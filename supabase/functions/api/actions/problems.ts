@@ -16,13 +16,14 @@ import { ApiError } from "../types.ts";
 import { requireSession, requireAdmin, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { sendPushToAdmins, sendPushToPhone } from "../push.ts";
+import * as R from "../../_shared/reglas.ts";
 
-export const REPORTE_PLAZO_HORAS = 48;
+export const REPORTE_PLAZO_HORAS = R.REPORTE_PLAZO_HORAS;
 // La hora de respuesta que se promete (ver respondeAntesDe). DEBEN coincidir con las del
 // cliente (src/app/06-*) — lo verifica `npm run parity`.
-export const RESPUESTA_CORTE_HORA = 19;
-export const RESPUESTA_HOY_HORA = 21;
-export const RESPUESTA_MANANA_HORA = 13;
+export const RESPUESTA_CORTE_HORA = R.RESPUESTA_CORTE_HORA;
+export const RESPUESTA_HOY_HORA = R.RESPUESTA_HOY_HORA;
+export const RESPUESTA_MANANA_HORA = R.RESPUESTA_MANANA_HORA;
 
 export const MOTIVOS: Record<string, string> = {
   falto: "Faltó algo",

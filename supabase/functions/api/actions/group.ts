@@ -299,7 +299,7 @@ export function repartirGrupo(
       let idx = -1, best = Infinity;
       p.items.forEach((it: any, k: number) => {
         const pr = priceCartItem(it);
-        if (pr.eligibleR06 && pr.basePrice < best) { best = pr.basePrice; idx = k; }
+        if (pr.elegible.sandwich && pr.basePrice < best) { best = pr.basePrice; idx = k; }
       });
       if (idx >= 0) {
         const resto = p.items.map((it: any, k: number) => k === idx ? { ...it, qty: (Number(it.qty) || 1) - 1 } : it)

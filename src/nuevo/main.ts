@@ -6,6 +6,7 @@
 // que la pinte. También deja el DINERO: el cliente viejo calcula precios con el mismo módulo
 // que el servidor (ver dinero.ts). Nada más de lo nuevo es global.
 import { cartaVieja } from './carta';
+import { reglasViejas } from './reglas';
 import { dinero } from './dinero';
 import { abrir as abrirFijo, pantallaFijo } from './pantallas/fijo';
 
@@ -16,12 +17,15 @@ const registro: {
   fijo: { abrir: (id?: string) => Promise<void> };
   dinero: typeof dinero;
   carta: ReturnType<typeof cartaVieja>;
+  reglas: ReturnType<typeof reglasViejas>;
 } = {
   pantallas: { p_recurring: pantallaFijo },
   fijo: { abrir: abrirFijo },
   dinero,
   // La carta, ya en la forma del código viejo: `src/app/01-*` arma PROTS, SIGS… con esto.
   carta: cartaVieja(),
+  // Las reglas del negocio (envío, horario, referidos…): `src/app/*` las toma de acá.
+  reglas: reglasViejas(),
 };
 
 (window as unknown as { __sndNuevo: typeof registro }).__sndNuevo = registro;

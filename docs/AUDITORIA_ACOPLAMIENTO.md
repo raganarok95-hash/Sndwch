@@ -129,6 +129,36 @@ permisos, validación y código muerto.
   descontar el pedido). Los dos flujos de cancelación de `check:e2e` pasan por la función nueva.
   Con esto también desaparece el comentario desactualizado sobre «dos versiones vivas».
 
+## Avance del plan (2026-09-24)
+
+- **Paso 1 · carta única** — hecho: `_shared/carta.ts`, con la v4 cargada en la base.
+- **Paso 2 · recompensas como objeto** — hecho: cada una tiene un `tipo` (salsa, subir30, doble,
+  bebida, sandwich) y su `tope` en la carta; `dinero.ts` decide por el tipo. Se borraron
+  `rewardWaiver`, `findRewardTargetIndex` y las marcas `eligibleR0X` del servidor (la
+  elegibilidad sale de `dinero.ts`), y los topes sueltos del cliente.
+  **Defecto vivo encontrado de paso:** el regalo de vuelta (24-48 h tras el primer pedido) daba
+  120 puntos «para canjear una bebida» que cuesta 160 desde el 2026-09-05. Ahora sus puntos son
+  el precio vigente de la bebida. `tests-api/regalo-de-vuelta.test.ts`, vista fallar con el
+  valor anterior.
+- **Paso 3 · reglas compartidas** — hecho: `_shared/reglas.ts` con envío, tienda, horario, rangos,
+  referidos, retos, tarjeta de regalo, Plan Semanal, cola, ventana de entrega y los plazos de «Algo
+  salió mal». Los puntos del referido y de la escalera se DERIVAN de las recompensas (el invariante
+  que `parity` comparaba ahora se cumple por construcción). `parity` pasó de comparar dos copias a
+  vigilar que ninguna regla vuelva a escribirse en un lado (visto fallar con una copia en cada
+  lado). «+50 pts» y el costo del referido del panel se interpolan; S/5.50, S/0.48 y S/17.87 del
+  panel son cifras del modelo en Python que el servidor no conoce: quedan para el rediseño del
+  panel (#86), en vez de copiarlas.
+  De paso: `como-pagas-y-avisos.spec.ts` fallaba 2 de cada 30 corridas (forzaba la pantalla desde
+  fuera y leía la llamada antes de que saliera); ahora pasa 45 de 45.
+
+- **Paso 4 · chequeos contra la base** — hecho: `check:rpc` y `check:doble-escritura` leen `pg_proc`
+  de un Postgres local con la foto del esquema, en vez de reconstruir las funciones desde las
+  migraciones con regex. Los dos traen `--probar`. El de doble escritura ahora sigue las llamadas
+  entre funciones, y con eso encontró un paso suelto real: el registro creaba la cuenta con los
+  puntos del bono de bienvenida y anotaba su historial aparte. Ahora es `crear_cuenta` (migración
+  `20260924230134`), una transacción; `tests-db/crear-cuenta.sql`, vista fallar sin la función y
+  con un defecto inyectado (el bono anotado dos veces).
+
 ## Problemas futuros (no rompen hoy)
 
 - **157 de 163 acciones sin contrato** (`b: any`): la entrada no se valida por esquema y la salida

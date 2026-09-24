@@ -83,7 +83,7 @@ Si todo vuelve a este archivo, en tres meses volvemos a los 52 000 tokens.
 ## ⚠ CAMBIAR UN PRECIO EN EL CÓDIGO NO CAMBIA EL PRECIO REAL
 
 **Los precios de la carta (`supabase/functions/_shared/carta.ts`, de donde salen `PROT_PRICE`,
-`SIG_DATA` y `SIDE_PRICE`) y `REWARDS` de `catalog.ts` son SOLO la semilla del primer arranque. La fuente de verdad en runtime es la
+`SIG_DATA`, `SIDE_PRICE` y los puntos de `REWARDS`) son SOLO la semilla del primer arranque. La fuente de verdad en runtime es la
 tabla `catalog_prices`**, que `loadCatalogPrices()` carga encima de esos literales en cada
 llamada. Si un código tiene fila en esa tabla, el literal del archivo NUNCA se usa para
 cobrar.
@@ -240,15 +240,11 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    que algo sea probable acá es extraer el CÁLCULO puro de la acción que toca la base:
    `cancellationDeltas` salió así de las dos cancelaciones, que además lo tenían duplicado
    palabra por palabra.
-4. `npm run parity` — compara las constantes de dinero duplicadas entre `src/app.ts` y
-   `supabase/functions/api/**` (`scripts/parity.mjs`). Si falla, el
-   cliente mostraría un número y el servidor cobraría otro. La carta ya no pasa por acá (es una
-   sola, `_shared/carta.ts`). Cubre topes de
-   recompensa, umbrales, zonas de delivery (con precio y excluidas), tarifa por distancia
-   (`DELIVERY_KM_RATE`/`ROAD_FACTOR`/`MIN_FEE`/`MAX_KM` + `STORE_LAT`/`STORE_LON`), nombres, y
-   los DOS precios del catálogo que NO viven en `catalog_prices` —`EXTRA_SAUCE_PRICE` y
-   `BASE_SURCHARGE` (el recargo del pan de focaccia)—, para los que esta comparación es la
-   única defensa.
+4. `npm run parity` — que ninguna regla compartida vuelva a escribirse como valor propio en un
+   lado. La carta (`_shared/carta.ts`), el dinero (`_shared/dinero.ts`) y las reglas del negocio
+   (`_shared/reglas.ts`: envío, tienda, horario, rangos, referidos, retos, cola, plazos) viven
+   UNA sola vez y las importan cliente y servidor; una regla nueva va ahí, nunca como segunda
+   copia. Además cruza los supuestos del modelo en Python contra el servidor.
 5. `npm run build` — regenera `index.html` desde `src/`.
 5b. `npm run check:backup` — viaje completo del respaldo (volcar → SQL → cargar en un
    Postgres real → comparar fila por fila) con datos hostiles a propósito. Levanta su
@@ -277,12 +273,9 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    pregunta si un número **puede justificarse** — la clase de error que el empaque tuvo dos
    meses sin que nada lo notara.
 5f. `npm run check:rpc` — que ninguna función `security definer` quede llamable con la anon key.
-   Fue el séptimo caso del mismo defecto en este repo; ahora hay algo que lo mira. Lee las migraciones en orden, y **compara la ARIDAD de la firma**: el patrón
-   normal para cambiar una firma es `drop function vieja(...)` + `create or replace nueva(...)`,
-   y sin comparar la firma el drop de la sobrecarga vieja daba por muerta a la que está viva —
-   cuatro funciones desaparecían del chequeo en silencio. Se encontró **cruzando el conteo del
-   script contra `pg_proc` de la base real**; sin ese cruce habría pasado. Un punto ciego en una
-   verificación de seguridad es peor que no tenerla: da confianza falsa justo donde no la hay.
+   Fue el séptimo caso del mismo defecto en este repo. Desde el 2026-09-24 le pregunta a `pg_proc`
+   de un Postgres local con la foto del esquema (antes leía las migraciones con regex y tuvo un
+   punto ciego con las sobrecargas). `-- --probar` crea una función sin revoke y exige detectarla.
 5h. `npm run check:e2e` — flujos de punta a punta contra el backend REAL levantado en local:
    el `api` en Deno + PostgREST + Postgres con el esquema real (`scripts/e2e/servidor-local.mjs`).
    Cada flujo (`tests-e2e/flujos.mjs`) entra por la API y después mira la base. Es lo único que
@@ -298,7 +291,7 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
    `adminToolsSections()`, no del test: una herramienta nueva entra sola. Corre dentro de
    `npm test`.
 5f-ter. `npm run check:doble-escritura` — que ninguna función inserte en una tabla que la RPC
-   que llama ya inserta (lee la última definición de cada RPC de las migraciones). Cada regalo
+   que llama ya inserta, también a través de otra función (lee `pg_proc` de la base local). Cada regalo
    de crédito quedaba anotado dos veces en `credit_ledger`. `-- --probar` le inyecta ese caso.
 6. `npm run test:estado` — la suite entera comparada contra `tests/ROJAS_CONOCIDAS.txt`: falla
    si aparece una roja NUEVA o si una conocida ya pasa (hay que borrarla de la lista). Mientras
@@ -335,18 +328,12 @@ ninguna foto servida se quede sin original y que no sobreviva un archivo del for
 
 ## Cómo desplegar el backend
 
-**El despliegue de `api`, `create-charge`, `create-credit-charge` y `weekly-summary` es
-automático vía CI — NUNCA lo hagas llamando a `mcp__Supabase__deploy_edge_function` a
-mano para estas 4.** `.github/workflows/deploy-api.yml` corre en cada push a `main` que
-toque `supabase/functions/**` y ejecuta `supabase functions deploy` para esas 4 funciones
-directo desde el checkout del repo, sin costo de tokens.
-
-`daily-summary`, `birthday-bonus`, `winback-campaign` y `send-order-email` **NO están en
-ese workflow** (sus `entrypoint_path` en `list_edge_functions` apuntan a `/tmp/user_fn_.../
-source/`, no al runner de GitHub Actions — señal de que la última vez que cambiaron fue
-con un deploy manual). Si alguna vez tocas una de estas 4, sí necesitas
-`mcp__Supabase__deploy_edge_function` a mano para esa función específica (son de un solo
-archivo cada una, mucho más barato que `api`) — o mejor, agrégala al workflow.
+**El despliegue de las 8 edge functions es automático vía CI — NUNCA lo hagas llamando a
+`mcp__Supabase__deploy_edge_function` a mano.** `.github/workflows/deploy-api.yml` corre en cada
+push a `main` que toque `supabase/functions/**` y despliega las 8 directo desde el checkout del
+repo, sin costo de tokens. `birthday-bonus` entró el 2026-08-29; `daily-summary`,
+`winback-campaign` y `send-order-email` el 2026-09-24 (hasta entonces un cambio en ellas quedaba
+en el repo sin llegar a producción). Una función NUEVA se agrega a ese workflow el mismo día.
 
 Esto quedó documentado aquí después de que una sesión entera (2026-07-18/19) se gastó el
 límite de varias sesiones intentando desplegar `api` a mano — leyendo y reincrustando sus
@@ -374,7 +361,7 @@ desde una sesión no se puede correr contra producción: para probar cambios al 
    igual" al que viste antes de pushear; puede que ya sea el post-CI y estés comparándolo
    contra sí mismo.
 2. Solo usa `mcp__Supabase__deploy_edge_function` manualmente si el CI está roto/no
-   disponible, o para una de las 4 funciones fuera del workflow. En ese caso sí exige los
+   disponible. En ese caso sí exige los
    archivos completos de la función tal cual están en disco (nunca reconstruidos de
    memoria) y compara después con `mcp__Supabase__get_edge_function` contra git antes de
    confiar en que coinciden.

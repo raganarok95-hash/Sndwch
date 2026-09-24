@@ -401,7 +401,7 @@ function badgesHTML(c){
 // en 120 — ocho días prometiendo una bebida que no alcanzaba a pagar, y encima 120 no cubría
 // NINGUNA recompensa salvo la salsa extra.
 function loQueGanaQuienInvita(){
-  var r=RWDS.filter(function(x){return x.id==='R06';})[0];
+  var r=recompensaDeTipo('sandwich');
   return (r&&REFERRER_REWARD_POINTS>=r.pts)
     ? 'un <b>sándwich 15CM GRATIS</b> ('+REFERRER_REWARD_POINTS+' pts)'
     : '<b>'+REFERRER_REWARD_POINTS+' pts</b> para tu próximo pedido';
@@ -412,7 +412,7 @@ function etiquetaDeEscalon(m){
   return (!r||m.points>=necesita)?m.label:(m.points+' puntos para tu próximo pedido');
 }
 function loQueGanaElInvitado(){
-  var r05=RWDS.filter(function(x){return x.id==='R05';})[0];
+  var r05=recompensaDeTipo('bebida');
   return (r05&&REFERRAL_BONUS_POINTS>=r05.pts)
     ? REFERRAL_BONUS_POINTS+' pts — una bebida de la casa'
     : REFERRAL_BONUS_POINTS+' pts para su primer pedido';
@@ -803,7 +803,7 @@ async function doClaimChallenge(){
   try{
     var res=await api('claim-challenge',{token:token});
     if(res.customer){cust=res.customer;cacheCust(cust,isAdmin);}
-    chalMsg='¡Reto completado! +50 pts';
+    chalMsg='¡Reto completado! +'+CHALLENGE_BONUS_POINTS+' pts';
   }catch(e){chalMsg=e.message;}
   _challengeClaimInProgress=false;
   render();
@@ -814,7 +814,7 @@ async function doClaimDiscoveryChallenge(){
   try{
     var res=await api('claim-discovery-challenge',{token:token});
     if(res.customer){cust=res.customer;cacheCust(cust,isAdmin);}
-    discChalMsg='¡Reto completado! +50 pts';
+    discChalMsg='¡Reto completado! +'+DISCOVERY_BONUS_POINTS+' pts';
   }catch(e){discChalMsg=e.message;}
   _discChallengeClaimInProgress=false;
   render();
@@ -1070,8 +1070,8 @@ function sPAvisos(){
 // entregado, dentro de las 48 h (los Términos dicen lo mismo, ver sPReturns). No es el Libro
 // de Reclamaciones: eso sigue en su pantalla, con su plazo legal. DEBEN coincidir con
 // problems.ts — lo verifica `npm run parity`.
-var REPORTE_PLAZO_HORAS=48;
-var RESPUESTA_CORTE_HORA=19,RESPUESTA_HOY_HORA=21,RESPUESTA_MANANA_HORA=13;
+var REPORTE_PLAZO_HORAS=REGLAS_N.REPORTE_PLAZO_HORAS;
+var RESPUESTA_CORTE_HORA=REGLAS_N.RESPUESTA_CORTE_HORA,RESPUESTA_HOY_HORA=REGLAS_N.RESPUESTA_HOY_HORA,RESPUESTA_MANANA_HORA=REGLAS_N.RESPUESTA_MANANA_HORA;
 var MOTIVOS_PROBLEMA=[
   {id:'falto',t:'Faltó algo',s:'Vino incompleto'},
   {id:'frio',t:'Llegó frío',s:'O tarde de más'},

@@ -6,7 +6,7 @@ import { sbGet } from "./db.ts";
 import { ApiError } from "./types.ts";
 import { computeRankName , REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS } from "./env.ts";
 import { REGLAS, resolverCarrito, tasarLinea, type LineaDelCarrito, type Precios, type Recompensa } from "../_shared/dinero.ts";
-import { CARTA, esSecreto, etiqueta, ID_SECRETO, idsDe, signaturesDeLaCarta } from "../_shared/carta.ts";
+import { CARTA, esSecreto, etiqueta, ID_SECRETO, idsDe, recompensaDeTipo, signaturesDeLaCarta, type TipoRecompensa } from "../_shared/carta.ts";
 
 // Reestructurado en esta sesión — el original (R01-R06, fijado casi al inicio del
 // proyecto) tenía 3 de 6 recompensas que cobraban puntos reales sin entregar ningún
@@ -77,11 +77,8 @@ export const REWARDS: Record<string, { pts: number; label: string }> = {
   //
   // ⚠ Estos números son SEMILLA. La fuente en runtime es `catalog_prices` (categoría
   // `reward`), actualizada en la misma sesión — cambiar solo esta línea no cambia nada.
-  R02: { pts: 20, label: "SALSA // EXTRA" },        // devuelve 1.33%
-  R04: { pts: 160, label: "DOBLE // PROTEÍNA" },    // devuelve 1.54%
-  R05: { pts: 160, label: "BEBIDA // GRATIS" },     // devuelve 1.46%
-  R03: { pts: 320, label: "TAMAÑO // 30CM" },       // devuelve 1.44%
-  R06: { pts: 400, label: "SÁNDWICH // GRATIS" },   // devuelve 1.48% — el ancla, no se mueve
+  // Las recompensas (tipo, puntos semilla, topes y textos) viven en _shared/carta.ts.
+  ...Object.fromEntries(CARTA.recompensas.map((x) => [x.id, { pts: x.pts, label: etiqueta(x).toUpperCase() }])),
 };
 
 // B02 (HERBS//CHEESE) retirado por decisión del dueño — posible reincorporación futura,
@@ -573,19 +570,6 @@ export const PROT_LABEL: Record<string, string> = Object.fromEntries(CARTA.prote
 // descuento sin tope si algún día se reutiliza para tasar un pedido real). Ahora replica
 // exactamente el mismo cálculo (con los mismos topes) que deriveCart usa para el pedido
 // real, una sola fuente de verdad en vez de dos implementaciones que podían divergir.
-export function rewardWaiver(rewardId: string | null, b: any, priced: PricedBuild): number {
-  if (!rewardId) return 0;
-  const reward = REWARDS[rewardId];
-  if (!reward) throw new ApiError("Recompensa inválida.");
-  if (rewardId === "R04" && !b.doubleProt) throw new ApiError("Selecciona doble proteína para usar esta recompensa.", 400);
-  if (rewardId === "R06" && b.size !== "15") throw new ApiError("Esta recompensa solo es válida en tamaño 15CM.", 400);
-  return rewardId === "R02" ? priced.sauceSurcharge
-    : rewardId === "R03" ? Math.min(priced.sizeUpgradeDiff, REGLAS.topeR03)
-    : rewardId === "R04" ? Math.min(priced.dblSurcharge, REGLAS.topeR04)
-    : rewardId === "R05" ? Math.min(priced.basePrice, REGLAS.topeR05)
-    : rewardId === "R06" ? priced.basePrice
-    : 0;
-}
 
 type PricedBuild = {
   basePrice: number;
@@ -699,8 +683,6 @@ export function deriveOrder(b: any): { ingredients: string[]; expectedTotal: num
   if (!size) throw new ApiError("Tamaño inválido.");
   const doubleProt = !!b.doubleProt;
   const extraSauce = !!b.extraSauce;
-  const rewardId = b.rewardId ? String(b.rewardId) : null;
-
   const priced = b.mode === "sig"
     ? priceSigBuild(String(b.sigId || ""), size, doubleProt, extraSauce, b.cheese ? String(b.cheese) : null)
     : priceByoBuild(
@@ -709,10 +691,10 @@ export function deriveOrder(b: any): { ingredients: string[]; expectedTotal: num
       Array.isArray(b.sauces) ? b.sauces.filter((x: any) => typeof x === "string") : [],
       size, doubleProt, extraSauce,
     );
-  const waiver = rewardWaiver(rewardId, b, priced);
+  // Un favorito no lleva recompensa: su total es el de la carta.
   return {
     ingredients: priced.ingredientsPerUnit,
-    expectedTotal: Math.max(0, priced.basePrice + priced.dblSurcharge + priced.sauceSurcharge - waiver),
+    expectedTotal: priced.basePrice + priced.dblSurcharge + priced.sauceSurcharge,
   };
 }
 
@@ -749,17 +731,21 @@ export type PricedItem = {
   sizeUpgradeDiff: number;
   ingredientsPerUnit: string[];
   label: string;
-  eligibleR02: boolean;
-  eligibleR03: boolean;
-  eligibleR04: boolean;
-  eligibleR05: boolean;
-  eligibleR06: boolean;
+  /** A qué tipo de recompensa puede aplicarse, calculado por `_shared/dinero.ts` (una sola regla). */
+  elegible: Record<TipoRecompensa, boolean>;
 };
 
 // Tasa y valida UNA línea del carrito (sándwich signature/build o bebida/side).
 // Nunca confía en el precio/etiqueta que reporte el cliente — todo se recalcula aquí
 // a partir de los catálogos del servidor.
 export function priceCartItem(raw: any): PricedItem {
+  const p = tasarYValidar(raw);
+  // Qué recompensa admite la línea lo decide `_shared/dinero.ts`, la misma regla con la que se
+  // cobra. Antes había aquí una segunda copia (eligibleR02…R06) que había que mantener igual.
+  const t = tasarLinea(p.item as unknown as LineaDelCarrito, preciosVigentes());
+  return { ...p, elegible: t ? t.elegible : { salsa: false, subir30: false, doble: false, bebida: false, sandwich: false } };
+}
+function tasarYValidar(raw: any): Omit<PricedItem, "elegible"> {
   const qty = validateQty(raw?.qty);
 
   if (raw?.type === "side") {
@@ -776,13 +762,6 @@ export function priceCartItem(raw: any): PricedItem {
       sizeUpgradeDiff: 0,
       ingredientsPerUnit: [code],
       label: SIDE_LABEL[code] || code,
-      eligibleR02: false,
-      eligibleR03: false,
-      eligibleR04: false,
-      // Una bebida/side es lo único elegible para R05 ("BEBIDA // GRATIS") — un
-      // sándwich nunca lo es, sin importar tamaño o proteína.
-      eligibleR05: true,
-      eligibleR06: false,
     };
   }
 
@@ -820,17 +799,6 @@ export function priceCartItem(raw: any): PricedItem {
       sizeUpgradeDiff: priced.sizeUpgradeDiff,
       ingredientsPerUnit: priced.ingredientsPerUnit,
       label: priced.label,
-      // R02 ("4TA // SALSA") perdona el cargo real de SALSA EXTRA — solo elegible si
-      // el cliente ya activó ese extra pagado en esta línea (mismo criterio que R04
-      // exige doubleProt activado: la recompensa perdona un cargo que el cliente ya
-      // pidió, no lo agrega de la nada).
-      eligibleR02: extraSauce,
-      eligibleR03: priced.sizeUpgradeDiff > 0,
-      eligibleR04: doubleProt,
-      eligibleR05: false,
-      // Excluye Signatures RESERVE (hoy solo SIG05) para que R06 no pueda gamearse eligiendo
-      // el sándwich más caro del catálogo — ver comentario de RESERVE_SIGS arriba.
-      eligibleR06: size === "15" && !RESERVE_SIGS.has(String(raw.sigId || "")),
     };
   }
 
@@ -851,35 +819,12 @@ export function priceCartItem(raw: any): PricedItem {
       sizeUpgradeDiff: priced.sizeUpgradeDiff,
       ingredientsPerUnit: priced.ingredientsPerUnit,
       label: priced.label,
-      // A diferencia de un Signature (salsas fijas de receta, "extra" siempre es de
-      // verdad extra), en BUILD YOUR OWN el cliente elige sus propias salsas (tope 3) —
-      // R02 ("4TA SALSA GRATIS") solo tiene sentido real si ya llegó al tope de 3 antes
-      // de pagar por una 4ta (hallazgo de auditoría financiera: antes calificaba incluso
-      // con 0 salsas base seleccionadas).
-      eligibleR02: extraSauce && sauces.length === 3,
-      eligibleR03: priced.sizeUpgradeDiff > 0,
-      eligibleR04: doubleProt,
-      eligibleR05: false,
-      eligibleR06: size === "15",
     };
   }
 
   throw new ApiError("Tipo de producto inválido.");
 }
 
-// R02 (perdona SALSA EXTRA) solo aplica a una línea que ya activó ese extra pagado; R03
-// (sube a 30CM gratis) solo a una línea 15CM cuya versión 30CM cueste más; R04 (doble
-// proteína gratis) solo a una línea con doble proteína activada; R05 (bebida gratis)
-// solo a una línea de bebida/side; R06 (15CM gratis) solo a una línea 15CM. El servidor
-// recalcula esto de forma independiente al índice que el cliente crea haber elegido.
-export function findRewardTargetIndex(priced: PricedItem[], rewardId: string): number {
-  if (rewardId === "R02") return priced.findIndex((p) => p.eligibleR02);
-  if (rewardId === "R03") return priced.findIndex((p) => p.eligibleR03);
-  if (rewardId === "R04") return priced.findIndex((p) => p.eligibleR04);
-  if (rewardId === "R05") return priced.findIndex((p) => p.eligibleR05);
-  if (rewardId === "R06") return priced.findIndex((p) => p.eligibleR06);
-  return priced.length ? 0 : -1;
-}
 
 // Combo sándwich (Signature o Build Your Own) + bebida: S/2 menos que pedir ambos por
 // separado, una vez por cada par sándwich+bebida en el carrito. Bajado de S/3 a S/2 — a
@@ -986,7 +931,8 @@ export function offpeakActiva(): boolean {
 // Por eso la frase no se afirma, se DERIVA: si el bono cubre R05 se nombra el producto, y si
 // no, el texto se queda en los puntos, que es lo único que sigue siendo verdad.
 export function bonoCubreBebida(): boolean {
-  return REFERRAL_BONUS_POINTS >= (REWARDS.R05 ? REWARDS.R05.pts : Infinity);
+  const d = recompensaDeTipo("bebida");
+  return REFERRAL_BONUS_POINTS >= (d && REWARDS[d.id] ? REWARDS[d.id].pts : Infinity);
 }
 export function loQueGanaElInvitado(): string {
   return bonoCubreBebida()
@@ -1003,7 +949,8 @@ export function loQueGanaElInvitado(): string {
 // se repricea desde el panel. Dejar derivado un solo lado del referido sería arreglar la
 // mitad de un defecto simétrico.
 export function loQueGanaQuienInvita(): string {
-  const r = REWARDS.R06;
+  const d = recompensaDeTipo("sandwich");
+  const r = d ? REWARDS[d.id] : undefined;
   return r && REFERRER_REWARD_POINTS >= r.pts
     ? `${REFERRER_REWARD_POINTS} puntos: canjéalos por un 15CM gratis`
     : `${REFERRER_REWARD_POINTS} puntos para tu próximo pedido`;
@@ -1036,7 +983,7 @@ export function etiquetaDeEscalon(
 // de las líneas del grupo es suya (en el carrito cerrado todas vienen mezcladas con una
 // nota "De: <nombre>"). Además así la promesa es literal y verificable.
 //
-// Usa la misma elegibilidad que R06 (`eligibleR06`: 15CM y no RESERVE) para que no se
+// Usa la misma elegibilidad que el sándwich gratis (`elegible.sandwich`: 15CM y no RESERVE) para que no se
 // pueda gamear con el menú secreto, y se excluye del conteo de combo igual que R06 — si
 // no, el combo terminaría regalando también la bebida emparejada con un sándwich que ya
 // es gratis (es exactamente el bug que ya se corrigió una vez para R06).

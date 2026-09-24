@@ -42,6 +42,13 @@ export function cartaVieja(c: Carta = CARTA) {
       ...(x.quesoOpcional ? { cheeseOptional: true } : {}),
       ...(x.secreto ? { secret: true, minOrders: x.secreto.minPedidos } : {}),
     })),
+    // Recompensas con su `tipo` (qué perdonan): el código viejo decide por él, nunca por el id.
+    // `sizeOnly` sale del tipo: subir a 30CM y el sándwich gratis solo se aplican a una línea de
+    // 15CM (la misma regla de elegibilidad de `_shared/dinero.ts`).
+    RWDS: c.recompensas.map((x) => ({
+      id: x.id, tipo: x.tipo, pts: x.pts, n: x.nombre, s: x.sabor, d: x.desc,
+      ...(x.tipo === 'subir30' || x.tipo === 'sandwich' ? { sizeOnly: '15' } : {}),
+    })),
     SIDES: c.bebidas.map((x) => ({ id: x.id, l: x.nombre, s: x.sabor, p: x.precio, d: x.desc, icon: x.icono })),
     SIG_IMG: foto(c.signatures),
     PROT_IMG: foto(c.proteinas),

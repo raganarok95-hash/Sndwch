@@ -13,48 +13,72 @@
 // cuando la RPC se escribe (o se reescribe) en una migración y el código que la llama se
 // escribió antes, o al revés, y nadie ve los dos lados a la vez. Esto los mira a la vez.
 //
-// Cómo: lee la ÚLTIMA definición de cada función desde supabase/migrations (en orden de
-// versión, como check-rpc) y anota en qué tablas inserta. Después recorre cada función de
-// supabase/functions/**: si llama a rpc("x") y además hace sbInsert("t") sobre una tabla t
-// en la que x ya inserta, falla.
+// Cómo (desde el 2026-09-24): le pregunta a la base. Levanta un Postgres local con la foto del
+// esquema (`supabase/esquema-actual.sql`, al día por `check:pg`) y lee de `pg_proc` el cuerpo
+// VIGENTE de cada función y en qué tablas inserta — también a través de otra función que llame
+// (`vincular_pedido_de_invitado` escribe el historial por `aplicar_pedido_a_la_cuenta`). Antes
+// reconstruía eso leyendo las migraciones con regex, y no veía las llamadas entre funciones.
+// Después recorre cada función de supabase/functions/**: si llama a rpc("x") y además hace
+// sbInsert("t") sobre una tabla t en la que x ya inserta, falla.
 //
 // Correr con: npm run check:doble-escritura   (dentro de `npm run verify`)
 // Verificarlo con: npm run check:doble-escritura -- --probar  (le inyecta el defecto real)
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { levantarPostgres } from './pg-local/postgres.mjs';
+import { psql, cargarEsquema } from './pg-local/esquema.mjs';
 
 const PROBAR = process.argv.includes('--probar');
 
-// ── 1. Qué tablas escribe cada RPC, según su última definición ──────────────────────────
-const MIG = 'supabase/migrations';
-const insertaEn = new Map(); // función -> Set(tablas)
-for (const f of readdirSync(MIG).filter((x) => x.endsWith('.sql')).sort()) {
-  const sql = readFileSync(join(MIG, f), 'utf8');
-  const re = /create\s+(?:or\s+replace\s+)?function\s+(?:public\.)?(\w+)\s*\(/gi;
-  let m;
-  while ((m = re.exec(sql))) {
-    const nombre = m[1].toLowerCase();
-    // El cuerpo va entre los dos $tag$ que siguen a la firma.
-    const resto = sql.slice(m.index);
-    const tag = resto.match(/\$(\w*)\$/);
-    if (!tag) continue;
-    const ini = resto.indexOf(tag[0]) + tag[0].length;
-    const fin = resto.indexOf(tag[0], ini);
-    if (fin < 0) continue;
-    const cuerpo = resto.slice(ini, fin);
-    const tablas = new Set();
-    for (const t of cuerpo.matchAll(/insert\s+into\s+(?:public\.)?(\w+)/gi)) tablas.add(t[1].toLowerCase());
-    insertaEn.set(nombre, tablas); // la última definición manda
+// ── 1. Qué tablas escribe cada RPC, según su definición vigente en la base ──────────────
+const cuerpos = new Map(); // función -> cuerpo
+{
+  const pg = levantarPostgres();
+  if (!pg) {
+    console.error('✗ No hay Postgres local (initdb) para leer pg_proc.');
+    process.exit(1);
   }
-  for (const d of sql.matchAll(/drop\s+function\s+(?:if\s+exists\s+)?(?:public\.)?(\w+)/gi)) {
-    // Un drop seguido de un create en la misma migración se resuelve solo: el create vuelve
-    // a anotar la función al procesarse (va después en el texto solo si se escribió así).
-    if (!new RegExp(`create\\s+(?:or\\s+replace\\s+)?function\\s+(?:public\\.)?${d[1]}\\s*\\(`, 'i').test(sql)) {
-      insertaEn.delete(d[1].toLowerCase());
+  try {
+    psql(pg.url, 'create database doble;');
+    const url = pg.url.replace('/postgres?', '/doble?');
+    cargarEsquema(url);
+    // Un separador que no aparece en ningún cuerpo: cada función en su bloque.
+    const salida = psql(url, `select '@@FN ' || p.proname || E'\n' || p.prosrc from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.prolang <> 12;`);
+    for (const bloque of salida.split('@@FN ').slice(1)) {
+      const salto = bloque.indexOf('\n');
+      const nombre = bloque.slice(0, salto).trim().toLowerCase();
+      cuerpos.set(nombre, (cuerpos.get(nombre) || '') + bloque.slice(salto + 1));
     }
+  } finally {
+    pg.parar();
+  }
+  if (cuerpos.size < 20) {
+    console.error(`✗ pg_proc devolvió solo ${cuerpos.size} funciones; ¿cargó el esquema?`);
+    process.exit(1);
   }
 }
+const directas = new Map();
+for (const [nombre, cuerpo] of cuerpos) {
+  directas.set(nombre, new Set([...cuerpo.matchAll(/insert\s+into\s+(?:public\.)?(\w+)/gi)].map((t) => t[1].toLowerCase())));
+}
+// Lo que inserta una función incluye lo que insertan las funciones que llama (cierre transitivo).
+const insertaEn = new Map();
+function tablasDe(nombre, visto = new Set()) {
+  if (insertaEn.has(nombre)) return insertaEn.get(nombre);
+  if (visto.has(nombre)) return new Set();
+  visto.add(nombre);
+  const out = new Set(directas.get(nombre) || []);
+  const cuerpo = cuerpos.get(nombre) || '';
+  for (const otra of cuerpos.keys()) {
+    if (otra !== nombre && new RegExp('\\b(?:public\\.)?' + otra + '\\s*\\(', 'i').test(cuerpo)) {
+      for (const t of tablasDe(otra, visto)) out.add(t);
+    }
+  }
+  insertaEn.set(nombre, out);
+  return out;
+}
+for (const nombre of cuerpos.keys()) tablasDe(nombre);
 
 // ── 2. Funciones del servidor: qué RPC llaman y en qué tablas insertan ─────────────────
 function archivosTs(dir) {

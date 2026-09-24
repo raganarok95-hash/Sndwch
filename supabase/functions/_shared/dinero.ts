@@ -22,21 +22,16 @@
 // céntimos es 6270, exacto. Se convierte a soles solo al devolver.
 
 /** Reglas del dinero que NO vienen de la base (no se editan desde el panel). */
-import { CARTA, idsDe } from './carta.ts';
+import { CARTA, idsDe, type TipoRecompensa } from './carta.ts';
 
 export const REGLAS = {
   /** Descuento por cada par sándwich + bebida. Bajado de S/2 a S/1 el 2026-08-22: a S/2 el
    *  combo se comía entre el 58% y el 118% de lo que deja una bebida (ver catalog.ts). */
   comboPorPar: 1,
-  /** Topes de las recompensas que perdonan un monto variable: sin tope, elegir la proteína o la
-   *  bebida más cara maximizaba el valor de los mismos puntos. */
-  topeR03: 8,
-  topeR04: 6,
-  topeR05: 6,
   /** Recargo de la salsa extra. Uno de los dos precios que NO viven en `catalog_prices`. */
   salsaExtra: 2,
   /** Recargo del pan por tamaño. El otro precio que no vive en `catalog_prices`. Solo la
-   *  focaccia lleva. Va DENTRO del precio base: así lo perdonan R06 y R03 enteros. */
+   *  focaccia lleva. Va DENTRO del precio base: así lo perdonan enteros el sándwich gratis y la subida a 30CM. */
   recargoPan: { B03: { p15: 0.5, p30: 1 } } as Record<string, { p15: number; p30: number }>,
   /** El menú secreto no entra en «15CM gratis» ni en el sándwich del organizador: es lo más caro
    *  del catálogo y se gamearía. */
@@ -50,7 +45,13 @@ export const REGLAS = {
 } as const;
 
 export type Tamano = '15' | '30';
-export type Recompensa = 'R02' | 'R03' | 'R04' | 'R05' | 'R06';
+/** El id de una recompensa de la carta (`CARTA.recompensas`). Lo que hace lo dice su `tipo`. */
+export type Recompensa = string;
+
+/** La definición de una recompensa por su id, o undefined si la carta no la tiene. */
+function defDe(r: Recompensa) {
+  return CARTA.recompensas.find((x) => x.id === r);
+}
 
 /** Los precios vigentes, tal como los cargó cada lado (servidor: catalog_prices; cliente:
  *  get-catalog). En soles. */
@@ -87,7 +88,8 @@ export type Tasada = {
   salsa: number;
   /** Cuánto costaría subir ESTE 15CM a 30CM, pan incluido. 0 si ya es 30CM. */
   subir30: number;
-  elegible: Record<Recompensa, boolean>;
+  /** A qué TIPO de recompensa puede aplicarse esta línea (ver `TipoRecompensa` en la carta). */
+  elegible: Record<TipoRecompensa, boolean>;
 };
 
 const cent = (soles: number): number => Math.round(soles * 100);
@@ -105,7 +107,7 @@ export function tasarLinea(it: LineaDelCarrito, p: Precios): Tasada | null {
     const c = cent(precio);
     return {
       tipo: 'side', qty: it.qty, unitario: c, base: c, doble: 0, salsa: 0, subir30: 0,
-      elegible: { R02: false, R03: false, R04: false, R05: true, R06: false },
+      elegible: { salsa: false, subir30: false, doble: false, bebida: true, sandwich: false },
     };
   }
   const t = it.size;
@@ -139,23 +141,26 @@ export function tasarLinea(it: LineaDelCarrito, p: Precios): Tasada | null {
   const subir30 = t === '15' ? Math.max(0, base30 - base) : 0;
   return {
     tipo: it.type, qty: it.qty, unitario: base + doble + salsa, base, doble, salsa, subir30,
-    elegible: { R02: r02, R03: subir30 > 0, R04: !!it.doubleProt, R05: false, R06: t === '15' && !reserva },
+    elegible: { salsa: r02, subir30: subir30 > 0, doble: !!it.doubleProt, bebida: false, sandwich: t === '15' && !reserva },
   };
 }
 
 /** La primera línea a la que se le puede aplicar la recompensa, o -1. */
 export function lineaDeLaRecompensa(tasadas: readonly (Tasada | null)[], r: Recompensa): number {
-  return tasadas.findIndex((x) => !!x && x.elegible[r]);
+  const d = defDe(r);
+  if (!d) return -1;
+  return tasadas.findIndex((x) => !!x && x.elegible[d.tipo]);
 }
 
+/** Cuánto perdona la recompensa sobre esa línea, en céntimos: lo que su tipo cubre, con su tope. */
 function perdonDe(r: Recompensa, x: Tasada): number {
-  switch (r) {
-    case 'R02': return x.salsa;
-    case 'R03': return Math.min(x.subir30, cent(REGLAS.topeR03));
-    case 'R04': return Math.min(x.doble, cent(REGLAS.topeR04));
-    case 'R05': return Math.min(x.base, cent(REGLAS.topeR05));
-    case 'R06': return x.base;
-  }
+  const d = defDe(r);
+  if (!d) return 0;
+  const monto = d.tipo === 'salsa' ? x.salsa
+    : d.tipo === 'subir30' ? x.subir30
+    : d.tipo === 'doble' ? x.doble
+    : x.base; // bebida y sándwich: la unidad entera
+  return d.tope == null ? monto : Math.min(monto, cent(d.tope));
 }
 
 export type OpcionesDelCarrito = {
@@ -194,27 +199,28 @@ export function resolverCarrito(
   let total = reales.reduce((s, { x }) => s + x.unitario * x.qty, 0);
   const subtotal = total;
 
-  // La recompensa se resuelve PRIMERO: R05 y R06 regalan una unidad COMPLETA, y esa unidad no
+  // La recompensa se resuelve PRIMERO: la bebida y el sándwich gratis regalan una unidad COMPLETA, y esa unidad no
   // puede seguir contando para el combo (si no, el combo regala también la otra mitad del par).
   const rid = op.recompensa ?? null;
   const ri = rid ? lineaDeLaRecompensa(tasadas, rid) : -1;
   const objetivo = ri >= 0 ? tasadas[ri]! : null;
+  const tipo = rid ? defDe(rid)?.tipo ?? null : null;
 
   let sandwiches = reales.filter(({ x }) => x.tipo !== 'side').reduce((s, { x }) => s + x.qty, 0);
   let bebidas = reales.filter(({ x }) => x.tipo === 'side').reduce((s, { x }) => s + x.qty, 0);
   // El umbral del organizador se mide sobre lo que el grupo PIDIÓ, antes de quitar la unidad
-  // que regala R06 (si no, un grupo de 5 con R06 caía a 4 y perdía el sándwich).
+  // que regala el sándwich gratis (si no, un grupo de 5 que lo usaba caía a 4 y perdía el del organizador).
   const sandwichesPedidos = sandwiches;
-  if (rid === 'R06' && objetivo && objetivo.tipo !== 'side') sandwiches -= 1;
-  if (rid === 'R05' && objetivo && objetivo.tipo === 'side') bebidas -= 1;
+  if (tipo === 'sandwich' && objetivo && objetivo.tipo !== 'side') sandwiches -= 1;
+  if (tipo === 'bebida' && objetivo && objetivo.tipo === 'side') bebidas -= 1;
 
-  // El organizador se lleva el 15CM más barato (misma elegibilidad que R06), nunca la misma
+  // El organizador se lleva el 15CM más barato (misma elegibilidad que el sándwich gratis), nunca la misma
   // línea que ya regala la recompensa.
   let oi = -1;
   if (op.organizador && sandwichesPedidos >= REGLAS.organizadorDesde) {
     let mejor = Infinity;
     reales.forEach(({ x, i }) => {
-      if (i === ri || !x.elegible.R06) return;
+      if (i === ri || !x.elegible.sandwich) return;
       if (x.base < mejor) {
         mejor = x.base;
         oi = i;
@@ -229,7 +235,7 @@ export function resolverCarrito(
     const precios: number[] = [];
     reales.forEach(({ x, i }) => {
       if (x.tipo !== 'side') return;
-      const n = rid === 'R05' && i === ri ? x.qty - 1 : x.qty;
+      const n = tipo === 'bebida' && i === ri ? x.qty - 1 : x.qty;
       for (let k = 0; k < n; k++) precios.push(x.unitario);
     });
     if (precios.length) valle = Math.min(Math.min(...precios), cent(REGLAS.valleTope));

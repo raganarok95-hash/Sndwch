@@ -3256,6 +3256,9 @@ export async function actAdminRetentionReport(b: any) {
     // tiene que poder decir las dos: medir solo contra el supuesto hace que el punto de partida
     // se lea como un logro.
     objetivo: MODELO_OBJETIVOS,
+    // Cifras del modelo que la pantalla nombra en sus explicaciones: viajan desde acá para que
+    // el texto no las escriba a mano.
+    cifras: { costoReferido: CAC_TECHO.costoReferido },
     alarm: {
       thresholdPct: RETENTION_ALARM_PCT,
       // Solo tiene sentido dar la alarma cuando hay clientes activos que medir; con 0
