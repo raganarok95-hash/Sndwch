@@ -2168,7 +2168,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '6c073d67db';
+var APP_BUILD = '75cf3bde24';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -3729,6 +3729,62 @@ function startOrder(m) {
 // Igual que startOrder('sig') pero deja el Signature tocado en la lista del home
 // ya preseleccionado en sOSig — evita el paso extra de buscarlo de nuevo en la lista
 // completa cuando el cliente ya sabe justo cuál quiere.
+// «Arma uno parecido» (ficha versión WICHO): el armador arranca con la receta de un
+// Signature ya puesta, para cambiarle lo que el cliente quiera. Solo entra lo que ARMA EL
+// TUYO ofrece: una proteína, un vegetal o una salsa exclusiva del Signature (sigOnly) o del
+// menú secreto (vaultOnly) se deja fuera y SE DICE, en vez de colarla por la puerta de
+// atrás a un precio que el armador no cobra.
+function piezasDelParecido(s) {
+    var libre = function (lista, id) { var x = lista.find(function (y) { return y.id === id; }); return !!x && !x.sigOnly && !x.vaultOnly; };
+    var fuera = [];
+    var p = libre(PROTS, s.prot) ? s.prot : null;
+    if (!p) {
+        var px = PROTS.find(function (y) { return y.id === s.prot; });
+        if (px)
+            fuera.push(px.l + ' ' + px.s.toLowerCase());
+    }
+    var t = (s.tops || []).filter(function (id) { var ok = libre(TOPS, id); if (!ok) {
+        var tx = TOPS.find(function (y) { return y.id === id; });
+        if (tx)
+            fuera.push(tx.l.toLowerCase());
+    } return ok; });
+    var sa = (s.sauces || []).filter(function (id) { var ok = libre(SAUCES, id); if (!ok) {
+        var sx = SAUCES.find(function (y) { return y.id === id; });
+        if (sx)
+            fuera.push(sx.l.toLowerCase());
+    } return ok; });
+    return { base: s.base || null, prot: p, tops: t, sauces: sa, cheese: s.fixedCheese || null, fuera: fuera };
+}
+function parecidoPrecargable(s) {
+    if (!s || s.secret)
+        return false;
+    var pz = piezasDelParecido(s);
+    return !!(pz.base || pz.prot || pz.tops.length || pz.sauces.length);
+}
+function armaParecido(id) {
+    var s = SIGS.find(function (x) { return x.id === id; });
+    if (!s)
+        return;
+    var pz = piezasDelParecido(s);
+    var tam = size;
+    resetBuilder();
+    mode = 'byo';
+    size = tam;
+    base = pz.base;
+    prot = pz.prot;
+    tops = pz.tops;
+    sauces = pz.sauces;
+    cheese = pz.cheese;
+    // Arranca en el primer paso que falta: sin tamaño, el tamaño; sin proteína libre, la
+    // proteína. Con todo puesto, en el tamaño, para que vea desde el principio qué lleva.
+    byoStep = !size ? 0 : !prot ? 2 : 0;
+    homeTab = 'byo';
+    sndScreen = 'o_build';
+    render();
+    showToast(pz.fuera.length
+        ? 'Te lo dejé como ' + s.n + '. ' + pz.fuera.join(', ') + ' es solo del Signature: elige qué va en su lugar.'
+        : 'Te lo dejé como ' + s.n + '. Cámbiale lo que quieras.', 'success');
+}
 function startOrderWithSig(id) {
     resetBuilder();
     mode = 'sig';
@@ -5445,6 +5501,9 @@ function sigPreviewOverlayHTML() {
                 + '</div></div>')
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096)">15CM // 30CM</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + GOLD + '">' + SOLES + pz(s.p15) + ' // ' + SOLES + pz(s.p30) + '</span></div>'
         + '<button onclick="closeSigPreview();sigId=\'' + s.id + '\';go(\'o_sig\')" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px">Pedir este Signature //</button>'
+        // «¿Lo quieres a tu manera? Arma uno parecido →» (ficha versión WICHO, aprobada): lleva
+        // al armador con esta receta ya puesta. Solo si hay algo que precargar.
+        + (parecidoPrecargable(s) ? '<button onclick="closeSigPreview();armaParecido(\'' + s.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-sky,#8CC8EC);letter-spacing:.12em;text-transform:uppercase;padding:10px 4px">¿Lo quieres a tu manera? Arma uno parecido →</button>' : '')
         + '<div onclick="closeSigPreview()" style="text-align:center;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em;padding:4px">Cerrar</div>'
         + '</div></div></div>';
 }
