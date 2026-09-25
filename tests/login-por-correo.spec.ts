@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, irAEntrar } from './helpers';
 
 // ENTRAR CON CORREO Y CÓDIGO — y que no quede nada vivo al salir.
 //
@@ -16,8 +16,8 @@ import { gotoApp } from './helpers';
 const CORREO = 'ana@ejemplo.com';
 
 async function pedirYVerificar(page: any) {
+  // PUNTOS sin sesión abre Entrar, que empieza por el correo.
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
   await page.locator('#l-email').fill(CORREO);
   await page.locator('button[onclick="doPedirCodigo()"]').click();
   await page.locator('#l-code').fill('123456');
@@ -43,7 +43,8 @@ test('sin cuenta: el registro muestra el correo verificado y no pide PIN ni corr
   });
   await pedirYVerificar(page);
 
-  await expect(page.getByText('Verificamos ' + CORREO)).toBeVisible();
+  // Primera vez: el correo ya verificado se muestra, no se vuelve a pedir.
+  await expect(page.locator('.en .hecho')).toContainText(CORREO);
   await expect(page.locator('#r-pin'), 'pedir PIN contradice «No hay contraseña»').toHaveCount(0);
   await expect(page.locator('#r-email'), 'un campo de correo que el servidor ignora').toHaveCount(0);
 
@@ -86,7 +87,6 @@ test('cerrar sesión devuelve el login al correo, no al teléfono de la persona 
     login: { customer: { phone: '900000001', name: 'Ana', points: 0 }, isAdmin: false, token: 'tok-ana' },
   });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
   await page.locator('[onclick*="authPinFallback=true"]').click();
   await page.locator('#l-phone').fill('900000001');
   await page.locator('#l-pin').fill('1234');
@@ -94,7 +94,7 @@ test('cerrar sesión devuelve el login al correo, no al teléfono de la persona 
   await expect.poll(() => page.evaluate(() => !!(window as any).token)).toBe(true);
 
   await page.evaluate(() => (window as any).doLogout());
-  await page.locator('button[onclick*="atab=\'login\'"]').click();
+  await irAEntrar(page);
   await expect(page.locator('#l-email'), 'la persona siguiente ve el formulario de teléfono de la anterior').toBeVisible();
   await expect(page.locator('#l-phone')).toHaveCount(0);
 });

@@ -96,7 +96,7 @@ test('cada vegetal del armador aparece, y lo elegido viaja al pedido', async ({ 
   await page.locator('#o-district').selectOption('trujillo');
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
-  await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 
   // Lo elegido viaja al servidor dentro del ítem, no se pierde en el camino.
   const po = calls.find((c) => c.action === 'place-order')!;

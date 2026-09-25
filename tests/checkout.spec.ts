@@ -40,7 +40,8 @@ test('invitado arma un Signature y paga con Yape/Plin', async ({ page }) => {
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
-  await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+  // La 06A (la losa): «Pedido recibido», con la referencia del pedido en la losa.
+  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 
   const placeOrderCall = calls.find((c) => c.action === 'place-order');
   expect(placeOrderCall).toBeTruthy();
@@ -106,7 +107,8 @@ test('invitado pide un Signature y el cambio de tamaño sí cambia el precio', a
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
-  await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+  // La 06A (la losa): «Pedido recibido», con la referencia del pedido en la losa.
+  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 
   const placeOrderCall2 = calls.find((c) => c.action === 'place-order');
   expect(placeOrderCall2).toBeTruthy();
@@ -211,7 +213,8 @@ test('el checkout exige distrito y muestra deshabilitados los que no cubrimos', 
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
-  await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+  // La 06A (la losa): «Pedido recibido», con la referencia del pedido en la losa.
+  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 
   const placeOrderCall = calls.find((c) => c.action === 'place-order');
   expect(placeOrderCall).toBeTruthy();

@@ -392,18 +392,20 @@ body.kb-open #app{padding-bottom:0}
    Una sola pantalla para todo el acceso: correo, código, primera vez, Google y el PIN de antes.
    Lo que cambia entre un momento y otro es el campo, nunca la pantalla. */
 .en{position:relative;min-height:100dvh;margin-bottom:calc(-1 * var(--sw-barra,0px));background:#F0EBDE;display:flex;flex-direction:column}
-.en .esc{position:relative;flex:0 0 auto;height:368px;overflow:hidden;background:linear-gradient(180deg,#1D2A22 0%,#16202A 100%)}
+.en .esc{position:relative;flex:0 0 auto;height:368px;overflow:hidden;background:linear-gradient(180deg,#1D2A22 0%,#16202A 100%) #1D2A22}
 .en .esc .sd{position:absolute;left:26px;bottom:12px;height:238px;width:auto;z-index:2}
 .en .esc .wc{position:absolute;right:28px;bottom:12px;height:172px;width:auto;z-index:2}
 .en .esc .piso{position:absolute;left:0;right:0;bottom:0;height:86px;z-index:1;background:linear-gradient(180deg,transparent,rgba(0,0,0,.34))}
 .en .esc .tx{position:absolute;left:0;right:0;top:62px;text-align:center;z-index:3}
 .en .esc .tx em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#CBA258;text-transform:uppercase;font-style:normal}
-.en .esc .tx b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:30px;line-height:.96;color:#fff;margin-top:9px;letter-spacing:-.02em}
+.en .esc .tx b{display:block;font-family:Anton,sans-serif;font-weight:700;font-size:30px;line-height:.96;color:#fff;margin-top:9px;letter-spacing:-.02em}
 .en .sal{all:unset;cursor:pointer;position:absolute;top:10px;left:12px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;z-index:4}
 .en .cuerpo{padding:50px 26px calc(var(--sw-barra,74px) + 24px);display:flex;flex-direction:column}
 .en .campo{display:block;border-bottom:2px solid #33230F;padding-bottom:12px;margin-bottom:24px}
 .en .campo s{display:block;text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6B4E28;text-transform:uppercase}
-.en .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:11px;font-family:'IBM Plex Mono',monospace;font-size:18px;color:#33230F;caret-color:#9C5F14}
+.en .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:11px;font-family:'IBM Plex Mono',monospace;font-size:18px;color:#33230F !important;caret-color:#9C5F14}
+/* ⚠ `!important` a propósito: la regla global `input{color:#EFEDE4 !important}` (fondo oscuro)
+   pintaba lo escrito crema sobre el papel crema de Entrar y la losa, o sea invisible. */
 .en .campo input::placeholder{color:rgba(51,35,15,.38)}
 .en .campo.codigo input{font-size:28px;letter-spacing:.42em}
 .en .hecho{font:500 11px/1.6 'IBM Plex Mono',monospace;color:#33230F;margin-bottom:22px}
@@ -412,11 +414,99 @@ body.kb-open #app{padding-bottom:0}
 .en .err{font:500 11px/1.6 'IBM Plex Mono',monospace;color:#9A2A12;min-height:18px;margin:-10px 0 10px}
 .en .nota{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6B4E28;line-height:1.9;text-transform:uppercase}
 .en .nota button{all:unset;cursor:pointer;display:inline-block;padding:8px 0;color:#33230F;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.en .esc.corta{height:270px}.en .esc.corta .sd{height:176px}.en .esc.corta .wc{height:128px}
+.en .par{display:flex;gap:18px}.en .par .campo{flex:1;min-width:0}
+.en .campo input:focus-visible{outline:none}.en .campo:focus-within{border-bottom-color:#9C5F14}
+.en .goo{width:100%}
+.en-go button:focus-visible{outline:2px solid #2A2113;outline-offset:-4px}
 .en-go{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:74px;display:flex;z-index:90}
 .en-go button{all:unset;box-sizing:border-box;cursor:pointer;flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
 .en-go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
 .en-go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
 .en-go .oro:only-child{justify-content:center;padding:0}
+/* ═══ LA PUERTA · la cara partida (maqueta M2 + la esquina de la cuenta, aprobadas) ═══════════
+   docs/maquetas/aprobadas/la-puerta-M2-sin-sesion.png y -con-sesion.png (fuente m2-esquina.html).
+   Es SIEMPRE lo primero que se ve, a pantalla completa y sin barra: cada mitad es un botón
+   entero que lleva a su mundo. CSS copiado de la fuente, salvo el lila de «WCH»: el de la
+   maqueta (#7B5EA0) daba 4.12:1 sobre el celeste y el mínimo AA es 4.5:1; #73579A da 4.58:1. */
+.pta{position:relative;height:100dvh;min-height:560px;margin-bottom:calc(-1 * var(--sw-barra,0px));display:flex;flex-direction:column;overflow:hidden;font-family:'EB Garamond',serif}
+.pta .mitades{flex:1;display:flex;min-height:0}
+.pta .h{all:unset;cursor:pointer;box-sizing:border-box;flex:1;min-width:0;position:relative;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+.pta .h:focus-visible{outline:3px solid #CBA258;outline-offset:-6px}
+.pta .hs{background:radial-gradient(120% 90% at 10% 20%,#1E1B15 0%,#110F0C 100%) #1E1B15}
+.pta .hw{background:radial-gradient(120% 90% at 90% 20%,#EAF4FB 0%,#CFE6F5 100%) #CFE6F5}
+.pta .cara{position:absolute;left:0;right:0;top:0;bottom:190px;display:flex;align-items:center}
+.pta .hs .cara{justify-content:flex-end}
+.pta .hw .cara{justify-content:flex-start}
+.pta .cara img{width:134%;max-height:100%;object-fit:contain;display:block;flex:0 0 auto}
+.pta .txt{position:relative;padding:0 20px 34px}
+.pta .hs .txt{text-align:right}
+.pta .nom{font-size:10px;letter-spacing:.3em;font-weight:600;text-transform:uppercase}
+.pta .prom{font-family:'Bodoni Moda',serif;font-weight:640;font-size:27px;line-height:1.04;margin-top:7px}
+.pta .baj{font-style:italic;font-size:13px;line-height:1.4;margin-top:6px}
+.pta .hs .nom{color:#CBA258}.pta .hs .prom{color:#F6F2E8}.pta .hs .baj{color:#9C978B}
+.pta .hw .nom{color:#73579A}.pta .hw .prom{color:#241D38}.pta .hw .baj{color:#5E5677}
+.pta .cab{position:absolute;top:0;left:0;right:0;z-index:4;display:flex;justify-content:center;padding-top:26px;pointer-events:none}
+.pta .wm{font-family:'Fraunces',serif;font-optical-sizing:auto;font-size:19px;font-weight:620;letter-spacing:.02em;line-height:1}
+.pta .wm .snd{color:#F6F2E8}.pta .wm .wch{color:#241D38}
+.pta .yo{all:unset;cursor:pointer;position:absolute;top:10px;right:4px;z-index:5;padding:12px;display:flex;align-items:center;gap:7px;font-family:'EB Garamond',serif;font-size:10px;letter-spacing:.22em;font-weight:600;text-transform:uppercase;color:#241D38}
+.pta .yo:focus-visible{outline:2px solid #241D38;outline-offset:-2px}
+.pta .yo .pt{background:#241D38;color:#EAF4FB;border-radius:999px;padding:5px 9px;letter-spacing:.14em}
+.pta .pie{background:#110F0C;padding:15px 12px calc(20px + env(safe-area-inset-bottom,0px));text-align:center}
+.pta .pie span{font-size:10px;letter-spacing:.22em;font-weight:600;text-transform:uppercase;color:#CBA258}
+.pta .pie em{font-style:italic;font-size:13px;color:#8E8A80;margin-left:10px}
+.pta .pie.cerrado span{color:#E2826A}
+
+/* ═══ 06 A · PEDIDO ENVIADO · la losa (aprobada 2026-09-24) + el aviso de puntos (2026-09-25) ══
+   docs/maquetas/aprobadas/06A-*.png (fuentes y1.html #A y aviso-puntos.html). SANDO está DETRÁS
+   de la losa: no hay forma de que tape un dato. El aviso para quien pagó sin cuenta vive DENTRO
+   de la losa, en el renglón de los puntos; con el correo, la losa sube en el mismo lugar. */
+.m06{position:relative;min-height:100dvh;margin-bottom:calc(-1 * var(--sw-barra,0px));display:flex;flex-direction:column;background:#1E2B22}
+.m06 .forro{position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:50}
+.m06 .arr{position:relative;flex:0 0 auto;height:472px;transition:height .35s ease}
+.m06.sube .arr{height:300px}
+.m06 .col{position:absolute;right:0;top:0;width:200px;bottom:0;z-index:3;overflow:hidden}
+.m06 .col img{position:absolute;right:-22px;bottom:-30px;height:400px}
+.m06 .arriba{position:absolute;left:30px;width:172px;top:78px;z-index:6}
+.m06 .ok{font:700 10px/1 'IBM Plex Mono',monospace;letter-spacing:.28em;color:#D8823C;text-transform:uppercase}
+.m06 h1{font-family:Anton,sans-serif;font-weight:700;font-size:42px;line-height:.86;color:#EFE6D4;margin:18px 0 0;letter-spacing:-.015em}
+.m06 .sub{font-family:'Instrument Serif',serif;font-style:italic;font-size:21px;color:#A6B79A;margin-top:20px;line-height:1.25}
+.m06 .sub u{display:block;text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.24em;color:#5F7358;margin-top:11px;text-transform:uppercase}
+.m06.sube .sub{display:none}
+.m06 .losa{position:relative;z-index:10;flex:1;background:#EFE6D4;padding:22px 26px calc(74px + 24px) 30px}
+.m06 .ca{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #1E2B22;padding-bottom:12px}
+.m06 .ca em{font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.24em;color:#5F7358;text-transform:uppercase}
+.m06 .ca u{text-decoration:none;font-family:Anton,sans-serif;font-size:22px;color:#1E2B22;letter-spacing:.01em}
+.m06 .dr{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:13px 0;border-bottom:1px solid rgba(30,43,34,.16);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:#6C7C64;text-transform:uppercase}
+.m06 .dr b{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;letter-spacing:0;color:#1E2B22;text-align:right}
+.m06 .dr b.pt{color:#B3651A}
+.m06 .dr button{all:unset;cursor:pointer;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#B3651A;text-transform:uppercase;padding:6px 0}
+.m06 .dr.espera{border-bottom:0;padding-bottom:10px}
+.m06 .dr.espera span{color:#B3651A}
+.m06 .nota{font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.7;color:#6C7C64;padding:12px 0;border-bottom:1px solid rgba(30,43,34,.16)}
+.m06 .nota label{cursor:pointer;color:#B3651A;text-decoration:underline;text-underline-offset:3px}
+.m06 .guardar{display:flex;gap:8px;align-items:stretch}
+.m06 .guardar .g{flex:1;min-height:44px;background:#1E2B22;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.m06 .guardar .c{all:unset;cursor:pointer;box-sizing:border-box;flex:0 0 auto;min-height:44px;display:flex;align-items:center;padding:0 12px;border:1px solid rgba(30,43,34,.35);font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#1E2B22;text-transform:uppercase}
+.m06 .guardar .c.solo{flex:1;justify-content:center}
+.m06 .campo{display:block;border-bottom:2px solid #1E2B22;padding:14px 0 10px}
+.m06 .campo s{display:block;text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#5F7358;text-transform:uppercase}
+.m06 .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:9px;font-family:'IBM Plex Mono',monospace;font-size:17px;color:#1E2B22 !important;caret-color:#B3651A}
+.m06 .campo input::placeholder{color:#A9AE9C}
+.m06 .campo.cod input{font-size:28px;letter-spacing:.32em}
+.m06 .par{display:flex;gap:16px}.m06 .par .campo{flex:1;min-width:0}
+.m06 .mini{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6C7C64;line-height:1.8;margin-top:12px;text-transform:uppercase}
+.m06 .mini b{color:#1E2B22;font-weight:700}
+.m06 .mini button{all:unset;cursor:pointer;color:#1E2B22;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.m06 .err{font:600 11px/1.5 'IBM Plex Mono',monospace;color:#9A2A12;min-height:16px;margin-top:10px}
+.m06 .extra{margin-top:18px;display:flex;flex-direction:column;gap:10px}
+.m06 .extra button{all:unset;cursor:pointer;box-sizing:border-box;min-height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border:1px solid rgba(30,43,34,.3);font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#1E2B22;text-transform:uppercase}
+.m06-go{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:74px;display:flex;z-index:90}
+.m06-go button{all:unset;box-sizing:border-box;cursor:pointer;flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.m06-go .oro{background:#D8823C;color:#231204;justify-content:flex-end;padding-right:16px}
+.m06-go .cel{background:#EFE6D4;color:#1E2B22;justify-content:flex-start;padding-left:16px}
+.m06-go button:focus-visible{outline:2px solid #1E2B22;outline-offset:-4px}
+
 /* ═══ MUNDO WICHO · el armador (maqueta M22 + el puente, aprobada 2026-09-24) ═══════════════
    docs/maquetas/aprobadas/mundo-wicho-M22-con-puente.png y su fuente m22-con-puente.html.
    Los valores salen de la maqueta tal cual: por eso viven acá y no en la escala de src/app.
@@ -3109,30 +3199,11 @@ var sndScreen = 'o_home', sndTab = 'order', busy = false, busyMsg = '';
 // Antes arrancaba en 'sig', asi que esa pantalla no existia: el cliente caia directo en
 // la lista de Signatures y la decision que estructura la marca era una barra de pestanas.
 //
-// ⚠ SE RECUERDA EL LADO, PERO SOLO PARA NO VOLVER A PREGUNTAR (decision del dueno,
-// 2026-09-17: "que recuerde la eleccion anterior pero no de manera invasiva").
-//
-// La pantalla de eleccion es para quien llega por primera vez. A un cliente que ya pidio
-// diez veces, preguntarle en cada visita de quien es el pedido es un toque de mas cada vez
-// -- y la friccion que mas se nota es la que se repite. Desde la segunda visita entra
-// directo a su lado.
-//
-// No es invasivo porque NO lo encierra: la barra de los dos hermanos sigue arriba del
-// catalogo, asi que cambiarse es un toque y esta a la vista. Recordar sin salida seria
-// invasivo; recordar con la puerta abierta al lado es lo contrario.
-//
-// El valor vive en localStorage y se acepta SOLO si es uno de los tres lados reales: un
-// localStorage manipulado o heredado de una version futura no puede dejar la app en un
-// estado que ningun boton produce.
-var homeTab = (function () {
-    try {
-        var v = localStorage.getItem('sw_lado');
-        return (v === 'sig' || v === 'byo') ? v : null; // 'drink' fue un lado un dia; ya no
-    }
-    catch (e) {
-        return null;
-    } // navegacion privada, cookies bloqueadas: se pregunta igual
-})();
+// ⚠ SE ABRE SIEMPRE EN LA PUERTA (dueño, 2026-09-25): «luego siempre la primera pantalla debe
+// ser la dividida en mitades». Del 2026-09-17 a hoy el lado se recordaba en `sw_lado` y desde
+// la segunda visita se saltaba la puerta; eso se retiró. `sw_lado` se sigue escribiendo al
+// elegir, pero ya no decide nada al abrir.
+var homeTab = null;
 // Se llama desde los DOS sitios que cambian de lado —la pantalla de eleccion y la barra de
 // arriba del catalogo— para que no haya uno que recuerde y otro que no.
 // ── ELEGIR UN LADO ES ENTRAR A ESE LADO, NO CAMBIAR UNA PESTAÑA (2026-09-17) ──────────
@@ -3308,7 +3379,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '8d2e50a384';
+var APP_BUILD = 'f2f3da3889';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -3693,7 +3764,9 @@ function renderOverlays() {
     // group_order y group_split: el grupo es un pedido que se está eligiendo, y en la maqueta
     // aprobada la burbuja caía encima del total y de la barra de cierre. p_recurring (tu pedido
     // fijo): es una pantalla de UN toque, y la burbuja tapaba justo el precio de ese toque.
-    if (sndScreen.indexOf('admin') !== 0 && sndScreen !== 'o_item_confirm' && sndScreen !== 'o_cart' && sndScreen !== 'o_home' && sndScreen !== 'o_sig' && sndScreen !== 'o_build' && sndScreen !== 'p_problema' && sndScreen !== 'o_secreto' && sndScreen !== 'group_order' && sndScreen !== 'group_split' && sndScreen !== 'p_recurring') {
+    // p_auth, p_gauth y o_sent (2026-09-25): Entrar y la 06A son maquetas aprobadas sin burbuja;
+    // en las dos caía encima del pie de acción y del aviso de puntos.
+    if (sndScreen !== 'p_auth' && sndScreen !== 'p_gauth' && sndScreen !== 'o_sent' && sndScreen.indexOf('admin') !== 0 && sndScreen !== 'o_item_confirm' && sndScreen !== 'o_cart' && sndScreen !== 'o_home' && sndScreen !== 'o_sig' && sndScreen !== 'o_build' && sndScreen !== 'p_problema' && sndScreen !== 'o_secreto' && sndScreen !== 'group_order' && sndScreen !== 'group_split' && sndScreen !== 'p_recurring') {
         var supportMsg = encodeURIComponent('Hola, necesito ayuda con mi pedido/cuenta en SND//WCH.');
         html += '<a href="https://wa.me/' + WA + '?text=' + supportMsg + '" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:' + GOLD + ';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">' + icon('chat', 24, 'var(--sw-on-gold,#241a08)') + '</a>';
     }
@@ -4106,10 +4179,6 @@ async function loadStoreHoursBackground() {
                 localStorage.setItem('sw_gcid', r.googleClientId);
             }
             catch (e) { }
-            // Y para la PRIMERA visita: si el id llegó y todavía no se tocó nada, se muestra la
-            // bienvenida ahora. Ver mostrarHolaSiCorresponde() en 08-*.
-            if (typeof mostrarHolaSiCorresponde === 'function')
-                mostrarHolaSiCorresponde(true);
         }
         // La key de Google Maps viaja al cliente igual que el id del píxel: una key de navegador
         // es pública por diseño (se ve en el HTML de cualquier sitio que use Maps) y lo que la
@@ -4455,6 +4524,10 @@ var POSES = {
     mira: { sando: 'sando2_mira', wicho: 'wicho_cuerpo' },
     piensa: { sando: 'sando2_ladea', wicho: 'wicho_cuerpo' },
     serio: { sando: 'sando2_cuerpo', wicho: 'wicho_cuerpo' },
+    // Entrar («te abren la puerta», maqueta aprobada): los dos de cuerpo entero, esperando.
+    entrar: { sando: 'sando2_cuerpo', wicho: 'wicho_cuerpo_sinsombra' },
+    // 06A (la losa): SANDO asomado detrás de la losa. WICHO no aparece ahí.
+    asoma: { sando: 'sando2_asoma', wicho: 'wicho_cuerpo' },
 };
 function broPose(quien, estado) {
     var fila = POSES[estado || 'cuerpo'] || POSES.cuerpo;
@@ -6029,61 +6102,61 @@ function sMundoBebidas() {
 // mosaico, asi que la puerta y la carta no pueden decir cosas distintas.
 function cuantosSignatures() {
     var n = SIGS.filter(function (x) { return !x.secret && sigAvailable(x); }).length;
-    var palabras = ['', 'Un', 'Dos', 'Tres', 'Cuatro', 'Cinco', 'Seis', 'Siete', 'Ocho', 'Nueve', 'Diez'];
+    // Como lo dice M2: «Cinco recetas cerradas.» — la cifra se cuenta, la frase es la de la maqueta.
+    var palabras = ['', 'Una', 'Dos', 'Tres', 'Cuatro', 'Cinco', 'Seis', 'Siete', 'Ocho', 'Nueve', 'Diez'];
     if (!n)
         return 'La carta de la casa.';
     if (n === 1)
-        return 'Un sándwich de autor.';
-    return (palabras[n] || String(n)) + ' sándwiches de autor.';
+        return 'Una receta cerrada.';
+    return (palabras[n] || String(n)) + ' recetas cerradas.';
+}
+// ── LA PUERTA · la cara partida (M2 + la esquina de la cuenta, aprobadas 2026-09-25) ──────
+// docs/maquetas/aprobadas/la-puerta-M2-sin-sesion.png y -con-sesion.png. Es SIEMPRE la primera
+// pantalla: la app no pide nada al abrir (dueño: «luego siempre la primera pantalla debe ser la
+// dividida en mitades, tiene que cubrir por completo la pantalla»). Cada mitad de la cara es un
+// botón entero que lleva a su mundo; la cuenta vive en la esquina del lado claro, porque los
+// mundos no tienen barra y sin ella no habría cómo llegar a los puntos.
+//
+// Todo número que dice sale del código: cuántos Signatures (`cuantosSignatures`), la hora de
+// cierre (STORE_HOURS) y el envío mínimo (DELIVERY_MIN_FEE). La maqueta los trae de muestra.
+function horaDoce(h) {
+    var m = h % 24, suf = m < 12 ? 'a.m.' : 'p.m.', x = m % 12 === 0 ? 12 : m % 12;
+    return x + ':00 ' + suf;
+}
+function puertaEstado() {
+    var envio = 'delivery desde ' + SOLES_TXT + (DELIVERY_MIN_FEE % 1 ? pz(DELIVERY_MIN_FEE) : String(DELIVERY_MIN_FEE));
+    if (!businessLaunched)
+        return { rotulo: 'Aún no abrimos', detalle: envio, cerrado: false };
+    var lima = limaDayHour(new Date()), range = STORE_HOURS[lima.weekday];
+    if (!range)
+        return { rotulo: 'Cerrado hoy', detalle: envio, cerrado: true };
+    var abierto = lima.hour >= range[0] && lima.hour < range[1];
+    return abierto
+        ? { rotulo: 'Abierto ahora', detalle: 'cierra ' + horaDoce(range[1]) + ' · ' + envio, cerrado: false }
+        : { rotulo: 'Cerrado', detalle: 'abre ' + horaDoce(range[0]) + ' · ' + envio, cerrado: true };
 }
 function sOEleccion() {
-    var ss = storeStatus();
-    var estado = !businessLaunched ? 'AÚN NO ABRIMOS' : ss.label;
-    var colorEstado = !businessLaunched ? GOLD : (ss.open ? 'var(--sw-ok,#25D366)' : 'var(--sw-danger,#ff8888)');
-    var mitad = function (id, nombre, titulo, bajada, acento, plano) {
-        var esByo = id === 'byo';
-        return '<button onclick="elegirLado(\'' + id + '\')" style="all:unset;cursor:pointer;box-sizing:border-box;'
-            + 'flex:1;min-width:0;position:relative;display:flex;flex-direction:column;justify-content:flex-end;'
-            + 'background:' + plano + ';overflow:hidden">'
-            // ⚠ LA FIGURA SE DIMENSIONA POR EL ANCHO DE SU MITAD, NUNCA POR EL ALTO.
-            // Con `height:100%` cada mitad ocupa el alto que le dicte SU proporcion (282x520,
-            // o sea 0.54), y a 726px de alto mide 394 de ancho dentro de un panel de 195: se
-            // sale 200px por lado y corta la oreja. Es el mismo defecto que este archivo ya
-            // documenta para los hermanos de cuerpo entero, con los papeles cambiados.
-            + '<div style="position:absolute;left:0;right:0;top:0;bottom:120px;display:flex;'
-            + 'align-items:center;' + (esByo ? 'justify-content:flex-start' : 'justify-content:flex-end') + '">'
-            // 132% del ancho de la mitad: la cara llena la pantalla en vez de flotar en el medio.
-            // Lo que sobra sale por el borde de AFUERA (la oreja), nunca por la costura — por eso
-            // cada mitad se alinea a su lado interno. Recortar por la costura partiria la cara.
-            + '<img src="img/' + (esByo ? 'wicho' : 'sando') + '.webp" alt="' + esc(nombre) + '" '
-            + 'style="width:132%;height:auto;max-height:100%;object-fit:contain;display:block;flex:0 0 auto"></div>'
-            + '<div style="position:relative;padding:0 16px 26px;text-align:' + (esByo ? 'left' : 'right') + '">'
-            + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.26em;'
-            + 'text-transform:uppercase;color:' + acento + '">' + esc(nombre) + '</div>'
-            // El titulo NO lleva <br>: pasa por esc() y se veria el tag literal. Se deja fluir y
-            // el ancho de la mitad lo parte solo, que ademas aguanta cualquier traduccion futura.
-            + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;'
-            + 'color:var(--sw-text,#fff);line-height:1.04;margin-top:5px;text-wrap:balance">' + esc(titulo) + '</div>'
-            + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
-            + 'color:var(--sw-text-muted,#9DA096);margin-top:5px;line-height:1.35">' + esc(bajada) + '</div>'
-            + '</div></button>';
+    var est = puertaEstado();
+    var mitad = function (id, clase, nombre, titulo, bajada, img) {
+        return '<button class="h ' + clase + '" onclick="elegirLado(\'' + id + '\')" aria-label="' + esc(nombre + ' · ' + titulo) + '">'
+            + '<div class="cara"><img src="img/' + img + '" alt="" aria-hidden="true"></div>'
+            + '<div class="txt"><div class="nom">' + esc(nombre) + '</div><div class="prom">' + esc(titulo) + '</div>'
+            + '<div class="baj">' + esc(bajada) + '</div></div></button>';
     };
-    return '<div class="fi" style="position:relative;min-height:calc(100dvh - 49px);display:flex;flex-direction:column">'
-        + '<div style="position:absolute;top:0;left:0;right:0;z-index:3;padding:20px 18px;'
-        + 'display:flex;justify-content:space-between;align-items:center;pointer-events:none">'
-        // WORDMARK() ya existe y pinta el "//" con las dos barras identicas y un color por
-        // hermano. Reescribirlo aca a mano seria una segunda fuente del mismo glifo.
-        + WORDMARK(19)
-        + '<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;'
-        + 'color:' + colorEstado + '">' + esc(estado) + '</span></div>'
-        + '<div style="flex:1;display:flex;align-items:stretch;min-height:0">'
-        // ⚠ EL NUMERO SE CUENTA, NUNCA SE ESCRIBE. Decia "Cinco sándwiches de autor" con el
-        // cinco a mano; el dia que el dueño publique o retire un Signature desde el panel —que
-        // es como se edita la carta— la puerta seguiria diciendo cinco. Es el mismo defecto que
-        // ya rompio tres promesas publicas en el brief semanal (ver CLAUDE.md).
-        + mitad('sig', 'SND', 'Ya está resuelto', cuantosSignatures(), GOLD, 'linear-gradient(160deg,rgba(47,107,84,.30),rgba(30,70,54,.08))')
-        + mitad('byo', 'WCH', 'Tú decides', 'Pan, proteína, lo que quieras.', 'var(--sw-sky,#8CC8EC)', 'linear-gradient(200deg,rgba(140,200,236,.24),rgba(63,134,180,.07))')
-        + '</div></div>';
+    var nombre = cust && cust.name ? String(cust.name).trim().split(/\s+/)[0] : '';
+    var yo = cust
+        ? '<button class="yo" data-fondo="#CFE6F5" onclick="swTab(\'points\')" aria-label="Tu cuenta">' + esc(nombre) + ' <span class="pt">' + (cust.points || 0) + ' pts</span></button>'
+        : '<button class="yo" data-fondo="#CFE6F5" onclick="swTab(\'points\')">Entrar →</button>';
+    return '<div class="pta fi">'
+        + '<div class="cab"><span class="wm"><span class="snd" data-fondo="#1E1B15">SND</span><span class="wm-mark" aria-hidden="true"><i></i><i></i></span><span class="wch" data-fondo="#CFE6F5">WCH</span></span></div>'
+        + yo
+        + '<div class="mitades">'
+        // ⚠ EL NUMERO SE CUENTA, NUNCA SE ESCRIBE (ver cuantosSignatures).
+        + mitad('sig', 'hs', 'SND', 'Ya está resuelto', cuantosSignatures(), 'sando.webp')
+        + mitad('byo', 'hw', 'WCH', 'Tú decides', 'Pan, proteína, lo que quieras.', 'wicho.webp')
+        + '</div>'
+        + '<div class="pie' + (est.cerrado ? ' cerrado' : '') + '"><span>' + esc(est.rotulo) + '</span><em>' + esc(est.detalle) + '</em></div>'
+        + '</div>';
 }
 // Devuelve la primera frase de un texto. Si no encuentra un punto seguido de espacio
 // —un pitch de una sola oracion, por ejemplo— devuelve el texto entero: nunca inventa un
@@ -7757,10 +7830,8 @@ function checkoutExtrasHTML() {
         // para acortar el scroll del resto del checkout.
         + '<details open style="margin-top:20px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">Contacto y entrega //</summary><div style="margin-top:10px">'
         + (!cust || !myAddresses.length ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' + myAddresses.map(function (a) { var sel = mismoId(pickedAddrId, a.id); return '<div onclick="pickAddr(\'' + a.id + '\')" style="background:' + (sel ? 'var(--sw-card2,#171A14)' : 'var(--sw-card,#1B1F18)') + ';border:1px solid ' + (sel ? GOLD : '#2C3228') + ';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + (sel ? '#fff' : '#9DA096') + '">' + esc(a.label) + '</div>'; }).join('') + '</div>')
-        // Solo a invitados, y ARRIBA de los campos: el botón existe para ahorrarles escribir, y
-        // ofrecerlo después de que ya escribieron nombre y correo no ahorra nada. Quien ya tiene
-        // sesión no lo ve — sería ruido en el paso de pagar.
-        + (!cust ? googleCtaHTML('Te llenamos el nombre y el correo, y ganas puntos por este pedido.') : '')
+        // Antes de pagar no se ofrece ninguna cuenta (dueño, 2026-09-25): la cuenta se ofrece UNA
+        // vez, después de pagar, en la losa de la 06A (ver avisoDePuntos).
         + '<div style="display:flex;flex-direction:column;gap:10px">' + INP('o-nom', 'Nombre // Tu nombre', 'text', confNom, 'clientes', 'name', 'nombre') + INP('o-phone', 'Teléfono // 9XXXXXXXX', 'tel', confPhone, 'phone', 'tel', 'tel') + INP('o-email', 'Correo // Opcional, para tu comprobante', 'email', confEmail, 'mail', 'email') + '<div style="position:relative">' + INP('o-addr', 'Dirección // Calle o usa GPS', 'text', addrText, 'direccion', 'street-address', 'direccion') + '<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#9DA096)">' + icon('gps', 16, '#9DA096') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + districtPickerHTML() + INP('o-notes', 'Referencia // portón, piso, cerca de... (opcional)', 'text', confNotes) + '</div>'
         + (scheduleMode === 'now' ? '<div style="margin-top:16px;background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('horario', 13, '#9DA096') + '<span>Llega <b style="color:var(--sw-text,#FFFFFF)">' + esc(ventanaEstimadaTexto(null)) + '</b> si lo confirmas ahora.' + (queueAhead > 0 ? ' Ahora mismo hay ' + queueAhead + ' pedido' + (queueAhead === 1 ? '' : 's') + ' por delante.' : '') + '</span></div></div>' : '')
         + '</div></details>'
@@ -9029,6 +9100,8 @@ function finalizeOrderSuccess(res, po, chargeId) {
     // que el cron lo cancele solo, ver STALE_MANUAL_PAYMENT_HOURS_CLIENT.
     window._lOrderCreatedAt = Date.now();
     window._lRef = po.ref;
+    avisoPaso = 'aviso';
+    aErr = '';
     // La hora que el servidor dejó prometida al crear el pedido (ventanaPrometida en env.ts).
     window._lVentana = ventanaDelPedido(res.order);
     receiptUploadState = null;
@@ -9072,6 +9145,37 @@ function reopenWhatsAppConfirm() {
         return;
     window.open('https://wa.me/' + WA + '?text=' + encodeURIComponent(window._lWaText), '_blank');
 }
+// ── 06 A · PEDIDO ENVIADO · la losa (aprobada 2026-09-24) ─────────────────────────────────
+// docs/maquetas/aprobadas/06A-pedido-enviado-la-losa.png. SANDO está DETRÁS de una losa clara
+// que lo corta a la altura del hombro: los datos viven en la losa y no hay forma de que la
+// figura tape uno (el defecto de la 06, donde las zapatillas tapaban el número y la hora).
+//
+// Lo que la pantalla anterior también decía —el pago por confirmar, el comprobante, el rango
+// nuevo, el menú secreto, el aviso por WhatsApp, las notificaciones, el referido— sigue acá,
+// como renglones de la MISMA losa debajo de los de la maqueta: nada de eso se perdió, y la
+// primera vista es la aprobada.
+//
+// EL AVISO DE PUNTOS (aprobado 2026-09-25, docs/maquetas/aprobadas/06A-aviso-*.png): a quien
+// pagó sin cuenta se le ofrece UNA vez, acá, en el renglón de los puntos. Con Google es un toque
+// (nombre y celular ya los dio en el checkout); con correo, la losa sube en el mismo lugar:
+// correo y DNI, después el código. Antes de pagar no se le pidió nada.
+var avisoPaso = 'aviso', avisoDni = '', avisoBday = '';
+function seguirElPedido() { avisoPaso = 'aviso'; loadMyOrders(); }
+function avisoDePuntosHTML(pts) {
+    var g = googleConfigured();
+    return '<div class="dr espera"><span>Te esperan</span><b class="pt">+' + pts + ' puntos</b></div>'
+        + '<div class="guardar">'
+        + (g ? '<div class="g" id="google-btn-mount" data-tema="filled_black"></div>' : '')
+        + '<button class="c' + (g ? '' : ' solo') + '" onclick="avisoPaso=\'correo\';aErr=\'\';render()">' + (g ? 'Correo →' : 'Guardarlos con mi correo →') + '</button>'
+        + '</div>'
+        + '<div class="err" id="aviso-err" role="alert">' + esc(aErr || '') + '</div>';
+}
+function avisoCampo(id, rotulo, tipo, val, ph, extra) {
+    return '<label class="campo' + (extra && extra.clase ? ' ' + extra.clase : '') + '"><s>' + esc(rotulo) + '</s><input id="' + id + '" type="' + tipo + '"'
+        + (val ? ' value="' + esc(val) + '"' : '') + (ph ? ' placeholder="' + esc(ph) + '"' : '')
+        + (extra && extra.im ? ' inputmode="' + extra.im + '"' : '') + (extra && extra.ac ? ' autocomplete="' + extra.ac + '"' : '')
+        + (extra && extra.max ? ' maxlength="' + extra.max + '"' : '') + '></label>';
+}
 function sOSent() {
     var pending = window._lPendingPayment;
     var methodLabel = window._lPayMethod === 'yape' ? 'Yape' : window._lPayMethod === 'plin' ? 'Plin' : '';
@@ -9081,93 +9185,338 @@ function sOSent() {
     var deadlineLabel = manualWaiting && window._lOrderCreatedAt
         ? new Date(window._lOrderCreatedAt + STALE_MANUAL_PAYMENT_HOURS_CLIENT * 3600000).toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit' })
         : null;
-    // Antes esta pantalla nunca mostraba la referencia del pedido (útil para ubicarlo en
-    // MIS PEDIDOS o mencionarlo si hay que escribir a soporte) y usaba la misma tarjeta
-    // genérica que cualquier pantalla informativa — sin ningún tratamiento propio para el
-    // momento de mayor satisfacción del flujo (hallazgo de auditoría UX/diseño).
-    var rankUp = window._lRankUp;
-    // El aviso del menú secreto ya no cuelga del nombre del rango (ver _lSecretUnlock): el
-    // umbral se edita desde el panel y no tiene por qué caer sobre un rango.
-    var rankPerk = window._lSecretUnlock ? 'Ya puedes ver el menú secreto.' : null;
-    // ── EL MOMENTO QUE NO TENÍA CARA ──────────────────────────────────────────────────
-    // `marca/PERSONAJES.md` tenía esto como el hueco número UNO: "SANDO aprobando — para
-    // cuando el pedido se confirma. Hoy ese momento no tiene cara." Era el instante de mayor
-    // satisfacción de todo el flujo y lo recibía un wordmark, igual que cualquier pantalla
-    // informativa. El dueño mandó la pose el 2026-09-10.
-    //
-    // Va SANDO y no WICHO aunque el sándwich se haya armado en el lado celeste: acá ya no se
-    // elige nada: está decidido, pagado y en marcha. Ése es exactamente su territorio.
-    //
-    // Con un pago manual pendiente el gesto sería una mentira pequeña —todavía falta que el
-    // dueño confirme contra su cuenta— así que ahí se queda el wordmark de siempre.
-    var caraSando = !pending
-        ? '<img src="img/sando2_sonrie.png" alt="" aria-hidden="true" style="height:132px;width:auto;margin-bottom:6px">'
-        : '<div style="margin-bottom:12px;padding:14px;border-radius:50%;box-shadow:' + SHADOW_GOLD + '">' + WORDMARK(52, true) + '</div>';
-    return '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:var(--sw-bg,#12150F)" class="fi">'
-        + caraSando
-        // Un pedido 100% cubierto por una recompensa (total S/0) nunca tuvo ningún pago real
-        // que "confirmar" — decía "PAGO CONFIRMADO" igual (hallazgo de auditoría UX, BAJO).
-        + (pending ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';letter-spacing:.25em;margin-bottom:6px">✓ Pedido registrado //</div>' : (window._lTot === 0 ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);letter-spacing:.25em;margin-bottom:6px">✓ Pedido confirmado //</div>' : '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);letter-spacing:.25em;margin-bottom:6px">✓ Pago confirmado //</div>'))
-        + (window._lRef ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em;margin-bottom:20px">Pedido ' + esc(window._lRef) + (window._lVentana ? ' · llega ' + esc(window._lVentana) : '') + '</div>' : '<div style="margin-bottom:20px"></div>')
-        + (rankUp ? '<div class="rank-pop" style="background:linear-gradient(135deg,rgba(203,162,88,.22),rgba(203,162,88,.06));border:1px solid ' + GOLD + ';border-radius:12px;padding:16px 20px;margin-bottom:20px;width:100%;max-width:320px;box-shadow:' + SHADOW_GOLD + '"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">¡Subiste de rango! //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + esc(rankUp) + '</div>' + (rankPerk ? '<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:6px">' + rankPerk + '</div>' : '') + '</div>' : '')
-        // Desbloqueo del menú secreto SIN subida de rango. Hasta el 2026-08-26 este aviso vivía
-        // solo dentro de la tarjeta de rango, lo cual funcionaba de casualidad porque el umbral
-        // del secreto (5) caía justo sobre INICIADO. Al bajarlo a 3 dejaron de coincidir: quien
-        // pasa de 2 a 3 pedidos desbloquea el menú secreto y no cambia de rango, así que se
-        // habría enterado por ningún lado. Esta tarjeta cubre ese caso.
-        + ((rankPerk && !rankUp) ? '<div class="rank-pop" style="background:linear-gradient(135deg,rgba(203,162,88,.22),rgba(203,162,88,.06));border:1px solid ' + GOLD + ';border-radius:12px;padding:16px 20px;margin-bottom:20px;width:100%;max-width:320px;box-shadow:' + SHADOW_GOLD + '"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:6px">¡Desbloqueaste algo! //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">' + rankPerk + '</div></div>' : '')
-        + '<p style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text-muted,#9DA096);max-width:260px;line-height:1.6;margin-bottom:16px">' + (pending ? 'Verificaremos tu pago por ' + methodLabel + ' y tu pedido pasará a preparación en cuanto lo confirmemos.' : 'Tu pago fue procesado y tu pedido ya está en preparación.') + '</p>'
-        + '<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:16px 20px;margin-bottom:16px;width:100%;max-width:320px">'
-        + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Estado del pedido //</div>'
-        + stBadge('RECIBIDO')
-        + (manualWaiting ? '<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px"><span class="pulse" style="width:7px;height:7px;border-radius:50%;background:' + GOLD + ';display:inline-block"></span><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.1em">Esperando confirmación de pago</span></div>' : '')
-        + (deadlineLabel ? '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:6px">Confirmamos manualmente — si no lo hacemos antes de las ' + deadlineLabel + ', el pedido se cancela solo.</div>' : '')
-        + (manualWaiting ? '<div style="margin-top:10px">'
-            + (receiptUploadState === 'done'
-                ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-ok,#25D366)">✓ comprobante recibido — gracias</div>'
-                : '<label style="display:inline-flex;align-items:center;gap:6px;cursor:' + (receiptUploadState === 'uploading' ? 'default' : 'pointer') + ';font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';text-decoration:underline;letter-spacing:.05em">'
-                    + (receiptUploadState === 'uploading' ? 'subiendo comprobante...' : icon('clip', 12) + '<span>subir captura del comprobante (opcional)</span>')
-                    + '<input type="file" accept="image/*" onchange="handleReceiptFile(event)"' + (receiptUploadState === 'uploading' ? ' disabled' : '') + ' style="position:absolute;width:1px;height:1px;opacity:0"></label>')
-            + (typeof receiptUploadState === 'string' && receiptUploadState.indexOf('error:') === 0 ? '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-danger,#ff8888);margin-top:4px">' + esc(receiptUploadState.slice(6)) + '</div>' : '')
-            + '</div>' : '')
-        + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:10px;line-height:1.5">Sigue el estado en Puntos → Mis Pedidos</div></div>'
-        + '<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:14px 20px;margin-bottom:16px;width:100%;max-width:320px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-ok,#25D366);letter-spacing:.2em;margin-bottom:4px">' + (pending ? 'Monto a pagar //' : (window._lTot === 0 ? 'Cubierto por recompensa //' : 'Monto cobrado //')) + '</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + SOLES + pz(window._lTot || 0) + '</div>' + (window._lChargeId ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#9DA096);margin-top:4px">Ref. pago: ' + window._lChargeId + '</div>' : '') + '</div>'
-        + (cust ? '<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.15);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px">' + (pending ? 'Puntos //' : 'Puntos ganados //') + '</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:' + (pending ? '12px' : '32px') + ';font-weight:640;color:' + GOLD + '">' + (pending ? '+' + (window._lPoints || 0) + ' pts pendientes hasta confirmar tu pago' : '+' + (window._lPoints || 0) + '<span style="font-size:15px"> pts</span>') + '</div></div>' : '')
-        + (window._lRewardLabel ? '<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(37,211,102,.3);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-ok,#25D366);letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">' + icon('gift', 12, 'var(--sw-ok,#25D366)') + 'Recompensa aplicada //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">' + esc(window._lRewardLabel) + '</div></div>' : '')
-        // Respaldo tappable del window.open automático de arriba — muchos navegadores
-        // móviles lo bloquean por no venir de un tap directo del usuario, y sin esto un
-        // pedido ya cobrado podía quedar sin ningún comprobante ni aviso al negocio.
-        + (window._lWaText ? '<button onclick="reopenWhatsAppConfirm()" style="all:unset;cursor:pointer;display:block;width:100%;max-width:320px;text-align:center;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:13px;border-radius:10px;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px">' + icon('chat', 16, 'var(--sw-on-gold,#241a08)') + 'Confirmar pedido por WhatsApp →</button>' : '')
-        // Antes el único lugar para activar notificaciones push era un toggle escondido en
-        // el perfil (o una fila discreta en el checkout) — justo después del primer pedido
-        // pagado es el momento de mayor intención: el cliente ya vio el valor de la app y
-        // quiere saber cuándo llega SU pedido, así que se ofrece aquí de forma prominente.
-        + (cust && cust.total_orders === 1 && !pushSubscribed && ('serviceWorker' in navigator) && ('PushManager' in window) ? '<div onclick="togglePushNotifications()" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px;cursor:pointer"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">' + icon('notif', 12, GOLD) + 'No te pierdas tu pedido //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.5">Activa notificaciones y te avisamos apenas esté en camino.</div>' + (pushMsg ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';margin-top:6px">' + esc(pushMsg) + '</div>' : '') + '</div>' : '')
-        + (cust ? '<div onclick="shareReferral()" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px;cursor:pointer"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">' + icon('heart', 12, GOLD) + 'Invita a un amigo //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.5">Comparte tu código <b style="color:var(--sw-text,#FFFFFF)">' + esc(cust.phone) + '</b> — cuando haga su primer pedido, tú te ganas un SÁNDWICH 15CM GRATIS y él estrena con una BEBIDA GRATIS.</div></div>' : '')
-        + '<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">'
-        + '<button onclick="sndScreen=\'o_home\';render()" style="all:unset;cursor:pointer;border:1px solid ' + GOLD + ';color:' + GOLD + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.15em;padding:12px 22px;border-radius:10px">Nuevo pedido</button>'
-        + (cust ? '<button onclick="sndScreen=\'p_orders\';loadMyOrders()" style="all:unset;cursor:pointer;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.15em;padding:12px 22px;border-radius:10px">Ver estado →</button>' : '')
+    var pts = window._lPoints || 0;
+    var invitado = !cust && pts > 0 && !!window._lRef;
+    var sube = invitado && (avisoPaso === 'correo' || avisoPaso === 'codigo');
+    var ref = window._lRef ? '#' + esc(window._lRef) : '';
+    var losa = '', pie = '';
+    if (sube && avisoPaso === 'correo') {
+        losa = '<div class="ca"><em>Guardar +' + pts + ' puntos</em><u>' + ref + '</u></div>'
+            + avisoCampo('av-email', 'Tu correo', 'email', authEmail || window._lastGuestEmail || '', 'tu@correo.com', { im: 'email', ac: 'email' })
+            + '<div class="par">' + avisoCampo('av-dni', 'DNI', 'text', avisoDni, '8 dígitos', { im: 'numeric', max: 8 })
+            + avisoCampo('av-bday', 'Cumpleaños', 'text', avisoBday, 'DD/MM/AAAA', { im: 'numeric', max: 10 }) + '</div>'
+            + '<div class="err" id="aviso-err" role="alert">' + esc(aErr || '') + '</div>'
+            + '<div class="mini">Tu nombre y tu celular ya los tenemos: <b>' + esc(window._lastGuestName || '') + ' · ' + esc(window._lastGuestPhone || '') + '</b>.<br>'
+            + '+' + WELCOME_BONUS_POINTS + ' puntos de bienvenida. Aceptas los <button onclick="event.stopPropagation();sndScreen=\'p_legal\';render()">Términos y la Privacidad</button>.</div>';
+        pie = '<button class="oro" onclick="avisoMandarCodigo()">Mandar código</button><button class="cel" onclick="avisoPaso=\'aviso\';aErr=\'\';render()">Ahora no</button>';
+    }
+    else if (sube) {
+        losa = '<div class="ca"><em>Guardar +' + pts + ' puntos</em><u>' + ref + '</u></div>'
+            + avisoCampo('av-code', 'El código · 6 dígitos', 'tel', '', '••••••', { clase: 'cod', im: 'numeric', ac: 'one-time-code', max: 6 })
+            + '<div class="err" id="aviso-err" role="alert">' + esc(aErr || '') + '</div>'
+            + '<div class="mini">Lo mandamos a <b>' + esc(authMasked || authEmail) + '</b>. Vence en unos minutos.</div>'
+            + '<div class="dr" style="margin-top:14px"><span>No me llegó</span><button onclick="avisoMandarCodigo(true)">Mandar otro →</button></div>';
+        pie = '<button class="oro" onclick="avisoVerificar()">Guardar</button><button class="cel" onclick="avisoPaso=\'aviso\';aErr=\'\';render()">Ahora no</button>';
+    }
+    else {
+        var rankPerk = window._lSecretUnlock ? 'Ya puedes verlo' : null;
+        losa = '<div class="ca"><em>Tu pedido</em><u>' + ref + '</u></div>'
+            + (window._lVentana ? '<div class="dr"><span>Llega</span><b>' + esc(window._lVentana) + '</b></div>' : '')
+            + '<div class="dr"><span>Pagaste</span><b>' + SOLES_TXT + pz(window._lTot || 0) + '</b></div>'
+            + (window._lRewardLabel ? '<div class="dr"><span>Canjeaste</span><b>' + esc(window._lRewardLabel) + '</b></div>' : '')
+            + (cust && pts > 0 ? '<div class="dr"><span>' + (pending ? 'Al confirmar' : 'Ganaste') + '</span><b class="pt">+' + pts + ' puntos</b></div>' : '')
+            + (invitado ? avisoDePuntosHTML(pts) : '')
+            + (manualWaiting ? '<div class="nota">Confirmamos tu ' + methodLabel + ' contra la cuenta'
+                + (deadlineLabel ? '; si no lo hacemos antes de las ' + esc(deadlineLabel) + ', el pedido se cancela solo' : '') + '.<br>'
+                + (receiptUploadState === 'done' ? '✓ Comprobante recibido.'
+                    : receiptUploadState === 'uploading' ? 'Subiendo el comprobante…'
+                        : '<label>Subir la captura del comprobante (opcional)<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>')
+                + (typeof receiptUploadState === 'string' && receiptUploadState.indexOf('error:') === 0 ? '<br>' + esc(receiptUploadState.slice(6)) : '')
+                + '</div>' : '')
+            + (window._lRankUp ? '<div class="dr"><span>Subiste a</span><b class="pt">' + esc(window._lRankUp) + '</b></div>' : '')
+            + (rankPerk ? '<div class="dr"><span>Menú secreto</span><b class="pt">' + rankPerk + '</b></div>' : '')
+            + '<div class="extra">'
+            // Respaldo tappable del window.open automático: muchos navegadores móviles lo bloquean
+            // por no venir de un toque, y sin esto un pedido cobrado podía quedar sin aviso al negocio.
+            + (window._lWaText ? '<button onclick="reopenWhatsAppConfirm()">Mandar el aviso por WhatsApp <span>→</span></button>' : '')
+            // Justo después del primer pedido pagado es el momento de mayor intención para activar
+            // las notificaciones: quiere saber cuándo llega SU pedido.
+            + (cust && cust.total_orders === 1 && !pushSubscribed && ('serviceWorker' in navigator) && ('PushManager' in window) ? '<button onclick="togglePushNotifications()">Avísame cuando salga <span>→</span></button>' : '')
+            + (cust ? '<button onclick="shareReferral()">Invita a alguien <span>→</span></button>' : '')
+            + '</div>'
+            // Si algo sale mal con este pedido, es acá donde el cliente lo va a buscar.
+            + legalLinksHTML('o_sent');
+        pie = '<button class="oro" onclick="seguirElPedido()">Seguir el pedido</button><button class="cel" onclick="seguirElPedido()" aria-label="Seguir el pedido">→</button>';
+    }
+    return '<div class="m06 fi' + (sube ? ' sube' : '') + '"><div class="forro"></div>'
+        + '<div class="arr"><div class="col"><img src="' + broPose('sando', 'asoma') + '" alt="" aria-hidden="true"></div>'
+        + '<div class="arriba"><div class="ok">Pedido recibido</div><h1>YA ESTÁ<br>EN LA<br>COCINA</h1>'
+        + '<div class="sub">“Ya prendí<br>la plancha.”<u>Sando</u></div></div></div>'
+        + '<div class="losa">' + losa + '</div>'
         + '</div>'
-        + (!cust ? '<div onclick="atab=\'reg\';sndScreen=\'p_auth\';render()" style="margin-top:20px;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';letter-spacing:.1em">→ Crea tu cuenta y gana puntos por este pedido</div>' : '')
-        // Si algo sale mal con este pedido, es acá donde el cliente lo va a buscar.
-        + legalLinksHTML('o_sent')
-        + '</div>';
+        + '<div class="m06-go sw-barra">' + pie + '</div>';
 }
-// AUTH
-// Antes el bono de bienvenida se otorgaba en silencio (server-side, sin que este
-// formulario lo mencionara nunca) — un incentivo que no se comunica no convierte
-// (hallazgo de auditoría, BAJO). El número se INTERPOLA de `WELCOME_BONUS_POINTS` y
-// `npm run parity` lo compara contra el servidor: estaba escrito a mano con un comentario que
-// decía "debe coincidir" y nada que lo comprobara.
-function sPAuth() {
-    return H() + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;margin-bottom:6px;text-wrap:balance">Puntos<span class="cut-sep" style="color:' + GOLD + '"> // </span>rewards</div><p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis. Bono de bienvenida: +' + WELCOME_BONUS_POINTS + ' pts al crear tu cuenta.</p><div style="display:flex;background:var(--sw-card,#16241D);border-radius:10px;padding:4px;margin-bottom:24px">' + [['reg', 'Crear cuenta'], ['login', 'Ingresar']].map(function (x) { return '<button onclick="clearGoogleLink();atab=\'' + x[0] + '\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:' + (atab === x[0] ? GOLD : 'transparent') + ';color:' + (atab === x[0] ? 'var(--sw-on-gold,#241a08)' : 'var(--sw-text-muted,#9DA096)') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">' + x[1] + '</button>'; }).join('') + '</div>' + (googleConfigured() ? '<div id="google-btn-mount" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px"></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div style="flex:1;height:1px;background:var(--sw-card,#16241D)"></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#5A7A6A;letter-spacing:.15em">O con tu teléfono</span><div style="flex:1;height:1px;background:var(--sw-card,#16241D)"></div></div>' : '') + (atab === 'reg' ? '<div style="display:flex;flex-direction:column;gap:10px">' + (_googleIdToken ? '<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:12px 14px;margin-bottom:4px;display:flex;flex-direction:column;gap:6px"><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);line-height:1.4">✓ Verificamos <b>' + esc(_googleLinkedEmail || '') + '</b> con Google. Completa tu registro para vincularla — si no eres tú, descarta este vínculo abajo.</div><div onclick="discardGoogleLink()" style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#9DA096);cursor:pointer;text-decoration:underline;align-self:flex-start">No soy yo — continuar sin Google</div></div>' : '') + INP('r-name', 'Nombre // Tu nombre completo', 'text', window._lastGuestName || '', 'clientes') + INP('r-phone', 'Teléfono // 9XXXXXXXX', 'tel', window._lastGuestPhone || '', 'phone') + (authProof
-        // Llegó acá verificando un correo que todavía no tenía cuenta. Ese correo ya está
-        // resuelto (el servidor lo lee de la prueba firmada, no de un campo) y el PIN lo genera
-        // el servidor: la pantalla anterior prometió «No hay contraseña». Mostrar los dos campos
-        // pedía un PIN que contradecía esa promesa y un correo que se ignoraba al guardar.
-        ? '<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:12px 14px;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);line-height:1.4">✓ Verificamos <b>' + esc(authEmail) + '</b>. Vas a entrar siempre con ese correo y un código; no necesitas PIN.</div>'
-        : INP('r-pin', 'PIN personal // Mínimo 4 dígitos', 'password', undefined, 'lock') + INP('r-email', 'Correo // Para recuperar tu cuenta', 'email', window._lastGuestEmail || '', 'mail')) + INP('r-dni', 'DNI // 8 dígitos (obligatorio)', 'text', undefined, 'card') + INP('r-bday', 'Fecha de nacimiento // DD/MM/AAAA (obligatorio)', 'text', undefined, 'calendar') + INP('r-ref', 'Código de referido // opcional', 'text', refCode) + '<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px">' + aErr + '</div>' + '<p style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.5;margin-bottom:4px">Al crear tu cuenta aceptas nuestros <span onclick="event.stopPropagation();sndScreen=\'p_legal\';render()" style="color:' + GOLD + ';cursor:pointer;text-decoration:underline">Términos y Política de Privacidad</span>.</p>' + BTN('Crear cuenta //', 'doReg()') + '</div>' : '<div style="display:flex;flex-direction:column;gap:10px">' + (authPinFallback ? INP('l-phone', 'Teléfono // 9XXXXXXXX', 'tel', savedPh, 'phone') + INP('l-pin', 'PIN personal', 'password', undefined, 'lock') + '<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px">' + aErr + '</div>' + BTN('Ingresar //', 'doLogin()') + '<div onclick="authPinFallback=false;aErr=\'\';render()" style="text-align:center;margin-top:10px;font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:' + GOLD + ';cursor:pointer;letter-spacing:.1em">Prefiero entrar con mi correo →</div>' + `<div onclick="recNewPin=null;recEmailMasked=null;recPhone='';recDni='';recBday='';sndScreen='p_recover';render()" style="text-align:center;margin-top:10px;font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>` : authPaso === 'codigo' ? '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.6;margin-bottom:2px">Te mandamos un código de 6 dígitos a <b style="color:var(--sw-text-body,#EFEDE4)">' + esc(authMasked) + '</b>. Vence en unos minutos y sirve una sola vez.</p>' + INP('l-code', 'Código // 6 dígitos', 'tel', undefined, 'lock') + '<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px">' + aErr + '</div>' + BTN('Entrar //', 'doVerificarCodigo()') + '<div onclick="doPedirCodigo()" style="text-align:center;margin-top:10px;font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:' + GOLD + ';cursor:pointer;letter-spacing:.1em">No me llegó // Mandar otro →</div>' + '<div onclick="authPaso=\'correo\';aErr=\'\';render()" style="text-align:center;margin-top:10px;font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);cursor:pointer;letter-spacing:.1em">Cambiar de correo →</div>' : '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.6;margin-bottom:2px">No hay contraseña. Te mandamos un código de 6 dígitos a tu correo y entras con eso.</p>' + INP('l-email', 'Correo // tu@correo.com', 'email', authEmail, 'mail') + '<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px">' + aErr + '</div>' + BTN('Mándame el código //', 'doPedirCodigo()') + '<div onclick="authPinFallback=true;aErr=\'\';render()" style="text-align:center;margin-top:10px;font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);cursor:pointer;letter-spacing:.1em">Entrar con teléfono y PIN →</div>') + '</div>') + '<div style="margin-top:28px;border-top:1px solid var(--sw-border-soft,#1c1c1c);padding-top:20px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:12px">Recompensas //</div>' + RWDS.map(function (r) { return '<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#9DA096)">' + r.n + '<span style="color:var(--sw-text-muted,#9DA096)"> // </span>' + r.s + '</span><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096)">' + r.pts + ' pts</span></div>'; }).join('') + '</div></div>' + NAV();
+// ── El aviso por correo: correo + DNI → código → cuenta ─────────────────────────────────
+// Mismas reglas que el registro normal (doReg): DNI obligatorio de 8 dígitos y fecha de
+// nacimiento real. Nombre y celular son los del checkout (window._lastGuest*).
+async function avisoMandarCodigo(reenviar) {
+    var email = reenviar ? authEmail : (document.getElementById('av-email') ? gv('av-email') : '').trim();
+    if (!reenviar) {
+        avisoDni = (document.getElementById('av-dni') ? gv('av-dni') : '').trim();
+        avisoBday = (document.getElementById('av-bday') ? gv('av-bday') : '').trim();
+        if (!email || email.indexOf('@') < 0) {
+            aErr = 'Escribe un correo válido.';
+            render();
+            return;
+        }
+        if (!/^\d{8}$/.test(avisoDni)) {
+            aErr = 'El DNI son 8 dígitos.';
+            render();
+            return;
+        }
+        if (!parseBdayDDMMYYYY(avisoBday)) {
+            aErr = 'El cumpleaños va como DD/MM/AAAA.';
+            render();
+            return;
+        }
+    }
+    busy = true;
+    busyMsg = 'Mandando el código...';
+    render();
+    try {
+        var r = await api('request-login-code', { email: email });
+        authEmail = email;
+        authMasked = r.masked || email;
+        avisoPaso = 'codigo';
+        aErr = '';
+    }
+    catch (e) {
+        aErr = e.message;
+    }
+    busy = false;
+    render();
 }
+// Deja la sesión abierta con lo que devolvió el servidor, igual que los otros caminos de entrada.
+function avisoAbrirSesion(r) {
+    cust = r.customer;
+    isAdmin = !!r.isAdmin;
+    token = r.token;
+    cacheCust(cust, isAdmin);
+    localStorage.setItem('sw_ph', cust.phone);
+    localStorage.setItem('sw_tok', token);
+    savedPh = cust.phone;
+}
+// Quien ya tenía cuenta y pagó sin entrar: se le vincula ESTE pedido (acción reclamar-pedido).
+async function avisoReclamar() {
+    var ref = window._lRef || localStorage.getItem('sw_last_ref');
+    if (!ref || !token)
+        return;
+    try {
+        var r = await api('reclamar-pedido', { token: token, ref: ref });
+        if (r && r.customer) {
+            cust = r.customer;
+            cacheCust(cust, isAdmin);
+        }
+    }
+    catch (e) { }
+}
+async function avisoVerificar() {
+    var code = (document.getElementById('av-code') ? gv('av-code') : '').replace(/\D/g, '');
+    if (code.length !== 6) {
+        aErr = 'El código son 6 dígitos.';
+        render();
+        return;
+    }
+    busy = true;
+    busyMsg = 'Guardando tus puntos...';
+    render();
+    try {
+        var r = await api('verify-login-code', { email: authEmail, code: code });
+        if (!r.needsRegistration) {
+            avisoAbrirSesion(r);
+            await avisoReclamar();
+        }
+        else if (!window._lastGuestName || !window._lastGuestPhone) {
+            // Sin los datos del checkout (se recargó la página) no se puede crear la cuenta acá: se
+            // sigue en Entrar, en el paso de la primera vez, con el correo ya verificado.
+            authProof = r.emailProof;
+            authEmail = r.email;
+            busy = false;
+            sndScreen = 'p_auth';
+            render();
+            return;
+        }
+        else {
+            var reg = await api('register', { name: window._lastGuestName, phone: window._lastGuestPhone, pin: '', email: r.email,
+                dni: avisoDni, bday: parseBdayDDMMYYYY(avisoBday), referredBy: refCode || null,
+                claimOrderRef: window._lRef || localStorage.getItem('sw_last_ref') || null,
+                acquisitionSource: localStorage.getItem('sw_src') || null, emailProof: r.emailProof });
+            avisoAbrirSesion(reg);
+            fbTrack('CompleteRegistration', { content_name: refCode ? 'referido' : 'directo' });
+        }
+        limpiarLoginPorCorreo();
+        avisoPaso = 'aviso';
+        aErr = '';
+    }
+    catch (e) {
+        aErr = e.message;
+    }
+    busy = false;
+    render();
+    loadUserExtras();
+}
+// Google desde el aviso: el celular ya lo dio en el checkout, así que no hay paso intermedio.
+async function avisoConGoogle(idToken) {
+    try {
+        var r = await api('register', { phone: window._lastGuestPhone, googleIdToken: idToken, referredBy: refCode || null,
+            claimOrderRef: window._lRef || localStorage.getItem('sw_last_ref') || null,
+            acquisitionSource: localStorage.getItem('sw_src') || null });
+        clearGoogleLink();
+        avisoAbrirSesion(r);
+        fbTrack('CompleteRegistration', { content_name: refCode ? 'referido' : 'google' });
+        aErr = '';
+        busy = false;
+        render();
+        loadUserExtras();
+    }
+    catch (e) {
+        // Si el celular ya es de otra cuenta, o algo falla, se sigue por el paso de Entrar que pide
+        // el celular: el token de Google ya quedó guardado.
+        aErr = e.message;
+        busy = false;
+        go('p_gauth');
+    }
+}
+// ── ENTRAR · «te abren la puerta» (maqueta «entrar 2», docs/maquetas/aprobadas/entrar.png) ────
+// UNA sola pantalla para todo el acceso (dueño, 2026-09-25: «esa pantalla no me convence para
+// que esté en duplicado varias veces»). Lo que cambia de un momento a otro es el CAMPO, nunca la
+// pantalla: el correo, el código, los datos de la primera vez, el celular después de Google y el
+// teléfono con PIN de las cuentas de antes. Se llega solo desde la esquina de la puerta
+// («Entrar →») o desde una pantalla de cuenta sin sesión; ANTES DE PAGAR no se pide nada — a
+// quien pagó sin cuenta se le ofrece una vez, en la losa de la 06A (ver avisoDePuntosHTML).
+//
+// El bono de bienvenida se INTERPOLA de `WELCOME_BONUS_POINTS` (`npm run parity` lo compara
+// contra el servidor): un incentivo que no se comunica no convierte, y uno escrito a mano se
+// desincroniza.
+var entrarVerRef = false;
+function entrarPaso() {
+    if (sndScreen === 'p_gauth')
+        return 'google';
+    if (authProof)
+        return 'primera';
+    if (authPinFallback)
+        return 'pin';
+    if (authPaso === 'codigo')
+        return 'codigo';
+    return 'correo';
+}
+// La flecha de arriba retrocede UN paso dentro de la misma pantalla; solo desde el correo sale.
+function entrarAtras() {
+    aErr = '';
+    var p = entrarPaso();
+    if (p === 'google') {
+        discardGoogleLink();
+        sndScreen = 'p_auth';
+        render();
+        return;
+    }
+    if (p === 'primera' || p === 'codigo' || p === 'pin') {
+        limpiarLoginPorCorreo();
+        render();
+        return;
+    }
+    limpiarLoginPorCorreo();
+    clearGoogleLink();
+    sndTab = 'order';
+    sndScreen = 'o_home';
+    render();
+}
+// La mitad celeste del pie («Con Google») no puede ser el botón de Google: Google exige dibujar
+// el suyo (renderButton). Pide la tarjeta de One Tap y, si el navegador no la muestra, lleva la
+// vista al botón real para que sea un toque.
+function tocarGoogle() {
+    try {
+        google.accounts.id.prompt();
+    }
+    catch (e) { }
+    var m = document.getElementById('google-btn-mount');
+    if (m && m.scrollIntoView)
+        m.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+function entrarCampo(id, rotulo, tipo, val, extra) {
+    return '<label class="campo' + (extra && extra.clase ? ' ' + extra.clase : '') + '"><s>' + esc(rotulo) + '</s>'
+        + '<input id="' + id + '" type="' + tipo + '"' + (val ? ' value="' + esc(val) + '"' : '')
+        + (extra && extra.ph ? ' placeholder="' + esc(extra.ph) + '"' : '')
+        + (extra && extra.ac ? ' autocomplete="' + extra.ac + '"' : '')
+        + (extra && extra.im ? ' inputmode="' + extra.im + '"' : '')
+        + (extra && extra.max ? ' maxlength="' + extra.max + '"' : '')
+        + '></label>';
+}
+function sEntrar() {
+    var p = entrarPaso(), g = googleConfigured();
+    var em = 'Buenas', titulo = '¿QUIÉN LLEGÓ?', cuerpo = '', pie = '';
+    var err = '<div class="err" id="' + (p === 'google' ? 'gauth-err' : 'auth-err') + '" role="alert">' + esc(aErr || '') + '</div>';
+    var legal = '<button onclick="event.stopPropagation();sndScreen=\'p_legal\';render()">Términos y Política de Privacidad</button>';
+    if (p === 'correo') {
+        cuerpo = entrarCampo('l-email', 'Tu correo', 'email', authEmail, { ph: 'tu@correo.com', ac: 'email', im: 'email' })
+            + err
+            + (g ? '<div class="goo" id="google-btn-mount" data-tema="outline"></div>' : '')
+            + '<div class="nota">Te mandamos un código de 6 dígitos, no hay contraseña.<br>Si es tu primera vez te pedimos nombre y DNI.'
+            + (g ? '<br>Con Google no pedimos DNI.' : '')
+            + '<br><button onclick="authPinFallback=true;aErr=\'\';render()">Entrar con teléfono y PIN</button></div>';
+        pie = '<button class="oro" onclick="doPedirCodigo()">Seguir</button>' + (g ? '<button class="cel" onclick="tocarGoogle()">Con Google</button>' : '');
+    }
+    else if (p === 'codigo') {
+        em = 'Revisa tu correo';
+        titulo = 'SEIS NÚMEROS';
+        cuerpo = entrarCampo('l-code', 'El código', 'tel', '', { clase: 'codigo', ac: 'one-time-code', im: 'numeric', max: 6, ph: '••••••' })
+            + err
+            + '<div class="hecho">Lo mandamos a <b>' + esc(authMasked || authEmail) + '</b>. Vence en unos minutos y sirve una sola vez.</div>'
+            + '<div class="nota"><button onclick="doPedirCodigo()">No me llegó · mandar otro</button><br>'
+            + '<button onclick="authPaso=\'correo\';aErr=\'\';render()">Era otro correo · cambiar</button></div>';
+        pie = '<button class="oro" onclick="doVerificarCodigo()">Entrar</button>';
+    }
+    else if (p === 'primera') {
+        em = 'Primera vez';
+        titulo = '¿CÓMO TE LLAMAS?';
+        cuerpo = '<div class="hecho">✓ <b>' + esc(authEmail) + '</b>. Vas a entrar siempre con ese correo y un código.</div>'
+            + entrarCampo('r-name', 'Nombre', 'text', window._lastGuestName || '', { ac: 'name' })
+            + entrarCampo('r-phone', 'Celular · para avisarte', 'tel', window._lastGuestPhone || '', { ac: 'tel', im: 'tel', ph: '9•• ••• •••' })
+            + '<div class="par">' + entrarCampo('r-dni', 'DNI', 'text', '', { im: 'numeric', max: 8, ph: '8 dígitos' })
+            + entrarCampo('r-bday', 'Cumpleaños', 'text', '', { im: 'numeric', max: 10, ph: 'DD/MM/AAAA' }) + '</div>'
+            + (entrarVerRef || refCode ? entrarCampo('r-ref', 'Código de quien te invitó', 'text', refCode, {})
+                : '<div class="nota"><button onclick="entrarVerRef=true;render()">¿Te invitó alguien? · su código</button></div>')
+            + err
+            + '<div class="nota">Al entrar te damos +' + WELCOME_BONUS_POINTS + ' puntos de bienvenida.<br>Al crear tu cuenta aceptas los ' + legal + '.</div>';
+        pie = '<button class="oro" onclick="doReg()">Crear cuenta</button>';
+    }
+    else if (p === 'pin') {
+        em = 'Cuenta de antes';
+        titulo = 'TELÉFONO Y PIN';
+        cuerpo = entrarCampo('l-phone', 'Tu teléfono', 'tel', savedPh || '', { ac: 'tel', im: 'tel' })
+            + entrarCampo('l-pin', 'Tu PIN', 'password', '', { im: 'numeric', ac: 'current-password' })
+            + err
+            + '<div class="nota"><button onclick="recNewPin=null;recEmailMasked=null;recPhone=\'\';recDni=\'\';recBday=\'\';sndScreen=\'p_recover\';render()">¿Olvidaste tu PIN? · recuperar</button><br>'
+            + '<button onclick="authPinFallback=false;aErr=\'\';render()">Prefiero entrar con mi correo</button></div>';
+        pie = '<button class="oro" onclick="doLogin()">Entrar</button>';
+    }
+    else {
+        var nombre = String(window._lastGuestName || '').trim().split(/\s+/)[0];
+        em = nombre ? 'Hola, ' + nombre : 'Hola';
+        titulo = 'UN NÚMERO Y LISTO';
+        // autocomplete="tel": en Android el navegador ofrece el número guardado y el campo se llena
+        // de un toque. Nombre y correo no se piden: el servidor los toma del token de Google.
+        cuerpo = entrarCampo('g-phone', 'Tu celular', 'tel', window._lastGuestPhone || '', { ac: 'tel', im: 'tel', ph: '9•• ••• •••' })
+            + (entrarVerRef || refCode ? entrarCampo('g-ref', 'Código de quien te invitó', 'text', refCode, {})
+                : '<div class="nota"><button onclick="entrarVerRef=true;render()">¿Te invitó alguien? · su código</button></div>')
+            + err
+            + '<div class="nota">Con Google no pedimos DNI.<br>El número es para avisarte cuando tu pedido sale.<br>'
+            // "No soy yo" existe porque el dispositivo puede ser prestado.
+            + '<button onclick="entrarAtras()">No soy yo · otro correo</button></div>';
+        pie = '<button class="oro" onclick="doGoogleRegister()">Listo</button>';
+    }
+    var corta = p === 'primera';
+    return '<div class="en fi">'
+        + '<div class="esc' + (corta ? ' corta' : '') + '"><div class="piso"></div>'
+        + '<img class="sd" src="' + broPose('sando', 'entrar') + '" alt="" aria-hidden="true">'
+        + '<img class="wc" src="' + broPose('wicho', 'entrar') + '" alt="" aria-hidden="true">'
+        + '<div class="tx"><em>' + esc(em) + '</em><b>' + esc(titulo) + '</b></div></div>'
+        + '<button class="sal" onclick="entrarAtras()" aria-label="Volver">←</button>'
+        + '<div class="cuerpo">' + cuerpo + '</div>'
+        + '</div>'
+        + '<div class="en-go sw-barra">' + pie + '</div>';
+}
+function sPAuth() { return sEntrar(); }
 async function doReg() {
     // Con correo verificado no hay campos de PIN ni de correo (ver el formulario): el PIN lo
     // genera el servidor y el correo sale de la prueba firmada.
@@ -9255,7 +9604,8 @@ async function doReg() {
 // tampoco se puede adelantar nada: la pantalla dice "te mandamos un código" y punto. Quién
 // tiene cuenta y quién no recién se sabe al acertar el código.
 async function doPedirCodigo() {
-    var email = gv('l-email').trim();
+    // Desde el paso del código («No me llegó · mandar otro») ya no hay campo: se reusa el correo.
+    var email = (document.getElementById('l-email') ? gv('l-email') : authEmail).trim();
     var err = document.getElementById('auth-err');
     if (!email || email.indexOf('@') < 0) {
         if (err)
@@ -9382,6 +9732,13 @@ async function onGoogleCredential(resp) {
         if (r.needsRegistration) {
             _googleIdToken = resp.credential;
             _googleLinkedEmail = (r.prefill && r.prefill.email) || (r.prefill && r.prefill.name) || 'tu cuenta de Google';
+            if (sndScreen === 'o_sent' && window._lastGuestPhone) {
+                // El aviso de puntos de la 06A: el celular ya está (el del checkout), así que la cuenta
+                // se crea de un toque. Ver avisoConGoogle().
+                busyMsg = 'Guardando tus puntos...';
+                await avisoConGoogle(resp.credential);
+                return;
+            }
             window._lastGuestName = (r.prefill && r.prefill.name) || '';
             window._lastGuestEmail = (r.prefill && r.prefill.email) || '';
             // Antes esto mandaba al formulario COMPLETO (nombre, teléfono, PIN, DNI, fecha de
@@ -9403,6 +9760,14 @@ async function onGoogleCredential(resp) {
         localStorage.setItem('sw_ph', cust.phone);
         localStorage.setItem('sw_tok', token);
         savedPh = cust.phone;
+        // Desde el aviso de la 06A, quien ya tenía cuenta se queda en su pedido y se le vincula.
+        if (sndScreen === 'o_sent') {
+            await avisoReclamar();
+            busy = false;
+            render();
+            loadUserExtras();
+            return;
+        }
         busy = false;
         sndScreen = 'p_home';
         render();
@@ -9429,63 +9794,14 @@ function discardGoogleLink() {
 // todo el innerHTML en cada ciclo, así que el mount anterior siempre queda destruido y
 // hay que rehacerlo. Sin ruido si el script de Google todavía no cargó (red lenta,
 // bloqueador de contenido) o si GOOGLE_CLIENT_ID no está configurado.
-// ── PRIMERA APERTURA ────────────────────────────────────────────────────────────────
-// Se muestra UNA sola vez, y nunca a quien ya tiene sesión. La marca va en localStorage
-// (`sw_seen_hello`) y se escribe al MOSTRARLA, no al salir: si se escribiera al salir,
-// cerrar la pestaña en esta pantalla la haría reaparecer para siempre.
-//
-// ⚠ Es una puerta antes del menú, y eso tiene un costo real que el dueño aceptó
-// explícitamente al elegirlo. Por eso "Ver la carta" NO es un enlace chiquito al pie: es
-// un botón del mismo ancho que el de Google. Quien llega de un anuncio quiere ver comida,
-// y una puerta que no se puede saltar de un toque se cierra saliendo de la app.
-function saltarHola() { try {
-    localStorage.setItem('sw_seen_hello', '1');
-}
-catch (e) { } go('o_home'); }
-function sHello() {
-    try {
-        localStorage.setItem('sw_seen_hello', '1');
-    }
-    catch (e) { }
-    return '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:6px;background:var(--sw-bg,#12150F)" class="fi">'
-        + '<div style="margin-bottom:10px">' + WORDMARK(34) + '</div>'
-        + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);text-align:center;text-wrap:balance;line-height:1.2">Sándwiches de verdad,<br>a domicilio en Trujillo</div>'
-        + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);text-align:center;line-height:1.55;max-width:300px;margin-top:6px">Crea tu cuenta en un toque y empieza a ganar puntos desde tu primer pedido.</p>'
-        + googleCtaHTML('')
-        + '<div style="width:100%;max-width:280px;margin-top:2px">' + BTN('VER LA CARTA //', 'saltarHola()', true) + '</div>'
-        + '</div>';
-}
 // ── REGISTRO CON GOOGLE: UN SOLO CAMPO ──────────────────────────────────────────────
 // Se llega acá solo después de que el servidor verificó el token de Google y respondió
-// needsRegistration. El nombre y el correo ya vinieron firmados por Google y se muestran
-// para que la persona VEA con qué cuenta está entrando — no son editables acá: el servidor
-// los toma del token y no del cuerpo de la petición, así que un campo editable sería una
-// mentira sobre lo que se va a guardar.
-function sGoogleAuth() {
-    var quien = window._lastGuestName || _googleLinkedEmail || 'tu cuenta de Google';
-    var correo = window._lastGuestEmail || '';
-    return H() + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
-        + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:6px;text-wrap:balance">Último<span class="cut-sep" style="color:' + GOLD + '"> // </span>paso</div>'
-        + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.55;margin-bottom:20px">Ya te verificamos con Google. Solo falta tu teléfono — es con lo que te ubicamos para entregarte el pedido.</p>'
-        + '<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:10px">'
-        + icon('check', 18, 'var(--sw-ok,#25D366)')
-        + '<div style="min-width:0"><div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(quien) + '</div>'
-        + (correo ? '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(correo) + '</div>' : '') + '</div></div>'
-        // autocomplete="tel" no es decoración: en Android el navegador ofrece el número
-        // guardado, y entonces este único campo se llena de un toque.
-        + INP('g-phone', 'Teléfono // 9XXXXXXXX', 'tel', '', 'phone', 'tel', 'tel')
-        + '<div style="height:10px"></div>'
-        + INP('g-ref', 'Código de referido // opcional', 'text', refCode, 'gift')
-        + '<div id="gauth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);margin-top:10px;min-height:16px"></div>'
-        + '<div style="height:14px"></div>'
-        + BTN('CREAR MI CUENTA //', 'doGoogleRegister()')
-        // "No soy yo" existe porque este dispositivo puede ser prestado: sin una salida, quien
-        // lo tomó después queda atrapado en la cuenta de Google de otra persona.
-        + '<div style="text-align:center;margin-top:16px"><button onclick="discardGoogleLink();go(\'p_auth\')" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);min-height:44px;display:inline-flex;align-items:center">No soy yo — registrarme a mano</button></div>'
-        + '</div>';
-}
+// needsRegistration. Es el paso «google» de Entrar (ver sEntrar): el celular es lo único que
+// Google no da y que el negocio necesita de verdad — es la primary key de `customers` y con lo
+// que se ubica a alguien para entregarle el pedido.
+function sGoogleAuth() { return sEntrar(); }
 async function doGoogleRegister() {
-    var phone = gv('g-phone').trim(), ref = gv('g-ref').trim();
+    var phone = gv('g-phone').trim(), ref = (document.getElementById('g-ref') ? gv('g-ref') : refCode || '').trim();
     var err = document.getElementById('gauth-err');
     // Mismo mínimo que doOrder() y que actReg en el servidor. Se valida acá además de allá
     // para que el aviso llegue sin un viaje de red.
@@ -9555,7 +9871,11 @@ function mountGoogleButton() {
     if (!el)
         return;
     google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: onGoogleCredential, auto_select: true, cancel_on_tap_outside: false });
-    google.accounts.id.renderButton(el, { theme: 'filled_black', size: 'large', shape: 'pill', width: 280, text: 'continue_with', locale: 'es' });
+    // Cada hueco dice cómo quiere el botón: el de Entrar va sobre papel claro (outline) y el de la
+    // losa de la 06A sobre el bloque oscuro (filled_black). El ancho es el del hueco, entre los
+    // límites que Google acepta.
+    var ancho = Math.max(200, Math.min(400, Math.round(el.clientWidth || 280)));
+    google.accounts.id.renderButton(el, { theme: el.getAttribute('data-tema') || 'filled_black', size: 'large', shape: 'rectangular', width: ancho, text: 'continue_with', locale: 'es' });
     // La tarjeta de One Tap se pide UNA vez por carga y solo si no hay sesion. Sin el
     // guard, `mountGoogleButton()` corre despues de CADA render (ver 08-router) y Google
     // acabaria bloqueando el origen por pedirlo en bucle; y con sesion abierta seria
@@ -12596,16 +12916,12 @@ window.addEventListener('load', function () { sndRestoreOwnedFns(); });
         catch (e) { }
     }
     restoreCart();
-    // Primera apertura: solo si no hay sesión, no se ha visto antes, Google está configurado
-    // y no venimos por un link con destino propio (un pedido grupal, un código de referido,
-    // una confirmación de entrega). Interponerla ahí rompería el link que la persona tocó.
+    // No hay pantalla de bienvenida: la app abre SIEMPRE en la puerta (dueño, 2026-09-25).
     // ?legal=... gana sobre todo lo demás: quien llega con ese link viene a LEER el texto, sea
     // Google revisando la app o un cliente que lo pidió. Mandarlo al menú primero sería
     // exactamente lo contrario de lo que el link promete.
     if (legalFromUrl)
         sndScreen = legalFromUrl;
-    else
-        mostrarHolaSiCorresponde();
     render();
     if (token) {
         if (!haveCachedCust) {
@@ -12726,49 +13042,6 @@ function needsAdminBundle() {
     if (adminBundleReady || adminBundleError)
         return false;
     return String(sndScreen || '').indexOf('admin') === 0 && !ADMIN_SCREENS[sndScreen];
-}
-// ── ¿CORRESPONDE LA PANTALLA DE BIENVENIDA? ─────────────────────────────────────────
-// UNA sola función para los DOS momentos en que hay que decidirlo, porque el client id de
-// Google llega por RED y la decisión se toma antes:
-//   · al arrancar, con el id que dejó cacheado una visita anterior;
-//   · al responder `get-store-hours`, que es cuando lo sabe la primera visita de todas.
-// Tenerlo en dos sitios con la misma condición escrita dos veces es como se desincronizan.
-//
-// ⚠ ESTA FUNCIÓN NO EXISTÍA Y POR ESO LA PANTALLA NO SE MOSTRABA NUNCA. La condición vivía
-// suelta en el arranque y evaluaba `googleConfigured()` cuando GOOGLE_CLIENT_ID todavía era
-// el marcador — o sea que daba `false` SIEMPRE, con secret o sin él. Lo peor del defecto no
-// fue el defecto: fue que la prueba que lo cubría inyectaba el id ANTES de cargar la app, así
-// que validaba un camino que producción no podía alcanzar y pasaba en verde.
-//
-// `_holaYaDecidido` evita que la llegada tardía del id arrastre a alguien que YA está
-// navegando: la bienvenida es para quien acaba de entrar, no una pared que cae encima de
-// quien ya está mirando la carta.
-var _holaYaDecidido = false;
-// `conRender`: en el arranque NO se pinta acá — el propio arranque llama a render() justo
-// después, y renderizar dos veces se nota en un celular de gama baja. Cuando el id llega
-// tarde sí hay que pintar, porque ya no viene ningún render detrás.
-function mostrarHolaSiCorresponde(conRender) {
-    if (_holaYaDecidido)
-        return;
-    try {
-        // Solo desde el home y sin haber tocado nada. Si ya navegó a otra pantalla, entró por un
-        // link con destino propio, o hay algo en el carrito, llegamos tarde y no se interrumpe.
-        if (sndScreen !== 'o_home' || cart.length)
-            return;
-        if (token || localStorage.getItem('sw_seen_hello'))
-            return;
-        if (!googleConfigured())
-            return;
-        // Un link con destino propio (?group=, ?ref=, ?entrega=, ?legal=) se respeta entero:
-        // interponer una bienvenida rompería el link que la persona tocó.
-        if (groupCodeFromUrl || location.search)
-            return;
-        _holaYaDecidido = true;
-        sndScreen = 'p_hello';
-        if (conRender)
-            render();
-    }
-    catch (e) { }
 }
 // ── EL HUECO DE ABAJO LO MIDE LA BARRA, NO UN NÚMERO ESCRITO A MANO ────────────────
 // `#app` reservaba 49 px al pie porque esa era la altura de la barra de navegación de dos
@@ -12965,10 +13238,6 @@ function renderScreen() {
             // Registro con Google: un solo campo. Ver sGoogleAuth() en 05-*.
             case 'p_gauth':
                 h = sGoogleAuth();
-                break;
-            // Primera apertura. Ver sHello() en 05-*.
-            case 'p_hello':
-                h = sHello();
                 break;
             case 'p_welcome':
                 h = sWelcome();

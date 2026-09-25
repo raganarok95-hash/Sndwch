@@ -126,6 +126,10 @@ desincroniza el día que el dueño lo mueva, sin tocar una línea de código.
 Cada una de estas ya causó un defecto real en producción. El detalle está en
 `docs/DECISIONES.md`; acá está lo que hay que cumplir.
 
+- **La app abre SIEMPRE en la puerta y no pide cuenta antes de pagar.** La cuenta se ofrece
+  UNA vez: en la losa de la 06A a quien pagó sin ella, o desde la esquina de la puerta
+  («Entrar →»). Toda vinculación de un pedido de invitado pasa por `vincularPedidoDeInvitado()`
+  (`api/actions/auth.ts`). Lo vigila `tests/puerta-entrar-aviso.spec.ts`.
 - **El menú se edita desde el panel, no desde el código.** Los 5 Signatures públicos viven
   en `catalog_items` (append-only), SIG05 en `secret_signature`, y los precios de
   proteínas/bebidas/recompensas en `catalog_prices`. `_shared/carta.ts` es la **semilla**: el

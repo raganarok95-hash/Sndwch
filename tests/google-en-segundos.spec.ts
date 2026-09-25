@@ -38,13 +38,6 @@ async function conClientIdFalso(page: any) {
       set: () => { /* el bundle escribe el marcador REEMPLAZA_...; se ignora */ },
     });
   });
-  // Y se da la bienvenida por vista: con Google configurado, la primera apertura se
-  // interpone ANTES del home, y gotoApp() espera el home para devolver el control. Eso no
-  // es un detalle del arnés — es exactamente lo que le va a pasar a todo visitante nuevo en
-  // producción, y por eso la prueba de más abajo comprueba que salir de ahí cuesta un toque.
-  await page.addInitScript(() => {
-    try { localStorage.setItem('sw_seen_hello', '1'); } catch (e) { /* sin storage */ }
-  });
 }
 
 async function entraConGoogle(page: any) {
@@ -66,19 +59,19 @@ test('tras Google queda UN solo campo obligatorio: el teléfono', async ({ page 
   await expect(page.locator('#r-dni')).toHaveCount(0);
   await expect(page.locator('#r-pin')).toHaveCount(0);
   await expect(page.locator('#r-bday')).toHaveCount(0);
-  // El único otro campo es opcional y lo dice.
-  await expect(page.locator('#g-ref')).toHaveAttribute('placeholder', /opcional/);
+  // El código de quien invitó es opcional: no se muestra como campo hasta que se pide.
+  await expect(page.locator('#g-ref')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Te invitó alguien/ })).toBeVisible();
 });
 
 test('se ve CON QUÉ cuenta está entrando, y no es editable', async ({ page }) => {
   await gotoApp(page);
   await entraConGoogle(page);
 
-  // El nombre y el correo se muestran para que la persona confirme que es su cuenta. No
-  // son campos: el servidor los toma del token firmado por Google y no del cuerpo de la
-  // petición, así que un input editable mentiría sobre lo que se va a guardar.
-  await expect(page.locator('text=' + PREFILL.name)).toBeVisible();
-  await expect(page.locator('text=' + PREFILL.email)).toBeVisible();
+  // Entrar la saluda por su nombre («Hola, Rosa», como la maqueta) para que confirme que es
+  // su cuenta. No es un campo: el servidor toma nombre y correo del token firmado por Google
+  // y no del cuerpo de la petición, así que un input editable mentiría sobre lo que se guarda.
+  await expect(page.locator('.en .esc .tx em')).toHaveText('Hola, ' + PREFILL.name.split(' ')[0]);
   await expect(page.locator('input[value="' + PREFILL.name + '"]')).toHaveCount(0);
 });
 
@@ -89,7 +82,7 @@ test('el teléfono se manda sin dni, sin bday y sin pin — el servidor los resu
   await entraConGoogle(page);
 
   await page.locator('#g-phone').fill('987654321');
-  await page.getByRole('button', { name: 'CREAR MI CUENTA //' }).click();
+  await page.locator('.en-go .oro').click();
 
   await expect.poll(() => calls.filter((c) => c.action === 'register').length).toBe(1);
   const b = calls.find((c) => c.action === 'register')!.body;
@@ -108,9 +101,9 @@ test('un teléfono corto se avisa en el campo, sin viaje de red', async ({ page 
   await entraConGoogle(page);
 
   await page.locator('#g-phone').fill('98');
-  await page.getByRole('button', { name: 'CREAR MI CUENTA //' }).click();
+  await page.locator('.en-go .oro').click();
 
-  await expect(page.locator('#g-phone-msg')).toHaveText('Ingresa un teléfono de contacto válido.');
+  await expect(page.locator('#gauth-err')).toHaveText('Ingresa un teléfono válido.');
   expect(calls.filter((c) => c.action === 'register')).toHaveLength(0);
 });
 
@@ -126,43 +119,14 @@ test('hay salida si el celular es prestado', async ({ page }) => {
 });
 
 // ── DÓNDE APARECE EL BOTÓN ─────────────────────────────────────────────────────────────
-// Tres sitios, elegidos por el dueño: PUNTOS sin sesión (ya existía), el checkout de
-// invitado, y la primera apertura. Los tres pasan por googleCtaHTML(), que es no-op si el
-// GOOGLE_CLIENT_ID no está configurado — así que sin el secret la app se ve exactamente
-// como antes en vez de mostrar un hueco.
-
-// ⚠ ESTA PRUEBA SE REESCRIBIÓ ENTERA (2026-09-12) PORQUE VALIDABA UN CAMINO IMPOSIBLE.
-// La primera versión inyectaba el client id ANTES de cargar la app, y así la bienvenida salía
-// en el primer render. En producción eso NO puede pasar: el id llega por RED, dentro de
-// `get-store-hours`, y la decisión se tomaba antes de que respondiera. O sea que la pantalla
-// no se mostró nunca — y la prueba pasaba en verde, que es lo peor de todo el episodio.
-//
-// Ahora se prueba lo que de verdad ocurre: el id llega TARDE, y la bienvenida tiene que
-// aparecer igual.
-test('la bienvenida aparece aunque el client id llegue DESPUÉS del primer render', async ({ page }) => {
-  await page.addInitScript(() => {
-    try { localStorage.removeItem('sw_seen_hello'); localStorage.removeItem('sw_gcid'); localStorage.removeItem('sw_tok'); } catch (e) { /* sin storage */ }
-  });
-  // Sin tocar GOOGLE_CLIENT_ID: arranca con el marcador, exactamente como una primera visita
-  // real. El id viaja en la respuesta de get-store-hours, como en producción.
-  await mockBackend(page, {
-    'get-store-hours': { hours: HORARIO_ABIERTO, businessLaunched: true, googleClientId: 'prueba.apps.googleusercontent.com' },
-  });
-  await page.goto(APP_FILE);
-
-  const verCarta = page.getByRole('button', { name: 'VER LA CARTA //' });
-  await expect(verCarta).toBeVisible();
-
-  // Es una puerta antes del menú y el dueño la aceptó sabiéndolo. Lo que no puede pasar es
-  // que no se salte de un toque: quien llega de un anuncio quiere ver comida.
-  await verCarta.click();
-  await expect(verCarta).toHaveCount(0);
-  expect(await page.evaluate(() => localStorage.getItem('sw_seen_hello'))).toBe('1');
-});
+// Desde el 2026-09-25 (dueño): en Entrar y en el aviso de puntos de la 06A, DESPUÉS de pagar.
+// Ya no hay bienvenida al abrir ni botón en el checkout: antes de pagar no se pide ninguna
+// cuenta. Las dos pruebas de abajo lo verifican CON Google configurado, que es cuando el botón
+// podría colarse.
 
 test('el client id se guarda para que la SIGUIENTE visita no dependa de la red', async ({ page }) => {
   await page.addInitScript(() => {
-    try { localStorage.removeItem('sw_seen_hello'); localStorage.removeItem('sw_gcid'); } catch (e) { /* sin storage */ }
+    try { localStorage.removeItem('sw_gcid'); } catch (e) { /* sin storage */ }
   });
   await mockBackend(page, {
     'get-store-hours': { hours: HORARIO_ABIERTO, businessLaunched: true, googleClientId: 'prueba.apps.googleusercontent.com' },
@@ -170,37 +134,29 @@ test('el client id se guarda para que la SIGUIENTE visita no dependa de la red',
   await page.goto(APP_FILE);
   await page.waitForTimeout(800);
   // Es un valor PÚBLICO, no un secreto: viaja en el HTML de cualquier sitio con Sign-In.
-  // Guardarlo es lo que permite decidir de forma síncrona en el arranque siguiente.
   expect(await page.evaluate(() => localStorage.getItem('sw_gcid'))).toContain('apps.googleusercontent.com');
 });
 
-test('la bienvenida NO le cae encima a quien ya está navegando', async ({ page }) => {
-  await page.addInitScript(() => {
-    try { localStorage.removeItem('sw_seen_hello'); localStorage.removeItem('sw_gcid'); } catch (e) { /* sin storage */ }
-  });
-  await mockBackend(page, {
-    'get-store-hours': { hours: HORARIO_ABIERTO, businessLaunched: true, googleClientId: 'prueba.apps.googleusercontent.com' },
-  });
-  await page.goto(APP_FILE);
-  // Se navega ANTES de que llegue el id. La bienvenida es para quien acaba de entrar, no una
-  // pared que cae encima de quien ya eligió a dónde ir.
-  await page.evaluate(() => { (window as any).sndScreen = 'p_legal'; (window as any).render(); });
-  await page.evaluate(() => (window as any).mostrarHolaSiCorresponde(true));
-  await expect(page.getByRole('button', { name: 'VER LA CARTA //' })).toHaveCount(0);
-});
-
-test('el checkout de invitado ofrece Google ARRIBA de los campos, no después', async ({ page }) => {
+test('con Google configurado, la app igual abre en la puerta y el checkout no ofrece cuenta', async ({ page }) => {
   await conClientIdFalso(page);
   await gotoApp(page);
   await page.locator('[onclick*="startOrderWithSig("]').first().click();
   await page.locator('[onclick*="size=\'15\'"]').click();
   await page.locator('[onclick^="sigId="]').first().click();
   await page.getByRole('button', { name: 'CONTINUAR //' }).click();
-  await expect(page.locator('text=CONFIRMAR SÁNDWICH')).toBeVisible();
+  await expect(page.locator('#o-nom')).toBeVisible();
+  await expect(page.locator('#google-btn-mount')).toHaveCount(0);
+});
 
-  // El botón existe para ahorrarles escribir, así que ofrecerlo después de que ya
-  // escribieron nombre y correo no ahorra nada.
-  const yMount = await page.locator('#google-btn-mount').evaluate((e) => e.getBoundingClientRect().top);
-  const yNombre = await page.locator('#o-nom').evaluate((e) => e.getBoundingClientRect().top);
-  expect(yMount).toBeLessThan(yNombre);
+test('con Google configurado, Entrar y el aviso de la 06A tienen su hueco para el botón', async ({ page }) => {
+  await conClientIdFalso(page);
+  await gotoApp(page);
+  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
+  await expect(page.locator('.en #google-btn-mount')).toHaveCount(1);
+  await page.evaluate(() => {
+    const w = window as any;
+    w._lRef = 'ORD-PRUEBA-1'; w._lTot = 30; w._lPoints = 25; w._lPendingPayment = false;
+    w._lastGuestName = 'Rosa'; w._lastGuestPhone = '987654321'; w.go('o_sent');
+  });
+  await expect(page.locator('.m06 .guardar #google-btn-mount')).toHaveCount(1);
 });

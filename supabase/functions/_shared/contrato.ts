@@ -53,6 +53,12 @@ export const CONTRATO = {
     e.objeto({ token, id: e.uuid('Falta el pedido fijo.') }),
   ),
 
+  // El aviso de puntos de la 06A, cuando quien pagó sin entrar YA tenía cuenta (ver
+  // vincularPedidoDeInvitado en api/actions/auth.ts). `customer` sale solo si se acreditó.
+  'reclamar-pedido': accion<{ acreditado: boolean; customer: Record<string, unknown> | null }>()(
+    e.objeto({ token, ref: e.texto({ min: 1, max: 40, mensaje: 'Falta el pedido.' }) }),
+  ),
+
   'recurring-skip': accion<{ success: true; skipOn: string | null }>()(
     e.objeto({ token, id: e.uuid('Falta el pedido fijo.'), deshacer: e.bandera() }),
   ),

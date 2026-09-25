@@ -392,18 +392,20 @@ body.kb-open #app{padding-bottom:0}
    Una sola pantalla para todo el acceso: correo, código, primera vez, Google y el PIN de antes.
    Lo que cambia entre un momento y otro es el campo, nunca la pantalla. */
 .en{position:relative;min-height:100dvh;margin-bottom:calc(-1 * var(--sw-barra,0px));background:#F0EBDE;display:flex;flex-direction:column}
-.en .esc{position:relative;flex:0 0 auto;height:368px;overflow:hidden;background:linear-gradient(180deg,#1D2A22 0%,#16202A 100%)}
+.en .esc{position:relative;flex:0 0 auto;height:368px;overflow:hidden;background:linear-gradient(180deg,#1D2A22 0%,#16202A 100%) #1D2A22}
 .en .esc .sd{position:absolute;left:26px;bottom:12px;height:238px;width:auto;z-index:2}
 .en .esc .wc{position:absolute;right:28px;bottom:12px;height:172px;width:auto;z-index:2}
 .en .esc .piso{position:absolute;left:0;right:0;bottom:0;height:86px;z-index:1;background:linear-gradient(180deg,transparent,rgba(0,0,0,.34))}
 .en .esc .tx{position:absolute;left:0;right:0;top:62px;text-align:center;z-index:3}
 .en .esc .tx em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#CBA258;text-transform:uppercase;font-style:normal}
-.en .esc .tx b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:30px;line-height:.96;color:#fff;margin-top:9px;letter-spacing:-.02em}
+.en .esc .tx b{display:block;font-family:Anton,sans-serif;font-weight:700;font-size:30px;line-height:.96;color:#fff;margin-top:9px;letter-spacing:-.02em}
 .en .sal{all:unset;cursor:pointer;position:absolute;top:10px;left:12px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;z-index:4}
 .en .cuerpo{padding:50px 26px calc(var(--sw-barra,74px) + 24px);display:flex;flex-direction:column}
 .en .campo{display:block;border-bottom:2px solid #33230F;padding-bottom:12px;margin-bottom:24px}
 .en .campo s{display:block;text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6B4E28;text-transform:uppercase}
-.en .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:11px;font-family:'IBM Plex Mono',monospace;font-size:18px;color:#33230F;caret-color:#9C5F14}
+.en .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:11px;font-family:'IBM Plex Mono',monospace;font-size:18px;color:#33230F !important;caret-color:#9C5F14}
+/* ⚠ `!important` a propósito: la regla global `input{color:#EFEDE4 !important}` (fondo oscuro)
+   pintaba lo escrito crema sobre el papel crema de Entrar y la losa, o sea invisible. */
 .en .campo input::placeholder{color:rgba(51,35,15,.38)}
 .en .campo.codigo input{font-size:28px;letter-spacing:.42em}
 .en .hecho{font:500 11px/1.6 'IBM Plex Mono',monospace;color:#33230F;margin-bottom:22px}
@@ -412,11 +414,99 @@ body.kb-open #app{padding-bottom:0}
 .en .err{font:500 11px/1.6 'IBM Plex Mono',monospace;color:#9A2A12;min-height:18px;margin:-10px 0 10px}
 .en .nota{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6B4E28;line-height:1.9;text-transform:uppercase}
 .en .nota button{all:unset;cursor:pointer;display:inline-block;padding:8px 0;color:#33230F;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.en .esc.corta{height:270px}.en .esc.corta .sd{height:176px}.en .esc.corta .wc{height:128px}
+.en .par{display:flex;gap:18px}.en .par .campo{flex:1;min-width:0}
+.en .campo input:focus-visible{outline:none}.en .campo:focus-within{border-bottom-color:#9C5F14}
+.en .goo{width:100%}
+.en-go button:focus-visible{outline:2px solid #2A2113;outline-offset:-4px}
 .en-go{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:74px;display:flex;z-index:90}
 .en-go button{all:unset;box-sizing:border-box;cursor:pointer;flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
 .en-go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
 .en-go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
 .en-go .oro:only-child{justify-content:center;padding:0}
+/* ═══ LA PUERTA · la cara partida (maqueta M2 + la esquina de la cuenta, aprobadas) ═══════════
+   docs/maquetas/aprobadas/la-puerta-M2-sin-sesion.png y -con-sesion.png (fuente m2-esquina.html).
+   Es SIEMPRE lo primero que se ve, a pantalla completa y sin barra: cada mitad es un botón
+   entero que lleva a su mundo. CSS copiado de la fuente, salvo el lila de «WCH»: el de la
+   maqueta (#7B5EA0) daba 4.12:1 sobre el celeste y el mínimo AA es 4.5:1; #73579A da 4.58:1. */
+.pta{position:relative;height:100dvh;min-height:560px;margin-bottom:calc(-1 * var(--sw-barra,0px));display:flex;flex-direction:column;overflow:hidden;font-family:'EB Garamond',serif}
+.pta .mitades{flex:1;display:flex;min-height:0}
+.pta .h{all:unset;cursor:pointer;box-sizing:border-box;flex:1;min-width:0;position:relative;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+.pta .h:focus-visible{outline:3px solid #CBA258;outline-offset:-6px}
+.pta .hs{background:radial-gradient(120% 90% at 10% 20%,#1E1B15 0%,#110F0C 100%) #1E1B15}
+.pta .hw{background:radial-gradient(120% 90% at 90% 20%,#EAF4FB 0%,#CFE6F5 100%) #CFE6F5}
+.pta .cara{position:absolute;left:0;right:0;top:0;bottom:190px;display:flex;align-items:center}
+.pta .hs .cara{justify-content:flex-end}
+.pta .hw .cara{justify-content:flex-start}
+.pta .cara img{width:134%;max-height:100%;object-fit:contain;display:block;flex:0 0 auto}
+.pta .txt{position:relative;padding:0 20px 34px}
+.pta .hs .txt{text-align:right}
+.pta .nom{font-size:10px;letter-spacing:.3em;font-weight:600;text-transform:uppercase}
+.pta .prom{font-family:'Bodoni Moda',serif;font-weight:640;font-size:27px;line-height:1.04;margin-top:7px}
+.pta .baj{font-style:italic;font-size:13px;line-height:1.4;margin-top:6px}
+.pta .hs .nom{color:#CBA258}.pta .hs .prom{color:#F6F2E8}.pta .hs .baj{color:#9C978B}
+.pta .hw .nom{color:#73579A}.pta .hw .prom{color:#241D38}.pta .hw .baj{color:#5E5677}
+.pta .cab{position:absolute;top:0;left:0;right:0;z-index:4;display:flex;justify-content:center;padding-top:26px;pointer-events:none}
+.pta .wm{font-family:'Fraunces',serif;font-optical-sizing:auto;font-size:19px;font-weight:620;letter-spacing:.02em;line-height:1}
+.pta .wm .snd{color:#F6F2E8}.pta .wm .wch{color:#241D38}
+.pta .yo{all:unset;cursor:pointer;position:absolute;top:10px;right:4px;z-index:5;padding:12px;display:flex;align-items:center;gap:7px;font-family:'EB Garamond',serif;font-size:10px;letter-spacing:.22em;font-weight:600;text-transform:uppercase;color:#241D38}
+.pta .yo:focus-visible{outline:2px solid #241D38;outline-offset:-2px}
+.pta .yo .pt{background:#241D38;color:#EAF4FB;border-radius:999px;padding:5px 9px;letter-spacing:.14em}
+.pta .pie{background:#110F0C;padding:15px 12px calc(20px + env(safe-area-inset-bottom,0px));text-align:center}
+.pta .pie span{font-size:10px;letter-spacing:.22em;font-weight:600;text-transform:uppercase;color:#CBA258}
+.pta .pie em{font-style:italic;font-size:13px;color:#8E8A80;margin-left:10px}
+.pta .pie.cerrado span{color:#E2826A}
+
+/* ═══ 06 A · PEDIDO ENVIADO · la losa (aprobada 2026-09-24) + el aviso de puntos (2026-09-25) ══
+   docs/maquetas/aprobadas/06A-*.png (fuentes y1.html #A y aviso-puntos.html). SANDO está DETRÁS
+   de la losa: no hay forma de que tape un dato. El aviso para quien pagó sin cuenta vive DENTRO
+   de la losa, en el renglón de los puntos; con el correo, la losa sube en el mismo lugar. */
+.m06{position:relative;min-height:100dvh;margin-bottom:calc(-1 * var(--sw-barra,0px));display:flex;flex-direction:column;background:#1E2B22}
+.m06 .forro{position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:50}
+.m06 .arr{position:relative;flex:0 0 auto;height:472px;transition:height .35s ease}
+.m06.sube .arr{height:300px}
+.m06 .col{position:absolute;right:0;top:0;width:200px;bottom:0;z-index:3;overflow:hidden}
+.m06 .col img{position:absolute;right:-22px;bottom:-30px;height:400px}
+.m06 .arriba{position:absolute;left:30px;width:172px;top:78px;z-index:6}
+.m06 .ok{font:700 10px/1 'IBM Plex Mono',monospace;letter-spacing:.28em;color:#D8823C;text-transform:uppercase}
+.m06 h1{font-family:Anton,sans-serif;font-weight:700;font-size:42px;line-height:.86;color:#EFE6D4;margin:18px 0 0;letter-spacing:-.015em}
+.m06 .sub{font-family:'Instrument Serif',serif;font-style:italic;font-size:21px;color:#A6B79A;margin-top:20px;line-height:1.25}
+.m06 .sub u{display:block;text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.24em;color:#5F7358;margin-top:11px;text-transform:uppercase}
+.m06.sube .sub{display:none}
+.m06 .losa{position:relative;z-index:10;flex:1;background:#EFE6D4;padding:22px 26px calc(74px + 24px) 30px}
+.m06 .ca{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #1E2B22;padding-bottom:12px}
+.m06 .ca em{font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.24em;color:#5F7358;text-transform:uppercase}
+.m06 .ca u{text-decoration:none;font-family:Anton,sans-serif;font-size:22px;color:#1E2B22;letter-spacing:.01em}
+.m06 .dr{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:13px 0;border-bottom:1px solid rgba(30,43,34,.16);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:#6C7C64;text-transform:uppercase}
+.m06 .dr b{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;letter-spacing:0;color:#1E2B22;text-align:right}
+.m06 .dr b.pt{color:#B3651A}
+.m06 .dr button{all:unset;cursor:pointer;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#B3651A;text-transform:uppercase;padding:6px 0}
+.m06 .dr.espera{border-bottom:0;padding-bottom:10px}
+.m06 .dr.espera span{color:#B3651A}
+.m06 .nota{font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.7;color:#6C7C64;padding:12px 0;border-bottom:1px solid rgba(30,43,34,.16)}
+.m06 .nota label{cursor:pointer;color:#B3651A;text-decoration:underline;text-underline-offset:3px}
+.m06 .guardar{display:flex;gap:8px;align-items:stretch}
+.m06 .guardar .g{flex:1;min-height:44px;background:#1E2B22;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.m06 .guardar .c{all:unset;cursor:pointer;box-sizing:border-box;flex:0 0 auto;min-height:44px;display:flex;align-items:center;padding:0 12px;border:1px solid rgba(30,43,34,.35);font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#1E2B22;text-transform:uppercase}
+.m06 .guardar .c.solo{flex:1;justify-content:center}
+.m06 .campo{display:block;border-bottom:2px solid #1E2B22;padding:14px 0 10px}
+.m06 .campo s{display:block;text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#5F7358;text-transform:uppercase}
+.m06 .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:9px;font-family:'IBM Plex Mono',monospace;font-size:17px;color:#1E2B22 !important;caret-color:#B3651A}
+.m06 .campo input::placeholder{color:#A9AE9C}
+.m06 .campo.cod input{font-size:28px;letter-spacing:.32em}
+.m06 .par{display:flex;gap:16px}.m06 .par .campo{flex:1;min-width:0}
+.m06 .mini{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6C7C64;line-height:1.8;margin-top:12px;text-transform:uppercase}
+.m06 .mini b{color:#1E2B22;font-weight:700}
+.m06 .mini button{all:unset;cursor:pointer;color:#1E2B22;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.m06 .err{font:600 11px/1.5 'IBM Plex Mono',monospace;color:#9A2A12;min-height:16px;margin-top:10px}
+.m06 .extra{margin-top:18px;display:flex;flex-direction:column;gap:10px}
+.m06 .extra button{all:unset;cursor:pointer;box-sizing:border-box;min-height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border:1px solid rgba(30,43,34,.3);font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#1E2B22;text-transform:uppercase}
+.m06-go{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:74px;display:flex;z-index:90}
+.m06-go button{all:unset;box-sizing:border-box;cursor:pointer;flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.m06-go .oro{background:#D8823C;color:#231204;justify-content:flex-end;padding-right:16px}
+.m06-go .cel{background:#EFE6D4;color:#1E2B22;justify-content:flex-start;padding-left:16px}
+.m06-go button:focus-visible{outline:2px solid #1E2B22;outline-offset:-4px}
+
 /* ═══ MUNDO WICHO · el armador (maqueta M22 + el puente, aprobada 2026-09-24) ═══════════════
    docs/maquetas/aprobadas/mundo-wicho-M22-con-puente.png y su fuente m22-con-puente.html.
    Los valores salen de la maqueta tal cual: por eso viven acá y no en la escala de src/app.

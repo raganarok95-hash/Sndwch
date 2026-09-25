@@ -1238,7 +1238,37 @@ de llegar a la cuenta ni a los puntos.
 el cliente todavía no tiene ninguna razón para darlo. El dueño además pidió que «¿Quién llegó?»
 no aparezca repetida en varios puntos del flujo.
 
-**Pendiente de aprobación (no construir todavía):** el aviso ÚNICO de puntos después de pagar,
+**Aprobado después («aprobado todo go»):** el aviso ÚNICO de puntos después de pagar,
 dentro de la losa de la 06A (Google en un toque; correo y DNI en el mismo lugar), en vez de
 preguntar antes de pagar. El dueño dudó de que tres pasos antes de pagar no frenaran la compra.
 
+
+## 2026-09-25 · Construidas: la puerta M2, Entrar y la 06A con el aviso de puntos
+
+- **La puerta** (`sOEleccion`, CSS `.pta`) es la maqueta M2 más la esquina: pantalla completa,
+  sin barra, cada mitad un botón. El pie interpola el estado de la tienda, la hora (en formato
+  de 12 horas, `horaDoce`) y el envío mínimo (`DELIVERY_MIN_FEE`); «Cinco recetas cerradas»
+  se cuenta con `cuantosSignatures()`. `homeTab` ya no se lee de `sw_lado` al arrancar.
+- **Se retiró la bienvenida de primera apertura** (`sHello`, `p_hello`, `sw_seen_hello`) y el
+  botón de Google del checkout de invitado: los dos pedían cuenta antes de pagar.
+- **Entrar** (`sEntrar`, CSS `.en`) reemplaza el formulario «Puntos // rewards», que nunca se
+  aprobó. Es UNA pantalla con cinco pasos del mismo campo: correo, código, primera vez, celular
+  tras Google y teléfono + PIN (las cuentas de antes; no está en la maqueta, pero quitarlo
+  dejaba sin entrada a quien solo tiene PIN).
+- **La 06A** (`sOSent`, CSS `.m06`) reemplaza la confirmación vieja. Lo que aquella decía de
+  más (pago por confirmar, comprobante, rango, menú secreto, WhatsApp, notificaciones,
+  referido) sigue como renglones de la misma losa, debajo de los de la maqueta.
+- **El aviso de puntos** vive en la losa: Google en un toque (el celular ya está, el del
+  checkout) o correo + DNI + cumpleaños y el código, sin salir de la pantalla. El botón de Google
+  lo dibuja Google (`renderButton`) y su texto no se puede cambiar: dice «Continuar con Google»
+  donde la maqueta decía «Guardarlos con Google».
+- **Hueco cerrado de paso:** quien YA tenía cuenta y pagaba sin entrar perdía los puntos de
+  ese pedido aunque entrara después: la vinculación solo existía al crear la cuenta. Ahora hay
+  una acción `reclamar-pedido` y las dos rutas usan la misma `vincularPedidoDeInvitado()` en
+  `api/actions/auth.ts`, con la misma transacción de la base. Probada en `check:e2e`: suma una
+  sola vez, solo sobre la comida, y no toma un pedido que ya tiene dueño.
+- **Dos desvíos mínimos de la maqueta, por legibilidad:** el lila de «WCH» en la puerta pasa de
+  #7B5EA0 (4.12:1 sobre el celeste) a #73579A (4.58:1), para llegar al mínimo AA; y el texto
+  escrito en los campos de Entrar y de la losa lleva su color con `!important`, porque la regla
+  global `input{color:#EFEDE4 !important}` lo dejaba crema sobre papel crema. Lo vigila
+  `tests/puerta-entrar-aviso.spec.ts`.

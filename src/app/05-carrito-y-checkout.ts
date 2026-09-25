@@ -422,10 +422,8 @@ function checkoutExtrasHTML(){
     // para acortar el scroll del resto del checkout.
     +'<details open style="margin-top:20px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none">Contacto y entrega //</summary><div style="margin-top:10px">'
     +(!cust||!myAddresses.length?'':'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+myAddresses.map(function(a){var sel=mismoId(pickedAddrId,a.id);return'<div onclick="pickAddr(\''+a.id+'\')" style="background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?GOLD:'#2C3228')+';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+(sel?'#fff':'#9DA096')+'">'+esc(a.label)+'</div>';}).join('')+'</div>')
-    // Solo a invitados, y ARRIBA de los campos: el botón existe para ahorrarles escribir, y
-    // ofrecerlo después de que ya escribieron nombre y correo no ahorra nada. Quien ya tiene
-    // sesión no lo ve — sería ruido en el paso de pagar.
-    +(!cust?googleCtaHTML('Te llenamos el nombre y el correo, y ganas puntos por este pedido.'):'')
+    // Antes de pagar no se ofrece ninguna cuenta (dueño, 2026-09-25): la cuenta se ofrece UNA
+    // vez, después de pagar, en la losa de la 06A (ver avisoDePuntos).
     +'<div style="display:flex;flex-direction:column;gap:10px">'+INP('o-nom','Nombre // Tu nombre','text',confNom,'clientes','name','nombre')+INP('o-phone','Teléfono // 9XXXXXXXX','tel',confPhone,'phone','tel','tel')+INP('o-email','Correo // Opcional, para tu comprobante','email',confEmail,'mail','email')+'<div style="position:relative">'+INP('o-addr','Dirección // Calle o usa GPS','text',addrText,'direccion','street-address','direccion')+'<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#9DA096)">'+icon('gps',16,'#9DA096')+'</button></div>'+'<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>'+districtPickerHTML()+INP('o-notes','Referencia // portón, piso, cerca de... (opcional)','text',confNotes)+'</div>'
     +(scheduleMode==='now'?'<div style="margin-top:16px;background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.4;display:flex;align-items:flex-start;gap:8px">'+icon('horario',13,'#9DA096')+'<span>Llega <b style="color:var(--sw-text,#FFFFFF)">'+esc(ventanaEstimadaTexto(null))+'</b> si lo confirmas ahora.'+(queueAhead>0?' Ahora mismo hay '+queueAhead+' pedido'+(queueAhead===1?'':'s')+' por delante.':'')+'</span></div></div>':'')
     +'</div></details>'
@@ -1434,7 +1432,7 @@ function finalizeOrderSuccess(res,po,chargeId){
   // Momento real de creación — usado para mostrar un plazo real (no inventado) antes de
   // que el cron lo cancele solo, ver STALE_MANUAL_PAYMENT_HOURS_CLIENT.
   window._lOrderCreatedAt=Date.now();
-  window._lRef=po.ref;
+  window._lRef=po.ref;avisoPaso='aviso';aErr='';
   // La hora que el servidor dejó prometida al crear el pedido (ventanaPrometida en env.ts).
   window._lVentana=ventanaDelPedido(res.order);
   receiptUploadState=null;
@@ -1460,6 +1458,37 @@ function reopenWhatsAppConfirm(){
   if(!window._lWaText)return;
   window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(window._lWaText),'_blank');
 }
+// ── 06 A · PEDIDO ENVIADO · la losa (aprobada 2026-09-24) ─────────────────────────────────
+// docs/maquetas/aprobadas/06A-pedido-enviado-la-losa.png. SANDO está DETRÁS de una losa clara
+// que lo corta a la altura del hombro: los datos viven en la losa y no hay forma de que la
+// figura tape uno (el defecto de la 06, donde las zapatillas tapaban el número y la hora).
+//
+// Lo que la pantalla anterior también decía —el pago por confirmar, el comprobante, el rango
+// nuevo, el menú secreto, el aviso por WhatsApp, las notificaciones, el referido— sigue acá,
+// como renglones de la MISMA losa debajo de los de la maqueta: nada de eso se perdió, y la
+// primera vista es la aprobada.
+//
+// EL AVISO DE PUNTOS (aprobado 2026-09-25, docs/maquetas/aprobadas/06A-aviso-*.png): a quien
+// pagó sin cuenta se le ofrece UNA vez, acá, en el renglón de los puntos. Con Google es un toque
+// (nombre y celular ya los dio en el checkout); con correo, la losa sube en el mismo lugar:
+// correo y DNI, después el código. Antes de pagar no se le pidió nada.
+var avisoPaso='aviso',avisoDni='',avisoBday='';
+function seguirElPedido(){avisoPaso='aviso';loadMyOrders();}
+function avisoDePuntosHTML(pts){
+  var g=googleConfigured();
+  return'<div class="dr espera"><span>Te esperan</span><b class="pt">+'+pts+' puntos</b></div>'
+    +'<div class="guardar">'
+    +(g?'<div class="g" id="google-btn-mount" data-tema="filled_black"></div>':'')
+    +'<button class="c'+(g?'':' solo')+'" onclick="avisoPaso=\'correo\';aErr=\'\';render()">'+(g?'Correo →':'Guardarlos con mi correo →')+'</button>'
+    +'</div>'
+    +'<div class="err" id="aviso-err" role="alert">'+esc(aErr||'')+'</div>';
+}
+function avisoCampo(id,rotulo,tipo,val,ph,extra){
+  return'<label class="campo'+(extra&&extra.clase?' '+extra.clase:'')+'"><s>'+esc(rotulo)+'</s><input id="'+id+'" type="'+tipo+'"'
+    +(val?' value="'+esc(val)+'"':'')+(ph?' placeholder="'+esc(ph)+'"':'')
+    +(extra&&extra.im?' inputmode="'+extra.im+'"':'')+(extra&&extra.ac?' autocomplete="'+extra.ac+'"':'')
+    +(extra&&extra.max?' maxlength="'+extra.max+'"':'')+'></label>';
+}
 function sOSent(){
   var pending=window._lPendingPayment;
   var methodLabel=window._lPayMethod==='yape'?'Yape':window._lPayMethod==='plin'?'Plin':'';
@@ -1469,94 +1498,250 @@ function sOSent(){
   var deadlineLabel=manualWaiting&&window._lOrderCreatedAt
     ?new Date(window._lOrderCreatedAt+STALE_MANUAL_PAYMENT_HOURS_CLIENT*3600000).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'2-digit',minute:'2-digit'})
     :null;
-  // Antes esta pantalla nunca mostraba la referencia del pedido (útil para ubicarlo en
-  // MIS PEDIDOS o mencionarlo si hay que escribir a soporte) y usaba la misma tarjeta
-  // genérica que cualquier pantalla informativa — sin ningún tratamiento propio para el
-  // momento de mayor satisfacción del flujo (hallazgo de auditoría UX/diseño).
-  var rankUp=window._lRankUp;
-  // El aviso del menú secreto ya no cuelga del nombre del rango (ver _lSecretUnlock): el
-  // umbral se edita desde el panel y no tiene por qué caer sobre un rango.
-  var rankPerk=window._lSecretUnlock?'Ya puedes ver el menú secreto.':null;
-  // ── EL MOMENTO QUE NO TENÍA CARA ──────────────────────────────────────────────────
-  // `marca/PERSONAJES.md` tenía esto como el hueco número UNO: "SANDO aprobando — para
-  // cuando el pedido se confirma. Hoy ese momento no tiene cara." Era el instante de mayor
-  // satisfacción de todo el flujo y lo recibía un wordmark, igual que cualquier pantalla
-  // informativa. El dueño mandó la pose el 2026-09-10.
-  //
-  // Va SANDO y no WICHO aunque el sándwich se haya armado en el lado celeste: acá ya no se
-  // elige nada: está decidido, pagado y en marcha. Ése es exactamente su territorio.
-  //
-  // Con un pago manual pendiente el gesto sería una mentira pequeña —todavía falta que el
-  // dueño confirme contra su cuenta— así que ahí se queda el wordmark de siempre.
-  var caraSando=!pending
-    ?'<img src="img/sando2_sonrie.png" alt="" aria-hidden="true" style="height:132px;width:auto;margin-bottom:6px">'
-    :'<div style="margin-bottom:12px;padding:14px;border-radius:50%;box-shadow:'+SHADOW_GOLD+'">'+WORDMARK(52,true)+'</div>';
-  return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;background:var(--sw-bg,#12150F)" class="fi">'
-    +caraSando
-    // Un pedido 100% cubierto por una recompensa (total S/0) nunca tuvo ningún pago real
-    // que "confirmar" — decía "PAGO CONFIRMADO" igual (hallazgo de auditoría UX, BAJO).
-    +(pending?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';letter-spacing:.25em;margin-bottom:6px">✓ Pedido registrado //</div>':(window._lTot===0?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);letter-spacing:.25em;margin-bottom:6px">✓ Pedido confirmado //</div>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);letter-spacing:.25em;margin-bottom:6px">✓ Pago confirmado //</div>'))
-    +(window._lRef?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em;margin-bottom:20px">Pedido '+esc(window._lRef)+(window._lVentana?' · llega '+esc(window._lVentana):'')+'</div>':'<div style="margin-bottom:20px"></div>')
-    +(rankUp?'<div class="rank-pop" style="background:linear-gradient(135deg,rgba(203,162,88,.22),rgba(203,162,88,.06));border:1px solid '+GOLD+';border-radius:12px;padding:16px 20px;margin-bottom:20px;width:100%;max-width:320px;box-shadow:'+SHADOW_GOLD+'"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">¡Subiste de rango! //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+esc(rankUp)+'</div>'+(rankPerk?'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:6px">'+rankPerk+'</div>':'')+'</div>':'')
-    // Desbloqueo del menú secreto SIN subida de rango. Hasta el 2026-08-26 este aviso vivía
-    // solo dentro de la tarjeta de rango, lo cual funcionaba de casualidad porque el umbral
-    // del secreto (5) caía justo sobre INICIADO. Al bajarlo a 3 dejaron de coincidir: quien
-    // pasa de 2 a 3 pedidos desbloquea el menú secreto y no cambia de rango, así que se
-    // habría enterado por ningún lado. Esta tarjeta cubre ese caso.
-    +((rankPerk&&!rankUp)?'<div class="rank-pop" style="background:linear-gradient(135deg,rgba(203,162,88,.22),rgba(203,162,88,.06));border:1px solid '+GOLD+';border-radius:12px;padding:16px 20px;margin-bottom:20px;width:100%;max-width:320px;box-shadow:'+SHADOW_GOLD+'"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">¡Desbloqueaste algo! //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">'+rankPerk+'</div></div>':'')
-    +'<p style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text-muted,#9DA096);max-width:260px;line-height:1.6;margin-bottom:16px">'+(pending?'Verificaremos tu pago por '+methodLabel+' y tu pedido pasará a preparación en cuanto lo confirmemos.':'Tu pago fue procesado y tu pedido ya está en preparación.')+'</p>'
-    +'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:16px 20px;margin-bottom:16px;width:100%;max-width:320px">'
-    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Estado del pedido //</div>'
-    +stBadge('RECIBIDO')
-    +(manualWaiting?'<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px"><span class="pulse" style="width:7px;height:7px;border-radius:50%;background:'+GOLD+';display:inline-block"></span><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.1em">Esperando confirmación de pago</span></div>':'')
-    +(deadlineLabel?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:6px">Confirmamos manualmente — si no lo hacemos antes de las '+deadlineLabel+', el pedido se cancela solo.</div>':'')
-    +(manualWaiting?'<div style="margin-top:10px">'
-      +(receiptUploadState==='done'
-        ?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-ok,#25D366)">✓ comprobante recibido — gracias</div>'
-        :'<label style="display:inline-flex;align-items:center;gap:6px;cursor:'+(receiptUploadState==='uploading'?'default':'pointer')+';font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';text-decoration:underline;letter-spacing:.05em">'
-          +(receiptUploadState==='uploading'?'subiendo comprobante...':icon('clip',12)+'<span>subir captura del comprobante (opcional)</span>')
-          +'<input type="file" accept="image/*" onchange="handleReceiptFile(event)"'+(receiptUploadState==='uploading'?' disabled':'')+' style="position:absolute;width:1px;height:1px;opacity:0"></label>')
-      +(typeof receiptUploadState==='string'&&receiptUploadState.indexOf('error:')===0?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-danger,#ff8888);margin-top:4px">'+esc(receiptUploadState.slice(6))+'</div>':'')
-      +'</div>':'')
-    +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:10px;line-height:1.5">Sigue el estado en Puntos → Mis Pedidos</div></div>'
-    +'<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(37,211,102,.25);border-radius:12px;padding:14px 20px;margin-bottom:16px;width:100%;max-width:320px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-ok,#25D366);letter-spacing:.2em;margin-bottom:4px">'+(pending?'Monto a pagar //':(window._lTot===0?'Cubierto por recompensa //':'Monto cobrado //'))+'</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+SOLES+pz(window._lTot||0)+'</div>'+(window._lChargeId?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#9DA096);margin-top:4px">Ref. pago: '+window._lChargeId+'</div>':'')+'</div>'
-    +(cust?'<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.15);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px">'+(pending?'Puntos //':'Puntos ganados //')+'</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'+(pending?'12px':'32px')+';font-weight:640;color:'+GOLD+'">'+(pending?'+'+(window._lPoints||0)+' pts pendientes hasta confirmar tu pago':'+'+(window._lPoints||0)+'<span style="font-size:15px"> pts</span>')+'</div></div>':'')
-    +(window._lRewardLabel?'<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(37,211,102,.3);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-ok,#25D366);letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">'+icon('gift',12,'var(--sw-ok,#25D366)')+'Recompensa aplicada //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">'+esc(window._lRewardLabel)+'</div></div>':'')
-    // Respaldo tappable del window.open automático de arriba — muchos navegadores
-    // móviles lo bloquean por no venir de un tap directo del usuario, y sin esto un
-    // pedido ya cobrado podía quedar sin ningún comprobante ni aviso al negocio.
-    +(window._lWaText?'<button onclick="reopenWhatsAppConfirm()" style="all:unset;cursor:pointer;display:block;width:100%;max-width:320px;text-align:center;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:13px;border-radius:10px;margin-bottom:16px;display:flex;align-items:center;justify-content:center;gap:8px">'+icon('chat',16,'var(--sw-on-gold,#241a08)')+'Confirmar pedido por WhatsApp →</button>':'')
-    // Antes el único lugar para activar notificaciones push era un toggle escondido en
-    // el perfil (o una fila discreta en el checkout) — justo después del primer pedido
-    // pagado es el momento de mayor intención: el cliente ya vio el valor de la app y
-    // quiere saber cuándo llega SU pedido, así que se ofrece aquí de forma prominente.
-    +(cust&&cust.total_orders===1&&!pushSubscribed&&('serviceWorker' in navigator)&&('PushManager' in window)?'<div onclick="togglePushNotifications()" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.3);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px;cursor:pointer"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">'+icon('notif',12,GOLD)+'No te pierdas tu pedido //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.5">Activa notificaciones y te avisamos apenas esté en camino.</div>'+(pushMsg?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';margin-top:6px">'+esc(pushMsg)+'</div>':'')+'</div>':'')
-    +(cust?'<div onclick="shareReferral()" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%;max-width:320px;cursor:pointer"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px;display:flex;align-items:center;gap:6px">'+icon('heart',12,GOLD)+'Invita a un amigo //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.5">Comparte tu código <b style="color:var(--sw-text,#FFFFFF)">'+esc(cust.phone)+'</b> — cuando haga su primer pedido, tú te ganas un SÁNDWICH 15CM GRATIS y él estrena con una BEBIDA GRATIS.</div></div>':'')
-    +'<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center">'
-    +'<button onclick="sndScreen=\'o_home\';render()" style="all:unset;cursor:pointer;border:1px solid '+GOLD+';color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.15em;padding:12px 22px;border-radius:10px">Nuevo pedido</button>'
-    +(cust?'<button onclick="sndScreen=\'p_orders\';loadMyOrders()" style="all:unset;cursor:pointer;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.15em;padding:12px 22px;border-radius:10px">Ver estado →</button>':'')
+  var pts=window._lPoints||0;
+  var invitado=!cust&&pts>0&&!!window._lRef;
+  var sube=invitado&&(avisoPaso==='correo'||avisoPaso==='codigo');
+  var ref=window._lRef?'#'+esc(window._lRef):'';
+  var losa='',pie='';
+  if(sube&&avisoPaso==='correo'){
+    losa='<div class="ca"><em>Guardar +'+pts+' puntos</em><u>'+ref+'</u></div>'
+      +avisoCampo('av-email','Tu correo','email',authEmail||window._lastGuestEmail||'','tu@correo.com',{im:'email',ac:'email'})
+      +'<div class="par">'+avisoCampo('av-dni','DNI','text',avisoDni,'8 dígitos',{im:'numeric',max:8})
+      +avisoCampo('av-bday','Cumpleaños','text',avisoBday,'DD/MM/AAAA',{im:'numeric',max:10})+'</div>'
+      +'<div class="err" id="aviso-err" role="alert">'+esc(aErr||'')+'</div>'
+      +'<div class="mini">Tu nombre y tu celular ya los tenemos: <b>'+esc(window._lastGuestName||'')+' · '+esc(window._lastGuestPhone||'')+'</b>.<br>'
+      +'+'+WELCOME_BONUS_POINTS+' puntos de bienvenida. Aceptas los <button onclick="event.stopPropagation();sndScreen=\'p_legal\';render()">Términos y la Privacidad</button>.</div>';
+    pie='<button class="oro" onclick="avisoMandarCodigo()">Mandar código</button><button class="cel" onclick="avisoPaso=\'aviso\';aErr=\'\';render()">Ahora no</button>';
+  }else if(sube){
+    losa='<div class="ca"><em>Guardar +'+pts+' puntos</em><u>'+ref+'</u></div>'
+      +avisoCampo('av-code','El código · 6 dígitos','tel','','••••••',{clase:'cod',im:'numeric',ac:'one-time-code',max:6})
+      +'<div class="err" id="aviso-err" role="alert">'+esc(aErr||'')+'</div>'
+      +'<div class="mini">Lo mandamos a <b>'+esc(authMasked||authEmail)+'</b>. Vence en unos minutos.</div>'
+      +'<div class="dr" style="margin-top:14px"><span>No me llegó</span><button onclick="avisoMandarCodigo(true)">Mandar otro →</button></div>';
+    pie='<button class="oro" onclick="avisoVerificar()">Guardar</button><button class="cel" onclick="avisoPaso=\'aviso\';aErr=\'\';render()">Ahora no</button>';
+  }else{
+    var rankPerk=window._lSecretUnlock?'Ya puedes verlo':null;
+    losa='<div class="ca"><em>Tu pedido</em><u>'+ref+'</u></div>'
+      +(window._lVentana?'<div class="dr"><span>Llega</span><b>'+esc(window._lVentana)+'</b></div>':'')
+      +'<div class="dr"><span>Pagaste</span><b>'+SOLES_TXT+pz(window._lTot||0)+'</b></div>'
+      +(window._lRewardLabel?'<div class="dr"><span>Canjeaste</span><b>'+esc(window._lRewardLabel)+'</b></div>':'')
+      +(cust&&pts>0?'<div class="dr"><span>'+(pending?'Al confirmar':'Ganaste')+'</span><b class="pt">+'+pts+' puntos</b></div>':'')
+      +(invitado?avisoDePuntosHTML(pts):'')
+      +(manualWaiting?'<div class="nota">Confirmamos tu '+methodLabel+' contra la cuenta'
+        +(deadlineLabel?'; si no lo hacemos antes de las '+esc(deadlineLabel)+', el pedido se cancela solo':'')+'.<br>'
+        +(receiptUploadState==='done'?'✓ Comprobante recibido.'
+          :receiptUploadState==='uploading'?'Subiendo el comprobante…'
+          :'<label>Subir la captura del comprobante (opcional)<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>')
+        +(typeof receiptUploadState==='string'&&receiptUploadState.indexOf('error:')===0?'<br>'+esc(receiptUploadState.slice(6)):'')
+        +'</div>':'')
+      +(window._lRankUp?'<div class="dr"><span>Subiste a</span><b class="pt">'+esc(window._lRankUp)+'</b></div>':'')
+      +(rankPerk?'<div class="dr"><span>Menú secreto</span><b class="pt">'+rankPerk+'</b></div>':'')
+      +'<div class="extra">'
+      // Respaldo tappable del window.open automático: muchos navegadores móviles lo bloquean
+      // por no venir de un toque, y sin esto un pedido cobrado podía quedar sin aviso al negocio.
+      +(window._lWaText?'<button onclick="reopenWhatsAppConfirm()">Mandar el aviso por WhatsApp <span>→</span></button>':'')
+      // Justo después del primer pedido pagado es el momento de mayor intención para activar
+      // las notificaciones: quiere saber cuándo llega SU pedido.
+      +(cust&&cust.total_orders===1&&!pushSubscribed&&('serviceWorker' in navigator)&&('PushManager' in window)?'<button onclick="togglePushNotifications()">Avísame cuando salga <span>→</span></button>':'')
+      +(cust?'<button onclick="shareReferral()">Invita a alguien <span>→</span></button>':'')
+      +'</div>'
+      // Si algo sale mal con este pedido, es acá donde el cliente lo va a buscar.
+      +legalLinksHTML('o_sent');
+    pie='<button class="oro" onclick="seguirElPedido()">Seguir el pedido</button><button class="cel" onclick="seguirElPedido()" aria-label="Seguir el pedido">→</button>';
+  }
+  return'<div class="m06 fi'+(sube?' sube':'')+'"><div class="forro"></div>'
+    +'<div class="arr"><div class="col"><img src="'+broPose('sando','asoma')+'" alt="" aria-hidden="true"></div>'
+    +'<div class="arriba"><div class="ok">Pedido recibido</div><h1>YA ESTÁ<br>EN LA<br>COCINA</h1>'
+    +'<div class="sub">“Ya prendí<br>la plancha.”<u>Sando</u></div></div></div>'
+    +'<div class="losa">'+losa+'</div>'
     +'</div>'
-    +(!cust?'<div onclick="atab=\'reg\';sndScreen=\'p_auth\';render()" style="margin-top:20px;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';letter-spacing:.1em">→ Crea tu cuenta y gana puntos por este pedido</div>':'')
-    // Si algo sale mal con este pedido, es acá donde el cliente lo va a buscar.
-    +legalLinksHTML('o_sent')
-    +'</div>';
+    +'<div class="m06-go sw-barra">'+pie+'</div>';
+}
+// ── El aviso por correo: correo + DNI → código → cuenta ─────────────────────────────────
+// Mismas reglas que el registro normal (doReg): DNI obligatorio de 8 dígitos y fecha de
+// nacimiento real. Nombre y celular son los del checkout (window._lastGuest*).
+async function avisoMandarCodigo(reenviar?){
+  var email=reenviar?authEmail:(document.getElementById('av-email')?gv('av-email'):'').trim();
+  if(!reenviar){
+    avisoDni=(document.getElementById('av-dni')?gv('av-dni'):'').trim();
+    avisoBday=(document.getElementById('av-bday')?gv('av-bday'):'').trim();
+    if(!email||email.indexOf('@')<0){aErr='Escribe un correo válido.';render();return;}
+    if(!/^\d{8}$/.test(avisoDni)){aErr='El DNI son 8 dígitos.';render();return;}
+    if(!parseBdayDDMMYYYY(avisoBday)){aErr='El cumpleaños va como DD/MM/AAAA.';render();return;}
+  }
+  busy=true;busyMsg='Mandando el código...';render();
+  try{
+    var r=await api('request-login-code',{email:email});
+    authEmail=email;authMasked=r.masked||email;avisoPaso='codigo';aErr='';
+  }catch(e){aErr=e.message;}
+  busy=false;render();
+}
+// Deja la sesión abierta con lo que devolvió el servidor, igual que los otros caminos de entrada.
+function avisoAbrirSesion(r){
+  cust=r.customer;isAdmin=!!r.isAdmin;token=r.token;cacheCust(cust,isAdmin);
+  localStorage.setItem('sw_ph',cust.phone);localStorage.setItem('sw_tok',token);savedPh=cust.phone;
+}
+// Quien ya tenía cuenta y pagó sin entrar: se le vincula ESTE pedido (acción reclamar-pedido).
+async function avisoReclamar(){
+  var ref=window._lRef||localStorage.getItem('sw_last_ref');
+  if(!ref||!token)return;
+  try{
+    var r=await api('reclamar-pedido',{token:token,ref:ref});
+    if(r&&r.customer){cust=r.customer;cacheCust(cust,isAdmin);}
+  }catch(e){}
+}
+async function avisoVerificar(){
+  var code=(document.getElementById('av-code')?gv('av-code'):'').replace(/\D/g,'');
+  if(code.length!==6){aErr='El código son 6 dígitos.';render();return;}
+  busy=true;busyMsg='Guardando tus puntos...';render();
+  try{
+    var r=await api('verify-login-code',{email:authEmail,code:code});
+    if(!r.needsRegistration){
+      avisoAbrirSesion(r);await avisoReclamar();
+    }else if(!window._lastGuestName||!window._lastGuestPhone){
+      // Sin los datos del checkout (se recargó la página) no se puede crear la cuenta acá: se
+      // sigue en Entrar, en el paso de la primera vez, con el correo ya verificado.
+      authProof=r.emailProof;authEmail=r.email;busy=false;sndScreen='p_auth';render();return;
+    }else{
+      var reg=await api('register',{name:window._lastGuestName,phone:window._lastGuestPhone,pin:'',email:r.email,
+        dni:avisoDni,bday:parseBdayDDMMYYYY(avisoBday),referredBy:refCode||null,
+        claimOrderRef:window._lRef||localStorage.getItem('sw_last_ref')||null,
+        acquisitionSource:localStorage.getItem('sw_src')||null,emailProof:r.emailProof});
+      avisoAbrirSesion(reg);
+      fbTrack('CompleteRegistration',{content_name:refCode?'referido':'directo'});
+    }
+    limpiarLoginPorCorreo();avisoPaso='aviso';aErr='';
+  }catch(e){aErr=e.message;}
+  busy=false;render();loadUserExtras();
+}
+// Google desde el aviso: el celular ya lo dio en el checkout, así que no hay paso intermedio.
+async function avisoConGoogle(idToken){
+  try{
+    var r=await api('register',{phone:window._lastGuestPhone,googleIdToken:idToken,referredBy:refCode||null,
+      claimOrderRef:window._lRef||localStorage.getItem('sw_last_ref')||null,
+      acquisitionSource:localStorage.getItem('sw_src')||null});
+    clearGoogleLink();avisoAbrirSesion(r);
+    fbTrack('CompleteRegistration',{content_name:refCode?'referido':'google'});
+    aErr='';busy=false;render();loadUserExtras();
+  }catch(e){
+    // Si el celular ya es de otra cuenta, o algo falla, se sigue por el paso de Entrar que pide
+    // el celular: el token de Google ya quedó guardado.
+    aErr=e.message;busy=false;go('p_gauth');
+  }
 }
 
-// AUTH
-// Antes el bono de bienvenida se otorgaba en silencio (server-side, sin que este
-// formulario lo mencionara nunca) — un incentivo que no se comunica no convierte
-// (hallazgo de auditoría, BAJO). El número se INTERPOLA de `WELCOME_BONUS_POINTS` y
-// `npm run parity` lo compara contra el servidor: estaba escrito a mano con un comentario que
-// decía "debe coincidir" y nada que lo comprobara.
-function sPAuth(){
-  return H()+'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;margin-bottom:6px;text-wrap:balance">Puntos<span class="cut-sep" style="color:'+GOLD+'"> // </span>rewards</div><p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:24px;line-height:1.6">Acumula puntos con cada pedido. Canjéalos por salsas, upgrades y sándwiches gratis. Bono de bienvenida: +'+WELCOME_BONUS_POINTS+' pts al crear tu cuenta.</p><div style="display:flex;background:var(--sw-card,#16241D);border-radius:10px;padding:4px;margin-bottom:24px">'+[['reg','Crear cuenta'],['login','Ingresar']].map(function(x){return'<button onclick="clearGoogleLink();atab=\''+x[0]+'\';aErr=\'\';render()" style="all:unset;cursor:pointer;flex:1;background:'+(atab===x[0]?GOLD:'transparent')+';color:'+(atab===x[0]?'var(--sw-on-gold,#241a08)':'var(--sw-text-muted,#9DA096)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">'+x[1]+'</button>';}).join('')+'</div>'+(googleConfigured()?'<div id="google-btn-mount" style="display:flex;justify-content:center;margin-bottom:14px;min-height:44px"></div><div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><div style="flex:1;height:1px;background:var(--sw-card,#16241D)"></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:#5A7A6A;letter-spacing:.15em">O con tu teléfono</span><div style="flex:1;height:1px;background:var(--sw-card,#16241D)"></div></div>':'')+(atab==='reg'?'<div style="display:flex;flex-direction:column;gap:10px">'+(_googleIdToken?'<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:12px 14px;margin-bottom:4px;display:flex;flex-direction:column;gap:6px"><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);line-height:1.4">✓ Verificamos <b>'+esc(_googleLinkedEmail||'')+'</b> con Google. Completa tu registro para vincularla — si no eres tú, descarta este vínculo abajo.</div><div onclick="discardGoogleLink()" style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#9DA096);cursor:pointer;text-decoration:underline;align-self:flex-start">No soy yo — continuar sin Google</div></div>':'')+INP('r-name','Nombre // Tu nombre completo','text',window._lastGuestName||'','clientes')+INP('r-phone','Teléfono // 9XXXXXXXX','tel',window._lastGuestPhone||'','phone')+(authProof
-  // Llegó acá verificando un correo que todavía no tenía cuenta. Ese correo ya está
-  // resuelto (el servidor lo lee de la prueba firmada, no de un campo) y el PIN lo genera
-  // el servidor: la pantalla anterior prometió «No hay contraseña». Mostrar los dos campos
-  // pedía un PIN que contradecía esa promesa y un correo que se ignoraba al guardar.
-  ?'<div style="background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:12px 14px;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);line-height:1.4">✓ Verificamos <b>'+esc(authEmail)+'</b>. Vas a entrar siempre con ese correo y un código; no necesitas PIN.</div>'
-  :INP('r-pin','PIN personal // Mínimo 4 dígitos','password',undefined,'lock')+INP('r-email','Correo // Para recuperar tu cuenta','email',window._lastGuestEmail||'','mail'))+INP('r-dni','DNI // 8 dígitos (obligatorio)','text',undefined,'card')+INP('r-bday','Fecha de nacimiento // DD/MM/AAAA (obligatorio)','text',undefined,'calendar')+INP('r-ref','Código de referido // opcional','text',refCode)+'<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px">'+aErr+'</div>'+'<p style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.5;margin-bottom:4px">Al crear tu cuenta aceptas nuestros <span onclick="event.stopPropagation();sndScreen=\'p_legal\';render()" style="color:'+GOLD+';cursor:pointer;text-decoration:underline">Términos y Política de Privacidad</span>.</p>'+BTN('Crear cuenta //','doReg()')+'</div>':'<div style="display:flex;flex-direction:column;gap:10px">'+(authPinFallback?INP('l-phone','Teléfono // 9XXXXXXXX','tel',savedPh,'phone')+INP('l-pin','PIN personal','password',undefined,'lock')+'<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px">'+aErr+'</div>'+BTN('Ingresar //','doLogin()')+'<div onclick="authPinFallback=false;aErr=\'\';render()" style="text-align:center;margin-top:10px;font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">Prefiero entrar con mi correo →</div>'+`<div onclick="recNewPin=null;recEmailMasked=null;recPhone='';recDni='';recBday='';sndScreen='p_recover';render()" style="text-align:center;margin-top:10px;font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">¿Olvidaste tu PIN? // Recuperar →</div>`:authPaso==='codigo'?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.6;margin-bottom:2px">Te mandamos un código de 6 dígitos a <b style="color:var(--sw-text-body,#EFEDE4)">'+esc(authMasked)+'</b>. Vence en unos minutos y sirve una sola vez.</p>'+INP('l-code','Código // 6 dígitos','tel',undefined,'lock')+'<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px">'+aErr+'</div>'+BTN('Entrar //','doVerificarCodigo()')+'<div onclick="doPedirCodigo()" style="text-align:center;margin-top:10px;font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:'+GOLD+';cursor:pointer;letter-spacing:.1em">No me llegó // Mandar otro →</div>'+'<div onclick="authPaso=\'correo\';aErr=\'\';render()" style="text-align:center;margin-top:10px;font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);cursor:pointer;letter-spacing:.1em">Cambiar de correo →</div>':'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.6;margin-bottom:2px">No hay contraseña. Te mandamos un código de 6 dígitos a tu correo y entras con eso.</p>'+INP('l-email','Correo // tu@correo.com','email',authEmail,'mail')+'<div id="auth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px">'+aErr+'</div>'+BTN('Mándame el código //','doPedirCodigo()')+'<div onclick="authPinFallback=true;aErr=\'\';render()" style="text-align:center;margin-top:10px;font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);cursor:pointer;letter-spacing:.1em">Entrar con teléfono y PIN →</div>')+'</div>')+'<div style="margin-top:28px;border-top:1px solid var(--sw-border-soft,#1c1c1c);padding-top:20px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:12px">Recompensas //</div>'+RWDS.map(function(r){return'<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+r.n+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+r.s+'</span><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096)">'+r.pts+' pts</span></div>';}).join('')+'</div></div>'+NAV();
+// ── ENTRAR · «te abren la puerta» (maqueta «entrar 2», docs/maquetas/aprobadas/entrar.png) ────
+// UNA sola pantalla para todo el acceso (dueño, 2026-09-25: «esa pantalla no me convence para
+// que esté en duplicado varias veces»). Lo que cambia de un momento a otro es el CAMPO, nunca la
+// pantalla: el correo, el código, los datos de la primera vez, el celular después de Google y el
+// teléfono con PIN de las cuentas de antes. Se llega solo desde la esquina de la puerta
+// («Entrar →») o desde una pantalla de cuenta sin sesión; ANTES DE PAGAR no se pide nada — a
+// quien pagó sin cuenta se le ofrece una vez, en la losa de la 06A (ver avisoDePuntosHTML).
+//
+// El bono de bienvenida se INTERPOLA de `WELCOME_BONUS_POINTS` (`npm run parity` lo compara
+// contra el servidor): un incentivo que no se comunica no convierte, y uno escrito a mano se
+// desincroniza.
+var entrarVerRef=false;
+function entrarPaso():string{
+  if(sndScreen==='p_gauth')return'google';
+  if(authProof)return'primera';
+  if(authPinFallback)return'pin';
+  if(authPaso==='codigo')return'codigo';
+  return'correo';
 }
+// La flecha de arriba retrocede UN paso dentro de la misma pantalla; solo desde el correo sale.
+function entrarAtras(){
+  aErr='';
+  var p=entrarPaso();
+  if(p==='google'){discardGoogleLink();sndScreen='p_auth';render();return;}
+  if(p==='primera'||p==='codigo'||p==='pin'){limpiarLoginPorCorreo();render();return;}
+  limpiarLoginPorCorreo();clearGoogleLink();
+  sndTab='order';sndScreen='o_home';render();
+}
+// La mitad celeste del pie («Con Google») no puede ser el botón de Google: Google exige dibujar
+// el suyo (renderButton). Pide la tarjeta de One Tap y, si el navegador no la muestra, lleva la
+// vista al botón real para que sea un toque.
+function tocarGoogle(){
+  try{google.accounts.id.prompt();}catch(e){}
+  var m=document.getElementById('google-btn-mount');
+  if(m&&m.scrollIntoView)m.scrollIntoView({block:'center',behavior:'smooth'});
+}
+function entrarCampo(id,rotulo,tipo,val,extra){
+  return'<label class="campo'+(extra&&extra.clase?' '+extra.clase:'')+'"><s>'+esc(rotulo)+'</s>'
+    +'<input id="'+id+'" type="'+tipo+'"'+(val?' value="'+esc(val)+'"':'')
+    +(extra&&extra.ph?' placeholder="'+esc(extra.ph)+'"':'')
+    +(extra&&extra.ac?' autocomplete="'+extra.ac+'"':'')
+    +(extra&&extra.im?' inputmode="'+extra.im+'"':'')
+    +(extra&&extra.max?' maxlength="'+extra.max+'"':'')
+    +'></label>';
+}
+function sEntrar(){
+  var p=entrarPaso(),g=googleConfigured();
+  var em='Buenas',titulo='¿QUIÉN LLEGÓ?',cuerpo='',pie='';
+  var err='<div class="err" id="'+(p==='google'?'gauth-err':'auth-err')+'" role="alert">'+esc(aErr||'')+'</div>';
+  var legal='<button onclick="event.stopPropagation();sndScreen=\'p_legal\';render()">Términos y Política de Privacidad</button>';
+  if(p==='correo'){
+    cuerpo=entrarCampo('l-email','Tu correo','email',authEmail,{ph:'tu@correo.com',ac:'email',im:'email'})
+      +err
+      +(g?'<div class="goo" id="google-btn-mount" data-tema="outline"></div>':'')
+      +'<div class="nota">Te mandamos un código de 6 dígitos, no hay contraseña.<br>Si es tu primera vez te pedimos nombre y DNI.'
+      +(g?'<br>Con Google no pedimos DNI.':'')
+      +'<br><button onclick="authPinFallback=true;aErr=\'\';render()">Entrar con teléfono y PIN</button></div>';
+    pie='<button class="oro" onclick="doPedirCodigo()">Seguir</button>'+(g?'<button class="cel" onclick="tocarGoogle()">Con Google</button>':'');
+  }else if(p==='codigo'){
+    em='Revisa tu correo';titulo='SEIS NÚMEROS';
+    cuerpo=entrarCampo('l-code','El código','tel','',{clase:'codigo',ac:'one-time-code',im:'numeric',max:6,ph:'••••••'})
+      +err
+      +'<div class="hecho">Lo mandamos a <b>'+esc(authMasked||authEmail)+'</b>. Vence en unos minutos y sirve una sola vez.</div>'
+      +'<div class="nota"><button onclick="doPedirCodigo()">No me llegó · mandar otro</button><br>'
+      +'<button onclick="authPaso=\'correo\';aErr=\'\';render()">Era otro correo · cambiar</button></div>';
+    pie='<button class="oro" onclick="doVerificarCodigo()">Entrar</button>';
+  }else if(p==='primera'){
+    em='Primera vez';titulo='¿CÓMO TE LLAMAS?';
+    cuerpo='<div class="hecho">✓ <b>'+esc(authEmail)+'</b>. Vas a entrar siempre con ese correo y un código.</div>'
+      +entrarCampo('r-name','Nombre','text',window._lastGuestName||'',{ac:'name'})
+      +entrarCampo('r-phone','Celular · para avisarte','tel',window._lastGuestPhone||'',{ac:'tel',im:'tel',ph:'9•• ••• •••'})
+      +'<div class="par">'+entrarCampo('r-dni','DNI','text','',{im:'numeric',max:8,ph:'8 dígitos'})
+      +entrarCampo('r-bday','Cumpleaños','text','',{im:'numeric',max:10,ph:'DD/MM/AAAA'})+'</div>'
+      +(entrarVerRef||refCode?entrarCampo('r-ref','Código de quien te invitó','text',refCode,{})
+        :'<div class="nota"><button onclick="entrarVerRef=true;render()">¿Te invitó alguien? · su código</button></div>')
+      +err
+      +'<div class="nota">Al entrar te damos +'+WELCOME_BONUS_POINTS+' puntos de bienvenida.<br>Al crear tu cuenta aceptas los '+legal+'.</div>';
+    pie='<button class="oro" onclick="doReg()">Crear cuenta</button>';
+  }else if(p==='pin'){
+    em='Cuenta de antes';titulo='TELÉFONO Y PIN';
+    cuerpo=entrarCampo('l-phone','Tu teléfono','tel',savedPh||'',{ac:'tel',im:'tel'})
+      +entrarCampo('l-pin','Tu PIN','password','',{im:'numeric',ac:'current-password'})
+      +err
+      +'<div class="nota"><button onclick="recNewPin=null;recEmailMasked=null;recPhone=\'\';recDni=\'\';recBday=\'\';sndScreen=\'p_recover\';render()">¿Olvidaste tu PIN? · recuperar</button><br>'
+      +'<button onclick="authPinFallback=false;aErr=\'\';render()">Prefiero entrar con mi correo</button></div>';
+    pie='<button class="oro" onclick="doLogin()">Entrar</button>';
+  }else{
+    var nombre=String(window._lastGuestName||'').trim().split(/\s+/)[0];
+    em=nombre?'Hola, '+nombre:'Hola';titulo='UN NÚMERO Y LISTO';
+    // autocomplete="tel": en Android el navegador ofrece el número guardado y el campo se llena
+    // de un toque. Nombre y correo no se piden: el servidor los toma del token de Google.
+    cuerpo=entrarCampo('g-phone','Tu celular','tel',window._lastGuestPhone||'',{ac:'tel',im:'tel',ph:'9•• ••• •••'})
+      +(entrarVerRef||refCode?entrarCampo('g-ref','Código de quien te invitó','text',refCode,{})
+        :'<div class="nota"><button onclick="entrarVerRef=true;render()">¿Te invitó alguien? · su código</button></div>')
+      +err
+      +'<div class="nota">Con Google no pedimos DNI.<br>El número es para avisarte cuando tu pedido sale.<br>'
+      // "No soy yo" existe porque el dispositivo puede ser prestado.
+      +'<button onclick="entrarAtras()">No soy yo · otro correo</button></div>';
+    pie='<button class="oro" onclick="doGoogleRegister()">Listo</button>';
+  }
+  var corta=p==='primera';
+  return'<div class="en fi">'
+    +'<div class="esc'+(corta?' corta':'')+'"><div class="piso"></div>'
+    +'<img class="sd" src="'+broPose('sando','entrar')+'" alt="" aria-hidden="true">'
+    +'<img class="wc" src="'+broPose('wicho','entrar')+'" alt="" aria-hidden="true">'
+    +'<div class="tx"><em>'+esc(em)+'</em><b>'+esc(titulo)+'</b></div></div>'
+    +'<button class="sal" onclick="entrarAtras()" aria-label="Volver">←</button>'
+    +'<div class="cuerpo">'+cuerpo+'</div>'
+    +'</div>'
+    +'<div class="en-go sw-barra">'+pie+'</div>';
+}
+function sPAuth(){return sEntrar();}
 async function doReg(){
   // Con correo verificado no hay campos de PIN ni de correo (ver el formulario): el PIN lo
   // genera el servidor y el correo sale de la prueba firmada.
@@ -1611,7 +1796,8 @@ async function doReg(){
 // tampoco se puede adelantar nada: la pantalla dice "te mandamos un código" y punto. Quién
 // tiene cuenta y quién no recién se sabe al acertar el código.
 async function doPedirCodigo(){
-  var email=gv('l-email').trim();
+  // Desde el paso del código («No me llegó · mandar otro») ya no hay campo: se reusa el correo.
+  var email=(document.getElementById('l-email')?gv('l-email'):authEmail).trim();
   var err=(document.getElementById('auth-err') as HTMLInputElement | null);
   if(!email||email.indexOf('@')<0){if(err)err.textContent='Escribe un correo válido.';return;}
   clearGoogleLink();
@@ -1669,6 +1855,13 @@ async function onGoogleCredential(resp){
     if(r.needsRegistration){
       _googleIdToken=resp.credential;
       _googleLinkedEmail=(r.prefill&&r.prefill.email)||(r.prefill&&r.prefill.name)||'tu cuenta de Google';
+      if(sndScreen==='o_sent'&&window._lastGuestPhone){
+        // El aviso de puntos de la 06A: el celular ya está (el del checkout), así que la cuenta
+        // se crea de un toque. Ver avisoConGoogle().
+        busyMsg='Guardando tus puntos...';
+        await avisoConGoogle(resp.credential);
+        return;
+      }
       window._lastGuestName=(r.prefill&&r.prefill.name)||'';
       window._lastGuestEmail=(r.prefill&&r.prefill.email)||'';
       // Antes esto mandaba al formulario COMPLETO (nombre, teléfono, PIN, DNI, fecha de
@@ -1683,6 +1876,8 @@ async function onGoogleCredential(resp){
     }
     cust=r.customer;isAdmin=r.isAdmin;token=r.token;cacheCust(cust,isAdmin);
     localStorage.setItem('sw_ph',cust.phone);localStorage.setItem('sw_tok',token);savedPh=cust.phone;
+    // Desde el aviso de la 06A, quien ya tenía cuenta se queda en su pedido y se le vincula.
+    if(sndScreen==='o_sent'){await avisoReclamar();busy=false;render();loadUserExtras();return;}
     busy=false;sndScreen='p_home';render();loadUserExtras();
   }catch(e){
     aErr=e.message;busy=false;render();
@@ -1702,57 +1897,14 @@ function discardGoogleLink(){
 // todo el innerHTML en cada ciclo, así que el mount anterior siempre queda destruido y
 // hay que rehacerlo. Sin ruido si el script de Google todavía no cargó (red lenta,
 // bloqueador de contenido) o si GOOGLE_CLIENT_ID no está configurado.
-// ── PRIMERA APERTURA ────────────────────────────────────────────────────────────────
-// Se muestra UNA sola vez, y nunca a quien ya tiene sesión. La marca va en localStorage
-// (`sw_seen_hello`) y se escribe al MOSTRARLA, no al salir: si se escribiera al salir,
-// cerrar la pestaña en esta pantalla la haría reaparecer para siempre.
-//
-// ⚠ Es una puerta antes del menú, y eso tiene un costo real que el dueño aceptó
-// explícitamente al elegirlo. Por eso "Ver la carta" NO es un enlace chiquito al pie: es
-// un botón del mismo ancho que el de Google. Quien llega de un anuncio quiere ver comida,
-// y una puerta que no se puede saltar de un toque se cierra saliendo de la app.
-function saltarHola(){try{localStorage.setItem('sw_seen_hello','1');}catch(e){}go('o_home');}
-function sHello(){
-  try{localStorage.setItem('sw_seen_hello','1');}catch(e){}
-  return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:6px;background:var(--sw-bg,#12150F)" class="fi">'
-    +'<div style="margin-bottom:10px">'+WORDMARK(34)+'</div>'
-    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);text-align:center;text-wrap:balance;line-height:1.2">Sándwiches de verdad,<br>a domicilio en Trujillo</div>'
-    +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);text-align:center;line-height:1.55;max-width:300px;margin-top:6px">Crea tu cuenta en un toque y empieza a ganar puntos desde tu primer pedido.</p>'
-    +googleCtaHTML('')
-    +'<div style="width:100%;max-width:280px;margin-top:2px">'+BTN('VER LA CARTA //','saltarHola()',true)+'</div>'
-    +'</div>';
-}
 // ── REGISTRO CON GOOGLE: UN SOLO CAMPO ──────────────────────────────────────────────
 // Se llega acá solo después de que el servidor verificó el token de Google y respondió
-// needsRegistration. El nombre y el correo ya vinieron firmados por Google y se muestran
-// para que la persona VEA con qué cuenta está entrando — no son editables acá: el servidor
-// los toma del token y no del cuerpo de la petición, así que un campo editable sería una
-// mentira sobre lo que se va a guardar.
-function sGoogleAuth(){
-  var quien=window._lastGuestName||_googleLinkedEmail||'tu cuenta de Google';
-  var correo=window._lastGuestEmail||'';
-  return H()+'<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
-    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:6px;text-wrap:balance">Último<span class="cut-sep" style="color:'+GOLD+'"> // </span>paso</div>'
-    +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.55;margin-bottom:20px">Ya te verificamos con Google. Solo falta tu teléfono — es con lo que te ubicamos para entregarte el pedido.</p>'
-    +'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:10px">'
-      +icon('check',18,'var(--sw-ok,#25D366)')
-      +'<div style="min-width:0"><div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(quien)+'</div>'
-      +(correo?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(correo)+'</div>':'')+'</div></div>'
-    // autocomplete="tel" no es decoración: en Android el navegador ofrece el número
-    // guardado, y entonces este único campo se llena de un toque.
-    +INP('g-phone','Teléfono // 9XXXXXXXX','tel','','phone','tel','tel')
-    +'<div style="height:10px"></div>'
-    +INP('g-ref','Código de referido // opcional','text',refCode,'gift')
-    +'<div id="gauth-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);margin-top:10px;min-height:16px"></div>'
-    +'<div style="height:14px"></div>'
-    +BTN('CREAR MI CUENTA //','doGoogleRegister()')
-    // "No soy yo" existe porque este dispositivo puede ser prestado: sin una salida, quien
-    // lo tomó después queda atrapado en la cuenta de Google de otra persona.
-    +'<div style="text-align:center;margin-top:16px"><button onclick="discardGoogleLink();go(\'p_auth\')" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);min-height:44px;display:inline-flex;align-items:center">No soy yo — registrarme a mano</button></div>'
-    +'</div>';
-}
+// needsRegistration. Es el paso «google» de Entrar (ver sEntrar): el celular es lo único que
+// Google no da y que el negocio necesita de verdad — es la primary key de `customers` y con lo
+// que se ubica a alguien para entregarle el pedido.
+function sGoogleAuth(){return sEntrar();}
 async function doGoogleRegister(){
-  var phone=gv('g-phone').trim(),ref=gv('g-ref').trim();
+  var phone=gv('g-phone').trim(),ref=(document.getElementById('g-ref')?gv('g-ref'):refCode||'').trim();
   var err=(document.getElementById('gauth-err') as HTMLInputElement | null);
   // Mismo mínimo que doOrder() y que actReg en el servidor. Se valida acá además de allá
   // para que el aviso llegue sin un viaje de red.
@@ -1801,7 +1953,11 @@ function mountGoogleButton(){
   var el=document.getElementById('google-btn-mount');
   if(!el)return;
   google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogleCredential,auto_select:true,cancel_on_tap_outside:false});
-  google.accounts.id.renderButton(el,{theme:'filled_black',size:'large',shape:'pill',width:280,text:'continue_with',locale:'es'});
+  // Cada hueco dice cómo quiere el botón: el de Entrar va sobre papel claro (outline) y el de la
+  // losa de la 06A sobre el bloque oscuro (filled_black). El ancho es el del hueco, entre los
+  // límites que Google acepta.
+  var ancho=Math.max(200,Math.min(400,Math.round(el.clientWidth||280)));
+  google.accounts.id.renderButton(el,{theme:el.getAttribute('data-tema')||'filled_black',size:'large',shape:'rectangular',width:ancho,text:'continue_with',locale:'es'});
   // La tarjeta de One Tap se pide UNA vez por carga y solo si no hay sesion. Sin el
   // guard, `mountGoogleButton()` corre despues de CADA render (ver 08-router) y Google
   // acabaria bloqueando el origen por pedirlo en bucle; y con sesion abierta seria

@@ -61,6 +61,9 @@ vive en el chat o en `/tmp`, no existe.
 | La puerta (M2) | `la-puerta-M2.png` | `m.html` #2 | «m2 puerta» |
 | La puerta · sin sesión | `la-puerta-M2-sin-sesion.png` | `m2-esquina.html` #1 | «Me parece bien los cambios a los hermanos y que sea así» (2026-09-25) — M2 idéntica más «Entrar →» en la esquina del lado claro; **la vigente** |
 | La puerta · con sesión | `la-puerta-M2-con-sesion.png` | `m2-esquina.html` #2 | ídem — la esquina dice tu nombre y tus puntos (los de la maqueta son de muestra) y lleva a tu cuenta |
+| 06 A · aviso de puntos (invitado) | `06A-aviso-de-puntos.png` | `aviso-puntos.html` #1 | «aprobado todo go» (2026-09-25) — el ÚNICO lugar donde se ofrece la cuenta a quien pagó sin ella; +51 es de muestra |
+| 06 A · aviso · correo y DNI | `06A-aviso-correo-y-dni.png` | `aviso-puntos.html` #2 | ídem — la losa sube en el mismo lugar; nombre y celular salen del checkout |
+| 06 A · aviso · el código | `06A-aviso-el-codigo.png` | `aviso-puntos.html` #3 | ídem |
 
 ## Lo que todavía no tiene maqueta aprobada
 

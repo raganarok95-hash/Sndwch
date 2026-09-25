@@ -130,7 +130,9 @@ function renderOverlays(){
   // group_order y group_split: el grupo es un pedido que se está eligiendo, y en la maqueta
   // aprobada la burbuja caía encima del total y de la barra de cierre. p_recurring (tu pedido
   // fijo): es una pantalla de UN toque, y la burbuja tapaba justo el precio de ese toque.
-  if(sndScreen.indexOf('admin')!==0&&sndScreen!=='o_item_confirm'&&sndScreen!=='o_cart'&&sndScreen!=='o_home'&&sndScreen!=='o_sig'&&sndScreen!=='o_build'&&sndScreen!=='p_problema'&&sndScreen!=='o_secreto'&&sndScreen!=='group_order'&&sndScreen!=='group_split'&&sndScreen!=='p_recurring'){
+  // p_auth, p_gauth y o_sent (2026-09-25): Entrar y la 06A son maquetas aprobadas sin burbuja;
+  // en las dos caía encima del pie de acción y del aviso de puntos.
+  if(sndScreen!=='p_auth'&&sndScreen!=='p_gauth'&&sndScreen!=='o_sent'&&sndScreen.indexOf('admin')!==0&&sndScreen!=='o_item_confirm'&&sndScreen!=='o_cart'&&sndScreen!=='o_home'&&sndScreen!=='o_sig'&&sndScreen!=='o_build'&&sndScreen!=='p_problema'&&sndScreen!=='o_secreto'&&sndScreen!=='group_order'&&sndScreen!=='group_split'&&sndScreen!=='p_recurring'){
     var supportMsg=encodeURIComponent('Hola, necesito ayuda con mi pedido/cuenta en SND//WCH.');
     html+='<a href="https://wa.me/'+WA+'?text='+supportMsg+'" target="_blank" rel="noopener" style="position:fixed;right:16px;bottom:84px;z-index:150;width:50px;height:50px;border-radius:50%;background:'+GOLD+';display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.4);text-decoration:none" aria-label="Soporte por WhatsApp">'+icon('chat',24,'var(--sw-on-gold,#241a08)')+'</a>';
   }
@@ -456,9 +458,6 @@ async function loadStoreHoursBackground(){
       // no un secreto: lo peor que puede pasar es que quede uno viejo, y el de abajo lo
       // pisa en cuanto responde el servidor.
       try{localStorage.setItem('sw_gcid',r.googleClientId);}catch(e){}
-      // Y para la PRIMERA visita: si el id llegó y todavía no se tocó nada, se muestra la
-      // bienvenida ahora. Ver mostrarHolaSiCorresponde() en 08-*.
-      if(typeof mostrarHolaSiCorresponde==='function')mostrarHolaSiCorresponde(true);
     }
     // La key de Google Maps viaja al cliente igual que el id del píxel: una key de navegador
     // es pública por diseño (se ve en el HTML de cualquier sitio que use Maps) y lo que la
@@ -794,6 +793,10 @@ var POSES: Record<string, Record<string, string>> = {
   mira:   { sando: 'sando2_mira',         wicho: 'wicho_cuerpo' },
   piensa: { sando: 'sando2_ladea',        wicho: 'wicho_cuerpo' },
   serio:  { sando: 'sando2_cuerpo',       wicho: 'wicho_cuerpo' },
+  // Entrar («te abren la puerta», maqueta aprobada): los dos de cuerpo entero, esperando.
+  entrar: { sando: 'sando2_cuerpo',       wicho: 'wicho_cuerpo_sinsombra' },
+  // 06A (la losa): SANDO asomado detrás de la losa. WICHO no aparece ahí.
+  asoma:  { sando: 'sando2_asoma',        wicho: 'wicho_cuerpo' },
 };
 function broPose(quien,estado){
   var fila=POSES[estado||'cuerpo']||POSES.cuerpo;

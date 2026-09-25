@@ -307,14 +307,11 @@ window.addEventListener('load',function(){sndRestoreOwnedFns();});
     }catch(e){}
   }
   restoreCart();
-  // Primera apertura: solo si no hay sesión, no se ha visto antes, Google está configurado
-  // y no venimos por un link con destino propio (un pedido grupal, un código de referido,
-  // una confirmación de entrega). Interponerla ahí rompería el link que la persona tocó.
+  // No hay pantalla de bienvenida: la app abre SIEMPRE en la puerta (dueño, 2026-09-25).
   // ?legal=... gana sobre todo lo demás: quien llega con ese link viene a LEER el texto, sea
   // Google revisando la app o un cliente que lo pidió. Mandarlo al menú primero sería
   // exactamente lo contrario de lo que el link promete.
   if(legalFromUrl)sndScreen=legalFromUrl;
-  else mostrarHolaSiCorresponde();
   render();
   if(token){
     if(!haveCachedCust){busy=true;busyMsg='Verificando tu sesión...';render();}
@@ -402,42 +399,6 @@ function loadAdminBundle(){
 function needsAdminBundle(){
   if(adminBundleReady||adminBundleError)return false;
   return String(sndScreen||'').indexOf('admin')===0 && !ADMIN_SCREENS[sndScreen];
-}
-// ── ¿CORRESPONDE LA PANTALLA DE BIENVENIDA? ─────────────────────────────────────────
-// UNA sola función para los DOS momentos en que hay que decidirlo, porque el client id de
-// Google llega por RED y la decisión se toma antes:
-//   · al arrancar, con el id que dejó cacheado una visita anterior;
-//   · al responder `get-store-hours`, que es cuando lo sabe la primera visita de todas.
-// Tenerlo en dos sitios con la misma condición escrita dos veces es como se desincronizan.
-//
-// ⚠ ESTA FUNCIÓN NO EXISTÍA Y POR ESO LA PANTALLA NO SE MOSTRABA NUNCA. La condición vivía
-// suelta en el arranque y evaluaba `googleConfigured()` cuando GOOGLE_CLIENT_ID todavía era
-// el marcador — o sea que daba `false` SIEMPRE, con secret o sin él. Lo peor del defecto no
-// fue el defecto: fue que la prueba que lo cubría inyectaba el id ANTES de cargar la app, así
-// que validaba un camino que producción no podía alcanzar y pasaba en verde.
-//
-// `_holaYaDecidido` evita que la llegada tardía del id arrastre a alguien que YA está
-// navegando: la bienvenida es para quien acaba de entrar, no una pared que cae encima de
-// quien ya está mirando la carta.
-var _holaYaDecidido=false;
-// `conRender`: en el arranque NO se pinta acá — el propio arranque llama a render() justo
-// después, y renderizar dos veces se nota en un celular de gama baja. Cuando el id llega
-// tarde sí hay que pintar, porque ya no viene ningún render detrás.
-function mostrarHolaSiCorresponde(conRender?){
-  if(_holaYaDecidido)return;
-  try{
-    // Solo desde el home y sin haber tocado nada. Si ya navegó a otra pantalla, entró por un
-    // link con destino propio, o hay algo en el carrito, llegamos tarde y no se interrumpe.
-    if(sndScreen!=='o_home'||cart.length)return;
-    if(token||localStorage.getItem('sw_seen_hello'))return;
-    if(!googleConfigured())return;
-    // Un link con destino propio (?group=, ?ref=, ?entrega=, ?legal=) se respeta entero:
-    // interponer una bienvenida rompería el link que la persona tocó.
-    if(groupCodeFromUrl||location.search)return;
-    _holaYaDecidido=true;
-    sndScreen='p_hello';
-    if(conRender)render();
-  }catch(e){}
 }
 // ── EL HUECO DE ABAJO LO MIDE LA BARRA, NO UN NÚMERO ESCRITO A MANO ────────────────
 // `#app` reservaba 49 px al pie porque esa era la altura de la barra de navegación de dos
@@ -601,8 +562,6 @@ function renderScreen(){
     case'p_auth':      h=sPAuth();break;
     // Registro con Google: un solo campo. Ver sGoogleAuth() en 05-*.
     case'p_gauth':     h=sGoogleAuth();break;
-    // Primera apertura. Ver sHello() en 05-*.
-    case'p_hello':     h=sHello();break;
     case'p_welcome':   h=sWelcome();break;
     case'p_recover':   h=sPRecover();break;
     case'p_legal':     h=sPLegal();break;

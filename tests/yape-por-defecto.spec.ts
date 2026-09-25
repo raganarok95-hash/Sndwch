@@ -52,7 +52,7 @@ test('sin tocar el selector, el pedido sale por Yape/Plin y no por tarjeta', asy
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
-  await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 
   const po = calls.find((c) => c.action === 'place-order');
   expect(po!.body.paymentMethod).toBe('yape');
@@ -81,7 +81,7 @@ test('el total por defecto NO lleva el recargo de la comisión de tarjeta', asyn
   expect(base).toBeTruthy();
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
-  await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 
   const po = calls.find((c) => c.action === 'place-order');
   // ⚠ ACÁ ESTABA ESCRITO `20.9` A MANO — el precio del Signature que resultaba quedar

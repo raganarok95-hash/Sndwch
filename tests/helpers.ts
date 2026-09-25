@@ -131,10 +131,8 @@ export async function clearDeliveryPin(page: Page) {
 // Se exporta porque cuatro specs navegan por su cuenta en vez de usar gotoApp, y repetir
 // el clic en cada uno los deja desincronizados el dia que la pantalla cambie.
 export async function elegirSando(page: Page) {
-  // La app RECUERDA el lado elegido (localStorage `sw_lado`): quien vuelve entra directo a su
-  // lado sin ver la puerta. Una prueba que carga la app dos veces vive exactamente eso, y
-  // esperar una puerta que la app no muestra la dejaba colgada (recetas.spec.ts, 2026-09-24).
-  // Se toca la puerta SOLO si está: es lo mismo que hace un cliente.
+  // La app abre SIEMPRE en la puerta (2026-09-25). Se toca la puerta SOLO si está: una prueba
+  // que ya navegó dentro del mundo y vuelve a llamar esto no tiene que salir de él.
   const puerta = page.getByRole('button', { name: /Ya está resuelto/ });
   await Promise.race([puerta.waitFor(), page.waitForSelector('text=Y además')]);
   if (await puerta.isVisible()) await puerta.click();
@@ -183,12 +181,24 @@ export async function gotoApp(page: Page, handlers: ActionHandlers = {}) {
 // que conservan las cuentas creadas antes del correo, así que es el que la mayoría de estas
 // pruebas quiere ejercitar. Para probar el camino de correo está su propio spec.
 export async function entrarConTelefono(page: Page, phone = '900000001', pin = '1234') {
-  await page.getByRole('button', { name: 'INGRESAR' }).click();
-  // La pestaña abre en el flujo de correo; este enlace destapa el de teléfono + PIN.
-  await page.locator('[onclick*="authPinFallback=true"]').click();
+  await irAEntrar(page);
+  // Entrar abre en el correo; este enlace destapa el teléfono + PIN de las cuentas de antes.
+  await page.getByRole('button', { name: 'Entrar con teléfono y PIN' }).click();
   await page.locator('#l-phone').fill(phone);
   await page.locator('#l-pin').fill(pin);
-  await page.getByRole('button', { name: 'INGRESAR //' }).click();
+  await page.locator('.en-go button.oro').click();
+}
+
+// Entrar se abre desde la esquina de la puerta («Entrar →») o desde PUNTOS sin sesión, como lo
+// hace un cliente. Si ya está abierta no se toca nada; si la prueba está dentro de un mundo,
+// primero vuelve a la puerta por su «×».
+export async function irAEntrar(page: Page) {
+  const entrar = page.locator('.en'), esquina = page.locator('.pta .yo'), cambiar = page.locator('[aria-label="Cambiar de lado"]').first();
+  await Promise.race([entrar.waitFor(), esquina.waitFor(), cambiar.waitFor()]);
+  if (await entrar.isVisible()) return;
+  if (!(await esquina.isVisible())) await cambiar.click();
+  await esquina.click();
+  await entrar.waitFor();
 }
 
 // ── Entrar al armador ─────────────────────────────────────────────────────────────────

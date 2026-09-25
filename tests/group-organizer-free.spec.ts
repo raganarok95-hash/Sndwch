@@ -133,7 +133,7 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
-  await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 
   const placeOrder = calls.find((c) => c.action === 'place-order');
   expect(placeOrder).toBeTruthy();
