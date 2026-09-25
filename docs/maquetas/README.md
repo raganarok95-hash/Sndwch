@@ -59,6 +59,8 @@ vive en el chat o en `/tmp`, no existe.
 | Mundo WICHO · los seis pasos del armador | `mundo-wicho-los-seis-pasos.png` | — (capturas de la app construida, `sOBuild` + `.mw`) | «Si, apruebo» (2026-09-25) — tamaño, pan, queso, vegetales y salsas en el mismo mundo que M22; el espacio libre bajo las piezas queda así |
 | Mundo SANDO (M15) | `mundo-sando-M15.png` | `m8.html` #1 | «m15 sando» |
 | La puerta (M2) | `la-puerta-M2.png` | `m.html` #2 | «m2 puerta» |
+| La puerta · sin sesión | `la-puerta-M2-sin-sesion.png` | `m2-esquina.html` #1 | «Me parece bien los cambios a los hermanos y que sea así» (2026-09-25) — M2 idéntica más «Entrar →» en la esquina del lado claro; **la vigente** |
+| La puerta · con sesión | `la-puerta-M2-con-sesion.png` | `m2-esquina.html` #2 | ídem — la esquina dice tu nombre y tus puntos (los de la maqueta son de muestra) y lleva a tu cuenta |
 
 ## Lo que todavía no tiene maqueta aprobada
 

@@ -49,6 +49,8 @@ export const MAPA = [
   ['mundo-wicho-M22-con-puente', 'm22-con-puente.html', 1],
   ['mundo-sando-M15', 'm8.html', 0],
   ['la-puerta-M2', 'm.html', 1],
+  ['la-puerta-M2-sin-sesion', 'm2-esquina.html', 0],
+  ['la-puerta-M2-con-sesion', 'm2-esquina.html', 1],
 ];
 
 if (import.meta.url === `file://${process.argv[1]}`) {

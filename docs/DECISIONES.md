@@ -1222,3 +1222,23 @@ como las otras pantallas aprobadas.
 - La res laminada (P09) no tenía foto y en M22 cada fila ES su foto. Entró la de Adobe Stock gratis
   `511898883` recortada a la carne (anotada en `img/fuente/FUENTES.md`).
 - Con esto pasan las dos rojas conocidas del puente. Solo queda la de «Pedir lo mismo» (#69).
+
+## 2026-09-25 · La app abre siempre en la puerta; la cuenta no se pide al entrar
+
+**Qué se decidió (dueño).** No existe una pantalla de correo «por primera vez» al abrir la app.
+La primera pantalla es SIEMPRE la puerta M2, a pantalla completa, y cada mitad de la cara lleva a
+su mundo. Lo único que se le agrega es la esquina del lado claro: «Entrar →» sin sesión (abre
+«¿Quién llegó?», E2) o tu nombre y tus puntos con sesión (abre tu cuenta). Maquetas:
+`docs/maquetas/aprobadas/la-puerta-M2-sin-sesion.png` y `-con-sesion.png`.
+
+**Por qué la esquina.** Los mundos aprobados no tienen barra de abajo: sin ella no habría forma
+de llegar a la cuenta ni a los puntos.
+
+**Por qué no se pide el correo al abrir.** Pedirlo antes de ver la carta es fricción justo donde
+el cliente todavía no tiene ninguna razón para darlo. El dueño además pidió que «¿Quién llegó?»
+no aparezca repetida en varios puntos del flujo.
+
+**Pendiente de aprobación (no construir todavía):** el aviso ÚNICO de puntos después de pagar,
+dentro de la losa de la 06A (Google en un toque; correo y DNI en el mismo lugar), en vez de
+preguntar antes de pagar. El dueño dudó de que tres pasos antes de pagar no frenaran la compra.
+
