@@ -42,6 +42,10 @@ anótalo acá.
     pedido del dueño. **No lanzarlo dentro de una sesión** sin preguntar antes: ocupa la CPU del
     contenedor (las pruebas corren más lentas mientras tanto) y la tarea queda a la vista como
     «en ejecución». Si hace falta, con un modelo más chico o solo sobre `docs/`.
+  - **El 2026-09-25 el sistema lo MATÓ (`Killed`, salida 137)** al empezar a indexar 506
+    documentos con `npm run indice`, con 16 GB de RAM y ~15 GB libres. El modelo cargó bien;
+    lo que revienta es la memoria durante el indexado. Un indexado completo en este
+    contenedor no termina: hay que partirlo en tandas o usar un modelo más chico.
 
 - **El service worker sirve el shell desde caché (stale-while-revalidate) desde
   2026-08-19** — `sw.js`. Dos trampas que lo hacían fallar en silencio y que ya están
