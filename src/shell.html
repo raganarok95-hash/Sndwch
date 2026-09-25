@@ -388,6 +388,91 @@ body.kb-open #app{padding-bottom:0}
    (t2.html #C, «el bocado de cerca»). CSS copiado de la fuente; lo único que cambia es que
    las filas van en flujo en vez de a coordenadas fijas, porque las pistas y los que ya no
    vuelven pueden ser menos de tres. */
+/* ═══ MUNDO WICHO · el armador (maqueta M22 + el puente, aprobada 2026-09-24) ═══════════════
+   docs/maquetas/aprobadas/mundo-wicho-M22-con-puente.png y su fuente m22-con-puente.html.
+   Los valores salen de la maqueta tal cual: por eso viven acá y no en la escala de src/app.
+   Su pelaje #8CC8EC es el campo; su tinta es el texto; el lila es lo elegido. */
+.mw{position:relative;min-height:100dvh;margin-bottom:calc(-1 * var(--sw-barra,0px));display:flex;flex-direction:column;overflow:hidden;background:#8CC8EC;color:#15242D;font-family:'EB Garamond',serif}
+.mw:before{content:"";position:absolute;inset:0;background:radial-gradient(85% 45% at 100% 0%,rgba(255,255,255,.5) 0%,transparent 65%);pointer-events:none}
+.mw>*{position:relative}
+.mw .mw-arriba{position:relative;z-index:2}
+.mw .linea{display:flex;gap:4px;padding:12px 18px 0}
+.mw .linea button{all:unset;flex:1;height:4px;border-radius:999px;background:rgba(26,42,52,.2);display:block}
+.mw .linea button.ok{background:#1E2F3A;cursor:pointer}.mw .linea button.now{background:#7B5EA0}
+.mw .cab{height:46px;display:flex;align-items:center;padding:0 6px}
+.mw .cab .fl{all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#1E2F3A}
+.mw .cab .t{flex:1;text-align:center;font-size:9px;letter-spacing:.24em;font-weight:600;text-transform:uppercase;color:#4A3D62}
+.mw .cab .t s{text-decoration:none;color:#354C5D;margin-left:9px}
+.mw .cab .carro{all:unset;cursor:pointer;width:36px;height:36px;margin:0 4px;border-radius:50%;background:#4A3D62;color:#F0E9F7;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}
+.mw .cab .vacio{width:44px}
+.mw .wicho{position:absolute;right:-34px;top:62px;width:176px;height:124px;overflow:hidden;z-index:0;pointer-events:none}
+/* Asoma hasta el pecho, como en la maqueta: ahí las fotos de la proteína lo cortan. En los demás pasos
+   el corte lo hace la caja, así no tapa las opciones. */
+.mw .wicho img{width:176px;display:block}
+.mw h2{font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:640;font-size:34px;color:#15242D;line-height:1;padding:14px 20px 6px;max-width:62%;text-wrap:balance}
+/* La pregunta ocupa al menos hasta donde termina WICHO (62+124px): en la maqueta las fotos empiezan
+   justo ahí, y en los pasos de pregunta corta las piezas no quedan debajo de él. */
+.mw .preg{min-height:124px}
+.mw .ay{font-size:13px;color:#2F4A5A;padding:0 20px 16px;line-height:1.5;max-width:60%}
+.mw .cuerpo{flex:1;display:flex;flex-direction:column;padding-bottom:var(--sw-barra,124px)}
+/* La proteína: la foto a sangre ES la fila. */
+.mw .wb{all:unset;box-sizing:border-box;display:block;position:relative;width:100%;cursor:pointer}
+.mw .wb[disabled]{cursor:default}
+.mw .wb .foto{position:relative;height:140px;overflow:hidden;background:#1E2F3A}
+.mw .wb .foto img{width:100%;height:100%;object-fit:cover;display:block}
+.mw .wb[disabled] .foto img{filter:grayscale(1)}
+.mw .wb .velo{position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,16,22,.84) 0%,rgba(8,16,22,.52) 46%,rgba(8,16,22,0) 88%)}
+.mw .wb .txt{position:absolute;left:20px;top:50%;transform:translateY(-50%);max-width:60%}
+.mw .wb .n{font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:640;font-size:22px;color:#FFFFFF;line-height:1.1;text-shadow:0 2px 10px rgba(0,0,0,.6)}
+.mw .wb .n s{text-decoration:none;font-family:'EB Garamond',serif;font-size:9px;letter-spacing:.2em;font-weight:600;text-transform:uppercase;color:#8CC8EC;margin-left:8px}
+.mw .wb .d{font-size:11px;color:rgba(255,255,255,.86);line-height:1.45;margin-top:4px;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.mw .wb .p{font-style:italic;font-size:15px;color:#F0D9A6;margin-top:6px;text-shadow:0 1px 8px rgba(0,0,0,.7)}
+.mw .wb.sel .velo{background:linear-gradient(90deg,rgba(28,18,46,.9) 0%,rgba(28,18,46,.6) 46%,rgba(28,18,46,0) 88%)}
+.mw .wb.sel .n{color:#E4D2F2}.mw .wb.sel .n s{color:#C3A6D2}
+.mw .wb.sel:before{content:"";position:absolute;left:0;top:5px;bottom:5px;width:7px;background:#4A3D62;z-index:3;border-radius:60% 40% 55% 45%/50% 60% 40% 50%}
+.mw .sep{height:2px;background:repeating-linear-gradient(90deg,rgba(30,47,58,.3) 0 9px,transparent 9px 18px);margin:0 20px}
+/* El puente (en el color de SANDO, lleva a su lado) y el secreto: filas gemelas. */
+.mw .puente,.mw .secreto{all:unset;box-sizing:border-box;margin:18px 20px 0;padding:15px 0 0;display:flex;align-items:center;gap:13px;cursor:pointer}
+.mw .puente{border-top:2px dashed rgba(92,64,14,.35)}
+.mw .puente .o{width:42px;height:42px;flex:0 0 auto}
+.mw .puente .o img{width:42px;height:42px;object-fit:contain;display:block}
+.mw .puente b{display:block;font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:640;font-size:19px;color:#3B2A0C;line-height:1.1}
+.mw .puente .tx>span{display:block;font-size:11px;color:#5C400E;margin-top:3px;font-style:italic}
+.mw .puente .fl{margin-left:auto;font-size:20px;color:#5C400E}
+.mw .secreto{margin-top:12px;border-top:2px dashed rgba(74,61,98,.4)}
+.mw .secreto[disabled]{cursor:default}
+.mw .secreto .o{width:38px;height:38px;border-radius:50%;flex:0 0 auto;background:repeating-radial-gradient(circle at 50% 50%,#C3A6D2 0 3px,#4A3D62 3px 6px)}
+.mw .secreto b{display:block;font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:640;font-size:19px;color:#2A2140;line-height:1.1}
+.mw .secreto .tx>span{display:block;font-size:11px;color:#4A3D62;margin-top:3px;font-style:italic}
+.mw .secreto .fl{margin-left:auto;font-size:20px;color:#4A3D62}
+/* El pie: precio, lo que llevas y una acción. */
+.mw-pie{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:90;box-sizing:border-box;border-top:2px solid rgba(30,47,58,.18);background:#7FBEE4;padding:13px 18px calc(20px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:14px;font-family:'EB Garamond',serif}
+.mw-pie .pr{font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:640;font-size:23px;color:#5C400E;line-height:1}
+.mw-pie .llevas{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 4px;margin-top:3px}
+.mw-pie .llevas button{all:unset;cursor:pointer;font-style:italic;font-size:13px;color:#2B4453}
+.mw-pie .llevas i{font-style:normal;font-size:11px;color:#354C5D}
+.mw-pie .bt{all:unset;box-sizing:border-box;cursor:pointer;flex:0 0 auto;background:#4A3D62;color:#F0E9F7;padding:14px 26px;font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:640;font-size:15px;border-radius:56% 44% 52% 48%/48% 56% 44% 52%}
+.mw-pie .bt[disabled]{cursor:default;background:transparent;color:#2A2140;box-shadow:inset 0 0 0 2px rgba(74,61,98,.55)}
+/* Los pasos que M22 no dibuja hablan el mismo idioma: sin cajas grises, lo elegido en lila. */
+.mw .ops{display:flex;flex-direction:column;gap:10px;padding:0 20px}
+.mw .op{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;padding:18px;border-radius:12px;background:rgba(255,255,255,.34);box-shadow:inset 0 0 0 1px rgba(30,47,58,.14)}
+.mw .op.sel{background:#4A3D62;box-shadow:none}
+.mw .op .barra{height:26px;border-radius:999px;margin-bottom:15px;background:rgba(30,47,58,.22);box-shadow:inset 0 -7px 0 rgba(0,0,0,.12)}
+.mw .op.sel .barra{background:#C3A6D2}
+.mw .op .fila{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.mw .op .n{font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:#15242D;line-height:1}
+.mw .op .pre{font-style:italic;font-size:15px;color:#5C400E}
+.mw .op .s{font-weight:600;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:#354C5D;margin-top:6px}
+.mw .op .d{font-size:11px;line-height:1.5;color:#2F4A5A;margin-top:5px}
+.mw .op.sel .n{color:#F0E9F7}.mw .op.sel .pre{color:#F0D9A6}.mw .op.sel .s{color:#C3A6D2}.mw .op.sel .d{color:rgba(240,233,247,.82)}
+.mw .mitades{flex-direction:row;align-items:stretch;gap:8px}.mw .mitades .op{flex:1;min-width:0}
+.mw .piezas{display:flex;flex-wrap:wrap;gap:8px;padding:0 20px}
+.mw .pz{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;flex-direction:column;gap:2px;padding:11px 15px;border-radius:999px;background:rgba(255,255,255,.34);box-shadow:inset 0 0 0 1px rgba(30,47,58,.14)}
+.mw .pz b{font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:#15242D;line-height:1.1}
+.mw .pz span{font-size:9px;letter-spacing:.06em;color:#2F4A5A}
+.mw .pz.sel{background:#4A3D62;box-shadow:none}.mw .pz.sel b{color:#F0E9F7}.mw .pz.sel span{color:#C3A6D2}
+.mw .pz[disabled]{cursor:default;opacity:.45}
+.mw .extra{padding:18px 20px 0}
 .msec{position:relative;min-height:100dvh;overflow:hidden;background:#0A0B0C;padding:78px 24px 186px;box-sizing:border-box;color:#F2F0EA}
 .msec em,.msec s,.msec k,.msec i{text-decoration:none;font-style:normal;display:block}
 .msec .fo{position:absolute;inset:0;z-index:0;overflow:hidden}

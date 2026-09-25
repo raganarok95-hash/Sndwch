@@ -10,9 +10,6 @@
 # al rediseño del 2026-09-17 y se reescribieron sobre lo que la app hace hoy; una era un defecto
 # real (el botón deshabilitado del armador con contraste 2.13:1) y se corrigió.
 #
-# Tarea #71 — Mundo WICHO (maqueta M22 con puente): el puente «¿Prefieres que ya esté resuelto?»
-estrella-del-menu.spec.ts › la estrella del menú › el puente desde ARMA EL TUYO ofrece esa MISMA estrella, no otra
-palancas-del-modelo.spec.ts › ARMA EL TUYO ofrece una receta ya resuelta, sin dejar de ofrecer el armador
 #
 # Tarea #69 — «Pedir lo mismo» arriba de Tus pedidos (pantalla 33). La lógica de repetir sí está
 # cubierta y en verde (loadCart); lo que falta es la entrada visible.

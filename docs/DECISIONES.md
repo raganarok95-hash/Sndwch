@@ -1194,3 +1194,30 @@ retirados.
   `{ B03: … }` en `dinero.ts`.
 - El techo de 45% de costo pasó de una prueba del pavo (con su costo copiado fuera de
   `modelo/insumos.py`) a `check:costos`, para cada Signature, proteína del armador y doble.
+
+
+## 2026-09-25 · El armador ya es el Mundo WICHO (maqueta M22 + el puente)
+
+El paso de la proteína se construyó hasta verse como su PNG aprobado:
+- fondo celeste con su luz arriba a la derecha, y WICHO asomado;
+- la proteína como foto a sangre, con lo elegido en lila y su marca al borde;
+- debajo, el puente «¿Prefieres que ya esté resuelto?» con el logo real, y la fila del secreto;
+- al pie, el precio y «Siguiente» en la píldora lila.
+
+El CSS vive en `src/shell.html` (`.mw`), copiado de `docs/maquetas/fuentes/m22-con-puente.html`,
+como las otras pantallas aprobadas.
+
+- **El puente** lleva a la estrella de SANDO (la que el panel marca, o la primera disponible) y deja
+  recordado ese lado. Su texto interpola el nombre.
+- **El secreto**, cerrado, dice cuántos pedidos faltan (el umbral del panel) y no se abre; abierto
+  lleva al menú secreto.
+- **Los otros cinco pasos** (tamaño, pan, queso, vegetales, salsas) no tienen maqueta propia: pasaron
+  al mismo mundo (fondo, cabecera, pie, lo elegido en lila) conservando su forma. Se le mostraron al
+  dueño para aprobarlos.
+- **Dos desvíos a propósito de la maqueta**, los dos por legibilidad:
+  · el contador del paso («3/6») pasó de `#40596B` a `#354C5D`: sobre el celeste daba 4.05:1 y el
+    mínimo es 4.5:1;
+  · los precios usan el `s/` de toda la app, no el «S/» dibujado en la maqueta.
+- La res laminada (P09) no tenía foto y en M22 cada fila ES su foto. Entró la de Adobe Stock gratis
+  `511898883` recortada a la carne (anotada en `img/fuente/FUENTES.md`).
+- Con esto pasan las dos rojas conocidas del puente. Solo queda la de «Pedir lo mismo» (#69).

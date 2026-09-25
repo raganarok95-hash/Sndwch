@@ -55,7 +55,7 @@ vive en el chat o en `/tmp`, no existe.
 | Tu pedido fijo | `tu-pedido-fijo.png` | `u2.html` #2 | «me agradan, aprobadas» |
 | Lo legal | `lo-legal.png` | `u2.html` #3 | «me agradan, aprobadas» — fechas y datos fiscales los pone el dueño |
 | Mundo WICHO (M22) | `mundo-wicho-M22.png` | `m14.html` #2 | «M22 wicho aprobada» |
-| Mundo WICHO (M22) + el puente | `mundo-wicho-M22-con-puente.png` | `m22-con-puente.html` #2 | «esta bien pero no uses ese logo usa el logo actual y real» (2026-09-24) — **la vigente**: la fila «¿Prefieres que ya esté resuelto?» lleva al lado de SANDO, con el isotipo real |
+| Mundo WICHO (M22) + el puente | `mundo-wicho-M22-con-puente.png` | `m22-con-puente.html` #2 | «esta bien pero no uses ese logo usa el logo actual y real» (2026-09-24) — **la vigente**: la fila «¿Prefieres que ya esté resuelto?» lleva al lado de SANDO, con el isotipo real. **Construida el 2026-09-25** (`sOBuild`, `.mw` en shell.html) |
 | Mundo SANDO (M15) | `mundo-sando-M15.png` | `m8.html` #1 | «m15 sando» |
 | La puerta (M2) | `la-puerta-M2.png` | `m.html` #2 | «m2 puerta» |
 

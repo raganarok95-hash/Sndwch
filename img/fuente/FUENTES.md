@@ -24,6 +24,7 @@ escenografía ajena del cuadro.
 | `prot_p05.jpg` | **P05 Embutido // Italiano** — laminado fino, en pliegues | `559782786` (5472×3648) | cuadrado 2400 px desde (1098, 1000) — deja fuera el cuenco de aceitunas, la botella de aceite y el romero |
 | `prot_p06.jpg` | **P06 Albóndiga // Marinara** — chicas, en su propia marinara | `412433609` (7872×4432) | cuadrado 3000 px desde (2200, 938) — por dentro del sartén, fuera la servilleta rosa |
 | `prot_p08.jpg` | **P08 Pavo // Horneado** — lonjas finas, en pliegues | `469607542` (5184×3456) | cutout + fondo nuevo, ver abajo |
+| `prot_p09.jpg` | **P09 Res // Laminada** — salteada al momento con cebolla y pimiento (2026-09-25) | `511898883` (3712×5568) | cuadrado 2400 px desde (500, 2450) — solo la carne, fuera el pan, las papas y el cheddar de encima. Es la foto que se había descartado para el Philly por ser un macro: como foto de la proteína sola, eso es justo lo que sirve |
 
 Las cinco primeras se guardan reescaladas a 1600 px: la pantalla pide 1050, así que 1600 deja
 holgura real para re-encuadrar sin volver a licenciar, y evita meter 11 MB de binarios al
