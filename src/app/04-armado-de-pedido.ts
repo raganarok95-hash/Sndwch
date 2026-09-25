@@ -67,142 +67,156 @@ function byoStepHint(){
   if(byoStep===2)return'Elige una proteína';
   return'';
 }
+// Cada paso es una pantalla nueva: se empieza arriba, con la pregunta a la vista. Sin esto se
+// heredaba el scroll del paso anterior (el de la proteína es largo) y la pregunta quedaba cortada.
+function byoArriba(){try{window.scrollTo(0,0);}catch(e){}}
 function byoStepBack(){
-  if(byoStep>0){byoStep--;render();}else volverALaPuerta();
+  if(byoStep>0){byoStep--;render();byoArriba();}else volverALaPuerta();
 }
 function byoStepNext(){
   if(!byoStepCanContinue())return;
-  if(byoStep<BYO_ULTIMO){byoStep++;render();}else enterConfirm();
+  if(byoStep<BYO_ULTIMO){byoStep++;render();byoArriba();}else enterConfirm();
 }
 // Saltar a un paso ya visitado. Sin esto, corregir el pan elegido tres pasos atrás obliga a
 // retroceder de a uno; con la lista vieja al menos se veía todo junto, así que quitarla sin
 // dar esta salida habría sido perder algo real.
 function byoIrAPaso(i){
   if(i<0||i>byoStep)return;
-  byoStep=i;render();
+  byoStep=i;render();byoArriba();
 }
 
+// ══ EL MUNDO DE WICHO (maqueta M22 + el puente, aprobada el 2026-09-24) ══════════════════
+//
+// El armador es el lado de WICHO, y desde el 2026-09-25 se ve como su maqueta aprobada: su
+// pelaje celeste de campo, su tinta de texto, él asomado arriba a la derecha, la proteína como
+// foto a sangre y lo elegido en lila. El CSS vive en `src/shell.html` (`.mw`), copiado de
+// `docs/maquetas/fuentes/m22-con-puente.html`: la maqueta es la especificación exacta.
+//
+// Lo que NO cambió: la lógica de los pasos (`BYO_STEP_LABELS`, `byoStepCanContinue`), la
+// validación y el precio. Solo cómo se presentan.
+
 // ── LA LÍNEA DE PASOS ──────────────────────────────────────────────────────────────────
-// Seis segmentos de 3px pegados al borde de arriba. Lleno = hecho, a medio tono = donde
-// estás, apagado = falta. Es tocable en lo ya hecho: cada segmento es el atajo a su paso.
+// Un segmento por paso. Oscuro = hecho, lila = donde estás, apagado = falta. Lo hecho es
+// tocable: cada segmento es el atajo a su paso.
 function BYO_LINEA(){
   var segs='';
   for(var i=0;i<BYO_STEP_LABELS.length;i++){
     var hecho=i<byoStep,aqui=i===byoStep;
     segs+='<button type="button"'+(i<=byoStep?' onclick="byoIrAPaso('+i+')"':' disabled')
-      +' aria-label="'+esc(BYO_STEP_LABELS[i])+(hecho?' (hecho)':aqui?' (aquí)':' (falta)')+'"'
-      +' style="all:unset;'+(i<=byoStep?'cursor:pointer;':'')+'flex:1;height:3px;border-radius:999px;'
-      +'background:'+(hecho?ACC():aqui?'rgba(140,200,236,.55)':'var(--sw-border,#1F3243)')+'"></button>';
+      +' class="'+(hecho?'ok':aqui?'now':'')+'"'
+      +' aria-label="'+esc(BYO_STEP_LABELS[i])+(hecho?' (hecho)':aqui?' (aquí)':' (falta)')+'"></button>';
   }
-  return'<div style="display:flex;gap:3px;padding:0 18px">'+segs+'</div>';
+  return'<div class="linea">'+segs+'</div>';
 }
 
 // ── LA CABECERA DEL PASO ───────────────────────────────────────────────────────────────
 // Volver, en qué paso vas, y el carrito si hay algo. Sin logotipo: dentro del armador ya
-// sabes dónde estás, y repetir la marca en cada paso es lo que hacía la app anterior.
+// sabes dónde estás.
 function BYO_CABEZA(){
-  return'<div style="position:sticky;top:0;z-index:20;background:var(--sw-bg,#0B1724);padding-top:10px">'
-    +BYO_LINEA()
-    +'<div style="display:flex;align-items:center;gap:6px;height:46px;padding:0 8px">'
-    +'<button type="button" onclick="byoStepBack()" aria-label="Volver" style="all:unset;cursor:pointer;'
-    +'width:44px;height:44px;display:flex;align-items:center;justify-content:center;'
-    +'color:var(--sw-text-muted,#9DA096);font-size:22px">&#8592;</button>'
-    +'<div style="flex:1;min-width:0;text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;'
-    +'font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:'+ACC()+'">'
-    +esc(BYO_STEP_LABELS[byoStep])+'<span style="color:var(--sw-text-muted,#9DA096);margin-left:9px">'
-    +(byoStep+1)+'/'+BYO_STEP_LABELS.length+'</span></div>'
-    +(cart.length?RIEL_CARRITO():'<div style="width:44px"></div>')
+  var n=cart.length?unidadesEnCarrito():0;
+  return'<div class="mw-arriba">'+BYO_LINEA()
+    +'<div class="cab">'
+    +'<button type="button" class="fl" onclick="byoStepBack()" aria-label="Volver">&#8592;</button>'
+    +'<div class="t">'+esc(BYO_STEP_LABELS[byoStep])+'<s>'+(byoStep+1)+'/'+BYO_STEP_LABELS.length+'</s></div>'
+    +(n?'<button type="button" class="carro" onclick="go(\'o_cart\')" aria-label="Ver carrito ('+n+')">'+n+'</button>'
+       :'<div class="vacio"></div>')
     +'</div></div>';
 }
 
 // ── LA PREGUNTA ────────────────────────────────────────────────────────────────────────
-// Lo primero que se lee. Va en pregunta y no en sustantivo («¿Qué proteína?» y no
-// «PROTEÍNA») porque el cliente está respondiendo, no leyendo un índice.
+// Va en pregunta y no en sustantivo: el cliente está respondiendo, no leyendo un índice.
 function BYO_PREGUNTA(q,ayuda){
-  return'<div style="padding:22px 18px 16px">'
-    +'<h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;'
-    +'color:var(--sw-text,#fff);line-height:1.05;letter-spacing:.01em;text-wrap:balance">'+q+'</h2>'
-    +(ayuda?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.5;'
-      +'color:var(--sw-text-muted,#9DA096);margin-top:7px;max-width:34ch">'+ayuda+'</p>':'')
-    +'</div>';
+  return'<div class="preg"><h2>'+q+'</h2>'+(ayuda?'<div class="ay">'+ayuda+'</div>':'')+'</div>';
 }
 
 // ── DOS MITADES ────────────────────────────────────────────────────────────────────────
-// Para tamaño y pan: dos opciones y la decisión es una comparación. Una lista vertical
-// obliga a leer una, bajar, leer la otra y acordarse de la primera; lado a lado se comparan
-// de un vistazo. Eco deliberado de la puerta: ahí también eliges entre dos mitades.
+// Para el pan: dos opciones, y la decisión es una comparación. Lado a lado se comparan de
+// un vistazo.
 function BYO_MITADES(ops){
-  return'<div style="display:flex;gap:8px;padding:0 18px 18px;align-items:stretch">'+ops.map(function(o){
-    var sel=o.sel;
-    return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" onclick="'+o.fn+'" '
-      +'style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;min-width:0;display:flex;'
-      +'flex-direction:column;justify-content:flex-end;min-height:168px;padding:16px;border-radius:12px;'
-      +'background:'+(sel?'rgba(140,200,236,.13)':'var(--sw-card2,#0F1D29)')+';'
-      +'box-shadow:inset 0 0 0 '+(sel?'2px '+ACC():'1px var(--sw-border,#1F3243)')+'">'
-      +(o.fig?'<div style="flex:1;display:flex;align-items:center;justify-content:center;min-height:0">'+o.fig+'</div>':'')
-      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;'
-      +'color:var(--sw-text,#fff);line-height:1">'+esc(o.t)+'</div>'
-      +(o.s?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.2em;'
-        +'text-transform:uppercase;color:'+(sel?ACC():'var(--sw-text-muted,#9DA096)')+';margin-top:5px">'+esc(o.s)+'</div>':'')
-      +(o.d?'<p style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.5;'
-        +'color:var(--sw-text-muted,#9DA096);margin-top:9px">'+esc(o.d)+'</p>':'')
-      +(o.extra?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+';'
-        +'margin-top:9px">'+o.extra+'</div>':'')
+  return'<div class="ops mitades">'+ops.map(function(o){
+    return'<button type="button" class="op'+(o.sel?' sel':'')+'" aria-pressed="'+(o.sel?'true':'false')+'" onclick="'+o.fn+'">'
+      +'<div class="n">'+esc(o.t)+'</div>'
+      +(o.s?'<div class="s">'+esc(o.s)+'</div>':'')
+      +(o.d?'<div class="d">'+esc(o.d)+'</div>':'')
+      +(o.extra?'<div class="pre" style="margin-top:9px">'+o.extra+'</div>':'')
       +'</button>';
   }).join('')+'</div>';
 }
 
 // ── UNA PROTEÍNA ───────────────────────────────────────────────────────────────────────
-// El único paso con fotos reales (las 6 .webp cuadradas), y el que de verdad decide el
-// sándwich. La foto ocupa un tercio del ancho y toca los bordes de la fila: es el argumento,
-// no una miniatura decorativa de 48px al lado de un texto.
+// La foto a sangre ES la fila: es lo que de verdad decide el sándwich. Lo elegido se tiñe de
+// lila y lleva la marca al borde, como en la maqueta.
 function BYO_PROTEINA(pr){
   var av=isAvail(pr.id),sel=prot===pr.id;
   var img=PROT_IMG[pr.id];
   var precio=size==='30'?pr.p30:pr.p15;
-  return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" '
+  return'<button type="button" class="wb'+(sel?' sel':'')+'" aria-pressed="'+(sel?'true':'false')+'" '
     +(av?'onclick="prot=\''+pr.id+'\';if(doubleProt&&'+(pr.noDouble?'true':'false')+')doubleProt=false;render()"':'disabled')
-    +' aria-label="'+esc(pr.l+' '+pr.s)+'" style="all:unset;box-sizing:border-box;'+(av?'cursor:pointer;':'opacity:.45;')
-    +'display:flex;align-items:stretch;width:100%;min-height:104px;overflow:hidden;border-radius:12px;'
-    +'background:'+(sel?'rgba(140,200,236,.13)':'var(--sw-card2,#0F1D29)')+';'
-    +'box-shadow:inset 0 0 0 '+(sel?'2px '+ACC():'1px var(--sw-border,#1F3243)')+'">'
-    +(img?'<img src="'+img+'" alt="" aria-hidden="true" loading="lazy" style="width:104px;height:auto;min-height:104px;'
-      +'object-fit:cover;flex:0 0 auto'+(av?'':';filter:grayscale(1)')+'">':'')
-    +'<span style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;padding:13px 15px">'
-    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;'
-    +'color:var(--sw-text,#fff);line-height:1.1">'+esc(pr.l)
-    +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.18em;'
-    +'text-transform:uppercase;color:var(--sw-text-muted,#9DA096);margin-left:8px">'+esc(pr.s)+'</span></span>'
-    +'<span style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.45;'
-    +'color:var(--sw-text-muted,#9DA096);margin-top:5px">'+esc(av?pr.d:'Agotada hoy')+'</span>'
-    +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+';margin-top:7px">'
-    +SOLES+pz(precio)+'</span>'
-    +'</span></button>';
+    +' aria-label="'+esc(pr.l+' '+pr.s)+'">'
+    +'<div class="foto">'+(img?'<img src="'+img+'" alt="" aria-hidden="true" loading="lazy">':'')+'<div class="velo"></div>'
+    +'<div class="txt"><div class="n">'+esc(pr.l)+'<s>'+esc(pr.s)+'</s></div>'
+    +'<div class="d">'+esc(av?pr.d:'Agotada hoy')+'</div>'
+    +'<div class="p">'+SOLES+pz(precio)+'</div></div></div>'
+    +'</button>';
+}
+
+// ── EL PUENTE ──────────────────────────────────────────────────────────────────────────
+// «¿Prefieres que ya esté resuelto?»: lleva al lado de SANDO, a su estrella. Va DEBAJO de las
+// proteínas y no arriba: quien entró por WICHO ya eligió armar el suyo, y cortarle el paso al
+// entrar sería un obstáculo, no una opción. Lo ve quien bajó sin decidirse.
+// El nombre sale del catálogo (lo que el panel marca como estrella), nunca escrito: si el
+// dueño la mueve o la retira, este texto la sigue solo. Con el logo real, no uno dibujado
+// (corrección del dueño al aprobarlo).
+function estrellaDeSando(){
+  var vis=SIGS.filter(function(x){return!x.secret&&!x.retired;});
+  return vis.filter(function(x){return x.recommended&&sigInStock(x);})[0]||vis.filter(sigInStock)[0]||null;
+}
+function puenteASando(id){
+  homeTab='sig';
+  try{localStorage.setItem('sw_lado','sig');}catch(e){}
+  startOrderWithSig(id);
+}
+function BYO_PUENTE(){
+  var rec=estrellaDeSando();
+  if(!rec)return'';
+  return'<button type="button" class="puente" onclick="puenteASando(\''+rec.id+'\')">'
+    +'<span class="o"><img src="img/marca/avatar-1024-transparente.png" alt="SND//WCH"></span>'
+    +'<span class="tx" style="flex:1;min-width:0"><b style="display:block">¿Prefieres que ya esté resuelto?</b>'
+    +'<span>'+esc(rec.n)+', la estrella de SANDO. Te llevo a su lado.</span></span>'
+    +'<span class="fl" aria-hidden="true">&#8594;</span></button>';
+}
+
+// ── EL SECRETO ─────────────────────────────────────────────────────────────────────────
+// Lleva al mismo sándwich secreto que el lado de SANDO. No vende ingredientes. Cerrado, dice
+// cuánto falta en PEDIDOS (nunca con el nombre de un rango) y no se puede abrir.
+function BYO_SECRETO(){
+  var s=SIGS.find(function(x){return x.secret;});
+  if(!s)return'';
+  var hechos=cust?(cust.total_orders||0):0;
+  var abierto=!!cust&&hechos>=s.minOrders;
+  if(abierto){
+    return'<button type="button" class="secreto" onclick="sndScreen=\'o_secreto\';render()">'
+      +'<span class="o" aria-hidden="true"></span>'
+      +'<span class="tx" style="flex:1;min-width:0"><b>El sándwich secreto</b><span>Ya se te abrió. No preguntes qué lleva.</span></span>'
+      +'<span class="fl" aria-hidden="true">&#8594;</span></button>';
+  }
+  return'<button type="button" class="secreto" disabled>'
+    +'<span class="o" aria-hidden="true"></span>'
+    +'<span class="tx" style="flex:1;min-width:0"><b>El sándwich secreto</b><span>Se abre con tu pedido '+s.minOrders
+    +'. Llevas '+Math.min(hechos,s.minOrders)+'.</span></span></button>';
 }
 
 // ── UNA COSA QUE SE APILA ──────────────────────────────────────────────────────────────
-// Vegetales y salsas: no son una lista donde eliges uno, son cosas que se van poniendo
-// encima. Por eso se llenan de color al tocarlas en vez de encender una casilla al costado,
-// y por eso fluyen en vez de ir una debajo de otra: lo que importa es CUÁNTO llevas puesto,
-// y eso se ve de un vistazo con las piezas llenas contra las vacías.
+// Queso, vegetales y salsas: se van poniendo encima. Lo puesto se llena de lila.
 function BYO_PIEZA(o){
-  var sel=o.sel;
-  return'<button type="button" aria-pressed="'+(sel?'true':'false')+'"'+(o.off?' disabled':' onclick="'+o.fn+'"')
-    +' style="all:unset;box-sizing:border-box;'+(o.off?'opacity:.4;':'cursor:pointer;')
-    +'display:inline-flex;flex-direction:column;gap:2px;padding:11px 15px;border-radius:999px;'
-    +'background:'+(sel?ACC():'var(--sw-card2,#0F1D29)')+';'
-    +'box-shadow:inset 0 0 0 1px '+(sel?ACC():'var(--sw-border,#1F3243)')+'">'
-    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;'
-    +'color:'+(sel?ACC_INK():'var(--sw-text,#fff)')+';line-height:1.1">'+esc(o.t)+'</span>'
-    +(o.s?'<span style="font-family:\'EB Garamond\',serif;font-size:9px;letter-spacing:.06em;'
-      +'color:'+(sel?'rgba(14,26,23,.72)':'var(--sw-text-muted,#9DA096)')+'">'+esc(o.s)+'</span>':'')
+  return'<button type="button" class="pz'+(o.sel?' sel':'')+'" aria-pressed="'+(o.sel?'true':'false')+'"'
+    +(o.off?' disabled':' onclick="'+o.fn+'"')+'>'
+    +'<b>'+esc(o.t)+'</b>'+(o.s?'<span>'+esc(o.s)+'</span>':'')
     +'</button>';
 }
 
 // ── EL SÁNDWICH QUE LLEVAS ─────────────────────────────────────────────────────────────
-// Lo que estás armando, escrito. Crece con cada paso. No es un resumen para el final: es lo
-// que reemplaza a ver el sándwich hacerse delante tuyo. Cada parte es tocable y te devuelve
-// a su paso, así que además es la navegación que se perdió al quitar la lista de cinco filas.
+// Crece con cada paso, y cada parte te devuelve a su paso.
 function BYO_LOQUELLEVAS(){
   var partes=[];
   if(size)partes.push({i:0,t:size==='30'?'30CM':'15CM'});
@@ -212,49 +226,31 @@ function BYO_LOQUELLEVAS(){
   if(tops.length)partes.push({i:4,t:tops.length+(tops.length===1?' vegetal':' vegetales')});
   if(sauces.length)partes.push({i:5,t:sauces.length+(sauces.length===1?' salsa':' salsas')});
   if(!partes.length)return'';
-  return'<div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:0 4px;min-width:0">'
-    +partes.map(function(x,k){
-      return(k?'<span style="color:var(--sw-text-muted,#9DA096);font-size:11px">·</span>':'')
-        +'<button type="button" onclick="byoIrAPaso('+x.i+')" style="all:unset;cursor:pointer;'
-        +'font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted4,#C6C9BE)">'
-        +esc(x.t)+'</button>';
-    }).join('')+'</div>';
+  return'<div class="llevas">'+partes.map(function(x,k){
+    return(k?'<i>·</i>':'')+'<button type="button" onclick="byoIrAPaso('+x.i+')">'+esc(x.t)+'</button>';
+  }).join('')+'</div>';
 }
 
 // ── EL PIE ─────────────────────────────────────────────────────────────────────────────
-// Precio + lo que llevas + una sola acción. El precio se mueve desde el primer paso, que es
-// la única forma de que no aparezca una sorpresa al final — el costo inesperado al final del
-// embudo es el 39% del abandono en delivery, y es la palanca de conversión más barata que
-// tenemos. No hay botón de «Atrás» acá: volver es la flecha de arriba a la izquierda, igual
-// que en todas las demás pantallas. Tener dos sitios para lo mismo era de la app anterior.
+// Precio + lo que llevas + una sola acción. El precio a la vista desde el primer paso es la
+// defensa contra el costo sorpresa al final (el 39% del abandono en delivery). Deshabilitado
+// se distingue por la FORMA —solo borde—, no apagando el texto: ese texto es la instrucción.
 function BYO_PIE(){
   var listo=byoStepCanContinue();
   var precio=(size&&prot)?itemUnitPrice(currentBuiltItem()):0;
   var etiqueta=byoStep<BYO_ULTIMO?'Siguiente':'Listo';
-  return'<div class="sw-barra" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;'
-    +'max-width:480px;background:rgba(6,12,18,.97);border-top:1px solid var(--sw-border-soft,#111F2B);'
-    +'padding:12px 18px calc(12px + env(safe-area-inset-bottom,0px));z-index:90;'
-    +'display:flex;align-items:center;gap:14px">'
+  return'<div class="mw-pie sw-barra">'
     +'<div style="flex:1;min-width:0">'
-    +(precio>0?'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;'
-      +'font-weight:640;color:'+GOLD+';line-height:1">'+SOLES+pz(precio)+'</div>':'')
+    +(precio>0?'<div class="pr">'+SOLES+pz(precio)+'</div>':'')
     +BYO_LOQUELLEVAS()
     +'</div>'
-    +'<button type="button"'+(listo?' onclick="byoStepNext()"':' disabled')+' style="all:unset;box-sizing:border-box;'
-    // Deshabilitado se distingue por la FORMA —solo borde, sin relleno de color—, no apagando
-    // el texto: ese texto es la instrucción («Elige un tamaño») y con opacidad .4 quedaba en
-    // 2.13:1 de contraste (mínimo 4.5:1). Lo vio tests/contraste.spec.ts el 2026-09-24.
-    +(listo?'cursor:pointer;':'cursor:default;')+'flex:0 0 auto;background:'+(listo?ACC():'transparent')+';'
-    +'color:'+(listo?ACC_INK():'var(--sw-text-muted,#9DA096)')+';'
-    +(listo?'':'box-shadow:inset 0 0 0 1px var(--sw-border,#1F3243);')
-    +'border-radius:999px;padding:14px 26px;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;'
-    +'font-size:15px;font-weight:640;letter-spacing:.03em">'+(listo?etiqueta:byoStepHint())+'</button>'
+    +'<button type="button" class="bt"'+(listo?' onclick="byoStepNext()"':' disabled')+'>'
+    +(listo?etiqueta:byoStepHint())+'</button>'
     +'</div>';
 }
 
-// Desde cuánto sale un sándwich de este tamaño. Se calcula sobre las proteínas que HOY se
-// pueden elegir, no sobre un número escrito: decir "desde S/13.90" cuando la proteína barata
-// se agotó o el dueño la repreció es una promesa rota, y de las que no avisan.
+// Desde cuánto sale un sándwich de este tamaño, sobre las proteínas que HOY se pueden elegir:
+// decir «desde» un número escrito cuando la barata se agotó es una promesa rota.
 function byoDesde(sz){
   var ps=PROTS.filter(function(x){return!x.vaultOnly&&!x.sigOnly&&isAvail(x.id);})
               .map(function(x){return sz==='30'?x.p30:x.p15;});
@@ -266,79 +262,49 @@ function sOBuild(){
   var cuerpo='';
 
   if(byoStep===0){
-    // TAMAÑO. Va primero y solo, como en cualquier mostrador: es lo que cambia el precio de
-    // todo lo que viene después, así que preguntarlo al final sería mover el piso.
-    //
-    // ⚠ Y VA APILADO, NO EN DOS COLUMNAS. Lo que se compara acá es un LARGO, y dos columnas
-    // no pueden mostrar una proporción: cada barra queda medida contra su propia columna, no
-    // contra la otra. Apiladas comparten el mismo ancho, así que la de 30CM se ve el doble
-    // de la de 15CM porque lo es. Es la única forma de que el dibujo diga la verdad.
+    // TAMAÑO. Primero y solo: cambia el precio de todo lo que viene después. APILADO y no en
+    // dos columnas, porque lo que se compara es un LARGO: con el mismo ancho, la barra de 30CM
+    // se ve el doble de la de 15CM porque lo es. Ni una palabra sobre cuánta gente (ver SZTOG).
     cuerpo=BYO_PREGUNTA('¿De qué tamaño?','Es lo primero porque cambia el precio de todo lo demás.')
-      +'<div style="display:flex;flex-direction:column;gap:10px;padding:0 18px">'
-      // ⚠ Ni una palabra sobre cuánta gente. Ver la nota en SZTOG (02-*): el tamaño se describe
-      // por lo que ES —pan y relleno—, nunca por cuántos deberían comérselo.
+      +'<div class="ops">'
       +[{sz:'15',t:'15CM',s:'El de siempre',d:'Un sándwich completo.',w:'50%'},
         {sz:'30',t:'30CM',s:'El doble de todo',d:'El doble de pan y el doble de relleno.',w:'100%'}].map(function(o){
         var sel=size===o.sz;
-        return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" onclick="size=\''+o.sz+'\';render()" '
-          +'style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;padding:18px;'
-          +'border-radius:12px;background:'+(sel?'rgba(140,200,236,.13)':'var(--sw-card2,#0F1D29)')+';'
-          +'box-shadow:inset 0 0 0 '+(sel?'2px '+ACC():'1px var(--sw-border,#1F3243)')+'">'
-          // La barra ES el sándwich a escala. Va arriba del nombre porque es lo primero que
-          // resuelve la pregunta: se entiende sin leer una palabra.
-          +'<div style="height:26px;width:'+o.w+';border-radius:999px;margin-bottom:15px;'
-          +'background:'+(sel?ACC():'var(--sw-border,#1F3243)')+';'
-          +'box-shadow:inset 0 -7px 0 rgba(0,0,0,.2)"></div>'
-          +'<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">'
-          +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
-          +'font-weight:640;color:var(--sw-text,#fff);line-height:1">'+o.t+'</span>'
-          +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:'+GOLD+'">'
-          +'desde '+SOLES+pz(byoDesde(o.sz))+'</span></div>'
-          +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.2em;'
-          +'text-transform:uppercase;color:'+(sel?ACC():'var(--sw-text-muted,#9DA096)')+';margin-top:6px">'
-          +o.s+'</div>'
-          +'<p style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.5;'
-          +'color:var(--sw-text-muted,#9DA096);margin-top:5px">'+o.d+'</p>'
+        return'<button type="button" class="op'+(sel?' sel':'')+'" aria-pressed="'+(sel?'true':'false')+'" onclick="size=\''+o.sz+'\';render()">'
+          +'<div class="barra" style="width:'+o.w+'"></div>'
+          +'<div class="fila"><span class="n">'+o.t+'</span><span class="pre">desde '+SOLES+pz(byoDesde(o.sz))+'</span></div>'
+          +'<div class="s">'+o.s+'</div><div class="d">'+o.d+'</div>'
           +'</button>';
       }).join('')+'</div>';
 
   }else if(byoStep===1){
-    // PAN. Dos opciones otra vez, y el recargo de la focaccia ARRIBA, antes de elegir: dejó
-    // de ser gratis el 2026-09-03 y un precio que aparece recién en el carrito es
-    // exactamente la sorpresa que hace abandonar.
+    // PAN. El recargo ARRIBA, antes de elegir: un precio que aparece recién en el carrito es la
+    // sorpresa que hace abandonar. Se PREGUNTA por `baseSurcharge()`, el mismo camino del cobro.
     cuerpo=BYO_PREGUNTA('¿Sobre qué pan?','Los dos se hornean acá.')
       +BYO_MITADES(BASES.map(function(b){
-        // ⚠ El recargo se PREGUNTA, no se escribe. `BASE_SURCHARGE` es un objeto por pan con
-        // un precio por tamaño, no un número: la primera versión de esta línea lo trataba
-        // como número y habría pintado "[object Object]" al lado del pan — sin romper nada,
-        // sin que el typecheck dijera una palabra. Y va por `baseSurcharge()`, que es el
-        // mismo camino que usa el cobro, para que no puedan decir cosas distintas.
         var rec=baseSurcharge(b.id,size||'15');
         return{t:b.l,s:b.s,d:b.d,sel:base===b.id,fn:"base='"+b.id+"';render()",
                extra:rec>0?'+'+SOLES+pz(rec):'Sin recargo'};
       }));
 
   }else if(byoStep===2){
-    // PROTEÍNA. El paso con foto. Y el doble se ofrece DESPUÉS de elegir, no antes: ofrecer
-    // «doble» sin saber doble de qué es una pregunta sin sentido.
+    // PROTEÍNA (la maqueta M22). El doble se ofrece DESPUÉS de elegir: «doble» sin saber de
+    // qué es una pregunta sin sentido. Debajo, el puente al lado de SANDO y el secreto.
     var dispo=PROTS.filter(function(x){return!x.vaultOnly&&!x.sigOnly;});
     var elegida=PROTS.find(function(x){return x.id===prot;});
     var puedeDoble=elegida&&!(size==='30'?elegida.noDouble30:elegida.noDouble);
     var recargoDbl=elegida?(size==='30'?elegida.pDbl30:elegida.pDbl):0;
-    cuerpo=BYO_PREGUNTA('¿Qué va adentro?','Lo que elijas acá es el sándwich. Todo lo demás lo acompaña.')
-      +'<div style="display:flex;flex-direction:column;gap:9px;padding:0 18px">'
-      +dispo.map(BYO_PROTEINA).join('')+'</div>'
+    cuerpo=BYO_PREGUNTA('¿Qué va adentro?','Lo que elijas acá es el sándwich.')
+      +dispo.map(BYO_PROTEINA).join('<div class="sep"></div>')
       +(puedeDoble
-        ?'<div style="padding:18px 18px 0">'
-         +BYO_PIEZA({t:'Doble de '+elegida.l,s:'+'+SOLES_TXT+pz(recargoDbl),sel:doubleProt,
-                     fn:"doubleProt=!doubleProt;render()"})
-         +'</div>':'');
+        ?'<div class="extra">'+BYO_PIEZA({t:'Doble de '+elegida.l,s:'+'+SOLES_TXT+pz(recargoDbl),sel:doubleProt,
+                     fn:"doubleProt=!doubleProt;render()"})+'</div>':'')
+      +BYO_PUENTE()+BYO_SECRETO();
 
   }else if(byoStep===3){
-    // QUESO. Chico porque la decisión es chica: son tres, no cuestan, y «sin queso» es una
-    // respuesta legítima que tiene que estar a la vista y no escondida en un «saltar».
+    // QUESO. Chico porque la decisión es chica; «sin queso» es una respuesta legítima a la vista.
     cuerpo=BYO_PREGUNTA('¿Con queso?','Va incluido, no cuesta nada.')
-      +'<div style="display:flex;flex-wrap:wrap;gap:8px;padding:0 18px">'
+      +'<div class="piezas">'
       +CHEESE.map(function(c){
         return BYO_PIEZA({t:c.l,s:c.d,sel:cheese===c.id,fn:"cheese=cheese==='"+c.id+"'?null:'"+c.id+"';render()"});
       }).join('')
@@ -346,14 +312,12 @@ function sOBuild(){
       +'</div>';
 
   }else if(byoStep===4){
-    // VEGETALES. Sin límite y sin costo, así que la pregunta no es «cuáles puedes» sino
-    // «cuáles quieres». «Todos» es un atajo real: mucha gente los quiere todos y hacerle
-    // tocar siete veces es trabajo inventado.
+    // VEGETALES. Sin límite y sin costo. «Todos» es un atajo real.
     var veg=TOPS.filter(function(x){return!x.vaultOnly&&!x.sigOnly;});
     var ids=veg.filter(function(x){return isAvail(x.id);}).map(function(x){return x.id;});
     var todos=ids.length>0&&ids.every(function(id){return tops.indexOf(id)>=0;});
     cuerpo=BYO_PREGUNTA('¿Qué le pones encima?','Todos los que quieras, y ninguno cuesta.')
-      +'<div style="display:flex;flex-wrap:wrap;gap:8px;padding:0 18px">'
+      +'<div class="piezas">'
       +BYO_PIEZA({t:todos?'Ninguno':'Todos',s:todos?'empezar de cero':'los '+ids.length,sel:todos,
                   fn:"tops="+(todos?'[]':'['+ids.map(function(id){return"'"+id+"'";}).join(',')+']')+";render()"})
       +veg.map(function(t){
@@ -364,54 +328,30 @@ function sOBuild(){
       +'</div>';
 
   }else{
-    // SALSAS. Es el único paso con un tope real: van hasta MAX_SAUCES_BYO incluidas y no se
-    // puede elegir una cuarta distinta. Aparte existe una porción EXTRA de la última que
-    // elegiste, que sí se cobra — son dos cosas distintas y la pantalla tiene que decirlo,
-    // porque confundirlas es prometer una salsa gratis que el servidor va a cobrar.
+    // SALSAS. Hasta MAX_SAUCES_BYO incluidas; la porción EXTRA de la última se cobra aparte, y
+    // la pantalla lo dice porque confundirlas es prometer una salsa gratis que se va a cobrar.
     var sal=SAUCES.filter(function(x){return!x.vaultOnly&&!x.sigOnly;});
     var n=sauces.length;
     var lleno=n>=MAX_SAUCES_BYO;
     cuerpo=BYO_PREGUNTA('¿Y de salsa?','Hasta '+MAX_SAUCES_BYO+' incluidas. Llevas '+n+'.')
-      +'<div style="display:flex;flex-wrap:wrap;gap:8px;padding:0 18px">'
+      +'<div class="piezas">'
       +sal.map(function(x){
         var av=isAvail(x.id),sel=sauces.indexOf(x.id)>=0;
-        // Al llegar al tope las no elegidas se apagan en vez de desaparecer: una salsa que
-        // se esfuma de la lista parece un error de la app, apagada se lee como "ya elegiste
-        // las tuyas". Y las elegidas siguen tocables, para poder cambiar de opinión.
         return BYO_PIEZA({t:x.l,s:av?(x.spicy?'pica · '+x.s:x.s):'agotada',off:!av||(lleno&&!sel),sel:sel,
           fn:"byoToggleSalsa('"+x.id+"')"});
       }).join('')
       +'</div>'
-      // La porción extra solo tiene sentido cuando ya hay una salsa que duplicar — el
-      // servidor rechaza el pedido si no la hay, así que ofrecerla antes sería ofrecer algo
-      // que va a fallar al pagar.
-      +(n?'<div style="padding:20px 18px 0">'
+      +(n?'<div class="extra">'
         +BYO_PIEZA({t:'Doble de la última',s:'+'+SOLES_TXT+pz(EXTRA_SAUCE_PRICE),sel:extraSauce,
                     fn:"extraSauce=!extraSauce;render()"})
         +'</div>':'');
   }
 
-  // ⚠ EL PASO OCUPA LA PANTALLA, NO SE AMONTONA ARRIBA. La primera versión dejaba 350px de
-  // vacío debajo de las opciones en cuatro de los seis pasos: la pregunta y las piezas
-  // pegadas al techo y el resto negro. Eso no es minimalismo, es una pantalla a medio
-  // pintar. Los pasos de dos mitades ESTIRAN (son paneles, y a alto completo repiten la
-  // puerta, que es de donde vienes); los de piezas se CENTRAN en el espacio que queda; el de
-  // proteína no hace ninguna de las dos porque su lista ya llena y tiene que poder rodar.
-  // Solo el paso del TAMAÑO estira a alto completo, porque ahí los paneles llevan la figura
-  // del pan y el alto es parte de lo que se compara. El del PAN no: sin figura, estirado
-  // queda una caja vacía con el texto al pie, que es peor que una caja del tamaño de su
-  // contenido. El de PROTEÍNA ni estira ni centra — su lista ya llena y tiene que rodar.
-  // El paso se compone en el alto que tiene: la pregunta y las opciones centradas en el
-  // espacio libre, no pegadas al techo con 350px de negro debajo. Estirar las cajas para
-  // llenar fue el error opuesto y peor —una caja de 460px con una barra y cuatro líneas
-  // adentro—: el vacío no se arregla inflando el contenido, se arregla componiéndolo.
-  // Proteína es la excepción: su lista ya llena y tiene que poder rodar desde arriba.
-  return'<div style="min-height:100dvh;display:flex;flex-direction:column;background:var(--sw-bg,#0B1724)">'
+  return'<div class="mw">'
+    +'<div class="wicho" aria-hidden="true"><img src="'+broPose('wicho','cuerpo')+'" alt=""></div>'
     +BYO_CABEZA()
-    +'<div class="fi" style="flex:1;display:flex;flex-direction:column;justify-content:'
-    +(byoStep===2?'flex-start':'center')+';padding-bottom:var(--sw-barra,124px)">'
-    +cuerpo
-    +'</div></div>'+BYO_PIE();
+    +'<div class="cuerpo fi">'+cuerpo+'</div>'
+    +'</div>'+BYO_PIE();
 }
 
 // Tocar una salsa. Vive acá y no dentro del onclick porque la regla —la cuarta se cobra— es

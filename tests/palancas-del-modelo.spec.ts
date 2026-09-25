@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { irAlArmador, gotoApp, mockBackend, APP_FILE, stubWindowOpen, elegirSando, entrarConTelefono } from './helpers';
+import { APP_FILE, elegirSando, entrarConTelefono, gotoApp, hastaLaProteina, irAlArmador, mockBackend, stubWindowOpen } from './helpers';
 import { unSignature } from './carta';
 
 // Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
@@ -93,10 +93,9 @@ test('ARMA EL TUYO ofrece una receta ya resuelta, sin dejar de ofrecer el armado
   // mezcla escondiendo o encareciendo ARMA EL TUYO rompería la mitad de la identidad de la
   // marca (los dos hermanos) para ganar céntimos.
   await gotoApp(page);
-  // ⚠ El puente vive en el Mundo WICHO aprobado (maqueta M22 con puente), que todavía no está
-  // construido (tarea #71): esta prueba queda roja hasta entonces, en tests/ROJAS_CONOCIDAS.txt.
-  await irAlArmador(page);
-  await expect(page.locator('text=¿Prefieres que ya esté resuelto?')).toBeVisible();
+  // El puente vive en el paso de la proteína del Mundo WICHO (maqueta M22 con el puente).
+  await hastaLaProteina(page);
+  await expect(page.locator('button', { hasText: '¿Prefieres que ya esté resuelto?' })).toBeVisible();
   // ⚠ ACÁ DECÍA `text=The Original`, escrito a mano — y el código dice explícitamente lo
   // contrario: «El nombre sale del catálogo (que el servidor refresca), nunca escrito a
   // mano: si el dueño renombra o retira ese Signature, este texto lo sigue solo».
@@ -109,10 +108,12 @@ test('ARMA EL TUYO ofrece una receta ya resuelta, sin dejar de ofrecer el armado
     return s ? s.n : null;
   });
   expect(recomendado).toBeTruthy();
-  await expect(page.locator('text=¿Prefieres que ya esté resuelto?')).toContainText(recomendado as string);
-  // El armador sigue completo: los panes se pueden elegir y el paso a paso sigue ahí.
-  await expect(page.getByRole('button', { name: 'Ver el paso a paso completo →' })).toBeVisible();
-  await expect(page.locator('[onclick*="startOrderWithBase"]').first()).toBeVisible();
+  await expect(page.locator('button', { hasText: '¿Prefieres que ya esté resuelto?' })).toContainText(recomendado as string);
+  // El armador sigue entero: las proteínas se siguen ofreciendo y se puede seguir al paso
+  // siguiente. El puente es una salida más, no un reemplazo.
+  const armables = await page.evaluate(() => ((window as any).PROTS as any[]).filter((p) => !p.sigOnly && !p.vaultOnly).length);
+  await expect(page.locator('.wb')).toHaveCount(armables);
+  await expect(page.locator('button[onclick="byoStepNext()"], button.bt').first()).toBeVisible();
 });
 
 // ── PALANCA 2 · EL EMPUJÓN DE BEBIDA ENCABEZA CON EL PRODUCTO ─────────────────────────

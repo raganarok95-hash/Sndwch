@@ -205,6 +205,16 @@ export async function irAlArmador(page: Page) {
   await page.waitForSelector('text=¿De qué tamaño?');
 }
 
+// Hasta el paso de la proteína (el de la maqueta M22): tamaño y pan, los primeros de cada uno.
+export async function hastaLaProteina(page: Page) {
+  await irAlArmador(page);
+  await page.locator('[onclick*="size=\'15\'"]').click();
+  await siguientePaso(page);
+  await page.locator('[onclick^="base="]').first().click();
+  await siguientePaso(page);
+  await page.waitForSelector('text=¿Qué va adentro?');
+}
+
 // El botón de avanzar del armador. Se busca por lo que HACE, no por su rótulo: el rótulo
 // cambia entre «Siguiente», «Listo» y la pista de lo que falta («Elige un pan»).
 export async function siguientePaso(page: Page) {

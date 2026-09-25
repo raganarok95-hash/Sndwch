@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, hastaLaProteina } from './helpers';
 
 // LA ESTRELLA DEL MENÚ — que lo más rentable sea lo más visible (2026-09-12).
 //
@@ -83,11 +83,12 @@ test.describe('la estrella del menú', () => {
     });
     expect(estrella).toBeTruthy();
 
-    await page.evaluate(() => { (window as any).homeTab = 'byo'; (window as any).render(); });
+    // El puente vive en el paso de la proteína del Mundo WICHO (maqueta M22 con el puente).
+    await hastaLaProteina(page);
 
     // El puente nombra el Signature LEYÉNDOLO del catálogo, nunca escrito a mano: si el
     // dueño lo renombra desde el panel, el texto lo sigue solo.
-    const puente = page.locator('text=¿Prefieres que ya esté resuelto?');
+    const puente = page.locator('button', { hasText: '¿Prefieres que ya esté resuelto?' });
     await expect(puente).toBeVisible();
     await expect(puente).toContainText(estrella as string);
   });

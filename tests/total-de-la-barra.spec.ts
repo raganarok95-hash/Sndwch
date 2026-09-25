@@ -23,9 +23,9 @@ import { gotoApp } from './helpers';
 // Lee el importe de la barra fija tal como lo ve el cliente.
 async function totalDeLaBarra(page: any): Promise<string | null> {
   return page.evaluate(() => {
-    const barras = Array.from(document.querySelectorAll('div')).filter(
-      (d) => (d as HTMLElement).style.position === 'fixed' && (d as HTMLElement).style.bottom === '0px',
-    );
+    // Toda barra fija se declara con `sw-barra` (regla del repo); se busca por eso y no por un
+    // estilo escrito en línea, que deja de verse el día que la barra pasa a tener su clase.
+    const barras = Array.from(document.querySelectorAll('.sw-barra'));
     for (const b of barras) {
       const m = /S\/\s*([\d.]+)/.exec((b as HTMLElement).innerText || '');
       if (m) return m[1];

@@ -149,7 +149,7 @@ export const CARTA: Carta = {
     { id: "P05", nombre: "Embutido", sabor: "Italiano", desc: "Tres fiambres ahumados laminados finos y puestos en pliegues, nunca planos.", p15: 16.9, p30: 32.9, dbl15: 9.9, dbl30: 19.9, soloEnSignature: true, foto: "img/prot_p05.webp" },
     { id: "P06", nombre: "Albóndiga", sabor: "Marinara", desc: "Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.", p15: 14.9, p30: 26.9, dbl15: 6, dbl30: 12, foto: "img/prot_p06.webp" },
     { id: "P08", nombre: "Pavo", sabor: "Horneado", desc: "Lonjas de un milímetro puestas en pliegues, laminadas el mismo día.", p15: 15.9, p30: 28.9, dbl15: 9, dbl30: 17, foto: "img/prot_p08.webp" },
-    { id: "P09", nombre: "Res", sabor: "Laminada", desc: "Laminada fina y salteada al momento.", p15: 12.9, p30: 22.9, dbl15: 7, dbl30: 13 },
+    { id: "P09", nombre: "Res", sabor: "Laminada", desc: "Laminada fina y salteada al momento.", p15: 12.9, p30: 22.9, dbl15: 7, dbl30: 13, foto: "img/prot_p09.webp" },
   ],
   vegetales: [
     { id: "T01", nombre: "Tomate", sabor: "Fresco", desc: "En rodajas gruesas, cortado el mismo día." },
