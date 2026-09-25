@@ -27,11 +27,14 @@ function assertEquals<T>(actual: T, expected: T, msg?: string): void {
 function assert(cond: boolean, msg: string): void {
   if (!cond) throw new Error(msg);
 }
-import { priceCartItem, PROT_PRICE, SIG_DATA } from "../supabase/functions/api/catalog.ts";
-import { proteinasDelArmador, proteinasSoloDeSignature, signaturesRetirados, signaturesVigentes, unaSalsaDelArmador } from "./carta.ts";
+import { dblFee, priceCartItem, PROT_PRICE, SIG_DATA } from "../supabase/functions/api/catalog.ts";
+import { panSinRecargo, proteinasConDoble, proteinasDelArmador, proteinasSoloDeSignature, signaturesRetirados, signaturesVigentes, unaSalsaDelArmador } from "./carta.ts";
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const PAN_SIN_RECARGO = panSinRecargo();
 
 const armar = (prot: string, size: "15" | "30") =>
-  priceCartItem({ type: "byo", base: "B01", prot, tops: [], sauces: [unaSalsaDelArmador()], size, qty: 1 });
+  priceCartItem({ type: "byo", base: PAN_SIN_RECARGO, prot, tops: [], sauces: [unaSalsaDelArmador()], size, qty: 1 });
 
 Deno.test("ninguna proteína marcada como exclusiva de Signature se puede armar", () => {
   for (const prot of proteinasSoloDeSignature()) {
@@ -89,4 +92,16 @@ Deno.test("el armador no se quedó demasiado corto", () => {
   // Es el argumento entero de la sección: el cliente elige. Menos de cuatro deja de serlo.
   // Esta prueba es el piso, no una meta.
   assert(proteinasDelArmador().length >= 4, `solo quedan ${proteinasDelArmador().length} proteínas en el armador`);
+});
+
+Deno.test("el recargo del doble escala con el tamaño, en toda proteína que lo admite", () => {
+  // La porción que agrega el doble se duplica de 15CM a 30CM. Un recargo plano entre tamaños
+  // fue el defecto de la albóndiga, vivo desde agosto hasta el 2026-09-05 sin que nada lo
+  // señalara. No se exige exactamente el doble —el redondeo a precios enteros lo impide—, sino
+  // que crezca con la porción. (Que el doble no pase el techo de costo lo vigila check:costos.)
+  for (const prot of proteinasConDoble()) {
+    const r15 = dblFee(PROT_PRICE[prot]!, "15");
+    const r30 = dblFee(PROT_PRICE[prot]!, "30");
+    assert(r30 >= r15 * 1.8, `${prot}: el doble de 30CM (S/${r30}) no escaló contra el de 15CM (S/${r15})`);
+  }
 });

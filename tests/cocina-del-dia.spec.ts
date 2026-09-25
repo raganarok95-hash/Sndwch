@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp, entrarConTelefono } from './helpers';
+import { unPanSinRecargo, unaProteina } from './carta';
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const UNA_PROTEINA = unaProteina();
+const UN_PAN = unPanSinRecargo();
 
 // #10 y #12 — La pantalla de preparación, que es donde el dueño mira antes de abrir.
 //
@@ -33,12 +38,12 @@ const PREP_COMPLETO = {
     { ref: 'ORD-2', customerName: 'Beto', deliveryTime: '2026-09-10T20:00:00Z', startBy: '2026-09-10T19:50:00.000Z', late: true },
   ],
   ingredients: [
-    { code: 'P01', label: 'Res asada', qty: 2, stockQty: 1, shortfall: true },
-    { code: 'B01', label: 'Pan classic', qty: 2, stockQty: 30, shortfall: false },
+    { code: UNA_PROTEINA, label: 'Res asada', qty: 2, stockQty: 1, shortfall: true },
+    { code: UN_PAN, label: 'Pan classic', qty: 2, stockQty: 30, shortfall: false },
   ],
   miseEnPlace: [
-    { key: 'prot', label: 'Proteínas', items: [{ code: 'P01', label: 'Res asada', qty: 2, stockQty: 1, shortfall: true }] },
-    { key: 'base', label: 'Panes', items: [{ code: 'B01', label: 'Pan classic', qty: 2, stockQty: 30, shortfall: false }] },
+    { key: 'prot', label: 'Proteínas', items: [{ code: UNA_PROTEINA, label: 'Res asada', qty: 2, stockQty: 1, shortfall: true }] },
+    { key: 'base', label: 'Panes', items: [{ code: UN_PAN, label: 'Pan classic', qty: 2, stockQty: 30, shortfall: false }] },
   ],
 };
 

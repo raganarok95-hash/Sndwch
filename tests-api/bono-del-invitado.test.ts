@@ -39,8 +39,8 @@ Deno.test("hoy el bono del invitado alcanza para la bebida que se le promete", (
   // Si esta falla, la app está mintiendo en cuatro sitios a la vez. Es la comprobación que
   // habría gritado el 2026-09-05.
   assert(
-    REFERRAL_BONUS_POINTS >= REWARDS.R05.pts,
-    `el bono del invitado (${REFERRAL_BONUS_POINTS}) no cubre R05 (${REWARDS.R05.pts}): ` +
+    REFERRAL_BONUS_POINTS >= REWARDS[R_BEBIDA]!.pts,
+    `el bono del invitado (${REFERRAL_BONUS_POINTS}) no cubre la bebida gratis (${REWARDS[R_BEBIDA]!.pts}): ` +
     `la app le promete una bebida que no puede canjear`,
   );
   assertEquals(bonoCubreBebida(), true);
@@ -57,16 +57,16 @@ Deno.test("el bono no queda en tierra de nadie: alcanza para alguna recompensa r
   );
 });
 
-Deno.test("si R05 sube por encima del bono, la frase DEJA de nombrar la bebida", () => {
+Deno.test("si la bebida gratis sube por encima del bono, la frase DEJA de nombrar la bebida", () => {
   // Esto es lo que el panel puede provocar sin tocar código: `catalog_prices` categoría
   // `reward` repricea R05 en runtime. La frase tiene que seguirlo sola.
-  const antes = REWARDS.R05.pts;
+  const antes = REWARDS[R_BEBIDA]!.pts;
   try {
-    REWARDS.R05.pts = REFERRAL_BONUS_POINTS + 1;
+    REWARDS[R_BEBIDA]!.pts = REFERRAL_BONUS_POINTS + 1;
     assertEquals(bonoCubreBebida(), false);
     assert(
       !loQueGanaElInvitado().includes("bebida"),
-      `con R05 por encima del bono el texto sigue prometiendo la bebida: "${loQueGanaElInvitado()}"`,
+      `con la bebida gratis por encima del bono el texto sigue prometiendo la bebida: "${loQueGanaElInvitado()}"`,
     );
     // Lo que NO puede desaparecer son los puntos: eso sigue siendo cierto siempre.
     assert(
@@ -74,7 +74,7 @@ Deno.test("si R05 sube por encima del bono, la frase DEJA de nombrar la bebida",
       "el texto dejó de decir cuántos puntos recibe el invitado",
     );
   } finally {
-    REWARDS.R05.pts = antes;
+    REWARDS[R_BEBIDA]!.pts = antes;
   }
 });
 
@@ -82,9 +82,9 @@ Deno.test("ningún texto de marketing promete la bebida cuando el bono no la cub
   // El dueño copia estos textos a Instagram y WhatsApp: son promesas públicas. Es la misma
   // comprobación que `ocasiones-del-brief.test.ts` hace con la hora valle retirada, aplicada
   // al bono — no basta con interpolar la cifra, tampoco se puede nombrar lo que no alcanza.
-  const antes = REWARDS.R05.pts;
+  const antes = REWARDS[R_BEBIDA]!.pts;
   try {
-    REWARDS.R05.pts = REFERRAL_BONUS_POINTS + 1;
+    REWARDS[R_BEBIDA]!.pts = REFERRAL_BONUS_POINTS + 1;
     for (const t of marketingContent()) {
       for (const [campo, txt] of Object.entries({
         whatsapp: t.whatsapp, caption: t.caption, videoIdea: t.videoIdea,
@@ -96,17 +96,17 @@ Deno.test("ningún texto de marketing promete la bebida cuando el bono no la cub
       }
     }
   } finally {
-    REWARDS.R05.pts = antes;
+    REWARDS[R_BEBIDA]!.pts = antes;
   }
 });
 
-Deno.test("con el bono cubriendo R05, la frase SÍ nombra la bebida", () => {
+Deno.test("con el bono cubriendo la bebida gratis, la frase SÍ nombra la bebida", () => {
   // El espejo de la prueba anterior: una salvaguarda que apaga la frase para siempre sería
   // igual de mala — el premio concreto y nombrable es justamente lo que hace funcionar la
   // invitación. Tiene que volver sola, igual que `offpeakActiva()`.
   assert(
     loQueGanaElInvitado().includes("bebida"),
-    `el bono cubre R05 pero el texto no nombra la bebida: "${loQueGanaElInvitado()}"`,
+    `el bono cubre la bebida gratis pero el texto no nombra la bebida: "${loQueGanaElInvitado()}"`,
   );
 });
 
@@ -154,20 +154,24 @@ Deno.test("si el panel repricea la recompensa, el escalón deja de nombrarla", (
 // simétrico deja el otro esperando su turno.
 import { loQueGanaQuienInvita } from "../supabase/functions/api/catalog.ts";
 import { REFERRER_REWARD_POINTS } from "../supabase/functions/api/env.ts";
+import { recompensa } from "./carta.ts";
 
-Deno.test("quien invita: si el panel repricea R06, el aviso deja de nombrar el sándwich", () => {
-  const antes = REWARDS.R06.pts;
+const R_BEBIDA = recompensa("bebida");
+const R_SANDWICH = recompensa("sandwich");
+
+Deno.test("quien invita: si el panel repricea el 15CM gratis, el aviso deja de nombrar el sándwich", () => {
+  const antes = REWARDS[R_SANDWICH]!.pts;
   try {
     assert(
       loQueGanaQuienInvita().includes("15CM gratis"),
-      `hoy el premio cubre R06 pero el aviso no lo nombra: "${loQueGanaQuienInvita()}"`,
+      `hoy el premio cubre el 15CM gratis pero el aviso no lo nombra: "${loQueGanaQuienInvita()}"`,
     );
-    REWARDS.R06.pts = REFERRER_REWARD_POINTS + 1;
+    REWARDS[R_SANDWICH]!.pts = REFERRER_REWARD_POINTS + 1;
     assert(
       !loQueGanaQuienInvita().includes("gratis"),
       `el aviso sigue prometiendo un sándwich gratis que los ${REFERRER_REWARD_POINTS} pts ya no pagan`,
     );
   } finally {
-    REWARDS.R06.pts = antes;
+    REWARDS[R_SANDWICH]!.pts = antes;
   }
 });

@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp, entrarConTelefono } from './helpers';
+import { unaProteina } from './carta';
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const UNA_PROTEINA = unaProteina();
 
 // #38 (compras y costo real), #34/#31 (comisiones y conciliación de Culqi) y #39 (pasivo de
 // crédito), del lado del cliente.
@@ -31,10 +35,10 @@ const COMPRAS_COMPLETO = {
   avgWindow: 3,
   spikeThreshold: 0.15,
   costs: [
-    { code: 'P01', unit: 'g', lastUnitCost: 0.02, avgUnitCost: 0.02, purchases: 2, lastPurchasedAt: '2026-09-02', spikePct: 0.2 },
+    { code: UNA_PROTEINA, unit: 'g', lastUnitCost: 0.02, avgUnitCost: 0.02, purchases: 2, lastPurchasedAt: '2026-09-02', spikePct: 0.2 },
   ],
   recipeCosts: [
-    { recipeCode: 'P01', name: 'Res asada mechada', yieldPortions: 38, known: 2, total: 120.14, costPerPortion: 3.16, missing: [] },
+    { recipeCode: UNA_PROTEINA, name: 'Res asada mechada', yieldPortions: 38, known: 2, total: 120.14, costPerPortion: 3.16, missing: [] },
   ],
 };
 
@@ -50,7 +54,7 @@ test('si falta el precio de un ingrediente NO se muestra un total parcial', asyn
   await entrarComoAdmin(page, {
     'admin-purchases': {
       ...COMPRAS_COMPLETO,
-      recipeCosts: [{ recipeCode: 'P01', name: 'Res asada mechada', yieldPortions: 38, known: 1, total: 120, costPerPortion: null, missing: ['Sal'] }],
+      recipeCosts: [{ recipeCode: UNA_PROTEINA, name: 'Res asada mechada', yieldPortions: 38, known: 1, total: 120, costPerPortion: null, missing: ['Sal'] }],
     },
   });
   await page.locator('[onclick*="loadPurchases()"]').first().click();
@@ -65,7 +69,7 @@ test('una subida fuerte se avisa al registrar la compra, no un mes después', as
     'admin-purchase-add': { success: true, purchase: {}, spike: { pct: 0.25, previous: 20, current: 25 } },
   });
   await page.locator('[onclick*="loadPurchases()"]').first().click();
-  await page.locator('#pu-code').fill('P01');
+  await page.locator('#pu-code').fill(UNA_PROTEINA);
   await page.locator('#pu-qty').fill('6');
   await page.locator('#pu-unit').fill('kg');
   await page.locator('#pu-total').fill('150');
@@ -76,7 +80,7 @@ test('una subida fuerte se avisa al registrar la compra, no un mes después', as
 test('el formulario no manda una compra a medias', async ({ page }) => {
   const calls = await entrarComoAdmin(page, { 'admin-purchases': COMPRAS_COMPLETO });
   await page.locator('[onclick*="loadPurchases()"]').first().click();
-  await page.locator('#pu-code').fill('P01');
+  await page.locator('#pu-code').fill(UNA_PROTEINA);
   await page.getByRole('button', { name: /Guardar compra/ }).click();
   await expect(page.locator('text=/Completa insumo, cantidad, unidad/')).toBeVisible();
   expect(calls.filter((c) => c.action === 'admin-purchase-add')).toHaveLength(0);

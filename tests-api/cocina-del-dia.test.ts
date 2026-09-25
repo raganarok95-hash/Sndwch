@@ -14,6 +14,19 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
   }
 }
 import { batchPlanItems, cookNowItems, assemblyOrder, miseEnPlaceGroups } from "../supabase/functions/api/actions/admin.ts";
+import { unPan, unVegetal, unaBebida, unaProteina, unaSalsa } from "./carta.ts";
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const CUARTO_INSUMO = unaProteina(3);
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const INSUMO = unaProteina();
+const OTRO_INSUMO = unaProteina(1);
+const TERCER_INSUMO = unaProteina(2);
+const UNA_SALSA = unaSalsa();
+const UN_PAN = unPan();
+const UN_VEGETAL = unVegetal();
+const UNA_BEBIDA = unaBebida();
 
 const inv = (rows: [string, string, number | null][]) =>
   new Map(rows.map(([code, name, qty]) => [code, { product_name: name, stock_qty: qty }]));
@@ -22,20 +35,20 @@ const inv = (rows: [string, string, number | null][]) =>
 
 Deno.test("daysLeft traduce el stock a la única unidad que sirve: días", () => {
   // 20 porciones consumidas en 10 días = 2/día. Con 6 en stock quedan 3 días.
-  const items = batchPlanItems(new Map([["P01", 20]]), new Map(), inv([["P01", "Res", 6]]), 10, 4);
+  const items = batchPlanItems(new Map([[INSUMO, 20]]), new Map(), inv([[INSUMO, "Res", 6]]), 10, 4);
   assertEquals(items[0].daysLeft, 3);
 });
 
 Deno.test("sin consumo medido NO se inventa un plazo", () => {
   // Dividir entre cero daría Infinity y la pantalla diría que alcanza para siempre —
   // exactamente al revés de lo prudente.
-  const items = batchPlanItems(new Map(), new Map([["P01", 4]]), inv([["P01", "Res", 6]]), 10, 4);
+  const items = batchPlanItems(new Map(), new Map([[INSUMO, 4]]), inv([[INSUMO, "Res", 6]]), 10, 4);
   assertEquals(items[0].daysLeft, null);
 });
 
 Deno.test("sin cantidad rastreada tampoco hay plazo, ni cero ni infinito", () => {
   // stock_qty null significa "solo tenemos el interruptor de agotado", no "hay 0".
-  const items = batchPlanItems(new Map([["P01", 20]]), new Map(), inv([["P01", "Res", null]]), 10, 4);
+  const items = batchPlanItems(new Map([[INSUMO, 20]]), new Map(), inv([[INSUMO, "Res", null]]), 10, 4);
   assertEquals(items[0].daysLeft, null);
   assertEquals(items[0].toCook, null);
   assertEquals(items[0].stockTracked, false);
@@ -43,33 +56,33 @@ Deno.test("sin cantidad rastreada tampoco hay plazo, ni cero ni infinito", () =>
 
 Deno.test("avisa solo de lo que se acaba dentro del margen de producción", () => {
   const items = batchPlanItems(
-    new Map([["P01", 20], ["P02", 20], ["P05", 20]]),
+    new Map([[INSUMO, 20], [OTRO_INSUMO, 20], [TERCER_INSUMO, 20]]),
     new Map(),
-    inv([["P01", "Res", 2], ["P02", "Pollo", 6], ["P05", "Embutido", 40]]),
+    inv([[INSUMO, "Res", 2], [OTRO_INSUMO, "Pollo", 6], [TERCER_INSUMO, "Embutido", 40]]),
     10,
     4,
   );
   // 2/día: P01 dura 1 día, P02 3 días, P05 20 días. Con margen de 2 solo entra P01.
   const urgentes = cookNowItems(items, 2);
   assertEquals(urgentes.length, 1);
-  assertEquals(urgentes[0].code, "P01");
+  assertEquals(urgentes[0].code, INSUMO);
 });
 
 Deno.test("los más urgentes van primero, no los de mayor volumen", () => {
   // Si ordenara por cantidad, el insumo que se acaba mañana quedaría debajo del que se
   // acaba pasado — y el push solo muestra los tres primeros.
   const items = batchPlanItems(
-    new Map([["P01", 10], ["P02", 100]]),
+    new Map([[INSUMO, 10], [OTRO_INSUMO, 100]]),
     new Map(),
-    inv([["P01", "Res", 1], ["P02", "Pollo", 15]]),
+    inv([[INSUMO, "Res", 1], [OTRO_INSUMO, "Pollo", 15]]),
     10,
     4,
   );
-  assertEquals(cookNowItems(items, 3).map((u) => u.code).join(","), "P01,P02");
+  assertEquals(cookNowItems(items, 3).map((u) => u.code).join(","), [INSUMO, OTRO_INSUMO].join(","));
 });
 
 Deno.test("lo que ya se acabó entra con plazo cero o negativo, no se escapa", () => {
-  const items = batchPlanItems(new Map([["P01", 20]]), new Map(), inv([["P01", "Res", 0]]), 10, 4);
+  const items = batchPlanItems(new Map([[INSUMO, 20]]), new Map(), inv([[INSUMO, "Res", 0]]), 10, 4);
   assertEquals(items[0].daysLeft, 0);
   assertEquals(cookNowItems(items, 2).length, 1);
 });
@@ -81,7 +94,7 @@ Deno.test("una lista vacía o rota no dispara una alerta fantasma", () => {
 
 Deno.test("los pedidos ya programados mandan sobre el promedio", () => {
   // Es demanda vendida: no se puede promediar algo que ya está comprometido.
-  const items = batchPlanItems(new Map([["P01", 1]]), new Map([["P01", 30]]), inv([["P01", "Res", 0]]), 10, 4);
+  const items = batchPlanItems(new Map([[INSUMO, 1]]), new Map([[INSUMO, 30]]), inv([[INSUMO, "Res", 0]]), 10, 4);
   assertEquals(items[0].needed, 30);
   assertEquals(items[0].toCook, 30);
 });
@@ -141,18 +154,18 @@ const ing = (code: string, shortfall = false) =>
   ({ code, label: code, qty: 3, stockQty: 10, shortfall });
 
 Deno.test("agrupa por dónde está cada cosa, no en una lista plana", () => {
-  const g = miseEnPlaceGroups([ing("S01"), ing("P01"), ing("B01"), ing("T01"), ing("D01")]);
+  const g = miseEnPlaceGroups([ing(UNA_SALSA), ing(INSUMO), ing(UN_PAN), ing(UN_VEGETAL), ing(UNA_BEBIDA)]);
   assertEquals(g.map((x) => x.key).join(","), "prot,base,top,sauce,drink");
 });
 
 Deno.test("dentro del grupo mandan los faltantes", () => {
   // Es lo que hay que resolver ANTES de abrir; el resto solo hay que sacarlo.
-  const g = miseEnPlaceGroups([ing("P01"), ing("P02", true), ing("P03")]);
-  assertEquals(g[0].items[0].code, "P02");
+  const g = miseEnPlaceGroups([ing(INSUMO), ing(OTRO_INSUMO, true), ing(CUARTO_INSUMO)]);
+  assertEquals(g[0].items[0].code, OTRO_INSUMO);
 });
 
 Deno.test("un grupo sin nada no aparece vacío en la pantalla", () => {
-  const g = miseEnPlaceGroups([ing("P01")]);
+  const g = miseEnPlaceGroups([ing(INSUMO)]);
   assertEquals(g.length, 1);
   assertEquals(g[0].key, "prot");
 });
@@ -160,13 +173,13 @@ Deno.test("un grupo sin nada no aparece vacío en la pantalla", () => {
 Deno.test("un código que no encaja en ningún grupo NO se pierde", () => {
   // Perderlo en silencio sería peor que mostrarlo mal: es un insumo que igual hay que
   // preparar, y el que no está en la lista no se prepara.
-  const g = miseEnPlaceGroups([ing("P01"), ing("X99"), ing("QUESO")]);
+  const g = miseEnPlaceGroups([ing(INSUMO), ing("X99"), ing("QUESO")]);
   const otros = g.find((x) => x.key === "otros");
   assertEquals(otros?.items.length, 2);
 });
 
 Deno.test("ningún ingrediente aparece en dos grupos a la vez", () => {
-  const entrada = [ing("P01"), ing("B01"), ing("S01"), ing("T01"), ing("D01"), ing("Z1")];
+  const entrada = [ing(INSUMO), ing(UN_PAN), ing(UNA_SALSA), ing(UN_VEGETAL), ing(UNA_BEBIDA), ing("Z1")];
   const g = miseEnPlaceGroups(entrada);
   const total = g.reduce((a, x) => a + x.items.length, 0);
   assertEquals(total, entrada.length, "duplicar un ingrediente haría preparar el doble");

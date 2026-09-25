@@ -14,6 +14,10 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
 }
 import { ingredientCosts, recipeCost, creditLiability, culqiReconciliation } from "../supabase/functions/api/actions/admin.ts";
 import { orderMargin } from "../supabase/functions/api/actions/orders.ts";
+import { unaProteina } from "./carta.ts";
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const INSUMO = unaProteina();
 
 const compra = (code: string, qty: number, total: number, fecha: string, unit = "g") =>
   ({ product_code: code, qty, unit, total_paid: total, purchased_at: fecha });
@@ -22,7 +26,7 @@ const compra = (code: string, qty: number, total: number, fecha: string, unit = 
 
 Deno.test("el costo unitario sale de la boleta, no se pide aparte", () => {
   // El dueño tiene el total pagado y la cantidad; el precio unitario lo deriva el sistema.
-  const c = ingredientCosts([compra("P01", 6000, 120, "2026-09-01")]).get("P01")!;
+  const c = ingredientCosts([compra(INSUMO, 6000, 120, "2026-09-01")]).get(INSUMO)!;
   assertEquals(c.lastUnitCost, 0.02);
   assertEquals(c.avgUnitCost, 0.02);
 });
@@ -31,9 +35,9 @@ Deno.test("el promedio es PONDERADO por cantidad, no promedio de precios", () =>
   // 6 kg a S/20/kg y 0.5 kg a S/30/kg no cuestan S/25 el kilo: cuestan S/20.77. El promedio
   // simple sobrevalora la compra chica y con eso sube el costo de todo el menú.
   const c = ingredientCosts([
-    compra("P01", 6000, 120, "2026-09-01"),
-    compra("P01", 500, 15, "2026-09-02"),
-  ]).get("P01")!;
+    compra(INSUMO, 6000, 120, "2026-09-01"),
+    compra(INSUMO, 500, 15, "2026-09-02"),
+  ]).get(INSUMO)!;
   assertEquals(c.avgUnitCost, 0.0208);
   assertEquals(c.lastUnitCost, 0.03, "la última compra sí fue más cara");
 });
@@ -41,44 +45,44 @@ Deno.test("el promedio es PONDERADO por cantidad, no promedio de precios", () =>
 Deno.test("solo entran las últimas compras en el promedio", () => {
   // Promediar seis meses con inflación da un costo que ya no existe.
   const c = ingredientCosts([
-    compra("P01", 1000, 100, "2026-09-04"),
-    compra("P01", 1000, 100, "2026-09-03"),
-    compra("P01", 1000, 100, "2026-09-02"),
-    compra("P01", 1000, 10, "2026-01-01"),
-  ]).get("P01")!;
+    compra(INSUMO, 1000, 100, "2026-09-04"),
+    compra(INSUMO, 1000, 100, "2026-09-03"),
+    compra(INSUMO, 1000, 100, "2026-09-02"),
+    compra(INSUMO, 1000, 10, "2026-01-01"),
+  ]).get(INSUMO)!;
   assertEquals(c.avgUnitCost, 0.1, "la compra vieja y barata no debe arrastrar el promedio");
   assertEquals(c.purchases, 4);
 });
 
 Deno.test("marca cuánto subió respecto de la compra anterior", () => {
   const c = ingredientCosts([
-    compra("P01", 1000, 120, "2026-09-02"),
-    compra("P01", 1000, 100, "2026-09-01"),
-  ]).get("P01")!;
+    compra(INSUMO, 1000, 120, "2026-09-02"),
+    compra(INSUMO, 1000, 100, "2026-09-01"),
+  ]).get(INSUMO)!;
   assertEquals(c.spikePct, 0.2);
 });
 
 Deno.test("con UNA sola compra no se inventa una variación de 0%", () => {
   // 0% sugeriría que el precio está estable, cuando en realidad no hay contra qué comparar.
-  assertEquals(ingredientCosts([compra("P01", 1000, 100, "2026-09-01")]).get("P01")!.spikePct, null);
+  assertEquals(ingredientCosts([compra(INSUMO, 1000, 100, "2026-09-01")]).get(INSUMO)!.spikePct, null);
 });
 
 Deno.test("una compra con cantidad cero se descarta en vez de dar Infinity", () => {
   // Ese Infinity se propagaría al costo de todo el menú sin ningún error visible.
-  const m = ingredientCosts([compra("P01", 0, 100, "2026-09-01")]);
-  assertEquals(m.has("P01"), false);
+  const m = ingredientCosts([compra(INSUMO, 0, 100, "2026-09-01")]);
+  assertEquals(m.has(INSUMO), false);
 });
 
 Deno.test("el orden de las filas no cambia el resultado", () => {
-  const asc = ingredientCosts([compra("P01", 1000, 100, "2026-09-01"), compra("P01", 1000, 120, "2026-09-02")]).get("P01")!;
-  const desc = ingredientCosts([compra("P01", 1000, 120, "2026-09-02"), compra("P01", 1000, 100, "2026-09-01")]).get("P01")!;
+  const asc = ingredientCosts([compra(INSUMO, 1000, 100, "2026-09-01"), compra(INSUMO, 1000, 120, "2026-09-02")]).get(INSUMO)!;
+  const desc = ingredientCosts([compra(INSUMO, 1000, 120, "2026-09-02"), compra(INSUMO, 1000, 100, "2026-09-01")]).get(INSUMO)!;
   assertEquals(asc.lastUnitCost, desc.lastUnitCost);
 });
 
 // ── #38: costo por porción derivado de la receta ───────────────────────────────────────
 
 const RECETA = {
-  recipe_code: "P01",
+  recipe_code: INSUMO,
   name: "Res asada mechada",
   yield_portions: 38,
   ingredients: [

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp, entrarConTelefono } from './helpers';
+import { recompensa } from './carta';
 
 // #55 — La escalera de referidos, del lado del cliente.
 //
@@ -71,7 +72,7 @@ test('si el panel encarece la bebida, el escalón deja de prometerla', async ({ 
                   total_orders: 6, total_referrals: 0 },
       isAdmin: false, token: 'tok-rosa2',
     },
-    'get-catalog': { proteins: {}, sigs: {}, sides: {}, inventory: {}, rewardPts: { R05: 999 } },
+    'get-catalog': { proteins: {}, sigs: {}, sides: {}, inventory: {}, rewardPts: { [recompensa('bebida')]: 999 } },
   });
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await entrarConTelefono(page, '900000056', '1234');

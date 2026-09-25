@@ -13,7 +13,10 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
 }
 import { repartirGrupo } from "../supabase/functions/api/actions/group.ts";
 import { deriveCart } from "../supabase/functions/api/catalog.ts";
-import { unSignature } from "./carta.ts";
+import { unSignature, unaBebida } from "./carta.ts";
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const UNA_BEBIDA = unaBebida();
 
 // Un Signature vigente cualquiera: la prueba no depende de qué sándwich haya en la carta.
 const UN_SIGNATURE = unSignature();
@@ -35,10 +38,10 @@ Deno.test("el envío se parte en céntimos y la suma da EXACTAMENTE la tarifa", 
 
 Deno.test("cada parte es su comida (con su combo) más su envío", () => {
   const partes = repartirGrupo(
-    [{ name: "Ana", items: [sig15(), bebida("D07")] }, { name: "Beto", items: [sig15()] }],
+    [{ name: "Ana", items: [sig15(), bebida(UNA_BEBIDA)] }, { name: "Beto", items: [sig15()] }],
     8, "Ana", false,
   );
-  const comidaAna = deriveCart([sig15(), bebida("D07")], null, null, false).expectedTotal;
+  const comidaAna = deriveCart([sig15(), bebida(UNA_BEBIDA)], null, null, false).expectedTotal;
   assertEquals(c(partes[0].food), c(comidaAna));
   assertEquals(c(partes[0].total), c(comidaAna) + 400);
   const totalGrupo = partes.reduce((s, p) => s + c(p.total), 0);

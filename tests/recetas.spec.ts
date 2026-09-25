@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp, entrarConTelefono } from './helpers';
+import { unaProteina } from './carta';
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const UNA_PROTEINA = unaProteina();
 
 // #9 / #3 / #4 — La pantalla de recetas.
 //
@@ -18,7 +22,7 @@ const ADMIN = {
 };
 
 const RECETA_BASE = {
-  recipe_code: 'P01',
+  recipe_code: UNA_PROTEINA,
   name: 'Res asada mechada',
   yield_portions: 38,
   portion_grams: 85,
@@ -52,7 +56,7 @@ async function entrarARecetas(page: any, respuesta: unknown) {
 test('muestra la receta tal como está escrita cuando no se pidió escalar', async ({ page }) => {
   await entrarARecetas(page, { recipes: [RECETA_BASE], targetPortions: null });
   await expect(page.locator('text=Res asada mechada')).toBeVisible();
-  await expect(page.locator('text=/P01 · RINDE 38 × 85g/')).toBeVisible();
+  await expect(page.getByText(new RegExp(`${UNA_PROTEINA} · RINDE 38 × 85g`))).toBeVisible();
   await expect(page.locator('text=/6000 g/')).toBeVisible();
   // El total de la tanda es lo que decide si entra hoy o hay que empezar mañana.
   await expect(page.locator('text=/1h 10m/')).toBeVisible();

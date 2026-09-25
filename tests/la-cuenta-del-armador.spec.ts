@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers';
+import { unPanConRecargo, unPanSinRecargo } from './carta';
 
 // EL ARMADOR TIENE QUE COBRAR LO MISMO QUE EL CARRITO.
 //
@@ -46,9 +47,9 @@ for (const size of ['15', '30'] as const) {
     await gotoApp(page, {});
     await page.waitForTimeout(400);
 
-    // B03 es el único pan con recargo (BASE_SURCHARGE). Si algún día hay otro, esta prueba
-    // sigue valiendo para él: lo que fija es que las dos fórmulas coincidan.
-    const f = await precios(page, 'B03', size);
+    // El pan con recargo sale de la carta (la propiedad `recargo` del pan): lo que se fija es
+    // que las dos fórmulas coincidan, sea cual sea ese pan.
+    const f = await precios(page, unPanConRecargo(), size);
     expect(f.recargo, 'la focaccia dejó de tener recargo — revisa BASE_SURCHARGE').toBeGreaterThan(0);
     expect(
       f.armador,
@@ -60,7 +61,7 @@ for (const size of ['15', '30'] as const) {
 test('un pan sin recargo no inventa uno', async ({ page }) => {
   await gotoApp(page, {});
   await page.waitForTimeout(400);
-  const sinRecargo = await precios(page, 'B01', '15');
+  const sinRecargo = await precios(page, unPanSinRecargo(), '15');
   expect(sinRecargo.recargo).toBe(0);
   expect(sinRecargo.armador).toBeCloseTo(sinRecargo.carrito, 2);
 });
@@ -70,15 +71,15 @@ test('un pan sin recargo no inventa uno', async ({ page }) => {
 test('un Signature nunca paga el recargo del pan', async ({ page }) => {
   await gotoApp(page, {});
   await page.waitForTimeout(400);
-  const r = await page.evaluate(() => {
+  const r = await page.evaluate((conRecargo) => {
     const w = window as any;
-    const sig = w.SIGS.find((s: any) => !s.secret && s.base === 'B03') || w.SIGS.find((s: any) => !s.secret);
+    const sig = w.SIGS.find((s: any) => !s.secret && s.base === conRecargo) || w.SIGS.find((s: any) => !s.secret);
     w.mode = 'sig';
     w.sigId = sig.id;
     w.size = '15';
     w.doubleProt = false;
     w.extraSauce = false;
     return { total: w.total(), carta: w.sigPrice(sig) };
-  });
+  }, unPanConRecargo());
   expect(r.total).toBeCloseTo(r.carta, 2);
 });

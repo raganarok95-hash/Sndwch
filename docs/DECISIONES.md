@@ -1179,3 +1179,18 @@ Se verificó que las tres copias anteriores y las derivadas eran idénticas ante
 de `catalog_items` y precios de `catalog_prices`), se probó en el Postgres local contra el estado
 real de producción, y se aplicó. Las recetas de P09 y T10 son **primera versión**: el
 rendimiento de la res (0.70) es supuesto y se corrige con la primera tanda.
+
+
+## 2026-09-25 · Las pruebas no nombran productos, y el techo de costo vale para todo
+
+Pedido del dueño desde el inicio de la reescritura: «nunca escribir código ni pruebas que apunten
+a un ítem o texto específico del menú; derivar de objetos y propiedades». La carta v4 lo mostró
+caro: 29 pruebas cayeron sin que cambiara ninguna regla, y dos siguieron verdes mirando productos
+retirados.
+
+- Las pruebas preguntan a la carta (`tests/carta.ts`, `tests-api/carta.ts`). `check:pruebas-sin-codigos`
+  falla si una prueba escribe un código real; los inventados usan la serie 9x (P99, B99, SIG99).
+- El recargo del pan es una propiedad del pan (`recargo` en `_shared/carta.ts`), no una entrada
+  `{ B03: … }` en `dinero.ts`.
+- El techo de 45% de costo pasó de una prueba del pavo (con su costo copiado fuera de
+  `modelo/insumos.py`) a `check:costos`, para cada Signature, proteína del armador y doble.

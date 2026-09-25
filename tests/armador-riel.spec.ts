@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { mockBackend, APP_FILE } from './helpers';
+import { unVegetalDelArmador } from './carta';
 
 // EL RIEL TIENE QUE DECIR LO MISMO QUE LA PANTALLA
 //
@@ -84,7 +85,7 @@ test('cada parte de «lo que llevas» vuelve a SU paso, no al de al lado', async
   await siguiente(page);
   await page.locator('button', { hasText: /Cheddar/ }).first().click(); // queso
   await siguiente(page);
-  await page.locator('[onclick*="\'T01\'"]').first().click(); // un vegetal
+  await page.locator(`[onclick*="'${unVegetalDelArmador()}'"]`).first().click(); // un vegetal
   await siguiente(page); // salsas: desde acá se ve el resumen completo
 
   const partes: [RegExp, string][] = [

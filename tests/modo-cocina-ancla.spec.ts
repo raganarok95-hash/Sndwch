@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers';
+import { unSignature } from './carta';
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const UN_SIGNATURE = unSignature();
 
 // El modo cocina se usa en un celular dedicado, con las manos ocupadas, mirando UN pedido
 // mientras se arma. El poll trae pedidos nuevos cada 25 s y sortedActiveOrders() los ordena
@@ -20,7 +24,7 @@ const ped = (id: string, status: string, min: number, extra: any = {}) => ({
   customer_name: 'Cliente ' + id, customer_address: 'Av. Larco 1234, Trujillo',
   customer_phone: '987654321', notes: '', total: 20, date: '12/09', summary: '1 item',
   created_at: new Date(ahora - 1000 * 60 * min).toISOString(),
-  items: [{ sig: 'SIG01', size: '15', qty: 1 }], ...extra,
+  items: [{ sig: UN_SIGNATURE, size: '15', qty: 1 }], ...extra,
 });
 
 // Rosa lleva 40 min y ya está en PREPARANDO. El que entra después no pagó todavía, así que

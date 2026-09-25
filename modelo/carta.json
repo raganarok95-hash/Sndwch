@@ -56,7 +56,11 @@
       "id": "B03",
       "nombre": "Focaccia",
       "sabor": "Artesanal",
-      "desc": "Aceite de oliva en la masa y sal gruesa arriba. Más aromática y más densa."
+      "desc": "Aceite de oliva en la masa y sal gruesa arriba. Más aromática y más densa.",
+      "recargo": {
+        "p15": 0.5,
+        "p30": 1
+      }
     }
   ],
   "proteinas": [

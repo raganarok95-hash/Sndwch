@@ -21,6 +21,11 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
 }
 import { monthlyRecap, resumenCedeHoy, MONTHLY_RECAP_LAST_DAY } from "../supabase/functions/api/actions/customer.ts";
 import { limaPrevMonthRange } from "../supabase/functions/api/env.ts";
+import { signaturesVigentes } from "./carta.ts";
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const SIG_A = signaturesVigentes()[0]!;
+const SIG_B = signaturesVigentes()[1]!;
 
 // Un pedido tal como sale de la consulta del cron. `delivery_fee` va aparte a propósito: los
 // puntos NUNCA se ganan sobre el reparto (es pass-through al motorizado), así que un resumen
@@ -39,7 +44,7 @@ Deno.test("sin pedidos no se manda nada", () => {
 
 Deno.test("cuenta los pedidos y suma solo los puntos de la comida", () => {
   // 3 pedidos de S/26.90 con S/6 de delivery: los puntos salen de S/20.90 cada uno.
-  const r = monthlyRecap([pedido("SIG01", 26.9), pedido("SIG01", 26.9), pedido("SIG01", 26.9)]);
+  const r = monthlyRecap([pedido(SIG_A, 26.9), pedido(SIG_A, 26.9), pedido(SIG_A, 26.9)]);
   assertEquals(r?.count, 3);
   assertEquals(r?.points, 63, "el delivery no da puntos: 3 × round(26.90 − 6) = 63");
 });
@@ -47,41 +52,41 @@ Deno.test("cuenta los pedidos y suma solo los puntos de la comida", () => {
 Deno.test("el delivery nunca infla los puntos del resumen", () => {
   // El mismo pedido con reparto caro tiene que dar los MISMOS puntos. Si esta prueba falla,
   // el resumen le está prometiendo al cliente puntos que su saldo real no tiene.
-  const barato = monthlyRecap([pedido("SIG01", 26.9, 6)]);
-  const caro = monthlyRecap([pedido("SIG01", 32.9, 12)]);
+  const barato = monthlyRecap([pedido(SIG_A, 26.9, 6)]);
+  const caro = monthlyRecap([pedido(SIG_A, 32.9, 12)]);
   assertEquals(barato?.points, caro?.points);
 });
 
 Deno.test("el favorito es el que más veces pidió, no el primero ni el más caro", () => {
   const r = monthlyRecap([
-    pedido("SIG03", 34.9),
-    pedido("SIG01", 20.9),
-    pedido("SIG01", 20.9),
-    pedido("SIG01", 20.9),
+    pedido(SIG_B, 34.9),
+    pedido(SIG_A, 20.9),
+    pedido(SIG_A, 20.9),
+    pedido(SIG_A, 20.9),
   ]);
   assertEquals(r?.count, 4);
   assertEquals(typeof r?.favorite, "string");
-  assertEquals(r?.favorite?.includes("SIG03"), false, "SIG03 fue el más caro pero solo se pidió una vez");
+  assertEquals(r?.favorite?.includes(SIG_B), false, `${SIG_B} fue el más caro pero solo se pidió una vez`);
 });
 
 Deno.test("con un solo pedido no se inventa un 'favorito'", () => {
   // "Tu favorito fue X" a partir de una sola compra suena a que la app no lo conoce — y es
   // literalmente falso: no hay con qué comparar. El resumen igual sale, sin esa frase.
-  const r = monthlyRecap([pedido("SIG01", 20.9)]);
+  const r = monthlyRecap([pedido(SIG_A, 20.9)]);
   assertEquals(r?.count, 1);
   assertEquals(r?.favorite, null);
 });
 
 Deno.test("un empate tampoco produce un favorito falso... pero sí si alguno se repite", () => {
   // Dos productos distintos una vez cada uno: nadie es favorito.
-  assertEquals(monthlyRecap([pedido("SIG01", 20.9), pedido("SIG03", 34.9)])?.favorite, null);
+  assertEquals(monthlyRecap([pedido(SIG_A, 20.9), pedido(SIG_B, 34.9)])?.favorite, null);
   // El mismo dos veces: ahí sí.
-  assertEquals(typeof monthlyRecap([pedido("SIG01", 20.9), pedido("SIG01", 20.9)])?.favorite, "string");
+  assertEquals(typeof monthlyRecap([pedido(SIG_A, 20.9), pedido(SIG_A, 20.9)])?.favorite, "string");
 });
 
 Deno.test("un pedido con varias unidades del mismo ítem cuenta las unidades", () => {
   // Un pedido grupal de 3 del mismo Signature sí revela un favorito, aunque sea un pedido.
-  const r = monthlyRecap([pedido("SIG01", 62.7, 6, 3)]);
+  const r = monthlyRecap([pedido(SIG_A, 62.7, 6, 3)]);
   assertEquals(r?.count, 1);
   assertEquals(typeof r?.favorite, "string");
 });

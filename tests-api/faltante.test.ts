@@ -13,47 +13,55 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
   }
 }
 import { prepShortfall } from "../supabase/functions/api/actions/admin.ts";
+import { unPan, unVegetal, unaProteina, unaSalsa } from "./carta.ts";
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const INSUMO = unaProteina();
+const OTRO_INSUMO = unaProteina(1);
+const UN_VEGETAL = unVegetal();
+const UNA_SALSA = unaSalsa();
+const UN_PAN = unPan();
 
 const cuenta = (pares: [string, number][]) => new Map<string, number>(pares);
 const falta = (rs: { code: string; shortfall: boolean }[]) => rs.filter((r) => r.shortfall).map((r) => r.code);
 
 Deno.test("con stock suficiente no falta nada", () => {
-  const r = prepShortfall(cuenta([["P01", 3]]), [{ product_code: "P01", product_name: "Res // Asado", in_stock: true, stock_qty: 10 }]);
+  const r = prepShortfall(cuenta([[INSUMO, 3]]), [{ product_code: INSUMO, product_name: "Res // Asado", in_stock: true, stock_qty: 10 }]);
   assertEquals(falta(r).length, 0);
 });
 
 Deno.test("stock por DEBAJO de lo comprometido es un faltante", () => {
   // El caso que importa: los pedidos ya están pagados y programados, y una corrección
   // manual de stock dejó el número por debajo de lo que hace falta.
-  const r = prepShortfall(cuenta([["P01", 5]]), [{ product_code: "P01", in_stock: true, stock_qty: 2 }]);
-  assertEquals(falta(r).join(","), "P01");
+  const r = prepShortfall(cuenta([[INSUMO, 5]]), [{ product_code: INSUMO, in_stock: true, stock_qty: 2 }]);
+  assertEquals(falta(r).join(","), INSUMO);
 });
 
 Deno.test("el borde exacto NO es faltante — con lo justo alcanza", () => {
-  const r = prepShortfall(cuenta([["P01", 4]]), [{ product_code: "P01", in_stock: true, stock_qty: 4 }]);
+  const r = prepShortfall(cuenta([[INSUMO, 4]]), [{ product_code: INSUMO, in_stock: true, stock_qty: 4 }]);
   assertEquals(falta(r).length, 0);
 });
 
 Deno.test("marcado agotado a mano cuenta como faltante aunque el número diga otra cosa", () => {
   // Un "no" explícito del dueño manda sobre cualquier cantidad — mismo criterio que
   // reserve_inventory, que rechaza por in_stock=false antes de mirar stock_qty.
-  const r = prepShortfall(cuenta([["T01", 2]]), [{ product_code: "T01", in_stock: false, stock_qty: 99 }]);
-  assertEquals(falta(r).join(","), "T01");
+  const r = prepShortfall(cuenta([[UN_VEGETAL, 2]]), [{ product_code: UN_VEGETAL, in_stock: false, stock_qty: 99 }]);
+  assertEquals(falta(r).join(","), UN_VEGETAL);
 });
 
 Deno.test("un insumo sin cantidad rastreada no se declara faltante", () => {
   // stock_qty nulo = el dueño nunca quiso llevar la cuenta de ese insumo. Inventar un
   // faltante acá haría sonar la alarma todos los días por algo que no se rastrea.
-  const r = prepShortfall(cuenta([["S01", 8]]), [{ product_code: "S01", in_stock: true, stock_qty: null }]);
+  const r = prepShortfall(cuenta([[UNA_SALSA, 8]]), [{ product_code: UNA_SALSA, in_stock: true, stock_qty: null }]);
   assertEquals(falta(r).length, 0);
 });
 
 Deno.test("un insumo sin fila en inventario tampoco se declara faltante", () => {
-  const r = prepShortfall(cuenta([["B01", 6]]), []);
+  const r = prepShortfall(cuenta([[UN_PAN, 6]]), []);
   assertEquals(falta(r).length, 0);
   assertEquals(r[0].stockQty, null);
   // Sin nombre en la tabla, se muestra el código: peor etiqueta, nunca una fila perdida.
-  assertEquals(r[0].label, "B01");
+  assertEquals(r[0].label, UN_PAN);
 });
 
 Deno.test("los faltantes van primero, y entre iguales manda la cantidad", () => {
@@ -73,16 +81,16 @@ Deno.test("los faltantes van primero, y entre iguales manda la cantidad", () => 
 });
 
 Deno.test("stock en cero con demanda es faltante", () => {
-  const r = prepShortfall(cuenta([["P02", 1]]), [{ product_code: "P02", in_stock: true, stock_qty: 0 }]);
-  assertEquals(falta(r).join(","), "P02");
+  const r = prepShortfall(cuenta([[OTRO_INSUMO, 1]]), [{ product_code: OTRO_INSUMO, in_stock: true, stock_qty: 0 }]);
+  assertEquals(falta(r).join(","), OTRO_INSUMO);
 });
 
 Deno.test("sin demanda no hay nada que revisar", () => {
-  assertEquals(prepShortfall(cuenta([]), [{ product_code: "P01", in_stock: false, stock_qty: 0 }]).length, 0);
+  assertEquals(prepShortfall(cuenta([]), [{ product_code: INSUMO, in_stock: false, stock_qty: 0 }]).length, 0);
 });
 
 Deno.test("una lista de inventario nula no revienta el cálculo", () => {
-  const r = prepShortfall(cuenta([["P01", 2]]), null as never);
+  const r = prepShortfall(cuenta([[INSUMO, 2]]), null as never);
   assertEquals(r.length, 1);
   assertEquals(r[0].shortfall, false);
 });

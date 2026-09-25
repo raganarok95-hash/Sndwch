@@ -126,9 +126,34 @@ def c5_deuda():
                 avisos.append((nombre, f"estimado de hace {dias} días, nunca confirmado"))
 
 
+# ── 6 · Nada de lo que se vende pasa el techo de costo ─────────────────────────────────
+# El reporte `rentabilidad_por_parte.py` lo calculaba para todo, pero solo lo IMPRIMÍA: lo único
+# que lo hacía cumplir era una prueba del backend escrita para el pavo, con su costo copiado a
+# mano. Acá vale para cada Signature, cada proteína del armador y su doble, en los dos tamaños.
+def c6_techo():
+    import rentabilidad_por_parte as R
+    for sid, fila in R.SIG.items():
+        for i, precio in ((0, fila[6]), (1, fila[7])):
+            try:
+                pct = R.costo_sig(sid, i) / precio
+            except KeyError:
+                continue  # le falta un costo: eso lo señala c4, no es una pregunta de techo
+            if pct > R.TECHO:
+                falla(f"techo {sid}", f"{fila[0]} {('15', '30')[i]}CM cuesta {pct:.1%} de su precio (techo {R.TECHO:.0%})")
+    for p, (p15, p30, d15, d30) in R.BYO.items():
+        if p in R.FUERA_DEL_ARMADOR or p not in R.PROT:
+            continue
+        for i, precio, costo in ((0, p15, R.costo_byo(p, 0)), (1, p30, R.costo_byo(p, 1)),
+                                 (0, d15, R.PROT[p][0]), (1, d30, R.PROT[p][1])):
+            pct = costo / precio
+            if pct > R.TECHO:
+                falla(f"techo {p}", f"{R.PROT_NOM[p]} {('15', '30')[i]}CM cuesta {pct:.1%} de su precio (techo {R.TECHO:.0%})")
+
+
 CHEQUEOS = [("fichas completas", c1_fichas), ("guarda de unidad", c2_guarda_de_unidad),
             ("porciones reproducibles", c3_porciones),
-            ("modelo vs. servidor", c4_contra_el_servidor), ("deuda de cotización", c5_deuda)]
+            ("modelo vs. servidor", c4_contra_el_servidor), ("deuda de cotización", c5_deuda),
+            ("techo de costo", c6_techo)]
 
 
 def correr():
@@ -174,6 +199,10 @@ def probar():
     caso("el modelo tasando un precio que el servidor no cobra",
          lambda: __import__("rentabilidad_por_parte").BYO.__setitem__(X, (1, 2, 3, 4)),
          X)
+    ARMABLE = next(c for c in R0.BYO if c not in R0.FUERA_DEL_ARMADOR)
+    caso("una proteína del armador que sube de costo y pasa el techo",
+         lambda: __import__("rentabilidad_por_parte").PROT.__setitem__(ARMABLE, (99.0, 198.0)),
+         f"techo {ARMABLE}")
     caso("una proteína de la carta sin costo en el modelo",
          lambda: __import__("rentabilidad_por_parte").PROT.pop(X), X)
 
@@ -209,7 +238,7 @@ if __name__ == "__main__" and "--probar" in sys.argv:
     if malos:
         print(f"\n  ✗ {len(malos)} defecto(s) pasaron sin que nadie los viera.\n")
         sys.exit(1)
-    print("\n  OK — los ocho defectos fueron señalados.\n")
+    print("\n  OK — todos los defectos inyectados fueron señalados.\n")
     sys.exit(0)
 
 if __name__ == "__main__":
@@ -224,5 +253,5 @@ if __name__ == "__main__":
     if f:
         print(f"\n  {len(f)} problema(s).\n")
         sys.exit(1)
-    print(f"  OK — {len(I.TODAS)} fichas, las 5 comprobaciones pasan"
+    print(f"  OK — {len(I.TODAS)} fichas, las {len(CHEQUEOS)} comprobaciones pasan"
           f" ({len(a)} cosa(s) anotadas arriba, ninguna bloquea).\n")

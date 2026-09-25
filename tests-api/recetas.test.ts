@@ -15,9 +15,13 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
   }
 }
 import { scaleRecipe, recipeTimeline, batchLabels } from "../supabase/functions/api/actions/admin.ts";
+import { unaProteina } from "./carta.ts";
 
-// La receta real de P01 tal como quedó sembrada: 6 kg de punta de pecho → 38 porciones.
-const P01 = [
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const INSUMO = unaProteina();
+
+// Una receta real tal como quedó sembrada: 6 kg de punta de pecho → 38 porciones.
+const INGREDIENTES = [
   { item: "Punta de pecho (brisket)", qty: 6000, unit: "g" },
   { item: "Sal", qty: 72, unit: "g" },
   { item: "Cebolla en juliana", qty: 2, unit: "unidades" },
@@ -26,24 +30,24 @@ const P01 = [
 // ── #9: escalado ───────────────────────────────────────────────────────────────────────
 
 Deno.test("pedir el mismo rendimiento no cambia ninguna cantidad", () => {
-  const r = scaleRecipe(P01, 38, 38);
+  const r = scaleRecipe(INGREDIENTES, 38, 38);
   assertEquals(r.map((x) => x.scaledQty).join(","), "6000,72,2");
 });
 
 Deno.test("el doble de porciones es el doble de todo", () => {
-  const r = scaleRecipe(P01, 38, 76);
+  const r = scaleRecipe(INGREDIENTES, 38, 76);
   assertEquals(r.map((x) => x.scaledQty).join(","), "12000,144,4");
 });
 
 Deno.test("una tanda a la mitad escala hacia abajo, no redondea a la receta entera", () => {
-  const r = scaleRecipe(P01, 38, 19);
+  const r = scaleRecipe(INGREDIENTES, 38, 19);
   assertEquals(r.map((x) => x.scaledQty).join(","), "3000,36,1");
 });
 
 Deno.test("un objetivo que no es múltiplo da cantidades reales, no un salto de tanda", () => {
   // 40 porciones sobre una base de 38. Redondear a "una tanda y media" haría comprar 3 kg de
   // más para dos sándwiches.
-  const r = scaleRecipe(P01, 38, 40);
+  const r = scaleRecipe(INGREDIENTES, 38, 40);
   assertEquals(r[0].scaledQty, 6315.8);
   assertEquals(r[1].scaledQty, 75.8);
 });
@@ -57,22 +61,22 @@ Deno.test("se redondea a un decimal, no a entero", () => {
 
 Deno.test("la cantidad original se conserva al lado de la escalada", () => {
   // La pantalla muestra las dos: sin la original no hay forma de notar que el factor está mal.
-  const r = scaleRecipe(P01, 38, 76);
+  const r = scaleRecipe(INGREDIENTES, 38, 76);
   assertEquals(r[0].qty, 6000);
   assertEquals(r[0].scaledQty, 12000);
 });
 
 Deno.test("un rendimiento base inválido no produce cantidades infinitas", () => {
   // Dividir entre cero daría Infinity y la lista de compras diría "Infinity g de carne".
-  assertEquals(scaleRecipe(P01, 0, 40).length, 0);
-  assertEquals(scaleRecipe(P01, -5, 40).length, 0);
-  assertEquals(scaleRecipe(P01, NaN, 40).length, 0);
+  assertEquals(scaleRecipe(INGREDIENTES, 0, 40).length, 0);
+  assertEquals(scaleRecipe(INGREDIENTES, -5, 40).length, 0);
+  assertEquals(scaleRecipe(INGREDIENTES, NaN, 40).length, 0);
 });
 
 Deno.test("un objetivo inválido devuelve nada en vez de una receta absurda", () => {
-  assertEquals(scaleRecipe(P01, 38, 0).length, 0);
-  assertEquals(scaleRecipe(P01, 38, -10).length, 0);
-  assertEquals(scaleRecipe(P01, 38, NaN).length, 0);
+  assertEquals(scaleRecipe(INGREDIENTES, 38, 0).length, 0);
+  assertEquals(scaleRecipe(INGREDIENTES, 38, -10).length, 0);
+  assertEquals(scaleRecipe(INGREDIENTES, 38, NaN).length, 0);
 });
 
 Deno.test("un ingrediente sin cantidad numérica se descarta, no se multiplica por NaN", () => {
@@ -139,7 +143,7 @@ Deno.test("una receta sin etapas da un total de cero, no una excepción", () => 
 
 // ── #4: etiquetas ──────────────────────────────────────────────────────────────────────
 
-const RECETA = { recipe_code: "P01", name: "Res asada mechada", portion_grams: 85 };
+const RECETA = { recipe_code: INSUMO, name: "Res asada mechada", portion_grams: 85 };
 
 Deno.test("la etiqueta lleva la fecha límite calculada desde la vida útil real", () => {
   const l = batchLabels(RECETA, "2026-09-10T12:00:00Z", 3);
@@ -164,7 +168,7 @@ Deno.test("la etiqueta lleva el código y el gramaje: es lo que la hace distingu
   // "Sin fecha no hay rotación" dice el recetario; sin código ni gramaje, dos bolsas del
   // mismo día tampoco se distinguen.
   const l = batchLabels(RECETA, "2026-09-10T12:00:00Z", 3);
-  assertEquals(l.code, "P01");
+  assertEquals(l.code, INSUMO);
   assertEquals(l.portionGrams, 85);
 });
 

@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers';
+import { unSignature } from './carta';
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const UN_SIGNATURE = unSignature();
 
 // LOS IDS DE DIRECCIÓN SON NÚMEROS (2026-09-24).
 //
@@ -21,13 +25,13 @@ test('tocar una dirección guardada la usa, aunque su id sea un número', async 
     'session-check': { valid: true, customer: CLIENTE },
     'addresses-list': { addresses: DIRECCIONES },
   });
-  await page.evaluate((dirs) => {
+  await page.evaluate(([dirs, sig]) => {
     const w = window as any;
     w.token = 'tok';
     w.cust = { phone: '900000001', name: 'Ana', total_orders: 2 };
     w.myAddresses = dirs;
-    w.loadCart([{ type: 'sig', sigId: 'SIG02', size: '15', qty: 1 }]);
-  }, DIRECCIONES);
+    w.loadCart([{ type: 'sig', sigId: sig, size: '15', qty: 1 }]);
+  }, [DIRECCIONES, UN_SIGNATURE] as const);
   await page.locator('[onclick="pickAddr(\'12\')"]').click();
   expect(await page.evaluate(() => (window as any).addrText)).toBe('Av. España 123');
   expect(await page.evaluate(() => (window as any)._mLat)).toBe(-8.112);

@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { mockBackend, APP_FILE } from './helpers';
+import { unVegetalDelArmador } from './carta';
 
 // TODO LO QUE SE ELIGE EN EL ARMADOR SE PUEDE ELEGIR CON TECLADO
 //
@@ -80,13 +81,14 @@ test('una ficha de vegetal dice si está puesta o no, no solo se ve distinta', a
   await siguiente(page); // queso -> vegetales
   await expect(page.locator('[aria-label="VEGETALES (aquí)"]')).toHaveCount(1);
 
-  // El armador trae vegetales puestos por defecto, así que el tomate puede empezar marcado o
+  // El armador trae vegetales puestos por defecto, así que un vegetal puede empezar marcado o
   // no. Lo que se exige es que `aria-pressed` diga el estado REAL y se invierta al tocarlo.
-  const tomate = () => page.locator('button[onclick*="\'T01\'"]').first();
+  const VEG = unVegetalDelArmador();
+  const tomate = () => page.locator(`button[onclick*="'${VEG}'"]`).first();
   const antes = await tomate().getAttribute('aria-pressed');
   expect(['true', 'false'], 'la ficha tiene que decir si está puesta').toContain(antes);
   await tomate().click();
   await expect(tomate()).toHaveAttribute('aria-pressed', antes === 'true' ? 'false' : 'true');
-  const puesto = await page.evaluate(() => (window as any).tops.includes('T01'));
+  const puesto = await page.evaluate((v) => (window as any).tops.includes(v), VEG);
   expect(String(puesto), 'aria-pressed tiene que coincidir con lo que de verdad lleva el sándwich').toBe(await tomate().getAttribute('aria-pressed'));
 });

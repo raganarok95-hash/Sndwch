@@ -19,7 +19,10 @@
 // códigos. Así la próxima carta cambia datos, no código.
 
 /** Pan. */
-export type Pan = { id: string; nombre: string; sabor: string; desc: string };
+/** Pan. `recargo`: lo que suma por tamaño, DENTRO del precio base del sándwich (así lo perdonan
+ *  enteros el sándwich gratis y la subida a 30CM). Sin `recargo`, no suma nada. Es uno de los
+ *  precios que NO viven en `catalog_prices`. */
+export type Pan = { id: string; nombre: string; sabor: string; desc: string; recargo?: { p15: number; p30: number } };
 
 /** Proteína. `dbl15`/`dbl30`: recargo de doble porción en cada tamaño (la porción escala). */
 export type Proteina = {
@@ -136,7 +139,7 @@ export const CARTA: Carta = {
   ],
   panes: [
     { id: "B01", nombre: "Classic", sabor: "White", desc: "Miga suave y corteza fina. No pelea con el relleno, lo sostiene." },
-    { id: "B03", nombre: "Focaccia", sabor: "Artesanal", desc: "Aceite de oliva en la masa y sal gruesa arriba. Más aromática y más densa." },
+    { id: "B03", nombre: "Focaccia", sabor: "Artesanal", desc: "Aceite de oliva en la masa y sal gruesa arriba. Más aromática y más densa.", recargo: { p15: 0.5, p30: 1 } },
   ],
   // El doble escala con el tamaño (85 g en 15CM, 170 g en 30CM): por eso son dos recargos.
   // Precios y doble de la v4 (docs/MENU_CLASICOS_USA.md, modelo/rentabilidad_por_parte.py).
