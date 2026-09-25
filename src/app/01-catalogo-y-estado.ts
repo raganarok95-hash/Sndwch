@@ -974,27 +974,11 @@ var sndScreen='o_home',sndTab='order',busy=false,busyMsg='';
 // Antes arrancaba en 'sig', asi que esa pantalla no existia: el cliente caia directo en
 // la lista de Signatures y la decision que estructura la marca era una barra de pestanas.
 //
-// ⚠ SE RECUERDA EL LADO, PERO SOLO PARA NO VOLVER A PREGUNTAR (decision del dueno,
-// 2026-09-17: "que recuerde la eleccion anterior pero no de manera invasiva").
-//
-// La pantalla de eleccion es para quien llega por primera vez. A un cliente que ya pidio
-// diez veces, preguntarle en cada visita de quien es el pedido es un toque de mas cada vez
-// -- y la friccion que mas se nota es la que se repite. Desde la segunda visita entra
-// directo a su lado.
-//
-// No es invasivo porque NO lo encierra: la barra de los dos hermanos sigue arriba del
-// catalogo, asi que cambiarse es un toque y esta a la vista. Recordar sin salida seria
-// invasivo; recordar con la puerta abierta al lado es lo contrario.
-//
-// El valor vive en localStorage y se acepta SOLO si es uno de los tres lados reales: un
-// localStorage manipulado o heredado de una version futura no puede dejar la app en un
-// estado que ningun boton produce.
-var homeTab: string|null = (function(){
-  try{
-    var v = localStorage.getItem('sw_lado');
-    return (v === 'sig' || v === 'byo') ? v : null;   // 'drink' fue un lado un dia; ya no
-  }catch(e){ return null; }   // navegacion privada, cookies bloqueadas: se pregunta igual
-})();
+// ⚠ SE ABRE SIEMPRE EN LA PUERTA (dueño, 2026-09-25): «luego siempre la primera pantalla debe
+// ser la dividida en mitades». Del 2026-09-17 a hoy el lado se recordaba en `sw_lado` y desde
+// la segunda visita se saltaba la puerta; eso se retiró. `sw_lado` se sigue escribiendo al
+// elegir, pero ya no decide nada al abrir.
+var homeTab: string|null = null;
 // Se llama desde los DOS sitios que cambian de lado —la pantalla de eleccion y la barra de
 // arriba del catalogo— para que no haya uno que recuerde y otro que no.
 // ── ELEGIR UN LADO ES ENTRAR A ESE LADO, NO CAMBIAR UNA PESTAÑA (2026-09-17) ──────────

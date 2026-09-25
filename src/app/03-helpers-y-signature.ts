@@ -1349,61 +1349,57 @@ function sMundoBebidas(){
 // mosaico, asi que la puerta y la carta no pueden decir cosas distintas.
 function cuantosSignatures(){
   var n=SIGS.filter(function(x){return!x.secret&&sigAvailable(x);}).length;
-  var palabras=['','Un','Dos','Tres','Cuatro','Cinco','Seis','Siete','Ocho','Nueve','Diez'];
+  // Como lo dice M2: «Cinco recetas cerradas.» — la cifra se cuenta, la frase es la de la maqueta.
+  var palabras=['','Una','Dos','Tres','Cuatro','Cinco','Seis','Siete','Ocho','Nueve','Diez'];
   if(!n)return'La carta de la casa.';
-  if(n===1)return'Un sándwich de autor.';
-  return(palabras[n]||String(n))+' sándwiches de autor.';
+  if(n===1)return'Una receta cerrada.';
+  return(palabras[n]||String(n))+' recetas cerradas.';
+}
+// ── LA PUERTA · la cara partida (M2 + la esquina de la cuenta, aprobadas 2026-09-25) ──────
+// docs/maquetas/aprobadas/la-puerta-M2-sin-sesion.png y -con-sesion.png. Es SIEMPRE la primera
+// pantalla: la app no pide nada al abrir (dueño: «luego siempre la primera pantalla debe ser la
+// dividida en mitades, tiene que cubrir por completo la pantalla»). Cada mitad de la cara es un
+// botón entero que lleva a su mundo; la cuenta vive en la esquina del lado claro, porque los
+// mundos no tienen barra y sin ella no habría cómo llegar a los puntos.
+//
+// Todo número que dice sale del código: cuántos Signatures (`cuantosSignatures`), la hora de
+// cierre (STORE_HOURS) y el envío mínimo (DELIVERY_MIN_FEE). La maqueta los trae de muestra.
+function horaDoce(h:number):string{
+  var m=h%24,suf=m<12?'a.m.':'p.m.',x=m%12===0?12:m%12;
+  return x+':00 '+suf;
+}
+function puertaEstado():{rotulo:string,detalle:string,cerrado:boolean}{
+  var envio='delivery desde '+SOLES_TXT+(DELIVERY_MIN_FEE%1?pz(DELIVERY_MIN_FEE):String(DELIVERY_MIN_FEE));
+  if(!businessLaunched)return{rotulo:'Aún no abrimos',detalle:envio,cerrado:false};
+  var lima=limaDayHour(new Date()),range=STORE_HOURS[lima.weekday];
+  if(!range)return{rotulo:'Cerrado hoy',detalle:envio,cerrado:true};
+  var abierto=lima.hour>=range[0]&&lima.hour<range[1];
+  return abierto
+    ?{rotulo:'Abierto ahora',detalle:'cierra '+horaDoce(range[1])+' · '+envio,cerrado:false}
+    :{rotulo:'Cerrado',detalle:'abre '+horaDoce(range[0])+' · '+envio,cerrado:true};
 }
 function sOEleccion(){
-  var ss=storeStatus();
-  var estado=!businessLaunched?'AÚN NO ABRIMOS':ss.label;
-  var colorEstado=!businessLaunched?GOLD:(ss.open?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)');
-  var mitad=function(id,nombre,titulo,bajada,acento,plano){
-    var esByo=id==='byo';
-    return'<button onclick="elegirLado(\''+id+'\')" style="all:unset;cursor:pointer;box-sizing:border-box;'
-      +'flex:1;min-width:0;position:relative;display:flex;flex-direction:column;justify-content:flex-end;'
-      +'background:'+plano+';overflow:hidden">'
-      // ⚠ LA FIGURA SE DIMENSIONA POR EL ANCHO DE SU MITAD, NUNCA POR EL ALTO.
-      // Con `height:100%` cada mitad ocupa el alto que le dicte SU proporcion (282x520,
-      // o sea 0.54), y a 726px de alto mide 394 de ancho dentro de un panel de 195: se
-      // sale 200px por lado y corta la oreja. Es el mismo defecto que este archivo ya
-      // documenta para los hermanos de cuerpo entero, con los papeles cambiados.
-      +'<div style="position:absolute;left:0;right:0;top:0;bottom:120px;display:flex;'
-      +'align-items:center;'+(esByo?'justify-content:flex-start':'justify-content:flex-end')+'">'
-      // 132% del ancho de la mitad: la cara llena la pantalla en vez de flotar en el medio.
-      // Lo que sobra sale por el borde de AFUERA (la oreja), nunca por la costura — por eso
-      // cada mitad se alinea a su lado interno. Recortar por la costura partiria la cara.
-      +'<img src="img/'+(esByo?'wicho':'sando')+'.webp" alt="'+esc(nombre)+'" '
-      +'style="width:132%;height:auto;max-height:100%;object-fit:contain;display:block;flex:0 0 auto"></div>'
-      +'<div style="position:relative;padding:0 16px 26px;text-align:'+(esByo?'left':'right')+'">'
-      +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.26em;'
-      +'text-transform:uppercase;color:'+acento+'">'+esc(nombre)+'</div>'
-      // El titulo NO lleva <br>: pasa por esc() y se veria el tag literal. Se deja fluir y
-      // el ancho de la mitad lo parte solo, que ademas aguanta cualquier traduccion futura.
-      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;'
-      +'color:var(--sw-text,#fff);line-height:1.04;margin-top:5px;text-wrap:balance">'+esc(titulo)+'</div>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
-      +'color:var(--sw-text-muted,#9DA096);margin-top:5px;line-height:1.35">'+esc(bajada)+'</div>'
-      +'</div></button>';
+  var est=puertaEstado();
+  var mitad=function(id,clase,nombre,titulo,bajada,img){
+    return'<button class="h '+clase+'" onclick="elegirLado(\''+id+'\')" aria-label="'+esc(nombre+' · '+titulo)+'">'
+      +'<div class="cara"><img src="img/'+img+'" alt="" aria-hidden="true"></div>'
+      +'<div class="txt"><div class="nom">'+esc(nombre)+'</div><div class="prom">'+esc(titulo)+'</div>'
+      +'<div class="baj">'+esc(bajada)+'</div></div></button>';
   };
-  return'<div class="fi" style="position:relative;min-height:calc(100dvh - 49px);display:flex;flex-direction:column">'
-    +'<div style="position:absolute;top:0;left:0;right:0;z-index:3;padding:20px 18px;'
-    +'display:flex;justify-content:space-between;align-items:center;pointer-events:none">'
-    // WORDMARK() ya existe y pinta el "//" con las dos barras identicas y un color por
-    // hermano. Reescribirlo aca a mano seria una segunda fuente del mismo glifo.
-    +WORDMARK(19)
-    +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;'
-    +'color:'+colorEstado+'">'+esc(estado)+'</span></div>'
-    +'<div style="flex:1;display:flex;align-items:stretch;min-height:0">'
-    // ⚠ EL NUMERO SE CUENTA, NUNCA SE ESCRIBE. Decia "Cinco sándwiches de autor" con el
-    // cinco a mano; el dia que el dueño publique o retire un Signature desde el panel —que
-    // es como se edita la carta— la puerta seguiria diciendo cinco. Es el mismo defecto que
-    // ya rompio tres promesas publicas en el brief semanal (ver CLAUDE.md).
-    +mitad('sig','SND','Ya está resuelto',cuantosSignatures(),GOLD,
-           'linear-gradient(160deg,rgba(47,107,84,.30),rgba(30,70,54,.08))')
-    +mitad('byo','WCH','Tú decides','Pan, proteína, lo que quieras.','var(--sw-sky,#8CC8EC)',
-           'linear-gradient(200deg,rgba(140,200,236,.24),rgba(63,134,180,.07))')
-    +'</div></div>';
+  var nombre=cust&&cust.name?String(cust.name).trim().split(/\s+/)[0]:'';
+  var yo=cust
+    ?'<button class="yo" data-fondo="#CFE6F5" onclick="swTab(\'points\')" aria-label="Tu cuenta">'+esc(nombre)+' <span class="pt">'+(cust.points||0)+' pts</span></button>'
+    :'<button class="yo" data-fondo="#CFE6F5" onclick="swTab(\'points\')">Entrar →</button>';
+  return'<div class="pta fi">'
+    +'<div class="cab"><span class="wm"><span class="snd" data-fondo="#1E1B15">SND</span><span class="wm-mark" aria-hidden="true"><i></i><i></i></span><span class="wch" data-fondo="#CFE6F5">WCH</span></span></div>'
+    +yo
+    +'<div class="mitades">'
+    // ⚠ EL NUMERO SE CUENTA, NUNCA SE ESCRIBE (ver cuantosSignatures).
+    +mitad('sig','hs','SND','Ya está resuelto',cuantosSignatures(),'sando.webp')
+    +mitad('byo','hw','WCH','Tú decides','Pan, proteína, lo que quieras.','wicho.webp')
+    +'</div>'
+    +'<div class="pie'+(est.cerrado?' cerrado':'')+'"><span>'+esc(est.rotulo)+'</span><em>'+esc(est.detalle)+'</em></div>'
+    +'</div>';
 }
 
 // Devuelve la primera frase de un texto. Si no encuentra un punto seguido de espacio

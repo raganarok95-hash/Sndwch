@@ -120,7 +120,7 @@ test('organizador cierra el pedido grupal y paga todo junto con Yape/Plin', asyn
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
-  await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 
   const closeCall = calls.find((c) => c.action === 'close-group-order');
   expect(closeCall).toBeTruthy();

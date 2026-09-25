@@ -1,0 +1,124 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n,k,q,b{text-decoration:none;font-style:normal;display:block}
+body{background:#232323;padding:40px 44px 60px;width:2400px;color:#ddd}
+h1{font:800 30px/1 Archivo,sans-serif;color:#fff}
+.lead{font:400 16px/1.6 'IBM Plex Mono',monospace;color:#aaa;margin-top:12px;max-width:1700px}
+.lead b{display:inline;color:#CBA258;font-weight:600}
+.tira{display:flex;align-items:flex-start;margin-top:36px}
+.paso{display:flex;flex-direction:column;gap:10px;flex:0 0 auto}
+.rot{font:700 11px/1.3 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#eee;width:372px;min-height:30px}
+.rot b{display:inline-block;padding:4px 7px;margin-right:8px;font-size:10px}
+.rot b.ok{background:#3b3b3b;color:#bbb}.rot b.nu{background:#CBA258;color:#2A2113}
+.flecha{width:96px;flex:0 0 auto;text-align:center;font:600 11px/1.35 'IBM Plex Mono',monospace;color:#bdbdbd;padding:0 6px;margin-top:420px}
+.flecha big{display:block;font-size:34px;color:#CBA258;line-height:1;margin-bottom:6px}
+.png{width:372px;height:812px;display:block;outline:1px solid #444}
+.f{width:372px;height:812px;position:relative;overflow:hidden;outline:1px solid #444}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:60;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{justify-content:flex-end;padding-right:16px}.go .cel{justify-content:flex-start;padding-left:16px}
+
+/* 06A · LA LOSA — copiada de y1.html #A */
+.A{background:#1E2B22}
+.A .forro{position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:50}
+.A .arriba{position:absolute;left:30px;width:172px;top:78px;z-index:6}
+.A .ok{font:700 10px/1 'IBM Plex Mono',monospace;letter-spacing:.28em;color:#D8823C;text-transform:uppercase}
+.A h2{font-family:'Liberation Sans',Arial,sans-serif;font-weight:700;font-size:42px;line-height:.86;color:#EFE6D4;margin-top:18px;letter-spacing:-.015em}
+.A .sub{font-family:'Instrument Serif',serif;font-style:italic;font-size:21px;color:#A6B79A;margin-top:20px;line-height:1.25}
+.A .sub u{font:700 8px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.24em;color:#5F7358;margin-top:11px;text-transform:uppercase}
+.A .col{position:absolute;right:0;top:0;width:200px;bottom:340px;z-index:3;overflow:hidden}
+.A .col img{position:absolute;right:-22px;bottom:-30px;height:400px}
+.A .losa{position:absolute;left:0;right:0;bottom:74px;top:472px;background:#EFE6D4;z-index:10;padding:22px 26px 0 30px}
+.A .losa .ca{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #1E2B22;padding-bottom:12px}
+.A .losa .ca em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#5F7358;text-transform:uppercase}
+.A .losa .ca u{font-family:Anton,sans-serif;font-size:22px;color:#1E2B22;letter-spacing:.01em}
+.A .dr{display:flex;justify-content:space-between;align-items:baseline;padding:13px 0;border-bottom:1px solid rgba(30,43,34,.16);
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:#6C7C64;text-transform:uppercase}
+.A .dr b{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;letter-spacing:0;color:#1E2B22}
+.A .dr b.pt{color:#B3651A}
+.A .go .oro{background:#D8823C;color:#231204}.A .go .cel{background:#EFE6D4;color:#1E2B22}
+
+/* lo nuevo: el aviso vive DENTRO de la losa, en el renglón de los puntos */
+.A .dr.espera{border-bottom:0;padding-bottom:10px}
+.A .dr.espera span{color:#B3651A}
+.A .guardar{display:flex;gap:8px}
+.A .guardar .g{flex:1;background:#1E2B22;color:#EFE6D4;height:44px;display:flex;align-items:center;justify-content:center;gap:10px;
+  font:700 12px/1 Archivo,sans-serif;letter-spacing:.08em}
+.A .guardar .g k{width:16px;height:16px;border-radius:999px;background:conic-gradient(#EA4335 0 25%,#FBBC05 0 50%,#34A853 0 75%,#4285F4 0)}
+.A .guardar .c{flex:0 0 auto;height:44px;display:flex;align-items:center;padding:0 12px;border:1px solid rgba(30,43,34,.35);
+  font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#1E2B22;text-transform:uppercase}
+/* la losa sube cuando eliges el correo: SANDO queda detrás, como siempre */
+.A.sube .losa{top:300px}
+.A.sube .col{bottom:512px}
+.A .campo{border-bottom:2px solid #1E2B22;padding:14px 0 10px}
+.A .campo s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#5F7358;text-transform:uppercase}
+.A .campo n{font-family:'IBM Plex Mono',monospace;font-size:17px;color:#1E2B22;margin-top:9px;min-height:21px}
+.A .campo n.vac{color:#A9AE9C}
+.A .campo n u{display:inline-block;width:2px;height:17px;background:#B3651A;vertical-align:-3px;margin-left:2px}
+.A .campo.cod n{font-size:30px;letter-spacing:.32em}
+.A .par{display:flex;gap:16px}.A .par .campo{flex:1}
+.A .mini{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6C7C64;line-height:1.8;margin-top:12px;text-transform:uppercase}
+.A .mini b{display:inline;color:#1E2B22;font-weight:700}
+.marca{position:absolute;z-index:95;border:2px dashed #FF5A36}
+.marca span{position:absolute;top:-19px;left:-2px;background:#FF5A36;color:#fff;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;padding:4px 6px;white-space:nowrap;text-transform:uppercase}
+</style></head><body>
+
+<h1>El aviso de los puntos · uno solo, después de pagar</h1>
+<div class="lead">Antes de pagar <b>no se pregunta nada</b>: PAGAR lleva directo a pagar. Tu nombre y tu celular ya se piden para el delivery.<br>
+Con el pedido ya en la cocina, la pantalla 06A trae <b>un solo aviso</b>, dentro de la losa: «Te esperan +51 puntos».<br>
+Con Google es <b>un toque</b> y listo. Con correo, la losa sube en el mismo lugar: correo y DNI, después el código. Sin pantallas nuevas.<br>
+«¿Quién llegó?» (E2) queda <b>una sola vez</b> en toda la app: detrás de «Entrar →» en la puerta, para el que ya tiene cuenta.</div>
+
+<div class="tira">
+  <div class="paso"><div class="rot"><b class="ok">aprobada</b>Pagar · 31</div><img class="png" src="../../../docs/maquetas/aprobadas/31-pagar-con-yape.png"></div>
+  <div class="flecha"><big>→</big>YA PAGUÉ,<br>sin cuenta</div>
+
+  <div class="paso"><div class="rot"><b class="nu">06A + aviso</b>Te esperan tus puntos</div>
+  <div class="f A"><div class="forro"></div>
+    <div class="col"><img src="../../../img/sando2_asoma.png"></div>
+    <div class="arriba"><div class="ok">Pedido recibido</div><h2>YA ESTÁ<br>EN LA<br>COCINA</h2>
+      <div class="sub">“Ya prendí<br>la plancha.”<u>Sando</u></div></div>
+    <div class="losa">
+      <div class="ca"><em>Tu pedido</em><u>#A7F2K9</u></div>
+      <div class="dr"><span>Llega</span><b>7:40 – 8:05 p.m.</b></div>
+      <div class="dr"><span>Pagaste</span><b>S/50.80</b></div>
+      <div class="dr espera"><span>Te esperan</span><b class="pt">+51 puntos</b></div>
+      <div class="guardar"><div class="g"><k></k>Guardarlos con Google</div><div class="c">Correo →</div></div>
+    </div>
+    <div class="go"><div class="mi oro">Seguir el pedido</div><div class="mi cel">→</div></div>
+    <div class="marca" style="left:22px;right:18px;top:636px;height:88px"><span style="top:auto;bottom:-19px">el único aviso</span></div>
+  </div></div>
+
+  <div class="flecha"><big>→</big>CORREO</div>
+  <div class="paso"><div class="rot"><b class="nu">06A · la losa sube</b>Correo y DNI</div>
+  <div class="f A sube"><div class="forro"></div>
+    <div class="col"><img src="../../../img/sando2_asoma.png"></div>
+    <div class="arriba"><div class="ok">Pedido recibido</div><h2>YA ESTÁ<br>EN LA<br>COCINA</h2></div>
+    <div class="losa">
+      <div class="ca"><em>Guardar +51 puntos</em><u>#A7F2K9</u></div>
+      <div class="campo"><s>Tu correo</s><n>mafe.rios@gmail.com<u></u></n></div>
+      <div class="par"><div class="campo"><s>DNI</s><n class="vac">8 dígitos</n></div><div class="campo"><s>Cumpleaños</s><n class="vac">DD/MM/AAAA</n></div></div>
+      <div class="mini">Tu nombre y tu celular ya los tenemos: <b>Mafe · 987 654 321</b>.<br>+40 puntos de bienvenida. Aceptas los Términos y la Privacidad.</div>
+    </div>
+    <div class="go"><div class="mi oro">Mandar código</div><div class="mi cel">Ahora no</div></div>
+  </div></div>
+
+  <div class="flecha"><big>→</big></div>
+  <div class="paso"><div class="rot"><b class="nu">06A · mismo lugar</b>El código</div>
+  <div class="f A sube"><div class="forro"></div>
+    <div class="col"><img src="../../../img/sando2_asoma.png"></div>
+    <div class="arriba"><div class="ok">Pedido recibido</div><h2>YA ESTÁ<br>EN LA<br>COCINA</h2></div>
+    <div class="losa">
+      <div class="ca"><em>Guardar +51 puntos</em><u>#A7F2K9</u></div>
+      <div class="campo cod"><s>El código · 6 dígitos</s><n>482 1<u></u></n></div>
+      <div class="mini">Lo mandamos a <b>ma•••@gmail.com</b>. Vence en unos minutos.</div>
+      <div class="dr" style="margin-top:14px"><span>No me llegó</span><b style="font-size:11px;color:#B3651A">MANDAR OTRO →</b></div>
+    </div>
+    <div class="go"><div class="mi oro">Guardar</div><div class="mi cel">Ahora no</div></div>
+  </div></div>
+
+  <div class="flecha"><big>→</big>o directo<br>con Google</div>
+  <div class="paso"><div class="rot"><b class="ok">aprobada</b>06A · ya con cuenta</div><img class="png" src="../../../docs/maquetas/aprobadas/06A-pedido-enviado-la-losa.png"></div>
+</div>
+</body></html>

@@ -15,6 +15,7 @@ import {
 import { sendRecoveryEmail, sendLoginCodeEmail, maskEmail } from "../email.ts";
 import { debugLog } from "../logging.ts";
 import { pointsFor, rewardReferrer } from "./orders.ts";
+import type { Entrada, Salida } from "../../_shared/contrato.ts";
 
 // Verifica un id_token de Google Identity Services contra el propio endpoint de Google
 // (tokeninfo) en vez de validar la firma RS256/JWKS localmente — mismo criterio que
@@ -230,59 +231,13 @@ export async function actRegister(b: any) {
   const rows = [creada];
   let customer = safeCustomer(creada);
 
-  // Vincula el pedido de invitado que originó este registro (botón "CREAR CUENTA Y GANAR
-  // PUNTOS POR ESTE PEDIDO" en la confirmación) — antes esto solo creaba la cuenta sin
-  // tocar el pedido, así que el cliente nunca recibía los puntos que la propia app le
-  // prometía. El `ref` (incluye un componente aleatorio, ver oref() en el cliente) es la
-  // misma prueba de acceso que ya usan my-orders/submit-rating para invitados, y el filtro
-  // customer_phone=is.null evita "robar" un pedido que ya tiene dueño.
+  // Vincula el pedido de invitado que originó este registro (el aviso de puntos de la 06A):
+  // antes de existir esto se creaba la cuenta sin tocar el pedido y el cliente nunca recibía los
+  // puntos que la propia app le prometía. Ver vincularPedidoDeInvitado().
   const claimOrderRef = b.claimOrderRef ? String(b.claimOrderRef).trim().slice(0, 40) : null;
   if (claimOrderRef) {
-    try {
-      const orderRows = await sbGet(
-        "orders",
-        `ref=eq.${encodeURIComponent(claimOrderRef)}&customer_phone=is.null&select=ref,total,delivery_fee,customer_address`,
-      );
-      const order = orderRows[0];
-      if (order) {
-        // Reclamar y acreditar pasa en UNA transacción de la base (A2, migración
-        // 20260924212333), por el mismo `aplicar_pedido_a_la_cuenta` que crear y confirmar. Antes
-        // eran cuatro llamadas sueltas: si una fallaba el pedido quedaba de la cuenta y sin sus
-        // puntos, el bono de referido se anotaba aunque la base no lo hubiera otorgado, y si
-        // quien invitó había borrado su cuenta la clave foránea lo rompía a medias.
-        // El reclamo sigue siendo el filtro `customer_phone is null`, ahora dentro de la base:
-        // dos registros contra el mismo pedido y solo el primero lo gana. Si el pedido no está
-        // pagado (Yape pendiente) solo se vincula; los puntos llegan al confirmarse el pago.
-        // Puntos solo sobre la comida, nunca sobre el delivery (pass-through al motorizado).
-        const puntos = pointsFor(order.total, order.delivery_fee);
-        const r = await rpc("vincular_pedido_de_invitado", {
-          p_ref: order.ref,
-          p_phone: phone,
-          p_cuenta: {
-            points_delta: puntos,
-            credit_delta: 0,
-            redeemed_delta: 0,
-            last_address: order.customer_address,
-            referrer_phone: referredByValid || null,
-            referral_bonus: referredByValid ? REFERRAL_BONUS_POINTS : 0,
-            referrer_bonus: referredByValid ? REFERRER_REWARD_POINTS : 0,
-            base_points: puntos,
-            descripcion: "Pedido SND//WCH (vinculado tras crear cuenta)",
-            nombre: name,
-          },
-          p_rangos: RANKS.map((x) => ({ min: x.minOrders, name: x.name })),
-        });
-        if (r?.acreditado) {
-          customer = safeCustomer(r.customer);
-          // Avisarle a quien invitó (y pagarle el escalón, #55) solo si la base dio el bono.
-          if (r.bono_referido && referredByValid) await rewardReferrer(referredByValid, name);
-        }
-      }
-    } catch (e) {
-      // Vincular el pedido es un plus — nunca debe hacer fallar la creación de la cuenta. Y como
-      // ahora es una sola transacción, si falla no queda nada a medias.
-      console.error("claimOrderRef failed:", e);
-    }
+    const v = await vincularPedidoDeInvitado(claimOrderRef, phone, name, referredByValid || null);
+    if (v.customer) customer = v.customer;
   }
 
   const token = await signToken({ phone, isAdmin: false, exp: Date.now() / 1000 + TOKEN_TTL_SECONDS, v: rows[0].session_version || 1 });
@@ -609,4 +564,71 @@ export async function actRecover(b: any) {
     if (sent) return { success: true, name: row.name, emailSent: true, emailMasked: maskEmail(row.email) };
   }
   return { success: true, newPin, name: row.name, emailSent: false };
+}
+
+// ── VINCULAR UN PEDIDO DE INVITADO A UNA CUENTA ──────────────────────────────────────────
+// UNA sola función para los DOS caminos: crear la cuenta desde el aviso de puntos (register con
+// claimOrderRef) y entrar a una cuenta que YA existía después de pagar sin sesión
+// (reclamar-pedido). Antes solo existía el primero, y quien ya tenía cuenta y pagó sin entrar
+// perdía los puntos de ese pedido aunque entrara un segundo después.
+//
+// El `ref` (incluye un componente aleatorio, ver oref() en el cliente) es la misma prueba de
+// acceso que ya usan my-orders/submit-rating para invitados, y el filtro customer_phone=is.null
+// evita "robar" un pedido que ya tiene dueño.
+//
+// Reclamar y acreditar pasa en UNA transacción de la base (A2, migración 20260924212333), por el
+// mismo `aplicar_pedido_a_la_cuenta` que crear y confirmar: dos reclamos contra el mismo pedido y
+// solo el primero lo gana. Si el pedido no está pagado (Yape pendiente) solo se vincula; los
+// puntos llegan al confirmarse el pago. Puntos solo sobre la comida, nunca sobre el delivery.
+//
+// Vincular es un plus: nunca hace fallar la creación de la cuenta ni el inicio de sesión. Como es
+// una sola transacción, si falla no queda nada a medias.
+export async function vincularPedidoDeInvitado(
+  ref: string,
+  phone: string,
+  name: string,
+  referredByValid: string | null,
+): Promise<{ customer: ReturnType<typeof safeCustomer> | null; acreditado: boolean }> {
+  try {
+    const orderRows = await sbGet(
+      "orders",
+      `ref=eq.${encodeURIComponent(ref)}&customer_phone=is.null&select=ref,total,delivery_fee,customer_address`,
+    );
+    const order = orderRows[0];
+    if (!order) return { customer: null, acreditado: false };
+    const puntos = pointsFor(order.total, order.delivery_fee);
+    const r = await rpc("vincular_pedido_de_invitado", {
+      p_ref: order.ref,
+      p_phone: phone,
+      p_cuenta: {
+        points_delta: puntos,
+        credit_delta: 0,
+        redeemed_delta: 0,
+        last_address: order.customer_address,
+        referrer_phone: referredByValid,
+        referral_bonus: referredByValid ? REFERRAL_BONUS_POINTS : 0,
+        referrer_bonus: referredByValid ? REFERRER_REWARD_POINTS : 0,
+        base_points: puntos,
+        descripcion: "Pedido SND//WCH (vinculado a la cuenta)",
+        nombre: name,
+      },
+      p_rangos: RANKS.map((x) => ({ min: x.minOrders, name: x.name })),
+    });
+    if (!r?.acreditado) return { customer: null, acreditado: false };
+    // Avisarle a quien invitó (y pagarle el escalón, #55) solo si la base dio el bono.
+    if (r.bono_referido && referredByValid) await rewardReferrer(referredByValid, name);
+    return { customer: safeCustomer(r.customer), acreditado: true };
+  } catch (e) {
+    console.error("vincularPedidoDeInvitado failed:", e);
+    return { customer: null, acreditado: false };
+  }
+}
+
+// Quien YA tenía cuenta, pagó sin entrar y entra desde el aviso de la 06A: se le vincula ese
+// pedido. Sin referido (el bono de invitado es solo para cuentas nuevas).
+export async function actReclamarPedido(b: Entrada<"reclamar-pedido">): Promise<Salida<"reclamar-pedido">> {
+  const s = await requireSession(b.token);
+  const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(s.phone)}&select=name`);
+  const v = await vincularPedidoDeInvitado(b.ref.trim().slice(0, 40), s.phone, rows[0]?.name || "", null);
+  return { acreditado: v.acreditado, customer: v.customer };
 }

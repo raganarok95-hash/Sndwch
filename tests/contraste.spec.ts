@@ -73,6 +73,14 @@ test('ningún texto queda por debajo del contraste mínimo, en ninguna de las do
         const capas: number[][] = [];
         let n: Element | null = el;
         while (n && n !== document.documentElement) {
+          // Un texto que cruza DOS fondos (el wordmark de la puerta, partido en la costura)
+          // declara con `data-fondo` cuál tiene detrás de verdad: ningún ancestro lo sabe.
+          const declarado = n.getAttribute('data-fondo');
+          if (declarado) {
+            const h = declarado.replace('#', '');
+            capas.push([parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16), 1]);
+            break;
+          }
           const bg = getComputedStyle(n).backgroundColor;
           if (bg && !/rgba\(0, 0, 0, 0\)|transparent/.test(bg)) {
             const p = partes(bg);

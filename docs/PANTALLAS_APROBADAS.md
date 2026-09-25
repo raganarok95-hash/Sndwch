@@ -41,6 +41,8 @@ El dueño autorizó programarlas el 2026-09-23 («así avanzamos con el front»)
 | — | **Mundo WICHO · los seis pasos del armador** | «Si, apruebo» (2026-09-25) | `docs/maquetas/aprobadas/mundo-wicho-los-seis-pasos.png` — los cinco pasos que M22 no dibujaba, en su mismo mundo |
 | — | **Mundo SANDO** | «m15 sando» | captura `M15-sando-plato` |
 | — | **La puerta** (la cara partida) | «m2 puerta» | captura `M2-puerta` |
+| — | **La puerta · la esquina de la cuenta** | «Me parece bien los cambios a los hermanos y que sea así» (2026-09-25) | `docs/maquetas/aprobadas/la-puerta-M2-sin-sesion.png` y `-con-sesion.png` — es SIEMPRE la primera pantalla, a pantalla completa; no hay pantalla de correo al abrir |
+| — | **06A · el aviso de puntos para el invitado** | «aprobado todo go» (2026-09-25) | `docs/maquetas/aprobadas/06A-aviso-*.png` — antes de pagar no se pregunta nada; después, un solo aviso dentro de la losa: Google en un toque, o correo + DNI + código en el mismo lugar |
 | — | **El menú secreto** | estructura: «perfecta»; fondo: «Secret 3 me gusta» | cerrada — ver abajo |
 | — | **Entrar** (los dos te abren la puerta) | «entrar 2 aprobada» | corregido: se cortaba la cabeza de SANDO |
 | — | **Bebidas · lado SANDO** (el vaso a sangre) | «Bebidas 3 aprobada» | — |

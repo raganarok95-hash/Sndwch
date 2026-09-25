@@ -214,4 +214,27 @@ export const FLUJOS = {
     const ganoInvita = Number(valor(s, `select points from customers where phone = '${quienInvita.phone}'`)) - puntosInvitaAntes;
     afirmar(ganoInvita > 0 && String(ganoInvita) === valor(s, `select coalesce(sum(points), 0) from transactions where customer_phone = '${quienInvita.phone}' and description like 'Sándwich gratis por invitar%'`), 'quien invitó no recibió su bono anotado');
   },
+
+  async 'quien ya tenía cuenta y pagó sin entrar reclama ese pedido: suma sus puntos una sola vez, y no puede tomar uno ajeno'(s) {
+    const c = await registrarYEntrar(s);
+    const antes = Number(valor(s, `select points from customers where phone = '${c.phone}'`));
+    s.sql(`insert into orders (id, ref, customer_phone, contact_phone, customer_name, customer_address, total, delivery_fee, payment_status, payment_method, items)
+           values ('00000000-0000-4000-8000-0000000e2e02', 'E2E-REC', null, 'x', 'Cliente', 'Av. España 456', 40, 5, 'paid', 'card', '[]')`);
+    const r = await s.llamar('reclamar-pedido', { token: c.token, ref: 'E2E-REC' });
+    afirmar(r.status === 200 && r.acreditado === true, `reclamar-pedido: ${r.status} ${JSON.stringify(r).slice(0, 200)}`);
+    afirmar(valor(s, `select customer_phone from orders where ref = 'E2E-REC'`) === c.phone, 'el pedido no quedó vinculado a la cuenta');
+    const gano = Number(valor(s, `select points from customers where phone = '${c.phone}'`)) - antes;
+    afirmar(gano === 35, `ganó ${gano} puntos; eran 35 (solo la comida, sin el delivery)`);
+    // Otra vez el mismo pedido: ya tiene dueño, no suma nada.
+    const r2 = await s.llamar('reclamar-pedido', { token: c.token, ref: 'E2E-REC' });
+    afirmar(r2.status === 200 && r2.acreditado === false, 'el mismo pedido se reclamó dos veces');
+    afirmar(Number(valor(s, `select points from customers where phone = '${c.phone}'`)) - antes === 35, 'los puntos se sumaron dos veces');
+    // Un pedido que ya es de otra cuenta no se puede tomar.
+    const otro = await registrarYEntrar(s);
+    const r3 = await s.llamar('reclamar-pedido', { token: otro.token, ref: 'E2E-REC' });
+    afirmar(r3.acreditado === false && valor(s, `select customer_phone from orders where ref = 'E2E-REC'`) === c.phone, 'otra cuenta tomó un pedido ajeno');
+    // Sin sesión, nada.
+    const r4 = await s.llamar('reclamar-pedido', { token: '', ref: 'E2E-REC' });
+    afirmar(r4.status === 401, `sin sesión respondió ${r4.status}`);
+  },
 };

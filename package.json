@@ -40,6 +40,7 @@
     "check:costos:probar": "python3 scripts/check_costos.py --probar",
     "exportar:carta": "node --experimental-strip-types --no-warnings scripts/exportar-carta.mjs",
     "check:carta": "node --experimental-strip-types --no-warnings scripts/exportar-carta.mjs --check",
+    "indice": "nice -n 19 python3 scripts/indice.py",
     "check:pruebas-sin-codigos": "node scripts/check-pruebas-sin-codigos.mjs && node scripts/check-pruebas-sin-codigos.mjs --probar"
   },
   "devDependencies": {

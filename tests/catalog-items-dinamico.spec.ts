@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, mockBackend, cartaDeLaApp, type Carta } from './helpers';
+import { gotoApp, mockBackend, cartaDeLaApp, elegirSando, type Carta } from './helpers';
 
 // CATÁLOGO EDITABLE DESDE EL PANEL (2026-08-27). Hasta esta fecha, cambiar el nombre, el
 // pitch, el badge, la composición o el precio de un Signature exigía editar `SIGS` en
@@ -28,6 +28,8 @@ async function publicarDesdeElPanel(page: any, cambiar: (item: any, c: Carta) =>
   // Una ruta nueva gana a la anterior: desde acá `get-catalog` responde lo publicado.
   await mockBackend(page, { 'get-catalog': { proteins: {}, sigs: {}, sides: {}, rewardPts: {}, sigItems: { [id]: cambiar(semilla, c) } } });
   await page.reload();
+  // La app abre siempre en la puerta: se vuelve a entrar por SANDO, como un cliente.
+  await elegirSando(page);
   return { c, id, nombreSemilla: semilla.n as string };
 }
 

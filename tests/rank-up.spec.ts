@@ -3,7 +3,7 @@ import { gotoApp, entrarConTelefono } from './helpers';
 
 // Antes rankName() era puramente informativo — cruzar un umbral de rango no generaba ningún
 // aviso ni celebración (hallazgo de auditoría UX/diseño). Cubre finalizeOrderSuccess()
-// comparando el rango antes/después del pedido y la tarjeta "¡SUBISTE DE RANGO!" en sOSent().
+// comparando el rango antes/después del pedido y el renglón «Subiste a» de la losa en sOSent().
 //
 // Desde el 2026-08-26 estos dos tests cubren además algo que ANTES ERA EL MISMO EVENTO y ya
 // no lo es: subir de rango y desbloquear el menú secreto. Coincidían de casualidad porque el
@@ -44,14 +44,13 @@ test('cliente sube de rango a INICIADO al 5to pedido, sin repetir el aviso del m
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
-  await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('text=¡SUBISTE DE RANGO! //')).toBeVisible();
-  await expect(page.locator('text=INICIADO')).toBeVisible();
+  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.m06 .dr', { hasText: 'Subiste a' })).toContainText('INICIADO');
   // El menú secreto se desbloqueó dos pedidos antes: repetir el aviso acá sería mentirle al
   // cliente sobre qué acaba de ganar.
-  await expect(page.locator('text=Ya puedes ver el menú secreto')).not.toBeVisible();
-  // Referencia del pedido visible — antes esta pantalla nunca la mostraba.
-  await expect(page.locator('text=Pedido ORD-')).toBeVisible();
+  await expect(page.locator('.m06 .dr', { hasText: 'Menú secreto' })).toHaveCount(0);
+  // Referencia del pedido visible, en la cabecera de la losa.
+  await expect(page.locator('.m06 .ca')).toContainText('#ORD-');
 });
 
 test('al 3er pedido se desbloquea el menú secreto aunque no haya subida de rango', async ({ page }) => {
@@ -81,11 +80,10 @@ test('al 3er pedido se desbloquea el menú secreto aunque no haya subida de rang
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
-  await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
   // De 2 a 3 pedidos no se cruza ningún rango: sigue siendo REGULAR (RANKS pasa de 1 a 5).
-  await expect(page.locator('text=¡SUBISTE DE RANGO!')).not.toBeVisible();
+  await expect(page.locator('.m06 .dr', { hasText: 'Subiste a' })).toHaveCount(0);
   // Pero SÍ se cruza el umbral del menú secreto (3). Este es el caso que el aviso viejo se
   // perdía por completo: vivía dentro de la tarjeta de rango, que acá no se muestra.
-  await expect(page.locator('text=¡Desbloqueaste algo! //')).toBeVisible();
-  await expect(page.locator('text=Ya puedes ver el menú secreto')).toBeVisible();
+  await expect(page.locator('.m06 .dr', { hasText: 'Menú secreto' })).toContainText('Ya puedes verlo');
 });

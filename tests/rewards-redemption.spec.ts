@@ -78,7 +78,7 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
-  await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 
   const placeOrderCall = calls.find((c) => c.action === 'place-order');
   expect(placeOrderCall).toBeTruthy();
@@ -171,7 +171,7 @@ test('SÁNDWICH GRATIS + bebida en el carrito no regala también el combo', asyn
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
-  await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 
   const placeOrderCall2 = calls.find((c) => c.action === 'place-order');
   expect(placeOrderCall2).toBeTruthy();

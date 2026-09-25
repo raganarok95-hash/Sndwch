@@ -57,10 +57,9 @@ test('cliente aplica un código promocional y el descuento se refleja en el tota
   await expect(page.getByRole('button', { name: 'Confirmar con crédito //' })).toBeVisible();
   await page.getByRole('button', { name: 'Confirmar con crédito //' }).click();
 
-  // Pagado con crédito (a diferencia de Yape/Plin, que queda "pending") — la confirmación
-  // dice "Pago confirmado", no "PEDIDO REGISTRADO" (ese título es para pagos pendientes).
-  await expect(page.locator('text=Pago confirmado')).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('text=Monto cobrado')).toBeVisible();
+  // La 06A: el renglón «Pagaste» de la losa trae el monto cobrado.
+  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.m06 .dr', { hasText: 'Pagaste' })).toBeVisible();
   // Al pagar con crédito el pedido deja de ir por Culqi, así que el delivery vuelve a
   // su fee real (S/8), el mismo total de arriba.
   await expect(page.locator(`text=${esperadoTxt}`).first()).toBeVisible();
@@ -114,5 +113,5 @@ test('código promocional inválido muestra el error del servidor sin bloquear e
   await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
-  await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 });

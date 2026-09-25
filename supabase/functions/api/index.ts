@@ -17,7 +17,7 @@ import { validarEntrada } from "./entrada.ts";
 import { actPing } from "./actions/health.ts";
 import { actGetCatalog, actAdminCatalogSetPrice, actAdminCatalogItemsGet, actAdminCatalogItemsSet } from "./actions/catalog.ts";
 import {
-  actRegister, actLogin, actSessionCheck, actLogoutEverywhere, actDeleteAccount, actRecover,
+  actRegister, actReclamarPedido, actLogin, actSessionCheck, actLogoutEverywhere, actDeleteAccount, actRecover,
   actGoogleAuth, actRequestLoginCode, actVerifyLoginCode,
 } from "./actions/auth.ts";
 import {
@@ -97,6 +97,7 @@ const ACTIONS: ConContrato & SinContrato = {
   ping: actPing,
   "get-catalog": actGetCatalog,
   register: actRegister,
+  "reclamar-pedido": actReclamarPedido,
   login: actLogin,
   "google-auth": actGoogleAuth,
   // Entrar con correo y código de 6 dígitos. `login` (teléfono + PIN) NO se retira: lo

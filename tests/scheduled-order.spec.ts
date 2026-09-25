@@ -46,7 +46,7 @@ test('invitado programa un pedido para más tarde', async ({ page }) => {
   await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
-  await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 
   const placeOrderCall = calls.find((c) => c.action === 'place-order');
   expect(placeOrderCall).toBeTruthy();
@@ -91,7 +91,7 @@ test.describe('desde un teléfono con otra zona horaria', () => {
 
     await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
     await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
-    await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 
     const enviado = calls.find((c) => c.action === 'place-order')!.body.scheduledFor;
     const enLima = new Date(enviado).toLocaleTimeString('en-GB', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
