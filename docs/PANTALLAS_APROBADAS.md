@@ -38,6 +38,7 @@ El dueño autorizó programarlas el 2026-09-23 («así avanzamos con el front»)
 | 34 | **Dónde te lo dejamos** (etiquetas de bolsa) | «34 y bebidas de wicho aprobadas» | — |
 | — | **Bebidas · lado WICHO** (tres franjas a sangre) | ídem | — |
 | — | **Mundo WICHO** | «M22 wicho aprobada» | captura `M22-wicho` |
+| — | **Mundo WICHO · los seis pasos del armador** | «Si, apruebo» (2026-09-25) | `docs/maquetas/aprobadas/mundo-wicho-los-seis-pasos.png` — los cinco pasos que M22 no dibujaba, en su mismo mundo |
 | — | **Mundo SANDO** | «m15 sando» | captura `M15-sando-plato` |
 | — | **La puerta** (la cara partida) | «m2 puerta» | captura `M2-puerta` |
 | — | **El menú secreto** | estructura: «perfecta»; fondo: «Secret 3 me gusta» | cerrada — ver abajo |

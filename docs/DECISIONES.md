@@ -1212,8 +1212,9 @@ como las otras pantallas aprobadas.
 - **El secreto**, cerrado, dice cuántos pedidos faltan (el umbral del panel) y no se abre; abierto
   lleva al menú secreto.
 - **Los otros cinco pasos** (tamaño, pan, queso, vegetales, salsas) no tienen maqueta propia: pasaron
-  al mismo mundo (fondo, cabecera, pie, lo elegido en lila) conservando su forma. Se le mostraron al
-  dueño para aprobarlos.
+  al mismo mundo (fondo, cabecera, pie, lo elegido en lila) conservando su forma. **Aprobados por el dueño el
+  2026-09-25** («Si, apruebo»), con el espacio libre bajo las piezas tal como está; captura en
+  `docs/maquetas/aprobadas/mundo-wicho-los-seis-pasos.png`.
 - **Dos desvíos a propósito de la maqueta**, los dos por legibilidad:
   · el contador del paso («3/6») pasó de `#40596B` a `#354C5D`: sobre el celeste daba 4.05:1 y el
     mínimo es 4.5:1;
