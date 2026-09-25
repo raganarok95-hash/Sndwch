@@ -388,6 +388,35 @@ body.kb-open #app{padding-bottom:0}
    (t2.html #C, «el bocado de cerca»). CSS copiado de la fuente; lo único que cambia es que
    las filas van en flujo en vez de a coordenadas fijas, porque las pistas y los que ya no
    vuelven pueden ser menos de tres. */
+/* ═══ ENTRAR · «te abren la puerta» (maqueta aprobada «entrar 2», docs/maquetas/fuentes/w2.html #E2) ═══
+   Una sola pantalla para todo el acceso: correo, código, primera vez, Google y el PIN de antes.
+   Lo que cambia entre un momento y otro es el campo, nunca la pantalla. */
+.en{position:relative;min-height:100dvh;margin-bottom:calc(-1 * var(--sw-barra,0px));background:#F0EBDE;display:flex;flex-direction:column}
+.en .esc{position:relative;flex:0 0 auto;height:368px;overflow:hidden;background:linear-gradient(180deg,#1D2A22 0%,#16202A 100%)}
+.en .esc .sd{position:absolute;left:26px;bottom:12px;height:238px;width:auto;z-index:2}
+.en .esc .wc{position:absolute;right:28px;bottom:12px;height:172px;width:auto;z-index:2}
+.en .esc .piso{position:absolute;left:0;right:0;bottom:0;height:86px;z-index:1;background:linear-gradient(180deg,transparent,rgba(0,0,0,.34))}
+.en .esc .tx{position:absolute;left:0;right:0;top:62px;text-align:center;z-index:3}
+.en .esc .tx em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#CBA258;text-transform:uppercase;font-style:normal}
+.en .esc .tx b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:30px;line-height:.96;color:#fff;margin-top:9px;letter-spacing:-.02em}
+.en .sal{all:unset;cursor:pointer;position:absolute;top:10px;left:12px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;z-index:4}
+.en .cuerpo{padding:50px 26px calc(var(--sw-barra,74px) + 24px);display:flex;flex-direction:column}
+.en .campo{display:block;border-bottom:2px solid #33230F;padding-bottom:12px;margin-bottom:24px}
+.en .campo s{display:block;text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6B4E28;text-transform:uppercase}
+.en .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:11px;font-family:'IBM Plex Mono',monospace;font-size:18px;color:#33230F;caret-color:#9C5F14}
+.en .campo input::placeholder{color:rgba(51,35,15,.38)}
+.en .campo.codigo input{font-size:28px;letter-spacing:.42em}
+.en .hecho{font:500 11px/1.6 'IBM Plex Mono',monospace;color:#33230F;margin-bottom:22px}
+.en .hecho b{font-weight:700}
+.en .goo{display:flex;justify-content:center;min-height:44px;margin-bottom:22px}
+.en .err{font:500 11px/1.6 'IBM Plex Mono',monospace;color:#9A2A12;min-height:18px;margin:-10px 0 10px}
+.en .nota{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6B4E28;line-height:1.9;text-transform:uppercase}
+.en .nota button{all:unset;cursor:pointer;display:inline-block;padding:8px 0;color:#33230F;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.en-go{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:74px;display:flex;z-index:90}
+.en-go button{all:unset;box-sizing:border-box;cursor:pointer;flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.en-go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.en-go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+.en-go .oro:only-child{justify-content:center;padding:0}
 /* ═══ MUNDO WICHO · el armador (maqueta M22 + el puente, aprobada 2026-09-24) ═══════════════
    docs/maquetas/aprobadas/mundo-wicho-M22-con-puente.png y su fuente m22-con-puente.html.
    Los valores salen de la maqueta tal cual: por eso viven acá y no en la escala de src/app.
