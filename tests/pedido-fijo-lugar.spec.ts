@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers';
+import { unSignature } from './carta';
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const UN_SIGNATURE = unSignature();
 
 // TU PEDIDO FIJO (maqueta tu-pedido-fijo.png) y EL LUGAR APARTADO (2026-09-24).
 //
@@ -12,7 +16,7 @@ import { gotoApp } from './helpers';
 
 const CLIENTE = { phone: '900000001', name: 'Ana', points: 0, credit_balance: 0, total_orders: 9 };
 const DIR = { id: 12, label: 'Oficina', address: 'Av. España 123', reference: 'Piso 3', lat: -8.112, lon: -79.031 };
-const ITEMS = [{ type: 'sig', sigId: 'SIG02', size: '15', qty: 1 }];
+const ITEMS = [{ type: 'sig', sigId: UN_SIGNATURE, size: '15', qty: 1 }];
 const FIJO = {
   id: '11111111-2222-3333-4444-555555555555', items: ITEMS, weekday: 4, slot: '13:30', addressId: 12,
   label: 'The Marinara 15CM', valido: true, precio: 21.9, veces: 9, horaHabitual: '13:25',

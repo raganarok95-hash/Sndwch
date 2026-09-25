@@ -179,8 +179,12 @@ def costo_sig(sid, i, carta=None):
     return c
 
 
-def costo_byo(p, i, pan="B01"):
-    return (PROT[p][i] + PAN[pan][i] + EMPAQUE + SALSA[i] * NS_BYO
+# El pan con el que se tasa el armador: el que no suma recargo (sale de la carta, no se escribe).
+PAN_BASE = next(x["id"] for x in _CARTA["panes"] if not x.get("recargo"))
+
+
+def costo_byo(p, i, pan=None):
+    return (PROT[p][i] + PAN[pan or PAN_BASE][i] + EMPAQUE + SALSA[i] * NS_BYO
             + veg(TOPS_BYO_G, i) + QUESO[i] * FQ_BYO)
 
 

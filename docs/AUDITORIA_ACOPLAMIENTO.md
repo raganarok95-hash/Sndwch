@@ -159,6 +159,26 @@ permisos, validación y código muerto.
   `20260924230134`), una transacción; `tests-db/crear-cuenta.sql`, vista fallar sin la función y
   con un defecto inyectado (el bono anotado dos veces).
 
+- **Paso 5 · las pruebas no nombran productos** (2026-09-25) — hecho. Había 187 menciones en 36
+  archivos. Ahora piden lo que necesitan a `tests/carta.ts` (Playwright, nuevo) o
+  `tests-api/carta.ts` («un Signature vigente», «un pan con recargo», «la recompensa de tipo
+  bebida»). Lo sostiene `npm run check:pruebas-sin-codigos` (con `--probar`, 10 casos), que mira el
+  código y no los comentarios; un código inventado a propósito usa la serie 9x.
+  **Tres cosas que salieron de paso:**
+  · la prueba de contraste medía la ficha de un Signature **retirado** y la del recibo armaba el
+    carrito con otro: seguían verdes mirando algo que ya no existe;
+  · el recargo de la focaccia estaba en `dinero.ts` como `{ B03: … }`, una regla de dinero atada al
+    código de un producto: ahora es la propiedad `recargo` del pan en la carta;
+  · el techo de 45% de costo solo lo hacía cumplir una prueba escrita para el pavo, con su costo
+    copiado a mano. El modelo lo calculaba para todo y solo lo imprimía. Ahora es el chequeo 6 de
+    `check:costos` (cada Signature, cada proteína del armador y su doble), con su defecto
+    inyectado en `--probar`; la prueba del pavo se borró.
+  Lo que NO se tocó: los montos dentro de datos simulados (un pedido de prueba por S/24.90) son
+  datos del caso, no reglas; y el costo medido de la focaccia en `recargo-pan.test.ts` es el hecho
+  contra el que se valida la decisión.
+- **Pendiente** (tarea anotada): Paso 6 (ids por HTML y contratos de las 157 acciones, se cierran al
+  migrar cada pantalla).
+
 ## Problemas futuros (no rompen hoy)
 
 - **157 de 163 acciones sin contrato** (`b: any`): la entrada no se valida por esquema y la salida

@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp, entrarConTelefono } from './helpers';
+import { unaProteina } from './carta';
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const UNA_PROTEINA = unaProteina();
 
 // C6 — Proyecta cuánto cocinar en la próxima tanda a partir del consumo real. Lo aprobó el
 // dueño sabiendo que necesita 3-4 semanas de ventas reales para valer algo, así que lo que
@@ -23,7 +27,7 @@ const MOCK_ORDER = {
 };
 
 const ITEM = {
-  code: 'P01',
+  code: UNA_PROTEINA,
   name: 'RES // ASADO',
   usedInWindow: 60,
   perDay: 3,

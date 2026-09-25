@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp, entrarConTelefono, cartaDeLaApp } from './helpers';
+import { recompensa } from './carta';
+
+const R_BEBIDA = recompensa('bebida');
+const R_SANDWICH = recompensa('sandwich');
 
 // Cubre la reestructura de recompensas de esta sesión: R05 ("BEBIDA // GRATIS", 220 pts
 // tras la recalibración de puntos contra el costo real de insumos) antes no descontaba
@@ -55,13 +59,13 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
   // Canjea BEBIDA GRATIS y confirma que el ahorro mostrado es el precio real de la bebida —
   // antes de una sesión de agosto este número siempre era S/0 (recompensa rota). El tope de
   // R05 cubre la bebida más cara de la carta (lo fija tests-api/carrito.test.ts).
-  await page.locator("[onclick*=\"toggleReward('R05')\"]").click();
+  await page.locator(`[onclick*="toggleReward('${R_BEBIDA}')"]`).click();
   // El bug de auditoría (HTML crudo visible al aplicar cualquier recompensa con
   // ahorro) hacía que este texto SOLO apareciera bien renderizado en el resumen de
   // TOTAL, nunca en la fila de la recompensa misma — ahora aparece en ambos lugares
   // (arreglado), así que el locator debe apuntar específicamente a la fila del picker.
   const ahorro = await page.evaluate((p) => (window as any).SOLES_TXT + (window as any).pz(p), c.precioBebida[bebida]!);
-  await expect(page.locator(`[onclick*="toggleReward('R05')"] >> text=ahorras ${ahorro}`)).toBeVisible();
+  await expect(page.locator(`[onclick*="toggleReward('${R_BEBIDA}')"] >> text=ahorras ${ahorro}`)).toBeVisible();
 
   await page.locator('#o-nom').fill('Bruno Cliente');
   await page.locator('#o-phone').fill('987654323');
@@ -78,7 +82,7 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
 
   const placeOrderCall = calls.find((c) => c.action === 'place-order');
   expect(placeOrderCall).toBeTruthy();
-  expect(placeOrderCall!.body.rewardId).toBe('R05');
+  expect(placeOrderCall!.body.rewardId).toBe(R_BEBIDA);
   expect(placeOrderCall!.body.items).toHaveLength(2);
 });
 
@@ -90,7 +94,7 @@ test('cliente con puntos canjea BEBIDA GRATIS y el total refleja el descuento re
 // gratis de rebote (combo aplicado sobre una unidad que ya no se estaba cobrando).
 // Este test confirma que el combo YA NO aparece cuando el sándwich de ese combo es
 // justo el que la recompensa está regalando.
-test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo', async ({ page }) => {
+test('SÁNDWICH GRATIS + bebida en el carrito no regala también el combo', async ({ page }) => {
   const calls = await gotoApp(page, {
     login: {
       customer: { phone: '900000003', name: 'Carla Cliente', email: 'carla@test.com', points: 750, credit_balance: 0 },
@@ -127,7 +131,7 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
   await page.locator(`[onclick*="addSideToCart('${c.bebida()}')"]`).click();
   await page.locator('[aria-label^="Ver carrito"]').first().click(); // el carrito vive en el riel de arriba de Bebidas
 
-  await page.locator("[onclick*=\"toggleReward('R06')\"]").click();
+  await page.locator(`[onclick*="toggleReward('${R_SANDWICH}')"]`).click();
 
   // El ahorro de la recompensa debe ser el precio COMPLETO del sándwich — y el
   // combo NO debe aparecer, porque ese sándwich ya no cuenta para el combo (fix de una
@@ -149,8 +153,8 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
       aplicada: w.appliedReward,
     };
   });
-  expect(cuenta.aplicada, 'la recompensa no quedó aplicada').toBe('R06');
-  expect(cuenta.recompensa, 'R06 tiene que perdonar el sándwich ENTERO').toBeCloseTo(c.p15[sig]!, 2);
+  expect(cuenta.aplicada, 'la recompensa no quedó aplicada').toBe(R_SANDWICH);
+  expect(cuenta.recompensa, 'el 15CM gratis tiene que perdonar el sándwich ENTERO').toBeCloseTo(c.p15[sig]!, 2);
   expect(cuenta.combo, 'el sándwich regalado siguió contando para el combo').toBe(0);
   // Y que el descuento se VEA en el recibo con su monto: una cuenta que no se puede
   // seguir enseña a desconfiar justo antes de pagar.
@@ -171,5 +175,5 @@ test('SÁNDWICH GRATIS (R06) + bebida en el carrito no regala también el combo'
 
   const placeOrderCall2 = calls.find((c) => c.action === 'place-order');
   expect(placeOrderCall2).toBeTruthy();
-  expect(placeOrderCall2!.body.rewardId).toBe('R06');
+  expect(placeOrderCall2!.body.rewardId).toBe(R_SANDWICH);
 });

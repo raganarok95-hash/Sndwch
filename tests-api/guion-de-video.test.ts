@@ -22,6 +22,7 @@ import { marketingContent } from "../supabase/functions/api/actions/admin.ts";
 import { SIG_GATES } from "../supabase/functions/api/catalog.ts";
 import { REFERRER_REWARD_POINTS, REFERRAL_BONUS_POINTS, WELCOME_BONUS_POINTS } from "../supabase/functions/api/env.ts";
 import { ORGANIZER_FREE_MIN_SANDWICHES } from "../supabase/functions/api/catalog.ts";
+import { ID_SECRETO } from "../supabase/functions/_shared/carta.ts";
 
 Deno.test("los 8 temas traen un guion de video, ninguno vacío", () => {
   const temas = marketingContent();
@@ -65,7 +66,7 @@ Deno.test("las cifras del guion se interpolan, nunca se escriben a mano", () => 
   const temas = marketingContent();
   const porTema = (t: string) => temas.find((x) => x.theme === t)!.videoIdea;
 
-  const secretoMin = SIG_GATES.SIG05?.minOrders ?? 3;
+  const secretoMin = SIG_GATES[ID_SECRETO]?.minOrders ?? 3;
   assert(
     porTema("MENÚ SECRETO").includes(String(secretoMin)),
     "el guion del menú secreto no lleva el umbral vigente",

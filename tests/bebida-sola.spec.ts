@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers';
+import { nombreDe, unaBebida } from './carta';
+
+const BEBIDA = unaBebida();
 
 // Una bebida se tenía que poder comprar sola, y no se podía llegar a ella.
 //
@@ -23,16 +26,16 @@ test('se puede pedir una bebida sola, sin armar ningún sándwich', async ({ pag
 
   // 1 · Llegar. La pestaña vive en el menú, al lado de los Signatures y ARMA EL TUYO.
   await page.getByRole('button', { name: 'Bebidas' }).click();
-  await expect(page.getByText('The Cool', { exact: false }).first()).toBeVisible();
+  await expect(page.getByText(nombreDe(BEBIDA), { exact: false }).first()).toBeVisible();
 
   // 2 · Agregar, sin pasar por el armador.
-  await page.locator('[onclick*="addSideToCart(\'D08\')"]').first().click();
+  await page.locator(`[onclick*="addSideToCart('${BEBIDA}')"]`).first().click();
 
   // 3 · El carrito acepta un pedido que no lleva ni un sándwich. Se llega por la tarjeta
   // del home, que aparece recién cuando el carrito tiene algo — o sea que su sola
   // presencia ya prueba que la bebida entró sin pasar por el armador.
   await page.locator('[onclick*="o_cart"]').first().click();
-  await expect(page.locator('text=The Cool').first()).toBeVisible();
+  await expect(page.getByText(nombreDe(BEBIDA), { exact: false }).first()).toBeVisible();
 
   // Y el botón de pagar queda habilitado: si algún día alguien agrega una guarda de
   // "mínimo un sándwich", esto falla acá en vez de en producción.

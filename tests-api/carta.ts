@@ -74,3 +74,35 @@ export function unaSalsaDelArmador(): string {
     "ninguna salsa en el armador",
   )[0]!;
 }
+
+// ── Lo que sale directo de la carta compartida (_shared/carta.ts) ─────────────────────────
+import { CARTA, recompensaDeTipo, type TipoRecompensa } from "../supabase/functions/_shared/carta.ts";
+
+/** Un pan que no suma recargo y uno que sí (la prueba del recargo necesita los dos). */
+export function panSinRecargo(): string {
+  return hay(CARTA.panes.filter((p) => !p.recargo), "un pan sin recargo")[0]!.id;
+}
+export function panConRecargo(): string {
+  return hay(CARTA.panes.filter((p) => p.recargo), "un pan con recargo")[0]!.id;
+}
+
+/** Las bebidas de la carta, en su orden. `unaBebida(1)` es otra distinta de `unaBebida(0)`. */
+export function unaBebida(i = 0): string {
+  const l = hay(CARTA.bebidas, "bebidas");
+  return l[i % l.length]!.id;
+}
+
+/** El id de la recompensa que hace tal cosa (la bebida gratis, el 15CM gratis…). */
+export function recompensa(tipo: TipoRecompensa): string {
+  const r = recompensaDeTipo(tipo);
+  if (!r) throw new Error(`La carta no tiene una recompensa de tipo «${tipo}»: la prueba no puede armarse.`);
+  return r.id;
+}
+
+/** Un elemento cualquiera de cada sección de la carta, para cuando el código solo es una llave
+ *  (un insumo del inventario, una línea de un plan de tanda). `i` da otro distinto. */
+const deLaSeccion = (l: { id: string }[], que: string) => (i = 0) => hay(l, que)[i % l.length]!.id;
+export const unaProteina = deLaSeccion(CARTA.proteinas, "proteínas");
+export const unaSalsa = deLaSeccion(CARTA.salsas, "salsas");
+export const unVegetal = deLaSeccion(CARTA.vegetales, "vegetales");
+export const unPan = deLaSeccion(CARTA.panes, "panes");

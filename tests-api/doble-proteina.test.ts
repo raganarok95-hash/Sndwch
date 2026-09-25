@@ -19,6 +19,9 @@
 import { assertDoubleAllowed, NO_DOUBLE_PROTS, NO_DOUBLE_30_PROTS, PROT_PRICE, dblFee } from "../supabase/functions/api/catalog.ts";
 import { proteinasConDoble } from "./carta.ts";
 
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const CON_DOBLE = proteinasConDoble()[0]!;
+
 function assert(cond: boolean, msg: string) {
   if (!cond) throw new Error(msg);
 }
@@ -38,14 +41,14 @@ function acepta(fn: () => void, msg: string) {
   }
 }
 
-Deno.test("el doble de atún SE PUEDE pedir en 15CM", () => {
-  acepta(() => assertDoubleAllowed(true, "P04", "15"), "el 15CM de atún tiene que admitir doble");
+Deno.test("el doble SE PUEDE pedir en 15CM", () => {
+  acepta(() => assertDoubleAllowed(true, CON_DOBLE, "15"), `el 15CM de ${CON_DOBLE} tiene que admitir doble`);
 });
 
-Deno.test("el doble de atún también se puede pedir en 30CM", () => {
+Deno.test("el doble también se puede pedir en 30CM", () => {
   // Aprobado por el dueño el 2026-09-12 tras revisar el motivo FÍSICO, que era el único que
   // seguía vivo. El de margen había caducado tres semanas antes.
-  acepta(() => assertDoubleAllowed(true, "P04", "30"), "el 30CM de atún tiene que admitir doble");
+  acepta(() => assertDoubleAllowed(true, CON_DOBLE, "30"), `el 30CM de ${CON_DOBLE} tiene que admitir doble`);
 });
 
 Deno.test("el mecanismo por tamaño sigue funcionando aunque hoy no lo use nadie", () => {
@@ -74,7 +77,7 @@ Deno.test("el mecanismo por tamaño sigue funcionando aunque hoy no lo use nadie
 Deno.test("sin doble pedido, nunca rechaza", () => {
   // assertDoubleAllowed corre en las DOS rutas de tasación, incluso cuando el cliente no
   // pidió doble. Si llegara a rechazar con doubleProt=false, ningún pedido se podría pagar.
-  acepta(() => assertDoubleAllowed(false, "P04", "30"), "sin doble no puede rechazar nada");
+  acepta(() => assertDoubleAllowed(false, CON_DOBLE, "30"), "sin doble no puede rechazar nada");
 });
 
 Deno.test("el resto de proteínas admite doble en los dos tamaños", () => {
@@ -97,7 +100,7 @@ Deno.test("el recargo de atún cubre su costo con margen, que es lo que destrab�
   // Los costos vienen de la cotización real del dueño (2026-09-04): la porción de 85 g de
   // ensalada cuesta S/3.25 y la de 170 g, S/6.50. El techo acordado es 45%.
   const costo15 = 3.25, costo30 = 6.50;
-  const p = PROT_PRICE.P04;
+  const p = PROT_PRICE[CON_DOBLE]!;
   const cobra15 = dblFee(p, "15"), cobra30 = dblFee(p, "30");
   const pct15 = 100 * costo15 / cobra15, pct30 = 100 * costo30 / cobra30;
   assert(pct15 <= 45, `el doble de atún 15CM está en ${pct15.toFixed(1)}% de costo, sobre el techo de 45%`);

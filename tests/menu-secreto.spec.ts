@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp, entrarConTelefono } from './helpers';
+import { SECRETO, unPanSinRecargo, unaProteinaDelSecreto, unaSalsaDelArmador } from './carta';
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const UN_PAN = unPanSinRecargo();
+const PROT_SECRETA = unaProteinaDelSecreto();
+const UNA_SALSA = unaSalsaDelArmador();
+const EL_SECRETO = SECRETO;
 
 // La pantalla del menú secreto (maquetas «estructura» y «fondo»). Lo que no puede pasar en
 // silencio: que muestre pistas o días inventados en vez de los de la base, que liste al
@@ -9,7 +16,7 @@ const FIN = () => new Date(Date.now() + 10.5 * 86400000).toISOString();
 const catalogo = (extra: any = {}) => ({
   proteins: {}, sigs: {}, sides: {}, rewardPts: {}, inventory: {},
   secretSignature: {
-    name: 'El Chifero', base: 'B01', prot: 'P03', tops: [], sauces: ['S01'], p15: 24.9, p30: 34.9, minOrders: 3,
+    name: 'El Chifero', base: UN_PAN, prot: PROT_SECRETA, tops: [], sauces: [UNA_SALSA], p15: 24.9, p30: 34.9, minOrders: 3,
     vaultOnlyProts: [], vaultOnlyTops: [], vaultOnlySauces: [], endsAt: FIN(),
     hints: [{ t: 'Pica, y no de mentira', s: 'Si no aguantas el ají' }],
     past: [{ name: 'El Norteño', blurb: 'Cabrito, culantro y zarandaja', mes: 'AGO' }],
@@ -36,7 +43,7 @@ test('desbloqueado: días, pistas y los que ya no vuelven salen de la base', asy
   await expect(page.getByText('El Norteño')).toBeVisible();
   await expect(page.locator('.msec .a')).toHaveCount(1);
   await page.getByRole('button', { name: 'Pedirlo a ciegas' }).click();
-  expect(await page.evaluate(() => (window as any).sigId)).toBe('SIG05');
+  expect(await page.evaluate(() => (window as any).sigId)).toBe(EL_SECRETO);
 });
 
 test('sin pistas cargadas no inventa ninguna', async ({ page }) => {

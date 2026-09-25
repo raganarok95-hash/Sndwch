@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers';
+import { unSignature } from './carta';
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const UN_SIGNATURE = unSignature();
 
 // El modo cocina se usa en un celular DEDICADO de gama baja, apoyado en la mesada, con las
 // manos en la comida. Todo lo de acá salió de medir la pantalla real a 360×640 (viewport CSS
@@ -18,7 +22,7 @@ const PEDIDO = {
   customer_phone: '987654321', contact_phone: '987654321',
   notes: 'Portón negro, tocar fuerte.', total: 45.8, date: '12/09 13:00', summary: '2 items',
   created_at: new Date(ahora - 1000 * 60 * 12).toISOString(),
-  items: [{ type: 'sig', sigId: 'SIG01', size: '15', qty: 1 }],
+  items: [{ type: 'sig', sigId: UN_SIGNATURE, size: '15', qty: 1 }],
   lat: -8.11, lon: -79.03,
 };
 

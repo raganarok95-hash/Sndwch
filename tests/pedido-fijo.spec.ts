@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp, entrarConTelefono } from './helpers';
+import { unSignature } from './carta';
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const UN_SIGNATURE = unSignature();
 
 // #60 — Pedido fijo (recurrente). Ingreso predecible, que es justo lo que le falta a un
 // negocio nuevo.
@@ -86,7 +90,7 @@ test('la pantalla lista los pedidos fijos y permite quitarlos', async ({ page })
     login: { customer: CLIENTE, token: 'tok-1' },
     'recurring-list': {
       recurring: [
-        { id: 'rec-1', weekday: 5, slot: '19:30', label: '1 ítem', items: [{ mode: 'sig', sigId: 'SIG01', size: '15', qty: 1 }] },
+        { id: 'rec-1', weekday: 5, slot: '19:30', label: '1 ítem', items: [{ mode: 'sig', sigId: UN_SIGNATURE, size: '15', qty: 1 }] },
       ],
     },
     'recurring-delete': { success: true },

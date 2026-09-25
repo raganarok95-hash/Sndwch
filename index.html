@@ -753,7 +753,7 @@ body.kb-open #app{padding-bottom:0}
     ],
     panes: [
       { id: "B01", nombre: "Classic", sabor: "White", desc: "Miga suave y corteza fina. No pelea con el relleno, lo sostiene." },
-      { id: "B03", nombre: "Focaccia", sabor: "Artesanal", desc: "Aceite de oliva en la masa y sal gruesa arriba. Más aromática y más densa." }
+      { id: "B03", nombre: "Focaccia", sabor: "Artesanal", desc: "Aceite de oliva en la masa y sal gruesa arriba. Más aromática y más densa.", recargo: { p15: 0.5, p30: 1 } }
     ],
     // El doble escala con el tamaño (85 g en 15CM, 170 g en 30CM): por eso son dos recargos.
     // Precios y doble de la v4 (docs/MENU_CLASICOS_USA.md, modelo/rentabilidad_por_parte.py).
@@ -1123,9 +1123,11 @@ body.kb-open #app{padding-bottom:0}
     comboPorPar: 1,
     /** Recargo de la salsa extra. Uno de los dos precios que NO viven en `catalog_prices`. */
     salsaExtra: 2,
-    /** Recargo del pan por tamaño. El otro precio que no vive en `catalog_prices`. Solo la
-     *  focaccia lleva. Va DENTRO del precio base: así lo perdonan enteros el sándwich gratis y la subida a 30CM. */
-    recargoPan: { B03: { p15: 0.5, p30: 1 } },
+    /** Recargo del pan por tamaño, por pan. Sale de la propiedad `recargo` de cada pan de la carta
+     *  (antes era `{ B03: … }` escrito acá: una regla de dinero atada al código de un producto). */
+    recargoPan: Object.fromEntries(
+      CARTA.panes.filter((p2) => p2.recargo).map((p2) => [p2.id, p2.recargo])
+    ),
     /** El menú secreto no entra en «15CM gratis» ni en el sándwich del organizador: es lo más caro
      *  del catálogo y se gamearía. */
     reservas: idsDe(CARTA.signatures, (x2) => x2.tipo === "Reserve"),
@@ -3192,7 +3194,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'c96500af20';
+var APP_BUILD = 'bb93b155c0';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por

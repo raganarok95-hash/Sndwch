@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp, irAlArmador, siguientePaso } from './helpers';
+import { unVegetalDelArmador } from './carta';
+import { CARTA } from '../supabase/functions/_shared/carta.ts';
 
 // Recorrido hasta el paso de VEGETALES del armador actual: tamaño → pan → proteína → queso
 // (se salta: es opcional) → vegetales. Vive en un solo sitio porque las tres pruebas de este
@@ -59,14 +61,13 @@ test('JALAPEÑO + SPICY MAYO/PICANTE MIEL (exclusivos del menú secreto) no apar
   await expect(page.locator('text=Picante // Miel')).not.toBeVisible();
 });
 
-// LECHUGA (T09) — agregada el 2026-09-04 al igualar los gramajes al estándar de Subway.
+// TODO VEGETAL DEL ARMADOR SE OFRECE Y VIAJA AL PEDIDO.
 //
-// POR QUÉ TIENE PRUEBA. Era el único ingrediente del set estándar de Subway que no existía
-// en el catálogo, y el de MAYOR volumen (21 g) al menor costo por gramo — lo que más hace
-// que un sándwich se vea lleno, por lo que menos cuesta. Su modo de fallo es silencioso: un
-// topping que desaparece del array no rompe nada, solo deja al sándwich viéndose más vacío
-// y a nadie le salta un error.
-test('LECHUGA aparece en ARMA EL TUYO y el pedido la acepta', async ({ page }) => {
+// Nació por la lechuga (2026-09-04): el ingrediente de más volumen al menor costo, lo que más
+// hace que un sándwich se vea lleno. Su modo de fallo es silencioso: un vegetal que desaparece
+// de la lista no rompe nada, solo deja al sándwich más vacío. Ahora vale para cada vegetal que
+// la carta ofrece en el armador, sin nombrar ninguno.
+test('cada vegetal del armador aparece, y lo elegido viaja al pedido', async ({ page }) => {
   const calls = await gotoApp(page, {
     'place-order': (body: any) => ({
       success: true,
@@ -77,9 +78,12 @@ test('LECHUGA aparece en ARMA EL TUYO y el pedido la acepta', async ({ page }) =
 
   await hastaLosVegetales(page);
 
-  // Paso de vegetales: la lechuga se lista y se puede elegir.
-  await expect(page.locator('[onclick*="\'T09\'"]').first()).toBeVisible();
-  await page.locator('[onclick*="\'T09\'"]').first().click();
+  // Paso de vegetales: cada uno de la carta se lista, y uno se puede tocar.
+  for (const v of CARTA.vegetales.filter((x) => !x.soloEnSignature && !x.soloSecreto)) {
+    await expect(page.locator(`[onclick*="'${v.id}'"]`).first(), `${v.nombre} no se ofrece en el armador`).toBeVisible();
+  }
+  await page.locator(`[onclick*="'${unVegetalDelArmador()}'"]`).first().click();
+  const elegidos: string[] = await page.evaluate(() => [...(window as any).tops]);
 
   await siguientePaso(page); // vegetales -> salsas
   await page.locator('[onclick^="byoToggleSalsa("]').first().click();
@@ -94,9 +98,9 @@ test('LECHUGA aparece en ARMA EL TUYO y el pedido la acepta', async ({ page }) =
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
   await expect(page.locator('text=PEDIDO REGISTRADO')).toBeVisible({ timeout: 10000 });
 
-  // La lechuga viaja al servidor dentro del ítem, no se pierde en el camino.
+  // Lo elegido viaja al servidor dentro del ítem, no se pierde en el camino.
   const po = calls.find((c) => c.action === 'place-order')!;
-  expect(JSON.stringify(po.body.items)).toContain('T09');
+  expect([...po.body.items[0].tops].sort()).toEqual([...elegidos].sort());
 });
 
 // LO MARCADO `sigOnly` NO SE OFRECE EN EL ARMADOR, PERO SIGUE EN SUS SIGNATURES.

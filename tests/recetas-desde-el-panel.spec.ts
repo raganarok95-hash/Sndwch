@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers';
+import { unaProteina } from './carta';
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const UNA_PROTEINA = unaProteina();
+const OTRA_PROTEINA = unaProteina(1);
 
 // SE PUEDE CARGAR UNA RECETA DESDE EL PANEL.
 //
@@ -14,7 +19,7 @@ import { gotoApp } from './helpers';
 // registrar durante meses.
 
 const RECETA = {
-  recipe_code: 'P01',
+  recipe_code: UNA_PROTEINA,
   name: 'Res asada mechada',
   yield_portions: 24,
   portion_grams: 85,
@@ -48,10 +53,10 @@ async function panelDeRecetas(page: any) {
 test('el panel manda al servidor exactamente lo que se escribió', async ({ page }) => {
   const calls = await panelDeRecetas(page);
 
-  await page.evaluate(() => {
+  await page.evaluate((code) => {
     const w = window as any;
     w.recipeForm = {
-      code: 'P09',
+      code,
       name: 'Pollo cajún',
       yield: '18',
       grams: '85',
@@ -61,14 +66,14 @@ test('el panel manda al servidor exactamente lo que se escribió', async ({ page
     };
     w.recipeFormOpen = true;
     w.render();
-  });
+  }, OTRA_PROTEINA);
   await page.waitForTimeout(300);
   await page.evaluate(() => (window as any).doPublishRecipe());
   await page.waitForTimeout(600);
 
   const enviado = calls.find((c: any) => c.action === 'admin-recipe-set');
   expect(enviado, 'el panel no llamó a admin-recipe-set').toBeTruthy();
-  expect(enviado!.body.recipeCode).toBe('P09');
+  expect(enviado!.body.recipeCode).toBe(OTRA_PROTEINA);
   expect(enviado!.body.yieldPortions).toBe(18);
   // Los números tienen que llegar como NÚMEROS: la columna los espera así, y una cantidad
   // en texto haría que el escalado y el costo por porción den cualquier cosa.
@@ -87,11 +92,11 @@ test('el panel manda al servidor exactamente lo que se escribió', async ({ page
 // que solo cambió el nombre.
 test('cargar una receta existente la trae ENTERA al formulario', async ({ page }) => {
   await panelDeRecetas(page);
-  const f = await page.evaluate(() => {
-    (window as any).recipeFormLoad('P01');
+  const f = await page.evaluate((code) => {
+    (window as any).recipeFormLoad(code);
     return (window as any).recipeForm;
-  });
-  expect(f.code).toBe('P01');
+  }, UNA_PROTEINA);
+  expect(f.code).toBe(UNA_PROTEINA);
   expect(f.name).toBe('Res asada mechada');
   expect(f.yield).toBe('24');
   expect(f.ing).toBe('Punta de pecho | 2.5 | kg\nSal | 40 | g');
@@ -103,12 +108,12 @@ test('cargar una receta existente la trae ENTERA al formulario', async ({ page }
 // mintiendo sin que nada avise.
 test('una cantidad inválida se detiene ANTES de llegar al servidor', async ({ page }) => {
   const calls = await panelDeRecetas(page);
-  await page.evaluate(() => {
+  await page.evaluate((code) => {
     const w = window as any;
-    w.recipeForm = { code: 'P09', name: 'Prueba', yield: '10', grams: '', ing: 'Pechuga | | kg', steps: '' };
+    w.recipeForm = { code, name: 'Prueba', yield: '10', grams: '', ing: 'Pechuga | | kg', steps: '' };
     w.recipeFormOpen = true;
     w.render();
-  });
+  }, OTRA_PROTEINA);
   await page.evaluate(() => (window as any).doPublishRecipe());
   await page.waitForTimeout(400);
 
@@ -119,12 +124,12 @@ test('una cantidad inválida se detiene ANTES de llegar al servidor', async ({ p
 
 test('una receta sin ingredientes no se publica', async ({ page }) => {
   const calls = await panelDeRecetas(page);
-  await page.evaluate(() => {
+  await page.evaluate((code) => {
     const w = window as any;
-    w.recipeForm = { code: 'P09', name: 'Vacía', yield: '10', grams: '', ing: '', steps: 'Horno | 20' };
+    w.recipeForm = { code, name: 'Vacía', yield: '10', grams: '', ing: '', steps: 'Horno | 20' };
     w.recipeFormOpen = true;
     w.render();
-  });
+  }, OTRA_PROTEINA);
   await page.evaluate(() => (window as any).doPublishRecipe());
   await page.waitForTimeout(400);
   expect(calls.find((c: any) => c.action === 'admin-recipe-set')).toBeFalsy();

@@ -11,7 +11,7 @@ import { cartaDeLaApp, gotoApp, type Carta } from './helpers';
 // EL CASO NO ES HIPOTÉTICO: res (P01) y embutido (P05) salieron de ARMA EL TUYO el
 // 2026-09-05 por rentabilidad y siguen en `PROTS` marcadas `sigOnly`, porque sus Signatures
 // las usan. `cartItemStillExists` solo preguntaba si el id seguía en el array, así que las
-// dejaba pasar. Medido antes del arreglo: el carrito quedaba con `prot:'P01'` y un precio
+// dejaba pasar. Medido antes del arreglo: el carrito quedaba con la res como proteína y un precio
 // de S/14.90 en pantalla, y `priceByoBuild` lanza "Proteína inválida." recién al PAGAR.
 //
 // Es el mismo defecto que ya obligó a poner el selector de distrito y a tachar las horas

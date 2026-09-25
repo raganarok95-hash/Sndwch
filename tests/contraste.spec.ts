@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { mockBackend, APP_FILE } from './helpers';
+import { unaProteinaDelArmador, unPanSinRecargo, unSignature } from './carta';
 
 // NINGÚN TEXTO DE LA APP POR DEBAJO DEL MÍNIMO LEGIBLE
 //
@@ -26,10 +27,10 @@ const PANTALLAS: [string, string][] = [
   // única pantalla que cambia de paleta según el lado por el que se entró.
   ['bebidas-sando', "window.homeTab='sig';window.sndScreen='o_sides';"],
   ['bebidas-wicho', "window.homeTab='byo';window.sndScreen='o_sides';"],
-  ['ficha-signature', "window.selSig='SIG01';window.sndScreen='o_sig';"],
+  ['ficha-signature', `window.selSig='${unSignature()}';window.sndScreen='o_sig';`],
   ['armador-pan', "window.byoStep=0;window.size=null;window.base=null;window.sndScreen='o_build';"],
-  ['armador-proteina', "window.size='15';window.base='B01';window.byoStep=1;window.sndScreen='o_build';"],
-  ['armador-queso', "window.prot='P02';window.byoStep=2;window.sndScreen='o_build';"],
+  ['armador-proteina', `window.size='15';window.base='${unPanSinRecargo()}';window.byoStep=1;window.sndScreen='o_build';`],
+  ['armador-queso', `window.prot='${unaProteinaDelArmador()}';window.byoStep=2;window.sndScreen='o_build';`],
   ['armador-vegetales', "window.byoStep=3;window.sndScreen='o_build';"],
   ['armador-salsas', "window.byoStep=4;window.sndScreen='o_build';"],
   ['confirmar', "window.sndScreen='o_item_confirm';"],

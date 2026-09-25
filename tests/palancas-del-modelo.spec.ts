@@ -1,5 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { irAlArmador, gotoApp, mockBackend, APP_FILE, stubWindowOpen, elegirSando, entrarConTelefono } from './helpers';
+import { unSignature } from './carta';
+
+// Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
+const UN_SIGNATURE = unSignature();
 
 // LAS TRES PALANCAS DEL MODELO — medición y empujones (2026-09-06).
 //
@@ -21,7 +25,7 @@ const CLIENTE = { phone: '900000001', name: 'Ana Cliente', points: 0, credit_bal
 const pedidoEntregado = (ref: string) => ({
   id: 'ord-1', ref, status: 'ENTREGADO', payment_status: 'paid', payment_method: 'yape',
   total: 20.9, created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-  items: [{ type: 'sig', sigId: 'SIG01', size: '15', qty: 1 }],
+  items: [{ type: 'sig', sigId: UN_SIGNATURE, size: '15', qty: 1 }],
 });
 
 async function entrarConPedidoEntregado(page: any, ref = 'REF-001') {

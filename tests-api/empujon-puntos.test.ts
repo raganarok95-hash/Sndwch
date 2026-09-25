@@ -14,6 +14,7 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
 }
 import { nextRewardNudge } from "../supabase/functions/api/actions/customer.ts";
 import { REWARDS } from "../supabase/functions/api/catalog.ts";
+import { CARTA } from "../supabase/functions/_shared/carta.ts";
 
 // ⚠ Los números de acá están atados a la CALIBRACIÓN de puntos, recalibrada el 2026-09-05
 // para que las cinco recompensas devuelvan lo mismo (~1.5%): R02 20 · R04/R05 160 · R03 320 ·
@@ -57,11 +58,11 @@ Deno.test("el margen se puede mover sin tocar el resto del cálculo", () => {
 });
 
 Deno.test("devuelve la etiqueta real de la recompensa, no el código", () => {
-  // El cliente ve el nombre; mostrarle "R05" sería un dato interno filtrado a la app.
+  // El cliente ve el nombre; mostrarle el código interno de la recompensa sería un dato filtrado a la app.
   const n = nextRewardNudge(100, REWARDS);
   assertEquals(typeof n?.label, "string");
   assertEquals((n?.label || "").length > 0, true);
-  assertEquals((n?.label || "").startsWith("R0"), false);
+  assertEquals(CARTA.recompensas.some((r) => (n?.label || "").includes(r.id)), false);
 });
 
 Deno.test("sin recompensas configuradas no revienta ni inventa una", () => {

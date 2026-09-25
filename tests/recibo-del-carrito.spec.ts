@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers';
+import { unaBebida, unSignature } from './carta';
 
 // EL RECIBO DEL CARRITO TIENE QUE CUADRAR.
 //
@@ -22,15 +23,16 @@ import { gotoApp } from './helpers';
 async function carritoConDosItems(page: any) {
   const calls = await gotoApp(page, {});
   await page.waitForTimeout(600);
-  await page.evaluate(() => {
+  // Un Signature y una bebida de la carta vigente: el precio lo pone la app, no la prueba.
+  await page.evaluate(([sig, bebida]) => {
     const w = window as any;
     w.cart = [
-      { type: 'sig', sigId: 'SIG03', size: '30', qty: 1, unitPrice: 34.9, label: 'THE SMOKE 30CM' },
-      { type: 'side', code: 'D08', qty: 1, unitPrice: 6, label: 'THE COOL // MINT' },
+      { type: 'sig', sigId: sig, size: '30', qty: 1 },
+      { type: 'side', code: bebida, qty: 1 },
     ];
     w.sndScreen = 'o_cart';
     w.render();
-  });
+  }, [unSignature(), unaBebida()]);
   await page.waitForTimeout(500);
   return calls;
 }

@@ -30,9 +30,11 @@ export const REGLAS = {
   comboPorPar: 1,
   /** Recargo de la salsa extra. Uno de los dos precios que NO viven en `catalog_prices`. */
   salsaExtra: 2,
-  /** Recargo del pan por tamaño. El otro precio que no vive en `catalog_prices`. Solo la
-   *  focaccia lleva. Va DENTRO del precio base: así lo perdonan enteros el sándwich gratis y la subida a 30CM. */
-  recargoPan: { B03: { p15: 0.5, p30: 1 } } as Record<string, { p15: number; p30: number }>,
+  /** Recargo del pan por tamaño, por pan. Sale de la propiedad `recargo` de cada pan de la carta
+   *  (antes era `{ B03: … }` escrito acá: una regla de dinero atada al código de un producto). */
+  recargoPan: Object.fromEntries(
+    CARTA.panes.filter((p) => p.recargo).map((p) => [p.id, p.recargo!]),
+  ) as Record<string, { p15: number; p30: number }>,
   /** El menú secreto no entra en «15CM gratis» ni en el sándwich del organizador: es lo más caro
    *  del catálogo y se gamearía. */
   reservas: idsDe(CARTA.signatures, (x) => x.tipo === 'Reserve') as readonly string[],

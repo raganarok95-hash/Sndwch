@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { irAlArmador, siguientePaso, gotoApp, PIN_TEST, entrarConTelefono } from './helpers';
+import { unPanConRecargo, unPanSinRecargo } from './carta';
+import { CARTA } from '../supabase/functions/_shared/carta.ts';
+
+// El pan con recargo y cuánto suma, preguntados a la carta.
+const CON_RECARGO = unPanConRecargo();
+const RECARGO = CARTA.panes.find((p) => p.id === CON_RECARGO)!.recargo!;
+const enPantalla = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
 
 // SND//WCH — Yape/Plin es el método de pago por DEFECTO (2026-09-03) y la focaccia
 // se cobra (recargo de pan).
@@ -208,15 +215,15 @@ test('el recargo de la focaccia se ve ANTES de elegirla y entra al precio', asyn
   // El monto está en la tarjeta del pan, en el paso de elegir — no aparece recién en el
   // carrito. Un precio que sale después de haber elegido es la clase de sorpresa que hace
   // abandonar el pedido.
-  await expect(page.locator('[onclick*="base=\'B03\'"]')).toContainText('+S/0.50');
-  await expect(page.locator('[onclick*="base=\'B01\'"]')).not.toContainText('+S/');
+  await expect(page.locator(`[onclick*="base='${CON_RECARGO}'"]`)).toContainText(`+S/${enPantalla(RECARGO.p15)}`);
+  await expect(page.locator(`[onclick*="base='${unPanSinRecargo()}'"]`)).not.toContainText('+S/');
 
   // El 30CM cobra el doble, porque usa el doble de pan. El tamaño es su propio paso desde el
   // rediseño del armador: se vuelve atrás, se cambia, y se regresa al pan.
   await page.locator('button[onclick="byoStepBack()"]').click();
   await page.locator('[onclick*="size=\'30\'"]').click();
   await siguientePaso(page);
-  // pz() no escribe decimales cuando no hacen falta: el doble de S/0.50 se muestra "+S/1".
-  await expect(page.locator('[onclick*="base=\'B03\'"]')).toContainText('+S/1');
-  await expect(page.locator('[onclick*="base=\'B03\'"]')).not.toContainText('+S/0.50');
+  // pz() no escribe decimales cuando no hacen falta (S/1, no S/1.00).
+  await expect(page.locator(`[onclick*="base='${CON_RECARGO}'"]`)).toContainText(`+S/${enPantalla(RECARGO.p30)}`);
+  await expect(page.locator(`[onclick*="base='${CON_RECARGO}'"]`)).not.toContainText(`+S/${enPantalla(RECARGO.p15)}`);
 });

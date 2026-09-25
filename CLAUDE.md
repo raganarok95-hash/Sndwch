@@ -211,6 +211,8 @@ Cada una de estas ya causó un defecto real en producción. El detalle está en
   local. Una función nueva de la base se prueba AHÍ, no contra producción.
 - **Una tabla la escribe UNO por operación.** Si la RPC ya inserta en el libro, el código no
   vuelve a insertar al volver de ella. Lo vigila `npm run check:doble-escritura`.
+- **Una prueba no nombra un producto: lo pide a la carta** (`tests/carta.ts`, `tests-api/carta.ts`).
+  Un código inventado a propósito usa la serie 9x. Lo vigila `npm run check:pruebas-sin-codigos`.
 - **Una prueba que no se vio fallar no prueba nada.** Tres pruebas escritas el 2026-09-23
   pasaban con el defecto puesto (una miraba otra pantalla; otra quitaba comentarios con
   `//…` y se comía todo lo que seguía a «SND//WCH»). Inyecta el defecto antes de darla por buena.
