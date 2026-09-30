@@ -1206,6 +1206,16 @@ body.kb-open #app{padding-bottom:0}
 .m30 .grupo30 span{display:block;font-family:'EB Garamond',serif;font-size:15px;color:#33230F;margin-top:6px;line-height:1.35}
 .m30 .grupo30 button{all:unset;cursor:pointer;display:inline-block;margin-top:8px;padding:6px 0;font:700 11px/1 'IBM Plex Mono',monospace;color:#33230F;letter-spacing:.14em;text-transform:uppercase;border-bottom:1px solid #33230F}
 .m30 .grupo30 button:focus-visible{outline:2px solid #33230F;outline-offset:3px}
+/* EL PLATO DEL PEDIDO EN GRUPO: el logo grande donde los demás llevan la foto. */
+.m15 .plato.grupo .logo{position:absolute;left:0;right:0;top:0;height:58%;display:flex;align-items:center;justify-content:center;padding-top:40px;box-sizing:border-box}
+.m15 .plato.grupo .logo img{width:min(78%,420px);height:auto;max-height:100%;object-fit:contain;filter:drop-shadow(0 14px 26px rgba(60,38,14,.35))}
+.m15 .plato.grupo .regla{margin-top:16px;border-top:1px solid rgba(42,29,14,.35);border-bottom:1px solid rgba(42,29,14,.35);padding:10px 0;font:500 11px/1.6 'IBM Plex Mono',monospace;color:#2A1D0E;text-transform:uppercase;letter-spacing:.06em}
+.m15 .plato.grupo .cuenta{align-items:center}
+.m15 .plato.grupo .solo{all:unset;cursor:pointer;font-family:'EB Garamond',serif;font-size:15px;color:#2A1D0E;text-decoration:underline;text-underline-offset:3px;padding:10px 0}
+.m15 .plato.grupo .solo:focus-visible{outline:2px solid #2A1D0E;outline-offset:3px}
+@media (min-width:900px){
+  .m15 .plato.grupo .logo{right:50%;height:100%;padding-top:0}
+}
 /* ── EL PLATO EN KRAFT (dueño, 2026-09-30) ───────────────────────────────────────────────
    Cada Signature del Mundo SANDO se sirve sobre el kraft de la bolsa y del ticket; el secreto
    (.v) sigue de noche. Tinta café oscuro en vez de crema, y el dorado cede el precio y el botón

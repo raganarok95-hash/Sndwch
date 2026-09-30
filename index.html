@@ -1206,6 +1206,16 @@ body.kb-open #app{padding-bottom:0}
 .m30 .grupo30 span{display:block;font-family:'EB Garamond',serif;font-size:15px;color:#33230F;margin-top:6px;line-height:1.35}
 .m30 .grupo30 button{all:unset;cursor:pointer;display:inline-block;margin-top:8px;padding:6px 0;font:700 11px/1 'IBM Plex Mono',monospace;color:#33230F;letter-spacing:.14em;text-transform:uppercase;border-bottom:1px solid #33230F}
 .m30 .grupo30 button:focus-visible{outline:2px solid #33230F;outline-offset:3px}
+/* EL PLATO DEL PEDIDO EN GRUPO: el logo grande donde los demás llevan la foto. */
+.m15 .plato.grupo .logo{position:absolute;left:0;right:0;top:0;height:58%;display:flex;align-items:center;justify-content:center;padding-top:40px;box-sizing:border-box}
+.m15 .plato.grupo .logo img{width:min(78%,420px);height:auto;max-height:100%;object-fit:contain;filter:drop-shadow(0 14px 26px rgba(60,38,14,.35))}
+.m15 .plato.grupo .regla{margin-top:16px;border-top:1px solid rgba(42,29,14,.35);border-bottom:1px solid rgba(42,29,14,.35);padding:10px 0;font:500 11px/1.6 'IBM Plex Mono',monospace;color:#2A1D0E;text-transform:uppercase;letter-spacing:.06em}
+.m15 .plato.grupo .cuenta{align-items:center}
+.m15 .plato.grupo .solo{all:unset;cursor:pointer;font-family:'EB Garamond',serif;font-size:15px;color:#2A1D0E;text-decoration:underline;text-underline-offset:3px;padding:10px 0}
+.m15 .plato.grupo .solo:focus-visible{outline:2px solid #2A1D0E;outline-offset:3px}
+@media (min-width:900px){
+  .m15 .plato.grupo .logo{right:50%;height:100%;padding-top:0}
+}
 /* ── EL PLATO EN KRAFT (dueño, 2026-09-30) ───────────────────────────────────────────────
    Cada Signature del Mundo SANDO se sirve sobre el kraft de la bolsa y del ticket; el secreto
    (.v) sigue de noche. Tinta café oscuro en vez de crema, y el dorado cede el precio y el botón
@@ -3772,7 +3782,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '2e413edab3';
+var APP_BUILD = '3a44b032dc';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -7017,10 +7027,28 @@ function M15_PASAR(total, i, esSecreto, hayVault) {
     }
     return '<div class="pasar" aria-hidden="true">' + marcas + '<em>' + (i === total - 1 ? 'Último' : 'Baja ↓') + '</em></div>';
 }
+// EL PLATO DEL PEDIDO EN GRUPO (dueño 2026-09-30: «los pedidos grupales son de los que más
+// suman»; «en la 2 mejor pon solo el logo en grande»). Va segundo, justo después de la estrella:
+// nadie lo pasa de largo. El pack de 5 es el mismo grupo llenado por una sola persona. La regla
+// (desde cuántos, cuál va gratis) sale de la carta.
+function platoGrupo(total, hayVault) {
+    return '<section class="plato kraft grupo" aria-label="Pedido en grupo"><div class="forro"></div>'
+        + '<div class="logo" aria-hidden="true"><img src="img/marca/avatar-1024-transparente.png" alt=""></div>'
+        + '<div class="ficha"><div class="num">Para varios</div>'
+        + '<h1>Pedido en grupo</h1><div class="pitch">Mandas un enlace y cada uno elige el suyo desde su celular, Signature o armado. Tú pagas una vez y llega todo junto.</div>'
+        + '<div class="regla">Desde ' + ORGANIZER_FREE_MIN_SANDWICHES + ' sándwiches, el más barato va gratis</div></div>'
+        + '<div class="pie"><div class="cuenta">'
+        + '<button class="solo" onclick="empezarGrupo()">O llénalo tú: pack de ' + ORGANIZER_FREE_MIN_SANDWICHES + '</button>'
+        + '<button class="b" onclick="empezarGrupo()">Armar el grupo</button>'
+        + '</div></div>'
+        + M15_PASAR(total, 1, false, hayVault)
+        + '</section>';
+}
 function sMundoSando() {
     var visibles = sigsEnOrden(SIGS.filter(function (x) { return !x.secret && sigAvailable(x); }));
     var secreto = SIGS.find(function (s) { return s.secret; });
-    var total = visibles.length + (secreto ? 1 : 0);
+    // +1: el plato del pedido en grupo, que va segundo (ver platoGrupo).
+    var total = visibles.length + 1 + (secreto ? 1 : 0);
     var sirve = broPose('sando', 'cuerpo');
     var platos = visibles.map(function (s, i) {
         var av = sigInStock(s);
@@ -7037,8 +7065,9 @@ function sMundoSando() {
             + '<div class="p">' + SOLES_TXT + pz(s.p15) + '<s>30CM · ' + SOLES_TXT + pz(s.p30) + '</s></div>'
             + (av ? '<button class="b" onclick="startOrderWithSig(\'' + s.id + '\')">Lo quiero</button>' : '<button class="b" disabled>Agotado</button>')
             + '</div></div>'
-            + M15_PASAR(total, i, false, !!secreto)
-            + '</section>';
+            + M15_PASAR(total, i === 0 ? 0 : i + 1, false, !!secreto)
+            + '</section>'
+            + (i === 0 ? platoGrupo(total, !!secreto) : '');
     }).join('');
     var platoSecreto = '';
     if (secreto) {

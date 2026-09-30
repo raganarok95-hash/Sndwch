@@ -1,0 +1,45 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Arma el tuyo — como Subway</title>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:wght@600&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9E4D8;font-family:'EB Garamond',serif;padding:30px 26px;color:#1b1b1b}
+h2{font:600 28px/1.1 'Bodoni Moda',serif;margin:0 0 6px}.sub{margin:0 0 22px;color:#555;font-size:15px;max-width:1080px}
+.fila0{display:flex;gap:30px;align-items:flex-start}
+.tel{position:relative;width:390px;background:#8CC8EC;border-radius:26px;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.15);color:#15242D}
+.cab{position:relative;padding:18px 20px 22px;min-height:190px;box-sizing:border-box;background:linear-gradient(180deg,#A9D6F1,#8CC8EC)}
+.cab .top{display:flex;justify-content:space-between;font:600 13px 'Bodoni Moda',serif}
+.cab h1{font:640 34px/1 'Bodoni Moda',serif;margin:18px 0 6px}.cab p{margin:0;font-size:14px;color:#2F4A5A;max-width:24ch}
+.cab img{position:absolute;right:14px;top:30px;width:92px}
+.prog{display:flex;gap:6px;margin-top:14px}.prog i{flex:1;height:4px;border-radius:999px;background:rgba(21,36,45,.18)}.prog i.on{background:#15242D}
+section{background:#EAF4FB;margin:10px 12px;border-radius:12px;overflow:hidden}
+header{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px 10px;background:#DCEEFA}
+header h3{margin:0;font:640 20px 'Bodoni Moda',serif}header p{margin:4px 0 0;font:500 11px 'IBM Plex Mono',monospace;color:#4B6576;text-transform:uppercase;letter-spacing:.08em}
+header em{font:700 10px 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.1em;text-transform:uppercase;padding:6px 9px;border-radius:999px}
+em.req{background:#15242D;color:#EAF4FB}em.ok{background:#CBA258;color:#2A2113}em.op{background:transparent;color:#4B6576;border:1px solid #9DB9CB}
+.fila{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid #D2E4F1}
+.fila i{width:20px;height:20px;flex:0 0 auto;border:2px solid #15242D;box-sizing:border-box}.fila i.r{border-radius:50%}.fila i.c{border-radius:5px}
+.fila i.on{background:#15242D;box-shadow:inset 0 0 0 3px #EAF4FB}
+.fila .tx{flex:1}.fila b{display:block;font-size:17px;font-weight:600}.fila s{display:block;text-decoration:none;font-size:13px;color:#4B6576;font-style:italic}
+.fila u{text-decoration:none;font:500 13px 'IBM Plex Mono',monospace;color:#15242D}
+.dp{display:flex;align-items:center;gap:10px;padding:12px 16px;border-top:1px dashed #9DB9CB;background:#E2F0FA}.dp b{flex:1;font-size:16px}.dp u{text-decoration:none;font:500 12px 'IBM Plex Mono',monospace}
+.dp .sw{width:36px;height:20px;border-radius:999px;background:#9DB9CB}
+.pie{position:sticky;bottom:0;display:flex;justify-content:space-between;align-items:center;padding:14px 18px 20px;background:#15242D;color:#EAF4FB;margin-top:12px}
+.pie s{text-decoration:none;display:block;font:500 11px 'IBM Plex Mono',monospace;color:#8CC8EC;text-transform:uppercase;letter-spacing:.08em}.pie b{font:640 22px 'Bodoni Moda',serif}
+.pie button{border:0;background:#CBA258;color:#2A2113;padding:14px 20px;font:640 15px 'Bodoni Moda',serif}
+.nota{width:420px;font-size:15px;line-height:1.5;color:#333}.nota h4{font:600 19px 'Bodoni Moda',serif;margin:0 0 8px}.nota li{margin-bottom:8px}
+</style></head><body>
+<h2>Arma el tuyo, a la manera de Subway</h2>
+<p class="sub">Todo en una sola página que se baja con el dedo, en el orden del mostrador de Subway. Cada bloque dice si falta (<b>Requerido</b>) o ya está (<b>Listo ✓</b>), se elige con círculo (uno) o casilla (varios), y el precio va siempre abajo. Los nombres y precios son los de la carta de hoy.</p>
+<div class="fila0"><div class="tel"><div class="cab"><div class="top"><span>←</span><span>SND//WCH</span><span></span></div>
+<h1>Arma el tuyo</h1><p>Elige de arriba abajo. Lo que falta, se marca.</p><img src="../../../img/wicho2_come.png">
+<div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i class="on"></i></div></div>
+<section><header><div><h3>Tamaño</h3><p>Elige 1</p></div><em class="ok">Listo ✓</em></header><div class="fila on"><i class="r on"></i><div class="tx"><b>15CM</b><s>El de siempre</s></div><u></u></div><div class="fila"><i class="r"></i><div class="tx"><b>30CM</b><s>El doble de todo</s></div><u></u></div></section><section><header><div><h3>Pan</h3><p>Elige 1</p></div><em class="ok">Listo ✓</em></header><div class="fila on"><i class="r on"></i><div class="tx"><b>Classic</b><s>White</s></div><u></u></div><div class="fila"><i class="r"></i><div class="tx"><b>Focaccia</b><s>Artesanal</s></div><u>+S/0.50</u></div></section><section><header><div><h3>Proteína</h3><p>Elige 1</p></div><em class="ok">Listo ✓</em></header><div class="fila"><i class="r"></i><div class="tx"><b>Atún</b><s>House</s></div><u>S/23.90</u></div><div class="fila"><i class="r"></i><div class="tx"><b>Albóndiga</b><s>Marinara</s></div><u>S/23.90</u></div><div class="fila"><i class="r"></i><div class="tx"><b>Pavo</b><s>Horneado</s></div><u>S/24.90</u></div><div class="fila on"><i class="r on"></i><div class="tx"><b>Res</b><s>Laminada</s></div><u>S/23.90</u></div><div class="dp"><b>Doble proteína</b><u>+S/7.00</u><span class="sw"></span></div></section><section><header><div><h3>Queso</h3><p>Elige 1</p></div><em class="req">Requerido</em></header><div class="fila"><i class="r"></i><div class="tx"><b>Sin queso</b></div><u></u></div><div class="fila"><i class="r"></i><div class="tx"><b>Americano</b></div><u></u></div><div class="fila"><i class="r"></i><div class="tx"><b>Cheddar</b></div><u></u></div></section><section><header><div><h3>Vegetales</h3><p>Los que quieras</p></div><em class="op">Opcional</em></header><div class="fila"><i class="c"></i><div class="tx"><b>Sin vegetales</b></div><u></u></div><div class="fila on"><i class="c on"></i><div class="tx"><b>Tomate</b><s>Fresco</s></div><u></u></div><div class="fila on"><i class="c on"></i><div class="tx"><b>Cebolla</b><s>Morada juliana</s></div><u></u></div><div class="fila"><i class="c"></i><div class="tx"><b>Jalapeño</b><s>Encurtido</s></div><u></u></div><div class="fila"><i class="c"></i><div class="tx"><b>Pickles</b><s>Encurtidos</s></div><u></u></div><div class="fila"><i class="c"></i><div class="tx"><b>Pepinillo</b><s>Fresco</s></div><u></u></div><div class="fila"><i class="c"></i><div class="tx"><b>Pimiento</b><s>Verde</s></div><u></u></div><div class="fila on"><i class="c on"></i><div class="tx"><b>Lechuga</b><s>Fresca</s></div><u></u></div></section><section><header><div><h3>Salsas</h3><p>Hasta 3</p></div><em class="op">Opcional</em></header><div class="fila"><i class="c"></i><div class="tx"><b>Sin salsa</b></div><u></u></div><div class="fila"><i class="c"></i><div class="tx"><b>Aioli</b><s>Signature</s></div><u></u></div><div class="fila"><i class="c"></i><div class="tx"><b>Smoke</b><s>BBQ</s></div><u></u></div><div class="fila"><i class="c"></i><div class="tx"><b>Honey</b><s>Mustard</s></div><u></u></div><div class="fila"><i class="c"></i><div class="tx"><b>SNDWCH</b><s>Special</s></div><u></u></div><div class="fila on"><i class="c on"></i><div class="tx"><b>Oil & Vinegar</b><s>Classic</s></div><u></u></div><div class="fila"><i class="c"></i><div class="tx"><b>Teriyaki</b><s>Glaze</s></div><u></u></div><div class="fila"><i class="c"></i><div class="tx"><b>Chimichurri</b><s>Piña y Ají</s></div><u></u></div><div class="fila"><i class="c"></i><div class="tx"><b>Peanut</b><s>Satay</s></div><u></u></div><div class="fila"><i class="c"></i><div class="tx"><b>Mostaza</b><s>Dijon</s></div><u></u></div></section>
+<div class="pie"><div><s>15CM · Res laminada · falta el queso</s><b>S/23.90</b></div><button>Agregar</button></div></div>
+<div class="nota"><h4>Lo que cambia</h4><ul>
+<li><b>Una página en vez de seis pantallas.</b> Se ve todo lo elegido de un vistazo y se corrige tocando, sin «Atrás».</li>
+<li><b>Mismo orden que el mostrador de Subway</b>: tamaño, pan, proteína, queso, vegetales, salsas.</li>
+<li><b>«Requerido» y «Listo ✓»</b> en cada bloque, como en la app de Subway. «Agregar» avisa qué falta en vez de quedar apagado sin explicación.</li>
+<li><b>«Sin queso», «Sin vegetales», «Sin salsa»</b> como opción visible, no como omisión.</li>
+<li><b>Salsas: hasta 3</b>, como hoy. Al llegar a 3 las demás se apagan.</li>
+<li><b>Se queda lo de WICHO</b>: su celeste, su cara arriba, el precio en dorado.</li>
+<li>Las fotos de proteína (hoy en tarjetas grandes) pasan a una miniatura en cada fila, o se quitan — tú decides.</li>
+</ul></div></div></body></html>

@@ -23,6 +23,7 @@ vive en el chat o en `/tmp`, no existe.
 
 | pantalla | archivo | fuente | cómo quedó |
 |---|---|---|---|
+| Grupo · plato del Mundo SANDO | `grupo-2-plato.png` | captura de la app | «En la 2 mejor pon solo el logo en grande» (2026-09-30): segundo plato, logo grande, sin los hermanos. La puerta NO lleva el grupo: «Sin tocar la puerta, mejor» |
 | Grupo · armador de WICHO | `grupo-3-armador-wicho.png` | `../propuestas/pedido-en-grupo.html` #3 | «Aprobado 3 y 4» (2026-09-30): «¿Son varios?» en el primer paso del armador |
 | Grupo · carrito | `grupo-4-carrito.png` | `../propuestas/pedido-en-grupo.html` #4 | «Aprobado 3 y 4» (2026-09-30): el sello «¿Pides para más gente?» que convierte el pedido en grupo |
 | 01 · Ficha de un Signature (SANDO) | `01-ficha-de-un-signature.png` | perdida — recorte de captura | «La pantalla de la ficha, me agrada para sando» |

@@ -43,3 +43,16 @@ test('el armador de WICHO invita al grupo en el primer paso', async ({ page }) =
   await irAlArmador(page);
   await expect(page.locator('.mw .grupo')).toContainText('¿Son varios?');
 });
+
+test('el Mundo SANDO trae el plato del grupo en segundo lugar, con la regla de la carta', async ({ page }) => {
+  const calls = await gotoApp(page, {});
+  const platos = page.locator('.m15 .plato');
+  await expect(platos.nth(1)).toHaveClass(/grupo/);
+  const desde = await page.evaluate(() => (window as any).ORGANIZER_FREE_MIN_SANDWICHES);
+  await expect(platos.nth(1)).toContainText('Desde ' + desde + ' sándwiches');
+  await platos.nth(1).scrollIntoViewIfNeeded();
+  await platos.nth(1).getByRole('button', { name: 'Armar el grupo' }).click();
+  // Sin cuenta: lleva a entrar con el intento guardado, sin crear nada todavía.
+  expect(calls.find((c) => c.action === 'create-group-order')).toBeFalsy();
+  expect(await page.evaluate(() => (window as any).wantsNewGroup)).toBe(true);
+});
