@@ -275,7 +275,9 @@ function sOBuild(){
           +'<div class="fila"><span class="n">'+o.t+'</span><span class="pre">desde '+SOLES+pz(byoDesde(o.sz))+'</span></div>'
           +'<div class="s">'+o.s+'</div><div class="d">'+o.d+'</div>'
           +'</button>';
-      }).join('')+'</div>';
+      }).join('')+'</div>'
+      // Maqueta aprobada grupo-3: la invitación al grupo con la voz de WICHO.
+      +'<button type="button" class="grupo" onclick="empezarGrupo()"><span><b>¿Son varios?</b><s>Cada uno arma el suyo · '+esc(textoGrupoGratis())+'</s></span><i aria-hidden="true">→</i></button>';
 
   }else if(byoStep===1){
     // PAN. El recargo ARRIBA, antes de elegir: un precio que aparece recién en el carrito es la

@@ -1431,6 +1431,36 @@ function resumeWantedGroup(){
   doCreateGroupOrder();
   return true;
 }
+// EL GRUPO A LA VISTA (maquetas aprobadas grupo-3 y grupo-4, dueño 2026-09-30: «los pedidos
+// grupales son de los que más suman»). Se ofrece al empezar a armar y en el carrito. Organizar
+// exige cuenta (el servidor cobra a quien organizó); los demás entran por el enlace sin cuenta.
+var grupoLlevaCarrito=false;
+function empezarGrupo(conCarrito?:boolean){
+  grupoLlevaCarrito=!!conCarrito;
+  if(!cust){
+    wantsNewGroup=true;
+    showToast('Entra a tu cuenta para organizar el grupo. Los demás no necesitan cuenta.');
+    swTab('points');
+    return;
+  }
+  doCreateGroupOrder();
+}
+// «Convertir en grupo»: lo que ya estaba en el carrito pasa al grupo a nombre de quien organiza,
+// para no elegirlo dos veces. Sale del carrito: al cerrar el grupo vuelve con todo lo demás.
+async function pasarCarritoAlGrupo(){
+  grupoLlevaCarrito=false;
+  var nombre=(cust&&cust.name)||'Yo';
+  var pasados=0;
+  for(var i=0;i<cart.length;i++){
+    try{await api('add-group-item',{code:groupCode,contributorName:nombre,token:token,item:cart[i]});pasados++;}
+    catch(e){showToast('No se pudo pasar todo al grupo: '+e.message,'error');break;}
+  }
+  if(pasados===cart.length){cart=[];saveCart();}
+  else cart=cart.slice(pasados);
+}
+function textoGrupoGratis():string{
+  return'con '+ORGANIZER_FREE_MIN_SANDWICHES+', el más barato va gratis';
+}
 async function doCreateGroupOrder(){
   if(!cust){showToast('Inicia sesión para organizar un pedido grupal.');return;}
   busy=true;busyMsg='Creando pedido grupal...';render();
@@ -1438,6 +1468,7 @@ async function doCreateGroupOrder(){
   try{res=await api('create-group-order',{token:token});}
   catch(e){busy=false;render();showToast(e.message);return;}
   groupCode=res.code;groupData=null;groupMsg='';
+  if(grupoLlevaCarrito)await pasarCarritoAlGrupo();
   busy=false;sndScreen='group_order';render();
   loadGroupOrder();
   startGroupPoll();
