@@ -1708,7 +1708,10 @@ function sMundoSando(){
   var platos=visibles.map(function(s,i){
     var av=sigInStock(s);
     var marca=s.recommended?'La estrella':(sigBadge(s)||'');
-    return'<section class="plato" aria-label="'+esc(s.n)+'"><div class="forro"></div>'
+    // El plato de cada Signature va en KRAFT, el papel de la bolsa y del ticket (dueño,
+    // 2026-09-30: «no estoy eligiendo color de todo el mundo pero sí de sus sándwiches… elegí
+    // kraft»). El secreto conserva su noche morada.
+    return'<section class="plato kraft" aria-label="'+esc(s.n)+'"><div class="forro"></div>'
       +'<div class="foto">'+(fotoDelPlato(s.id)?'<img src="'+fotoDelPlato(s.id)+'" alt="" '+(i>0?'loading="lazy"':'')+(av?'':' style="filter:grayscale(1)"')+'>':'')+'<div class="baja"></div></div>'
       +'<img class="sirve" src="'+sirve+'" alt="" aria-hidden="true">'
       +'<div class="ficha"><div class="num">'+romano(i+1)+' de '+romano(visibles.length)+(marca?'<b>'+esc(marca)+'</b>':'')+'</div>'
