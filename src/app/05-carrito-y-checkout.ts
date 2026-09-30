@@ -1127,6 +1127,11 @@ function sOCart(){
     +'<div class="tt"><em>'+(sinEnvio?'Sin envío':'Total')+'</em><b>'+SOLES_TXT+pz(t)+'</b></div>'
     +'</div></div>'
     +'<div class="err" id="o-err" role="alert"></div>'
+    // Maqueta aprobada grupo-4: el pedido se puede volver grupo sin perder lo elegido. No se
+    // ofrece si el pedido ya viene de un grupo.
+    +(!pendingGroupCode&&cart.some(function(it){return it.type!=='side';})
+      ?'<div class="grupo30"><b>¿Pides para más gente?</b><span>Hazlo grupo: comparte el enlace y cada uno suma el suyo. '+esc(textoGrupoGratis().replace(/^c/,'C'))+'.</span><button onclick="empezarGrupo(true)">Convertir en grupo →</button></div>'
+      :'')
     +'<div class="hermanos" aria-hidden="true"><img class="s" src="'+broPose('sando','saluda')+'" alt=""><img class="w" src="'+broPose('wicho','alegre')+'" alt=""></div>'
     +'</div>'
     +hoja30HTML()
