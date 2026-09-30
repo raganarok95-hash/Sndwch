@@ -3,6 +3,11 @@
 Fuente: 16 capturas del dueño de Subway Rivera Navarrete en PedidosYa (Perú, 30-09-2026). Nada de
 esto está decidido: es el análisis para que el dueño elija qué adoptar.
 
+> **Corrección del dueño (mismo día):** «Requerido/Completado», «Más popular», «Agotado» y el precio
+> tachado con % de descuento son **de PedidosYa** (la plataforma), no de Subway. Y los precios son
+> **de Lima: en Trujillo no hay Subway**, así que no son una referencia de precio para nosotros.
+> Lo que sí es de Subway: qué se puede personalizar, los ingredientes, los combos y los packs.
+
 ## Cómo arma Subway el pedido
 
 - **Todo producto se personaliza, incluso los Signatures**: pan (1, «Requerido») → queso (1, con
@@ -39,9 +44,7 @@ esto está decidido: es el análisis para que el dueño elija qué adoptar.
 de tener pedidos reales (sería inventado), sabores locales (la carta v4 es de clásicos de USA por
 decisión del dueño; SND//WCH no tiene identidad regional).
 
-**Posición de precio**: con promo, Subway en PedidosYa queda por debajo nuestro (S/13.90–21.90 con
-bebida vs S/20.90–23.90 sin bebida, más envío por distancia). Se compite por calidad y producto, no
-por precio.
+**Precio**: no hay comparación válida — son precios de Lima y en Trujillo no existe Subway.
 
 ## ¿Es un menú «fit»? — ESTIMADO, no medido
 
