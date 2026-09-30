@@ -450,8 +450,10 @@ function goToCartFromConfirm(){
 // vacío a tener su primer producto, para que un pedido nuevo nunca arrastre texto
 // o selecciones de un carrito anterior ya finalizado.
 function initCheckoutFields(){
-  confNom=cust?cust.name:'';
-  confPhone=cust?cust.phone:'';
+  // `||''`: una cuenta sin teléfono o sin nombre guardado (la de Google puede llegar así) dejaba
+  // estos campos en undefined y el carrito se caía entero al abrirse («reading 'replace'»).
+  confNom=(cust&&cust.name)||'';
+  confPhone=(cust&&cust.phone)||'';
   confEmail=cust&&cust.email?cust.email:'';
   confNotes='';
   addrText=cust&&cust.last_address?cust.last_address:'';

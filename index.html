@@ -1241,6 +1241,35 @@ body.kb-open #app{padding-bottom:0}
 .mcu .salir s{text-decoration:none;font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#6E4F2A;text-transform:uppercase}
 .mcu .salir.borrar b{color:#8E2A18}
 .mcu .salir:focus-visible{outline:2px solid #9C5F14;outline-offset:2px}
+/* TUS PEDIDOS · LOS SELLOS (maqueta aprobada tus-pedidos-los-sellos.png). */
+.msl{position:relative;min-height:100dvh;background:#EFE6D4;color:#1E2B22;margin-bottom:calc(-1 * var(--sw-barra,0px))}
+.msl .sal{all:unset;cursor:pointer;position:absolute;top:10px;left:14px;z-index:4;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.7)}
+.msl.vacio,.msl .cargando{padding:70px 26px 40px}
+.msl.vacio .sal{color:#1E2B22;text-shadow:none}
+.msl .ir{all:unset;cursor:pointer;margin-top:18px;background:#1E2B22;color:#EFE6D4;padding:13px 22px;font:700 13px/1 Archivo,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.msl .ultimo{position:relative;height:282px;overflow:hidden;background:#1E2B22}
+.msl .ultimo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.msl .ultimo .velo{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,transparent 35%,rgba(10,14,10,.85) 100%)}
+.msl .ultimo .tx{all:unset;cursor:pointer;position:absolute;left:24px;right:24px;bottom:18px;z-index:2}
+.msl .ultimo em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#8CC8EC;text-transform:uppercase;font-style:normal}
+.msl .ultimo b{display:block;margin-top:8px;font:800 22px/1.1 Archivo,sans-serif;color:#fff}
+.msl .ultimo s{display:block;margin-top:8px;text-decoration:none;font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:rgba(255,255,255,.8);text-transform:uppercase}
+.msl .repetir{all:unset;box-sizing:border-box;cursor:pointer;display:flex;width:100%;justify-content:space-between;align-items:center;padding:20px 24px;background:#1E2B22;color:#EFE6D4}
+.msl .repetir span{font:800 13px/1 Archivo,sans-serif;letter-spacing:.18em;text-transform:uppercase}
+.msl .repetir b{font:500 13px/1 'IBM Plex Mono',monospace;color:#CBA258}
+.msl .repetir:focus-visible,.msl .sello:focus-visible,.msl .ultimo .tx:focus-visible{outline:2px solid #D8823C;outline-offset:3px}
+.msl .cuerpo{padding:26px 24px 40px}
+.msl .veces{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid rgba(30,43,34,.18);padding-bottom:14px}
+.msl .veces em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.22em;color:#6C7C64;text-transform:uppercase;font-style:normal}
+.msl .veces b{font:500 40px/1 Archivo,sans-serif;letter-spacing:-.02em}
+.msl .sellos{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:22px}
+.msl .sello{all:unset;box-sizing:border-box;cursor:pointer;aspect-ratio:1/1;border:1px solid rgba(30,43,34,.25);background:#F6EFE0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.msl .sello em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6C7C64;text-transform:uppercase;font-style:normal}
+.msl .sello b{font:700 15px/1 'IBM Plex Mono',monospace}
+.msl .sello.on{background:#1E2B22;color:#EFE6D4;border-color:#1E2B22}
+.msl .sello.on em{color:#CBA258}
+.msl .sello.x{opacity:.45}
+.msl .pie{margin-top:40px;font:500 11px/1.8 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#5A6A52;text-transform:uppercase}
 /* ── EL PLATO EN KRAFT (dueño, 2026-09-30) ───────────────────────────────────────────────
    Cada Signature del Mundo SANDO se sirve sobre el kraft de la bolsa y del ticket; el secreto
    (.v) sigue de noche. Tinta café oscuro en vez de crema, y el dorado cede el precio y el botón
@@ -3807,7 +3836,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '90e3b66f56';
+var APP_BUILD = 'ebf578c7f7';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -5543,8 +5572,10 @@ function goToCartFromConfirm() {
 // vacío a tener su primer producto, para que un pedido nuevo nunca arrastre texto
 // o selecciones de un carrito anterior ya finalizado.
 function initCheckoutFields() {
-    confNom = cust ? cust.name : '';
-    confPhone = cust ? cust.phone : '';
+    // `||''`: una cuenta sin teléfono o sin nombre guardado (la de Google puede llegar así) dejaba
+    // estos campos en undefined y el carrito se caía entero al abrirse («reading 'replace'»).
+    confNom = (cust && cust.name) || '';
+    confPhone = (cust && cust.phone) || '';
     confEmail = cust && cust.email ? cust.email : '';
     confNotes = '';
     addrText = cust && cust.last_address ? cust.last_address : '';
@@ -11294,39 +11325,74 @@ async function loadMyOrders() {
         render();
     }
 }
+// ── TUS PEDIDOS · LOS SELLOS (maqueta aprobada `tus-pedidos-los-sellos.png`, «Tus pedidos me
+// suena bien», con «Pedir lo mismo» arriba). El último pedido a lo ancho con su foto y el botón
+// para repetirlo; debajo, un sello por pedido. Toda cifra sale de los pedidos: cuántas veces,
+// la fecha de cada sello y el día que más se repite (solo si de verdad se repite).
+var MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+var DIAS_LARGOS = ['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'];
+// En la hora de Lima (UTC−5, sin horario de verano), no en la del aparato: un pedido de las 7
+// de la noche de un jueves sería viernes para un navegador en UTC. Se leen con getUTC*.
+function fechaDelPedido(o) {
+    var d = new Date(o.created_at || o.date || '');
+    return isNaN(d.getTime()) ? null : new Date(d.getTime() - 5 * 3600000);
+}
+function cuandoFue(d) {
+    var hoy = new Date(Date.now() - 5 * 3600000);
+    var dias = Math.floor(Date.UTC(hoy.getUTCFullYear(), hoy.getUTCMonth(), hoy.getUTCDate()) / 86400000) - Math.floor(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) / 86400000);
+    if (dias <= 0)
+        return 'hoy';
+    if (dias === 1)
+        return 'ayer';
+    if (dias < 7)
+        return 'hace ' + dias + ' días';
+    return d.getUTCDate() + ' ' + MESES_CORTOS[d.getUTCMonth()];
+}
+function precioDeRepetir(o) {
+    var its = (o.items || []).filter(cartItemRepeatable);
+    return money(its.reduce(function (a, it) { return a + itemUnitPrice(it) * (it.qty || 1); }, 0));
+}
 function sPOrders() {
-    var act = myOrders.filter(function (o) { return !pedidoTerminado(o.status); });
-    var done = myOrders.filter(function (o) { return pedidoTerminado(o.status); });
-    function card(o) {
-        var ci = STEPS.indexOf(o.status);
-        return '<div onclick="_sndOd=\'' + o.id + '\';rtStars=0;rtMsg=\'\';sndScreen=\'p_ord_detail\';render()" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer">'
-            + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
-            + '<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(o.customer_name) + '</div>'
-            + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:2px">' + esc(o.ref) + ' · ' + esc(o.date) + '</div></div>'
-            + '<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:' + GOLD + ';flex-shrink:0">' + SOLES + pz(o.total) + '</div></div>'
-            + '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-bottom:8px">' + esc(o.summary) + '</div>'
-            + '<div style="display:flex;gap:2px;margin-bottom:6px">' + STEPS.map(function (st, i) { var dn = i <= ci; return '<div style="flex:1;height:3px;background:' + (dn ? GOLD : '#2C3228') + ';border-radius:4px"></div>'; }).join('') + '</div>'
-            + stBadge(o.status) + '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:' + GOLD + ';text-align:right;margin-top:4px">ver detalle ›</div></div>';
-    }
-    var h = H('MIS PEDIDOS', "sndScreen='p_home';render()") + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
-    if (listLoading) {
-        h += skeletonCards(3, 132);
-    }
-    else {
-        if (act.length) {
-            h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-warn,#ffa500);letter-spacing:.2em;margin-bottom:10px" class="blink">● Activos // ' + act.length + '</div>';
-            h += act.map(card).join('');
-        }
-        if (done.length) {
-            h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:' + (act.length ? '16px' : '0') + ' 0 10px">Anteriores // ' + done.length + '</div>';
-            h += done.map(card).join('');
-        }
-        if (!myOrders.length) {
-            h += VACIO('Sin pedidos', 'Cuando hagas el primero, va a aparecer acá con su estado en vivo.', BTN('Hacer un pedido //', 'swTab(\'order\')'), 'mira');
-        }
-    }
-    h += '<div style="margin-top:14px">' + BTN('Actualizar //', 'loadMyOrders()', true) + '</div></div>' + NAV();
-    return h;
+    var bk = "sndScreen=cust?'p_home':'o_home';render()";
+    if (listLoading)
+        return '<div class="msl fi"><button class="sal" onclick="' + bk + '" aria-label="Volver">←</button><div class="cargando">Buscando tus pedidos…</div></div>';
+    if (!myOrders.length)
+        return '<div class="msl vacio fi"><button class="sal" onclick="' + bk + '" aria-label="Volver">←</button>'
+            + VACIO('Todavía ningún pedido', 'Cuando hagas el primero, aparece acá con su sello.', '<button class="ir" onclick="volverALaPuerta()">Pedir ahora</button>') + '</div>';
+    var ult = myOrders[0];
+    var fu = fechaDelPedido(ult);
+    var itsUlt = ult.items || [];
+    var primero = itsUlt.find(function (it) { return it.type === 'sig'; });
+    var foto = primero ? fotoDelPlato(primero.sigId) : '';
+    var repetible = itsUlt.some(cartItemRepeatable);
+    var terminado = pedidoTerminado(ult.status);
+    var estado = terminado ? (ult.status === 'CANCELADO' ? 'Cancelado' : 'Llegó' + (ult.delivered_at ? ' ' + horaLima(new Date(ult.delivered_at).getTime()) : ''))
+        : (STATUSES[ult.status] ? STATUSES[ult.status].label : ult.status);
+    var comidos = myOrders.filter(function (o) { return o.status !== 'CANCELADO'; });
+    // El día que más se repite: se dice solo si pasa de la mitad y hay al menos 3.
+    var porDia = [0, 0, 0, 0, 0, 0, 0];
+    comidos.forEach(function (o) { var d = fechaDelPedido(o); if (d)
+        porDia[d.getUTCDay()]++; });
+    var max = Math.max.apply(null, porDia), diaTop = porDia.indexOf(max);
+    var dato = max >= 3 && max * 2 > comidos.length ? 'Los ' + DIAS_LARGOS[diaTop] + ' son ' + max + ' de los ' + comidos.length + ' — por algo será.' : '';
+    var sellos = myOrders.map(function (o, k) {
+        var d = fechaDelPedido(o);
+        return '<button class="sello' + (k === 0 ? ' on' : '') + (o.status === 'CANCELADO' ? ' x' : '') + '" onclick="_sndOd=\'' + o.id + '\';rtStars=0;rtMsg=\'\';sndScreen=\'p_ord_detail\';render()" aria-label="Pedido ' + esc(o.ref || '') + '">'
+            + '<em>' + (d ? MESES_CORTOS[d.getUTCMonth()] : '—') + '</em><b>' + (d ? String(d.getUTCDate()).padStart(2, '0') : '') + '</b></button>';
+    }).join('');
+    return '<div class="msl fi">'
+        + '<div class="ultimo">' + (foto ? '<img src="' + foto + '" alt="">' : '') + '<div class="velo"></div>'
+        + '<button class="sal" onclick="' + bk + '" aria-label="Volver">←</button>'
+        + '<button class="tx" onclick="_sndOd=\'' + ult.id + '\';rtStars=0;rtMsg=\'\';sndScreen=\'p_ord_detail\';render()">'
+        + '<em>El último' + (fu ? ' · ' + cuandoFue(fu) : '') + '</em><b>' + esc(ult.summary || 'Tu pedido') + '</b>'
+        + '<s>' + esc(estado) + ' · ' + SOLES_TXT + pz(ult.total || 0) + '</s></button></div>'
+        + (repetible
+            ? '<button class="repetir" onclick="loadCart(myOrders[0].items)"><span>Pedir lo mismo</span><b>' + SOLES_TXT + pz(precioDeRepetir(ult)) + '</b></button>'
+            : '')
+        + '<div class="cuerpo"><div class="veces"><em>Has comido acá</em><b>' + comidos.length + (comidos.length === 1 ? ' vez' : ' veces') + '</b></div>'
+        + '<div class="sellos">' + sellos + '</div>'
+        + '<p class="pie">Toca un sello y se abre ese pedido.' + (dato ? '<br>' + esc(dato) : '') + '</p></div>'
+        + '</div>';
 }
 var _sndOd = null;
 function sOrdDetail() {

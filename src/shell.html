@@ -1241,6 +1241,35 @@ body.kb-open #app{padding-bottom:0}
 .mcu .salir s{text-decoration:none;font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#6E4F2A;text-transform:uppercase}
 .mcu .salir.borrar b{color:#8E2A18}
 .mcu .salir:focus-visible{outline:2px solid #9C5F14;outline-offset:2px}
+/* TUS PEDIDOS · LOS SELLOS (maqueta aprobada tus-pedidos-los-sellos.png). */
+.msl{position:relative;min-height:100dvh;background:#EFE6D4;color:#1E2B22;margin-bottom:calc(-1 * var(--sw-barra,0px))}
+.msl .sal{all:unset;cursor:pointer;position:absolute;top:10px;left:14px;z-index:4;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.7)}
+.msl.vacio,.msl .cargando{padding:70px 26px 40px}
+.msl.vacio .sal{color:#1E2B22;text-shadow:none}
+.msl .ir{all:unset;cursor:pointer;margin-top:18px;background:#1E2B22;color:#EFE6D4;padding:13px 22px;font:700 13px/1 Archivo,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.msl .ultimo{position:relative;height:282px;overflow:hidden;background:#1E2B22}
+.msl .ultimo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.msl .ultimo .velo{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,transparent 35%,rgba(10,14,10,.85) 100%)}
+.msl .ultimo .tx{all:unset;cursor:pointer;position:absolute;left:24px;right:24px;bottom:18px;z-index:2}
+.msl .ultimo em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#8CC8EC;text-transform:uppercase;font-style:normal}
+.msl .ultimo b{display:block;margin-top:8px;font:800 22px/1.1 Archivo,sans-serif;color:#fff}
+.msl .ultimo s{display:block;margin-top:8px;text-decoration:none;font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:rgba(255,255,255,.8);text-transform:uppercase}
+.msl .repetir{all:unset;box-sizing:border-box;cursor:pointer;display:flex;width:100%;justify-content:space-between;align-items:center;padding:20px 24px;background:#1E2B22;color:#EFE6D4}
+.msl .repetir span{font:800 13px/1 Archivo,sans-serif;letter-spacing:.18em;text-transform:uppercase}
+.msl .repetir b{font:500 13px/1 'IBM Plex Mono',monospace;color:#CBA258}
+.msl .repetir:focus-visible,.msl .sello:focus-visible,.msl .ultimo .tx:focus-visible{outline:2px solid #D8823C;outline-offset:3px}
+.msl .cuerpo{padding:26px 24px 40px}
+.msl .veces{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid rgba(30,43,34,.18);padding-bottom:14px}
+.msl .veces em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.22em;color:#6C7C64;text-transform:uppercase;font-style:normal}
+.msl .veces b{font:500 40px/1 Archivo,sans-serif;letter-spacing:-.02em}
+.msl .sellos{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:22px}
+.msl .sello{all:unset;box-sizing:border-box;cursor:pointer;aspect-ratio:1/1;border:1px solid rgba(30,43,34,.25);background:#F6EFE0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.msl .sello em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6C7C64;text-transform:uppercase;font-style:normal}
+.msl .sello b{font:700 15px/1 'IBM Plex Mono',monospace}
+.msl .sello.on{background:#1E2B22;color:#EFE6D4;border-color:#1E2B22}
+.msl .sello.on em{color:#CBA258}
+.msl .sello.x{opacity:.45}
+.msl .pie{margin-top:40px;font:500 11px/1.8 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#5A6A52;text-transform:uppercase}
 /* ── EL PLATO EN KRAFT (dueño, 2026-09-30) ───────────────────────────────────────────────
    Cada Signature del Mundo SANDO se sirve sobre el kraft de la bolsa y del ticket; el secreto
    (.v) sigue de noche. Tinta café oscuro en vez de crema, y el dorado cede el precio y el botón

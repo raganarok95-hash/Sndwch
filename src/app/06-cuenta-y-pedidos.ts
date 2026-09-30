@@ -105,38 +105,67 @@ async function loadMyOrders(){
   if(!done){done=true;clearTimeout(timer);listLoading=false;render();}
 }
 
+// ── TUS PEDIDOS · LOS SELLOS (maqueta aprobada `tus-pedidos-los-sellos.png`, «Tus pedidos me
+// suena bien», con «Pedir lo mismo» arriba). El último pedido a lo ancho con su foto y el botón
+// para repetirlo; debajo, un sello por pedido. Toda cifra sale de los pedidos: cuántas veces,
+// la fecha de cada sello y el día que más se repite (solo si de verdad se repite).
+var MESES_CORTOS=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+var DIAS_LARGOS=['domingos','lunes','martes','miércoles','jueves','viernes','sábados'];
+// En la hora de Lima (UTC−5, sin horario de verano), no en la del aparato: un pedido de las 7
+// de la noche de un jueves sería viernes para un navegador en UTC. Se leen con getUTC*.
+function fechaDelPedido(o:any):Date|null{
+  var d=new Date(o.created_at||o.date||'');
+  return isNaN(d.getTime())?null:new Date(d.getTime()-5*3600000);
+}
+function cuandoFue(d:Date):string{
+  var hoy=new Date(Date.now()-5*3600000);
+  var dias=Math.floor(Date.UTC(hoy.getUTCFullYear(),hoy.getUTCMonth(),hoy.getUTCDate())/86400000)-Math.floor(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())/86400000);
+  if(dias<=0)return'hoy';if(dias===1)return'ayer';
+  if(dias<7)return'hace '+dias+' días';
+  return d.getUTCDate()+' '+MESES_CORTOS[d.getUTCMonth()];
+}
+function precioDeRepetir(o:any):number{
+  var its=(o.items||[]).filter(cartItemRepeatable);
+  return money(its.reduce(function(a:number,it:any){return a+itemUnitPrice(it)*(it.qty||1);},0));
+}
 function sPOrders(){
-  var act=myOrders.filter(function(o){return !pedidoTerminado(o.status);});
-  var done=myOrders.filter(function(o){return pedidoTerminado(o.status);});
-  function card(o){
-    var ci=STEPS.indexOf(o.status);
-    return'<div onclick="_sndOd=\''+o.id+'\';rtStars=0;rtMsg=\'\';sndScreen=\'p_ord_detail\';render()" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
-      +'<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(o.customer_name)+'</div>'
-      +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(o.ref)+' · '+esc(o.date)+'</div></div>'
-      +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+GOLD+';flex-shrink:0">'+SOLES+pz(o.total)+'</div></div>'
-      +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-bottom:8px">'+esc(o.summary)+'</div>'
-      +'<div style="display:flex;gap:2px;margin-bottom:6px">'+STEPS.map(function(st,i){var dn=i<=ci;return'<div style="flex:1;height:3px;background:'+(dn?GOLD:'#2C3228')+';border-radius:4px"></div>';}).join('')+'</div>'
-      +stBadge(o.status)+'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:'+GOLD+';text-align:right;margin-top:4px">ver detalle ›</div></div>';
-  }
-  var h=H('MIS PEDIDOS',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
-  if(listLoading){
-    h+=skeletonCards(3,132);
-  }else{
-    if(act.length){
-      h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-warn,#ffa500);letter-spacing:.2em;margin-bottom:10px" class="blink">● Activos // '+act.length+'</div>';
-      h+=act.map(card).join('');
-    }
-    if(done.length){
-      h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:'+(act.length?'16px':'0')+' 0 10px">Anteriores // '+done.length+'</div>';
-      h+=done.map(card).join('');
-    }
-    if(!myOrders.length){
-      h+=VACIO('Sin pedidos','Cuando hagas el primero, va a aparecer acá con su estado en vivo.',BTN('Hacer un pedido //','swTab(\'order\')'),'mira');
-    }
-  }
-  h+='<div style="margin-top:14px">'+BTN('Actualizar //','loadMyOrders()',true)+'</div></div>'+NAV();
-  return h;
+  var bk="sndScreen=cust?'p_home':'o_home';render()";
+  if(listLoading)return'<div class="msl fi"><button class="sal" onclick="'+bk+'" aria-label="Volver">←</button><div class="cargando">Buscando tus pedidos…</div></div>';
+  if(!myOrders.length)return'<div class="msl vacio fi"><button class="sal" onclick="'+bk+'" aria-label="Volver">←</button>'
+    +VACIO('Todavía ningún pedido','Cuando hagas el primero, aparece acá con su sello.','<button class="ir" onclick="volverALaPuerta()">Pedir ahora</button>')+'</div>';
+  var ult=myOrders[0];
+  var fu=fechaDelPedido(ult);
+  var itsUlt=ult.items||[];
+  var primero=itsUlt.find(function(it:any){return it.type==='sig';});
+  var foto=primero?fotoDelPlato(primero.sigId):'';
+  var repetible=itsUlt.some(cartItemRepeatable);
+  var terminado=pedidoTerminado(ult.status);
+  var estado=terminado?(ult.status==='CANCELADO'?'Cancelado':'Llegó'+(ult.delivered_at?' '+horaLima(new Date(ult.delivered_at).getTime()):''))
+    :(STATUSES[ult.status]?STATUSES[ult.status].label:ult.status);
+  var comidos=myOrders.filter(function(o:any){return o.status!=='CANCELADO';});
+  // El día que más se repite: se dice solo si pasa de la mitad y hay al menos 3.
+  var porDia=[0,0,0,0,0,0,0];
+  comidos.forEach(function(o:any){var d=fechaDelPedido(o);if(d)porDia[d.getUTCDay()]++;});
+  var max=Math.max.apply(null,porDia),diaTop=porDia.indexOf(max);
+  var dato=max>=3&&max*2>comidos.length?'Los '+DIAS_LARGOS[diaTop]+' son '+max+' de los '+comidos.length+' — por algo será.':'';
+  var sellos=myOrders.map(function(o:any,k:number){
+    var d=fechaDelPedido(o);
+    return'<button class="sello'+(k===0?' on':'')+(o.status==='CANCELADO'?' x':'')+'" onclick="_sndOd=\''+o.id+'\';rtStars=0;rtMsg=\'\';sndScreen=\'p_ord_detail\';render()" aria-label="Pedido '+esc(o.ref||'')+'">'
+      +'<em>'+(d?MESES_CORTOS[d.getUTCMonth()]:'—')+'</em><b>'+(d?String(d.getUTCDate()).padStart(2,'0'):'')+'</b></button>';
+  }).join('');
+  return'<div class="msl fi">'
+    +'<div class="ultimo">'+(foto?'<img src="'+foto+'" alt="">':'')+'<div class="velo"></div>'
+    +'<button class="sal" onclick="'+bk+'" aria-label="Volver">←</button>'
+    +'<button class="tx" onclick="_sndOd=\''+ult.id+'\';rtStars=0;rtMsg=\'\';sndScreen=\'p_ord_detail\';render()">'
+    +'<em>El último'+(fu?' · '+cuandoFue(fu):'')+'</em><b>'+esc(ult.summary||'Tu pedido')+'</b>'
+    +'<s>'+esc(estado)+' · '+SOLES_TXT+pz(ult.total||0)+'</s></button></div>'
+    +(repetible
+      ?'<button class="repetir" onclick="loadCart(myOrders[0].items)"><span>Pedir lo mismo</span><b>'+SOLES_TXT+pz(precioDeRepetir(ult))+'</b></button>'
+      :'')
+    +'<div class="cuerpo"><div class="veces"><em>Has comido acá</em><b>'+comidos.length+(comidos.length===1?' vez':' veces')+'</b></div>'
+    +'<div class="sellos">'+sellos+'</div>'
+    +'<p class="pie">Toca un sello y se abre ese pedido.'+(dato?'<br>'+esc(dato):'')+'</p></div>'
+    +'</div>';
 }
 var _sndOd=null;
 function sOrdDetail(){
