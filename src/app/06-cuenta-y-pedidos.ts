@@ -44,43 +44,48 @@ function sWelcome(){
     +'<div style="margin-top:20px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096)">toca para continuar //</div>'
     +'</div></div>';
 }
+// ── TU CUENTA (maqueta aprobada `tu-cuenta.png`, «Pantalla de tu cuenta, se aprueba») ────────
+// La ficha del cliente arriba (pedidos, puntos, crédito: cada cifra lleva a lo suyo) y la lista
+// de lo que se configura. Reemplaza el perfil viejo con la barra de abajo. Lo que no tiene dato
+// (la fecha de alta, si el servidor no la manda) no se inventa: la línea no se pinta.
 function sPHome(){
-  var pts=cust.points||0;
-  var next=RWDS.find(function(r){return r.pts>pts;}),prev=null;
-  RWDS.forEach(function(r){if(r.pts<=pts)prev=r;});
-  var pct=next?((pts-(prev?prev.pts:0))/(next.pts-(prev?prev.pts:0)))*100:100;
-  var unlocked=RWDS.filter(function(r){return r.pts<=pts;});
-  var totalOrders=cust.total_orders||0;
-  var nextRank=RANKS.find(function(r){return r.minOrders>totalOrders;});
-  // Ring circular en vez de la barra lineal de antes — mismo dato (progreso hacia la
-  // próxima recompensa), pero como el elemento visual central del perfil, igual que en
-  // el mockup Prada Caffè (fase 2 de fidelidad). Debajo del ring se agrega el rango
-  // (antes solo vivía en sPProfile, una pantalla aparte) y cuánto falta para el
-  // siguiente — dato que el home del perfil no mostraba en absoluto hasta ahora.
-  var ringR=54,ringC=2*Math.PI*ringR,ringPct=next?Math.min(pct,100):100,ringDash=ringC*(ringPct/100);
-  var ringHTML='<div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:20px">'
-    +'<div style="position:relative;width:140px;height:140px">'
-    +'<svg width="140" height="140" viewBox="0 0 140 140" style="transform:rotate(-90deg)"><circle cx="70" cy="70" r="'+ringR+'" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="8"/><circle cx="70" cy="70" r="'+ringR+'" fill="none" stroke="'+GOLD+'" stroke-width="8" stroke-linecap="round" stroke-dasharray="'+ringDash+' '+ringC+'"/></svg>'
-    +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:#fff;line-height:1">'+pts.toLocaleString()+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">puntos</span></div>'
+  var c:any=cust||{};
+  var desde='';
+  if(c.created_at){var d=new Date(c.created_at);if(!isNaN(d.getTime()))desde='Cliente desde '+['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][d.getMonth()]+' '+d.getFullYear();}
+  var nDir=myAddresses.length;
+  var fila=function(t:string,s:string,accion:string){
+    return'<button class="r" onclick="'+accion+'"><span><b>'+t+'</b><s>'+s+'</s></span><span class="fl" aria-hidden="true">→</span></button>';
+  };
+  return'<div class="mct mcu fi"><button class="sal" onclick="volverALaPuerta()" aria-label="Volver">←</button>'
+    +'<span class="marca-der" aria-hidden="true"><img src="img/marca/avatar-1024-transparente.png" alt="">SND<span class="wm-mark"><i></i><i></i></span>WCH</span>'
+    +'<div class="ficha">'
+    +(desde?'<div class="hd"><em>'+esc(desde)+'</em></div>':'')
+    +'<h1>'+esc(c.name||'')+'</h1>'
+    +'<div class="cifras">'
+    +'<button onclick="loadMyOrders()"><em>Pedidos</em><b>'+(c.total_orders||0)+'</b></button>'
+    +'<button onclick="sndScreen=\'p_rewards\';render()"><em>Puntos</em><b>'+(c.points||0)+'</b></button>'
+    +'<div><em>Crédito</em><b>'+SOLES_TXT+pz(c.credit_balance||0)+'</b></div>'
+    +'</div></div>'
+    +'<div class="lis">'
+    +fila('Tus direcciones',nDir?(nDir===1?'Una guardada':nDir+' guardadas'):'Ninguna guardada todavía',"sndScreen='p_addresses';render()")
+    +fila('Tus datos','Nombre, teléfono, DNI',"sndScreen='p_datos';render()")
+    +fila('Cómo pagas',metodoPreferido()==='culqi'?'Tarjeta por defecto':'Yape por defecto',"sndScreen='p_pago';render()")
+    +fila('Avisos','Cuando sale y cuando llega',"sndScreen='p_avisos';render()")
+    +fila('Términos y privacidad','Lo legal, en criollo',"sndScreen='p_legal';render()")
     +'</div>'
-    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:'+GOLD+';margin-top:14px;letter-spacing:.05em">'+esc(rankName(totalOrders))+'</div>'
-    +(nextRank
-      ?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:4px">Te faltan <b style="color:var(--sw-text-body,#EFEDE4)">'+(nextRank.minOrders-totalOrders)+' pedido'+(nextRank.minOrders-totalOrders===1?'':'s')+'</b> para '+esc(nextRank.name)+'</div>'
-      :'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:4px">Ya alcanzaste el rango máximo</div>')
+    +'<button class="salir" onclick="doLogout()"><b>Cerrar sesión</b><s>En este aparato</s></button>'
+    +'<button class="salir borrar" onclick="doDeleteAccount()"><b>Borrar mi cuenta</b><s>No se puede deshacer</s></button>'
     +'</div>';
-  return H()+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'
-    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:14px">Hola, '+esc(cust.name.split(' ')[0].toUpperCase())+' //</div>'
-    // Gradiente navy (#0c1d30) fuera de la paleta forest/dorado documentada en DESIGN.md
-    // (auditoría UX, P3) — reemplazado por un degradado dentro de la misma familia verde
-    // bosque (forest-card-deep → casi negro con tinte verde) para que el hero de Perfil
-    // no sea la única superficie de toda la app con un tono de marca distinto.
-    +'<div style="background:linear-gradient(135deg,#171A14,#0c1712);border:1px solid rgba(203,162,88,.15);border-radius:20px;padding:24px;margin-bottom:20px;overflow:hidden">'
-    +ringHTML
-    +(next?'<div style="background:rgba(255,255,255,.05);border-radius:4px;height:4px;overflow:hidden;margin-bottom:6px"><div style="background:'+GOLD+';height:100%;width:'+Math.min(pct,100)+'%;border-radius:4px"></div></div><div style="display:flex;justify-content:space-between"><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096)">+'+(next.pts-pts)+' pts para</span><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;color:'+GOLD+'">'+next.n+' // '+next.s+'</span></div>':'')
-    +'<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.04);display:flex;gap:24px">'+[['Pedidos',cust.total_orders||0],['Canjeados',cust.total_redeemed||0]].map(function(x){return'<div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+x[1]+'</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:'+GOLD+';letter-spacing:.15em">'+x[0]+'</div></div>';}).join('')+'</div></div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">'+[['Canjear','Recompensa','sndScreen=\'p_rewards\';render()'],['Mis','Pedidos','sndScreen=\'p_orders\';loadMyOrders()'],['Historial','Puntos','loadHist()'],['Mi','Perfil','sndScreen=\'p_profile\';render()'],['Mis','Direcciones','loadAddresses()'],['Mis','Favoritos','loadFavorites()'],['Mi Pedido','Fijo','goRecurring()']].concat(isAdmin?[['Panel','Admin','sndScreen=\'admin_home\';loadAdmin()']]:[]).map(function(x){return'<div onclick="'+x[2]+'" style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:16px 14px;cursor:pointer"><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);letter-spacing:.03em">'+x[0]+'<span style="color:'+GOLD+'"> //</span></div><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.15em;margin-top:3px">'+x[1]+'</div></div>';}).join('')+'</div>'
-    +(unlocked.length?'<div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Listas para usar //</div>'+unlocked.map(function(r){return'<div style="background:var(--sw-card2,#122019);border:1px solid '+GOLD+';border-radius:10px;padding:13px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+r.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+r.s+'</span><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#9DA096)">se usa al pedir</span></div>';}).join('')+'</div>':'')
-    +'</div>'+NAV();
+}
+// TUS DATOS: lo que la cuenta guarda de ti. No hay edición en el servidor todavía: se muestra y
+// se dice cómo cambiarlo, en vez de un formulario que no guardaría nada.
+function sPDatos(){
+  var c:any=cust||{};
+  var dato=function(t:string,v:string){return'<div class="r dato"><span><s>'+t+'</s><b>'+esc(v||'—')+'</b></span></div>';};
+  return'<div class="mct mcu fi"><button class="sal" onclick="sndScreen=\'p_home\';render()" aria-label="Volver">←</button>'
+    +'<div class="cab"><em>Tu cuenta</em><h1>TUS<br>DATOS</h1><p>Para cambiar alguno, escríbenos por el chat de la esquina.</p></div>'
+    +'<div class="lis">'+dato('Nombre',c.name)+dato('Teléfono',c.phone)+dato('Correo',c.email)+dato('DNI',c.dni)+'</div>'
+    +'</div>';
 }
 
 // MY ORDERS — client side
@@ -100,38 +105,67 @@ async function loadMyOrders(){
   if(!done){done=true;clearTimeout(timer);listLoading=false;render();}
 }
 
+// ── TUS PEDIDOS · LOS SELLOS (maqueta aprobada `tus-pedidos-los-sellos.png`, «Tus pedidos me
+// suena bien», con «Pedir lo mismo» arriba). El último pedido a lo ancho con su foto y el botón
+// para repetirlo; debajo, un sello por pedido. Toda cifra sale de los pedidos: cuántas veces,
+// la fecha de cada sello y el día que más se repite (solo si de verdad se repite).
+var MESES_CORTOS=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+var DIAS_LARGOS=['domingos','lunes','martes','miércoles','jueves','viernes','sábados'];
+// En la hora de Lima (UTC−5, sin horario de verano), no en la del aparato: un pedido de las 7
+// de la noche de un jueves sería viernes para un navegador en UTC. Se leen con getUTC*.
+function fechaDelPedido(o:any):Date|null{
+  var d=new Date(o.created_at||o.date||'');
+  return isNaN(d.getTime())?null:new Date(d.getTime()-5*3600000);
+}
+function cuandoFue(d:Date):string{
+  var hoy=new Date(Date.now()-5*3600000);
+  var dias=Math.floor(Date.UTC(hoy.getUTCFullYear(),hoy.getUTCMonth(),hoy.getUTCDate())/86400000)-Math.floor(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate())/86400000);
+  if(dias<=0)return'hoy';if(dias===1)return'ayer';
+  if(dias<7)return'hace '+dias+' días';
+  return d.getUTCDate()+' '+MESES_CORTOS[d.getUTCMonth()];
+}
+function precioDeRepetir(o:any):number{
+  var its=(o.items||[]).filter(cartItemRepeatable);
+  return money(its.reduce(function(a:number,it:any){return a+itemUnitPrice(it)*(it.qty||1);},0));
+}
 function sPOrders(){
-  var act=myOrders.filter(function(o){return !pedidoTerminado(o.status);});
-  var done=myOrders.filter(function(o){return pedidoTerminado(o.status);});
-  function card(o){
-    var ci=STEPS.indexOf(o.status);
-    return'<div onclick="_sndOd=\''+o.id+'\';rtStars=0;rtMsg=\'\';sndScreen=\'p_ord_detail\';render()" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer">'
-      +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
-      +'<div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(o.customer_name)+'</div>'
-      +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(o.ref)+' · '+esc(o.date)+'</div></div>'
-      +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+GOLD+';flex-shrink:0">'+SOLES+pz(o.total)+'</div></div>'
-      +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-bottom:8px">'+esc(o.summary)+'</div>'
-      +'<div style="display:flex;gap:2px;margin-bottom:6px">'+STEPS.map(function(st,i){var dn=i<=ci;return'<div style="flex:1;height:3px;background:'+(dn?GOLD:'#2C3228')+';border-radius:4px"></div>';}).join('')+'</div>'
-      +stBadge(o.status)+'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:'+GOLD+';text-align:right;margin-top:4px">ver detalle ›</div></div>';
-  }
-  var h=H('MIS PEDIDOS',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
-  if(listLoading){
-    h+=skeletonCards(3,132);
-  }else{
-    if(act.length){
-      h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-warn,#ffa500);letter-spacing:.2em;margin-bottom:10px" class="blink">● Activos // '+act.length+'</div>';
-      h+=act.map(card).join('');
-    }
-    if(done.length){
-      h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:'+(act.length?'16px':'0')+' 0 10px">Anteriores // '+done.length+'</div>';
-      h+=done.map(card).join('');
-    }
-    if(!myOrders.length){
-      h+=VACIO('Sin pedidos','Cuando hagas el primero, va a aparecer acá con su estado en vivo.',BTN('Hacer un pedido //','swTab(\'order\')'),'mira');
-    }
-  }
-  h+='<div style="margin-top:14px">'+BTN('Actualizar //','loadMyOrders()',true)+'</div></div>'+NAV();
-  return h;
+  var bk="sndScreen=cust?'p_home':'o_home';render()";
+  if(listLoading)return'<div class="msl fi"><button class="sal" onclick="'+bk+'" aria-label="Volver">←</button><div class="cargando">Buscando tus pedidos…</div></div>';
+  if(!myOrders.length)return'<div class="msl vacio fi"><button class="sal" onclick="'+bk+'" aria-label="Volver">←</button>'
+    +VACIO('Todavía ningún pedido','Cuando hagas el primero, aparece acá con su sello.','<button class="ir" onclick="volverALaPuerta()">Pedir ahora</button>')+'</div>';
+  var ult=myOrders[0];
+  var fu=fechaDelPedido(ult);
+  var itsUlt=ult.items||[];
+  var primero=itsUlt.find(function(it:any){return it.type==='sig';});
+  var foto=primero?fotoDelPlato(primero.sigId):'';
+  var repetible=itsUlt.some(cartItemRepeatable);
+  var terminado=pedidoTerminado(ult.status);
+  var estado=terminado?(ult.status==='CANCELADO'?'Cancelado':'Llegó'+(ult.delivered_at?' '+horaLima(new Date(ult.delivered_at).getTime()):''))
+    :(STATUSES[ult.status]?STATUSES[ult.status].label:ult.status);
+  var comidos=myOrders.filter(function(o:any){return o.status!=='CANCELADO';});
+  // El día que más se repite: se dice solo si pasa de la mitad y hay al menos 3.
+  var porDia=[0,0,0,0,0,0,0];
+  comidos.forEach(function(o:any){var d=fechaDelPedido(o);if(d)porDia[d.getUTCDay()]++;});
+  var max=Math.max.apply(null,porDia),diaTop=porDia.indexOf(max);
+  var dato=max>=3&&max*2>comidos.length?'Los '+DIAS_LARGOS[diaTop]+' son '+max+' de los '+comidos.length+' — por algo será.':'';
+  var sellos=myOrders.map(function(o:any,k:number){
+    var d=fechaDelPedido(o);
+    return'<button class="sello'+(k===0?' on':'')+(o.status==='CANCELADO'?' x':'')+'" onclick="_sndOd=\''+o.id+'\';rtStars=0;rtMsg=\'\';sndScreen=\'p_ord_detail\';render()" aria-label="Pedido '+esc(o.ref||'')+'">'
+      +'<em>'+(d?MESES_CORTOS[d.getUTCMonth()]:'—')+'</em><b>'+(d?String(d.getUTCDate()).padStart(2,'0'):'')+'</b></button>';
+  }).join('');
+  return'<div class="msl fi">'
+    +'<div class="ultimo">'+(foto?'<img src="'+foto+'" alt="">':'')+'<div class="velo"></div>'
+    +'<button class="sal" onclick="'+bk+'" aria-label="Volver">←</button>'
+    +'<button class="tx" onclick="_sndOd=\''+ult.id+'\';rtStars=0;rtMsg=\'\';sndScreen=\'p_ord_detail\';render()">'
+    +'<em>El último'+(fu?' · '+cuandoFue(fu):'')+'</em><b>'+esc(ult.summary||'Tu pedido')+'</b>'
+    +'<s>'+esc(estado)+' · '+SOLES_TXT+pz(ult.total||0)+'</s></button></div>'
+    +(repetible
+      ?'<button class="repetir" onclick="loadCart(myOrders[0].items)"><span>Pedir lo mismo</span><b>'+SOLES_TXT+pz(precioDeRepetir(ult))+'</b></button>'
+      :'')
+    +'<div class="cuerpo"><div class="veces"><em>Has comido acá</em><b>'+comidos.length+(comidos.length===1?' vez':' veces')+'</b></div>'
+    +'<div class="sellos">'+sellos+'</div>'
+    +'<p class="pie">Toca un sello y se abre ese pedido.'+(dato?'<br>'+esc(dato):'')+'</p></div>'
+    +'</div>';
 }
 var _sndOd=null;
 function sOrdDetail(){
@@ -1036,7 +1070,7 @@ function sPPago(){
     var on=m===id;
     return'<button class="r'+(on?' on':'')+'" role="radio" aria-checked="'+on+'" onclick="guardarPreferencias({preferredPayment:\''+id+'\'})"><span><b>'+t+'</b><s>'+s+'</s></span><span class="marca"></span></button>';
   };
-  return'<div class="mct fi"><button class="sal" onclick="sndScreen=\'p_profile\';prefMsg=\'\';render()" aria-label="Volver">←</button>'
+  return'<div class="mct fi"><button class="sal" onclick="sndScreen=\'p_home\';prefMsg=\'\';render()" aria-label="Volver">←</button>'
     +'<div class="cab"><em>Tu cuenta</em><h1>CÓMO<br>PAGAS</h1>'
     +'<p>Con esto abre el pago. Igual puedes cambiarlo en cada pedido.</p></div>'
     +'<div class="lis" role="radiogroup" aria-label="Cómo pagas">'
@@ -1052,7 +1086,7 @@ function sPAvisos(){
     return'<button class="r'+(on?' on':'')+'" role="switch" aria-checked="'+on+'" onclick=\'guardarPreferencias({notifPrefs:'+JSON.stringify(nuevo)+'})\'><span><b>'+t+'</b><s>'+s+'</s></span><span class="llave"></span></button>';
   };
   var permiso=typeof Notification!=='undefined'?Notification.permission:'unsupported';
-  return'<div class="mct fi"><button class="sal" onclick="sndScreen=\'p_profile\';prefMsg=\'\';render()" aria-label="Volver">←</button>'
+  return'<div class="mct fi"><button class="sal" onclick="sndScreen=\'p_home\';prefMsg=\'\';render()" aria-label="Volver">←</button>'
     +'<div class="cab"><em>Tu cuenta</em><h1>AVISOS</h1>'
     +'<p>Qué te avisamos a este celular.</p></div>'
     +'<div class="lis">'

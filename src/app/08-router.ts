@@ -570,6 +570,7 @@ function renderScreen(){
     case'p_returns':   h=sPReturns();break;
     case'p_complaints':h=sPComplaints();break;
     case'p_home':      h=sPHome();break;
+    case'p_datos':     h=sPDatos();break;
     case'p_rewards':   h=sPRewards();break;
     case'p_history':   h=sPHistory();break;
     case'p_orders':    h=sPOrders();break;
