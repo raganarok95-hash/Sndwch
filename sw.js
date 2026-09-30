@@ -4,7 +4,7 @@
 // que se cierren todas las pestañas. Es la palanca para cuando un shell viejo se quedó
 // pegado en la app instalada, en el navegador del celular y en el de la PC al mismo
 // tiempo — que es exactamente lo que se reportó el 2026-08-21 con ARMA EL TUYO.
-const VERSION = 'v3';
+const VERSION = 'v4'; // v4 (2026-09-30): los íconos pasan al logo de los hermanos.
 const SHELL_CACHE = 'sndwch-shell-' + VERSION;
 const IMG_CACHE = 'sndwch-img-' + VERSION;
 const SHELL_URLS = ['./', './index.html'];
@@ -120,7 +120,7 @@ self.addEventListener('fetch', (event) => {
   let url;
   try { url = new URL(request.url); } catch (e) { return; }
   if (url.origin !== self.location.origin) return;
-  if (/^\/img\//.test(url.pathname) || /\/(icon-\d+|icon-maskable-\d+|apple-touch-icon)\.png$/.test(url.pathname)) {
+  if (/^\/img\//.test(url.pathname) || /\/(icon-\d+|icon-maskable-\d+|apple-touch-icon|favicon-\d+)\.png$/.test(url.pathname)) {
     event.respondWith(handleImage(event, request));
   }
 });
