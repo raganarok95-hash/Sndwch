@@ -163,3 +163,37 @@ bloqueados por el proxy.
 ⚠ **Siguen siendo aproximaciones.** La regla de arriba («una foto se elige por lo que promete»)
 se relajó solo en esto, a pedido del dueño: foto propia de los dos productos en cuanto estén
 en cocina.
+
+## La foto vertical del Mundo SANDO (2026-09-30)
+
+El dueño: «no se ve bien la foto de los sándwich… busca más fotos completas». Causa medida en
+el navegador: en la M15 la foto ocupa el 60% del ALTO de la pantalla (390×506 en un celular de
+390×844), y las de Signature son apaisadas para la tarjeta de 350×236 — `object-fit:cover`
+dejaba ver solo el centro del pan. Cada Signature de la carta tiene ahora `sigNN_v.webp`
+(`scripts/tratar_fotos.py`, «LA FOTO VERTICAL»); la ficha y el carrito siguen con `sigNN.jpg`.
+
+Licenciadas en la **categoría gratuita de Adobe Stock** (`pricing:"free"`, sin costo), bajadas
+a 2400 px:
+
+| archivo | producto | Adobe Stock | recorte aplicado al original | cómo se compone |
+|---|---|---|---|---|
+| `sig09_v.jpg` | **Philly Cheesesteak** (SIG09) | `394767354` (1571×2356 a 2400) | ancho completo, desde y=300, alto 2014 (ratio 0.78) | a sangre |
+| `sig02_v.jpg` | **Meatball Marinara** (SIG02) | `434960991` (1571×2356 a 2400) | ancho completo, desde y=300, alto 2014 | a sangre |
+| `sig10_v.jpg` | **Turkey** (SIG10) | `284405872` (2356×1571 a 2400) | (1130, 0)-(2356, 1571) — solo el sub, visto desde arriba | entera sobre su fondo |
+
+- El Philly trae res, pimiento verde, cebolla y queso fundido: calza con la receta. Se ve el
+  borde de un segundo sándwich igual a la derecha.
+- El Meatball trae queso blanco fundido y perejil encima; la receta lleva queso americano. Se
+  ve la punta de un segundo sándwich igual arriba a la derecha.
+- ⚠ El Turkey trae **pepino** (igual que `sig10.jpg`) y el pavo queda tapado por el pan: sigue
+  siendo una aproximación hasta la foto propia.
+- Hoagie, Tuna Melt, Classic Tuna y el secreto no tienen encuadre vertical propio: su vertical
+  se compone con la misma `sigNN.jpg` puesta **entera** arriba, sobre la misma foto ampliada,
+  desenfocada y oscurecida. No se encontró en la categoría gratuita un Hoagie ni un atún en
+  vertical que cupiera entero (el Hoagie mide casi 3 veces su alto).
+
+Se miraron y se descartaron, todas del Stock gratuito: `79762529`, `394768133`, `364171309`,
+`172270694`, `884610098`, `1877200330`, `1877200393`, `310339043` (Philly: primer plano,
+vaso de cerveza, papas fritas o horizontal); `530885978`, `534327986`, `407408705` (Meatball:
+fondo claro, se pierde sobre el verde); `71261112` (Hoagie con pepperoncini, que la receta no
+lleva), `776050809` (papas), `150082453` (pan de molde y papas), `128065892` (seis sándwiches).

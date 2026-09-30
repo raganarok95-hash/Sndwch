@@ -51,6 +51,7 @@ export function cartaVieja(c: Carta = CARTA) {
     })),
     SIDES: c.bebidas.map((x) => ({ id: x.id, l: x.nombre, s: x.sabor, p: x.precio, d: x.desc, icon: x.icono })),
     SIG_IMG: foto(c.signatures),
+    SIG_IMG_V: Object.fromEntries(c.signatures.filter((x) => x.fotoVertical).map((x) => [x.id, x.fotoVertical as string])),
     PROT_IMG: foto(c.proteinas),
     DRINK_IMG: foto(c.bebidas),
     /** Posición de cada Signature en la carta, para ordenar lo que llega de la base. */

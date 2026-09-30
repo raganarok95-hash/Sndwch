@@ -1709,7 +1709,7 @@ function sMundoSando(){
     var av=sigInStock(s);
     var marca=s.recommended?'La estrella':(sigBadge(s)||'');
     return'<section class="plato" aria-label="'+esc(s.n)+'"><div class="forro"></div>'
-      +'<div class="foto">'+(SIG_IMG[s.id]?'<img src="'+SIG_IMG[s.id]+'" alt="" '+(i>0?'loading="lazy"':'')+(av?'':' style="filter:grayscale(1)"')+'>':'')+'<div class="baja"></div></div>'
+      +'<div class="foto">'+(fotoDelPlato(s.id)?'<img src="'+fotoDelPlato(s.id)+'" alt="" '+(i>0?'loading="lazy"':'')+(av?'':' style="filter:grayscale(1)"')+'>':'')+'<div class="baja"></div></div>'
       +'<img class="sirve" src="'+sirve+'" alt="" aria-hidden="true">'
       +'<div class="ficha"><div class="num">'+romano(i+1)+' de '+romano(visibles.length)+(marca?'<b>'+esc(marca)+'</b>':'')+'</div>'
       +'<h1>'+esc(s.n)+'</h1><div class="pitch">'+esc(s.pitch||'')+'</div></div>'
@@ -1727,7 +1727,7 @@ function sMundoSando(){
     var abierto=!!cust&&falta===0;
     var hechos=Math.min(myTotal,secreto.minOrders);
     platoSecreto='<section class="plato v'+(abierto?' abierto':'')+'" aria-label="El sándwich secreto"><div class="forro"></div>'
-      +'<div class="foto">'+(SIG_IMG[secreto.id]?'<img src="'+SIG_IMG[secreto.id]+'" alt="" loading="lazy">':'')+'<div class="baja"></div></div>'
+      +'<div class="foto">'+(fotoDelPlato(secreto.id)?'<img src="'+fotoDelPlato(secreto.id)+'" alt="" loading="lazy">':'')+'<div class="baja"></div></div>'
       // El ojo espiral suelto sobre la foto borrosa se veía pegado (dueño 2026-09-30): se quitó.
       +'<div class="ficha"><div class="num">'+romano(total)+' de '+romano(total)+'<b>'+(abierto?'Abierto':'Cerrado')+'</b></div>'
       +'<h1>El sándwich<br>secreto</h1>'
@@ -1788,7 +1788,9 @@ function sOSig(){
       +'<span class="r">+'+SOLES_TXT+pz(recargo)+'<span class="sw"></span></span></button>';
   }
   return'<div class="f01 fi"><div class="forro"></div>'
-    +'<div class="foto">'+(SIG_IMG[s.id]?'<img src="'+SIG_IMG[s.id]+'" alt="'+esc(s.n)+'">':'')+'</div>'
+    // En escritorio la foto es media pantalla de alto completo: ahí va la vertical, que muestra
+    // el sándwich entero (la apaisada se recortaría por las puntas otra vez).
+    +'<div class="foto">'+(SIG_IMG[s.id]?'<picture>'+(fotoDelPlato(s.id)!==SIG_IMG[s.id]?'<source media="(min-width:900px)" srcset="'+fotoDelPlato(s.id)+'">':'')+'<img src="'+SIG_IMG[s.id]+'" alt="'+esc(s.n)+'"></picture>':'')+'</div>'
     +'<button class="sal" onclick="'+(editingItemQty?'cancelarEdicionFicha()':'go(\'o_home\')')+'" aria-label="Volver">←</button>'
     +'<div class="cuerpo"><div class="num">'+(i>=0?romano(i+1):'')+(marca?' · '+esc(marca):'')+'</div>'
     +'<h1>'+esc(s.n)+'</h1>'

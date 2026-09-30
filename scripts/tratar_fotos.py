@@ -74,6 +74,58 @@ def perfil(nombre):
     return PERFILES["prot"] if nombre.startswith("prot_") else PERFILES["sig"]
 
 
+# ── LA FOTO VERTICAL DEL MUNDO SANDO (2026-09-30) ──────────────────────────────────────
+# En el Mundo SANDO (M15) la foto de cada Signature ocupa el 60% de ALTO de la pantalla y
+# todo el ancho: en un celular de 390×844 es un recuadro de 390×506, vertical. Las fotos de
+# Signature son apaisadas (hechas para la tarjeta de 350×236), así que `object-fit:cover`
+# mostraba solo el centro del pan — el dueño: «no se ve bien la foto de los sándwich… busca
+# más fotos completas». Por eso cada Signature tiene además `sigNN_v.webp`:
+#
+#   · si en fuente/ hay `sigNN_v.jpg`, es un encuadre hecho a mano para el vertical;
+#   · si no, se usa la misma `sigNN.jpg` de la tarjeta.
+#
+# Y se compone de una de dos formas:
+#   · A SANGRE (las de VERTICAL_A_SANGRE): la foto ya es vertical y el sándwich entero cabe;
+#     se recorta al ratio y listo.
+#   · ENTERA SOBRE SU PROPIO FONDO (el resto): la foto se pone ENTERA en la zona de arriba
+#     (sin cortarle las puntas al pan) y lo que sobra del recuadro se llena con la misma foto
+#     ampliada, desenfocada y oscurecida. Lo de abajo igual lo tapa el degradado de la M15.
+RATIO_VERTICAL = 0.78          # 390 / 506, el recuadro medido en el celular
+VERTICAL_A_SANGRE = {"sig09_v", "sig02_v"}
+ZONA_VERTICAL = (0.06, 0.80)   # dónde va la foto entera, en fracción del alto del recuadro
+
+
+def componer_vertical(fg, ancho=ANCHO_OBJETIVO, ratio=RATIO_VERTICAL):
+    W, H = ancho, round(ancho / ratio)
+    fondo = fg.copy()
+    k = max(W / fondo.width, H / fondo.height)
+    fondo = fondo.resize((round(fondo.width * k) + 1, round(fondo.height * k) + 1), Image.LANCZOS)
+    fondo = fondo.crop(((fondo.width - W) // 2, (fondo.height - H) // 2,
+                        (fondo.width - W) // 2 + W, (fondo.height - H) // 2 + H))
+    fondo = ImageEnhance.Brightness(fondo.filter(ImageFilter.GaussianBlur(W * 0.04))).enhance(0.45)
+    y0, y1 = ZONA_VERTICAL
+    zona_h = round(H * (y1 - y0))
+    k = min(W / fg.width, zona_h / fg.height)
+    fg = fg.resize((round(fg.width * k), round(fg.height * k)), Image.LANCZOS)
+    # Borde suave: una foto pegada con canto duro sobre su propio desenfoque se lee como
+    # un recorte encima de otro.
+    mascara = Image.new("L", fg.size, 0)
+    m = round(min(fg.size) * 0.06)
+    ImageDraw.Draw(mascara).rectangle([m, m, fg.width - m, fg.height - m], fill=255)
+    mascara = mascara.filter(ImageFilter.GaussianBlur(m * 0.6))
+    x = (W - fg.width) // 2
+    y = round(H * y0) + (zona_h - fg.height) // 2
+    fondo.paste(fg, (x, y), mascara)
+    return fondo
+
+
+def tratar_vertical(origen, nombre):
+    if nombre in VERTICAL_A_SANGRE:
+        return tratar(origen, RATIO_VERTICAL, ANCHO_OBJETIVO, 1.0)
+    fg = tratar(origen, origen.size[0] / origen.size[1], ANCHO_OBJETIVO, 1.0)
+    return componer_vertical(fg)
+
+
 # El centro de interés está un pelo ARRIBA del centro geométrico: en las 8 fotos el
 # sándwich se apoya en algo, así que el tercio inferior es superficie y no producto.
 SESGO_VERTICAL = 0.92
@@ -176,6 +228,8 @@ def main():
         print(f"✗ {FUENTE} está vacío.", file=sys.stderr)
         return 1
     for nombre in archivos:
+        if nombre[:-4].endswith("_v"):
+            continue  # es la fuente de una vertical: se trata abajo, no como tarjeta
         origen = Image.open(os.path.join(FUENTE, nombre))
         pf = perfil(nombre)
         salida = tratar(origen, pf["ratio"], pf["ancho"], pf["zoom"])
@@ -197,6 +251,19 @@ def main():
         peso = os.path.getsize(os.path.join(DESTINO, destino)) // 1024
         print(f"  · {nombre} → {destino}: {origen.size[0]}×{origen.size[1]} → "
               f"{salida.size[0]}×{salida.size[1]}, {peso} KB{aviso}")
+    # Las verticales del Mundo SANDO: una por Signature (ver componer_vertical).
+    # Solo las de la carta vigente: las de Signatures retirados no se sirven en ningún lado.
+    import re
+    carta = open(os.path.join(RAIZ, "supabase", "functions", "_shared", "carta.ts"), encoding="utf-8").read()
+    en_carta = set(re.findall(r'foto: "img/(sig\d+)\.jpg"', carta))
+    sigs = sorted(f[:-4] for f in archivos if f[:-4] in en_carta)
+    for sig in sigs:
+        nombre = sig + "_v"
+        fuente = nombre + ".jpg" if nombre + ".jpg" in archivos else sig + ".jpg"
+        salida = tratar_vertical(Image.open(os.path.join(FUENTE, fuente)), nombre)
+        salida.save(os.path.join(DESTINO, nombre + ".webp"), "WEBP", quality=CALIDAD_WEBP, method=6)
+        peso = os.path.getsize(os.path.join(DESTINO, nombre + ".webp")) // 1024
+        print(f"  · {fuente} → {nombre}.webp: {salida.size[0]}×{salida.size[1]}, {peso} KB")
     print(f"✓ {len(archivos)} fotos tratadas desde img/fuente/")
     return 0
 

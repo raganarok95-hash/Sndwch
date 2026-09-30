@@ -97,6 +97,29 @@ revisar(tf.ajustar(Image.new("RGB", (640, 432)), 1050).size == (640, 432),
 revisar(tf.ajustar(Image.new("RGB", (1600, 1600)), 1050).size == (1050, 1050),
         "una foto más grande que el objetivo no se está bajando: el cliente descargaría de más")
 
+# ── 6b · La vertical del Mundo SANDO muestra el sándwich ENTERO ─────────────────────
+# El defecto que vino a arreglar (dueño 2026-09-30): la foto apaisada en el recuadro vertical
+# de la M15 cortaba las dos puntas del pan. 390×506 CSS px es el recuadro medido en un celular
+# de 390×844 (la foto ocupa el 60% del alto). Escrito acá, no leído de tf, por lo mismo que el 4.
+RATIO_VERTICAL_MEDIDO = 390 / 506
+revisar(abs(tf.RATIO_VERTICAL - RATIO_VERTICAL_MEDIDO) < 0.02,
+        f"tf.RATIO_VERTICAL ({tf.RATIO_VERTICAL:.3f}) ya no es el del recuadro medido "
+        f"({RATIO_VERTICAL_MEDIDO:.3f}): el navegador volvería a recortar la foto")
+# Una foto apaisada con un marco de un color puro: si el compositor la recortara, el marco
+# desaparecería de algún borde. Se busca el rojo en las cuatro orillas de la zona.
+prueba = Image.new("RGB", (1600, 1000), (0, 0, 255))
+from PIL import ImageDraw as _D
+_D.Draw(prueba).rectangle([0, 0, 1599, 999], outline=(255, 0, 0), width=120)
+v = tf.componer_vertical(prueba)
+revisar(abs(v.width / v.height - RATIO_VERTICAL_MEDIDO) < 0.02, "la vertical no sale con el ratio del recuadro")
+W, H = v.size
+y_mid = round(H * (tf.ZONA_VERTICAL[0] + tf.ZONA_VERTICAL[1]) / 2)
+def rojo(px): return px[0] > 150 and px[2] < 120
+izq = any(rojo(v.getpixel((x, y_mid))) for x in range(0, 60))
+der = any(rojo(v.getpixel((x, y_mid))) for x in range(W - 60, W))
+revisar(izq and der,
+        "la vertical compuesta perdió los extremos de la foto: el pan vuelve a salir sin puntas")
+
 # ── 7 · Cada foto servida tiene su original guardado ─────────────────────────────────
 # Se mira por NOMBRE BASE, no por nombre de archivo: desde el 2026-09-17 las de proteína
 # salen en .webp desde una fuente .jpg, así que comparar los nombres completos daría por
@@ -105,7 +128,12 @@ IMG = os.path.join(RAIZ, "img")
 servidas = {f for f in os.listdir(IMG)
             if (f.startswith("sig") or f.startswith("prot_")) and f.endswith((".jpg", ".webp"))}
 fuentes = {os.path.splitext(f)[0] for f in os.listdir(os.path.join(IMG, "fuente"))}
-huerfanas = {f for f in servidas if os.path.splitext(f)[0] not in fuentes}
+# La vertical del Mundo SANDO (`sigNN_v`) sale de su propio encuadre si existe, y si no de la
+# misma `sigNN` de la tarjeta (ver componer_vertical en tratar_fotos.py).
+def tiene_fuente(f):
+    b = os.path.splitext(f)[0]
+    return b in fuentes or (b.endswith("_v") and b[:-2] in fuentes)
+huerfanas = {f for f in servidas if not tiene_fuente(f)}
 revisar(not huerfanas,
         f"estas fotos no tienen original en img/fuente/ y volver a correr el script las "
         f"dejaría sin tratar: {sorted(huerfanas)}")
