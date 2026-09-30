@@ -43,6 +43,7 @@ El dueño autorizó programarlas el 2026-09-23 («así avanzamos con el front»)
 | — | **La puerta** (la cara partida) | «m2 puerta» | captura `M2-puerta` |
 | — | **La puerta · la esquina de la cuenta** | «Me parece bien los cambios a los hermanos y que sea así» (2026-09-25) | `docs/maquetas/aprobadas/la-puerta-M2-sin-sesion.png` y `-con-sesion.png` — es SIEMPRE la primera pantalla, a pantalla completa; no hay pantalla de correo al abrir |
 | — | **06A · el aviso de puntos para el invitado** | «aprobado todo go» (2026-09-25) | `docs/maquetas/aprobadas/06A-aviso-*.png` — antes de pagar no se pregunta nada; después, un solo aviso dentro de la losa: Google en un toque, o correo + DNI + código en el mismo lugar |
+| — | **El camino de compra completo** (01 + doble proteína, bebida tras «Lo quiero», 30G con RECIBE/PUNTOS/CÓDIGO, hojas de programar, código y recibe) | «Si aprobadas, go» (2026-09-25) | `docs/maquetas/aprobadas/01-ficha-con-doble-proteina.png`, `bebidas-sando-sigo-sin-bebida.png`, `30G-*.png` — reemplaza «Confirmar sándwich»; el correo opcional del pago se retira |
 | — | **El menú secreto** | estructura: «perfecta»; fondo: «Secret 3 me gusta» | cerrada — ver abajo |
 | — | **Entrar** (los dos te abren la puerta) | «entrar 2 aprobada» | corregido: se cortaba la cabeza de SANDO |
 | — | **Bebidas · lado SANDO** (el vaso a sangre) | «Bebidas 3 aprobada» | — |

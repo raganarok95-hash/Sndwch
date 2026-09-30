@@ -131,16 +131,53 @@ export async function clearDeliveryPin(page: Page) {
 // Se exporta porque cuatro specs navegan por su cuenta en vez de usar gotoApp, y repetir
 // el clic en cada uno los deja desincronizados el dia que la pantalla cambie.
 export async function elegirSando(page: Page) {
-  // La app abre SIEMPRE en la puerta (2026-09-25). Se toca la puerta SOLO si está: una prueba
-  // que ya navegó dentro del mundo y vuelve a llamar esto no tiene que salir de él.
+  // La app abre SIEMPRE en la puerta. Se toca la mitad de SANDO solo si está a la vista: una
+  // prueba que ya navegó dentro de su mundo y vuelve a llamar esto no tiene que salir de él.
   const puerta = page.getByRole('button', { name: /Ya está resuelto/ });
-  await Promise.race([puerta.waitFor(), page.waitForSelector('text=Y además')]);
+  const mundo = page.locator('.m15');
+  await Promise.race([puerta.waitFor(), mundo.waitFor()]);
   if (await puerta.isVisible()) await puerta.click();
-  // Se espera un texto que SOLO existe en el mundo de SANDO ya pintado. Antes era
-  // "SIGNATURE", que era la pestaña del catálogo viejo; al desaparecer esa barra el helper
-  // se quedaba esperando 30s en cada prueba de la suite. El ancla es el tramo de abajo del
-  // mundo, así que llegar hasta él significa que la pantalla se pintó ENTERA.
-  await page.waitForSelector('text=Y además');
+  // El mundo de SANDO es la M15: un plato por pantalla. Llegar a él pintado es el ancla.
+  await mundo.waitFor();
+}
+
+// ── EL CAMINO DE COMPRA (2026-09-25): M15 → ficha 01 → bebidas → 30G → 31 ─────────────────
+// `i`: qué plato de la M15 (en el orden de la carta). Deja la prueba en la 30G.
+export async function pedirUnSignature(page: Page, opts: { i?: number; size?: '15' | '30'; dobleProteina?: boolean } = {}) {
+  await page.locator('.m15 .plato').nth(opts.i ?? 0).locator('button.b').click();
+  await page.locator('.f01').waitFor();
+  if (opts.size) await page.locator(`.f01 .tam button[onclick*="size='${opts.size}'"]`).click();
+  if (opts.dobleProteina) await page.locator('.f01 .dp').click();
+  await page.locator('.f01 .pie button').click();
+  // Si el pedido no trae bebida, se ofrecen las bebidas: se sigue sin ninguna.
+  const sin = page.getByRole('button', { name: /Sigo sin bebida/ });
+  await Promise.race([sin.waitFor(), page.locator('.m30').waitFor()]);
+  if (await sin.isVisible()) await sin.click();
+  await page.locator('.m30').waitFor();
+}
+// La hoja RECIBE de la 30G.
+export async function ponerRecibe(page: Page, nombre = 'Cliente Invitado', celular = '987654321') {
+  await page.locator('.m30 .en', { hasText: 'Recibe' }).click();
+  await page.locator('#o-nom').fill(nombre);
+  await page.locator('#o-phone').fill(celular);
+  await page.locator('.m30-go .oro').click();
+  await page.locator('.hoja').waitFor({ state: 'detached' });
+}
+// La dirección se elige en el mapa (Leaflet, que no carga sin red): se deja por estado, igual
+// que el pin de PIN_TEST que gotoApp ya inyecta antes de cargar la app.
+export async function ponerDireccion(page: Page, direccion = 'Av. España 123, Trujillo', distrito = 'trujillo') {
+  await page.evaluate(([a, d]) => {
+    const w = window as any;
+    w.addrText = a; w.deliveryDistrict = d;
+    if (typeof w._mLat !== 'number') { w._mLat = -8.1120; w._mLon = -79.0290; }
+    w.render();
+  }, [direccion, distrito]);
+}
+// PAGAR en la 30G → la 31 (Yape por defecto) → «Ya pagué».
+export async function pagarConYape(page: Page) {
+  await page.locator('.m30-go .oro').click();
+  await page.locator('.m31.y').waitFor();
+  await page.locator('.m30-go .oro').click();
 }
 
 export async function gotoApp(page: Page, handlers: ActionHandlers = {}) {

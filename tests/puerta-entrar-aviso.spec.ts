@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { gotoApp, mockBackend } from './helpers';
+import { gotoApp, mockBackend, pedirUnSignature, ponerRecibe, ponerDireccion, pagarConYape } from './helpers';
 
 // LA PUERTA, ENTRAR Y EL AVISO DE PUNTOS (maquetas aprobadas el 2026-09-25).
 //
@@ -19,17 +19,10 @@ const ORDEN = (body: any) => ({
 });
 
 async function pagarComoInvitado(page: Page) {
-  await page.locator('[onclick*="startOrderWithSig("]').first().click();
-  await page.locator('[onclick*="size=\'15\'"]').click();
-  await page.locator('[onclick^="sigId="]').first().click();
-  await page.getByRole('button', { name: 'CONTINUAR //' }).click();
-  await page.locator('#o-nom').fill('Cliente Invitado');
-  await page.locator('#o-phone').fill('987654321');
-  await page.locator('#o-addr').fill('Av. España 123, Trujillo');
-  await page.locator('#o-district').selectOption('trujillo');
-  await page.locator('[onclick*="selectPayMethod(\'yape\')"]').click();
-  await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
-  await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
+  await pedirUnSignature(page, { size: '15' });
+  await ponerRecibe(page, 'Cliente Invitado', '987654321');
+  await ponerDireccion(page, 'Av. España 123, Trujillo', '');
+  await pagarConYape(page);
   await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 }
 
@@ -67,13 +60,17 @@ test('la esquina: sin sesión abre Entrar; con sesión dice el nombre y los punt
 
 test('antes de pagar no se ofrece ninguna cuenta', async ({ page }) => {
   await gotoApp(page, { 'place-order': ORDEN });
-  await page.locator('[onclick*="startOrderWithSig("]').first().click();
-  await page.locator('[onclick*="size=\'15\'"]').click();
-  await page.locator('[onclick^="sigId="]').first().click();
-  await page.getByRole('button', { name: 'CONTINUAR //' }).click();
-  await expect(page.locator('#o-nom')).toBeVisible();
-  await expect(page.locator('#google-btn-mount')).toHaveCount(0);
-  await expect(page.locator('text=Crea tu cuenta')).toHaveCount(0);
+  await pedirUnSignature(page, { size: '15' });
+  const sinCuenta = async () => {
+    await expect(page.locator('#google-btn-mount')).toHaveCount(0);
+    await expect(page.locator('text=Crea tu cuenta')).toHaveCount(0);
+  };
+  await sinCuenta();                                   // la 30G
+  await ponerRecibe(page);
+  await ponerDireccion(page, 'Av. España 123, Trujillo', '');
+  await page.locator('.m30-go .oro').click();
+  await page.locator('.m31.y').waitFor();
+  await sinCuenta();                                   // la 31, donde se paga
 });
 
 test('el aviso ofrece los puntos del pedido y, con correo, crea la cuenta llevando el pedido', async ({ page }) => {

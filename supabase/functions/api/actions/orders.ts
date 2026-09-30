@@ -5,7 +5,7 @@
 import {
   CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS, STALE_MANUAL_PAYMENT_HOURS,
   isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES, DELIVERY_ZONE_FEES,
-  DELIVERY_KM_RATE, DELIVERY_ROAD_FACTOR, DELIVERY_MIN_FEE, DELIVERY_MAX_KM, STORE_LAT, STORE_LON,
+  DELIVERY_KM_RATE, DELIVERY_ROAD_FACTOR, DELIVERY_MIN_FEE, STORE_LAT, STORE_LON,
   CULQI_FEE_RATE, noteNeedsAttention, MAX_PUSH_PER_RUN, REFERRAL_MILESTONES,
   ventanaPrometida, RANKS,
 } from "../env.ts";
@@ -812,12 +812,6 @@ export function deliveryFeeForKm(km: number): number {
 export function resolveDeliveryFee(lat: unknown, lon: unknown, zone: string): { fee: number; km: number | null } {
   const km = billableKm(lat, lon);
   if (km === null) return { fee: deliveryFeeForZone(zone), km: null };
-  if (km > DELIVERY_MAX_KM) {
-    throw new ApiError(
-      `Tu ubicación está a ${km.toFixed(1)} km del local y por ahora llegamos hasta ${DELIVERY_MAX_KM} km. Revisa el punto en el mapa.`,
-      400,
-    );
-  }
   return { fee: deliveryFeeForKm(km), km };
 }
 

@@ -24,7 +24,8 @@ from pathlib import Path  # noqa: E402
 from mcp_server import server  # noqa: E402
 from mcp_server.config import config  # noqa: E402
 
-TANDAS = ["docs", "src", "supabase/functions", "tests", "tests-api", "tests-e2e", "scripts", "modelo", "supabase/migrations"]
+# Sin pruebas ni migraciones ni docs/historico (ver exclude_patterns en .knowledge-rag/config.yaml).
+TANDAS = ["docs", "src", "supabase/functions", "scripts", "modelo"]
 LOTE = 32
 
 
@@ -47,7 +48,8 @@ def indexar(carpeta):
     else:
         orq.parser.parse_directory = leer_todo
         orq._prune_orphan_documents = podar
-    res = orq.index_all(force=forzar)
+    # La pasada final no se fuerza: las tandas ya se forzaron, y forzarla las rehace todas otra vez.
+    res = orq.index_all(force=forzar and bool(carpeta))
     res["tanda"] = carpeta or "(el resto del repo, con poda)"
     res["segundos"] = round(time.time() - t)
     res["memoria_max_mb"] = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss // 1024

@@ -70,8 +70,11 @@ export const NOTE_ALERT_WORDS = ["alergi", "alérgi", "intoleran", "celiac", "ce
 export const DELIVERY_KM_RATE = 2;
 export const DELIVERY_ROAD_FACTOR = 1.3;
 export const DELIVERY_MIN_FEE = 5;
-export const DELIVERY_MAX_KM = 12;
-export const DELIVERY_EXCLUDED_ZONES = ["el milagro", "el porvenir"];
+// SIN LÍMITES DE ENVÍO (dueño, 2026-09-30: «manda siempre la distancia, mi proveedor de delivery
+// no tiene límites de envío»). Hasta hoy había un tope de 12 km y El Milagro / El Porvenir se
+// rechazaban por el texto de la dirección. La lista vacía apaga ese rechazo sin ramas muertas
+// (el mismo criterio que la hora valle retirada); el tope de km se quitó con sus chequeos.
+export const DELIVERY_EXCLUDED_ZONES: string[] = [];
 export const ZONAS_DE_ENVIO: { id: string; nombre: string; precio: number }[] = [
   { id: "cerca", nombre: "Cerca del local", precio: 6 },
   { id: "media", nombre: "Distancia media", precio: 8 },

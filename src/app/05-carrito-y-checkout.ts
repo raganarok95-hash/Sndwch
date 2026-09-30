@@ -17,6 +17,7 @@ function editCartItem(idx){
   var it=cart[idx];
   if(!it||it.type==='side')return;
   syncConfirmFields();
+  _lineaEnEdicion={idx:idx,item:it};
   cart.splice(idx,1);
   if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
   saveCart();
@@ -127,7 +128,7 @@ async function applyPromoCode(){
   var el=(document.getElementById('o-promo') as HTMLInputElement|null);
   var code=el?el.value.trim():'';
   if(!code)return;
-  var phone=cust?cust.phone:gv('o-phone').trim();
+  var phone=cust?cust.phone:confPhone.trim();
   if(!phone){promoStatus='Ingresa tu teléfono de contacto primero.';renderPromoStatus();return;}
   promoStatus='Verificando...';renderPromoStatus();
   try{
@@ -141,10 +142,9 @@ async function applyPromoCode(){
     //    ("2026-08-28T15:30", sin zona): el servidor corre en UTC, así que esa cadena
     //    naive se interpretaba como 15:30 UTC = 10:30 en Lima, y el preview no veía la
     //    promo de hora valle que el pedido real sí iba a aplicar.
-    var schedEl=(document.getElementById('o-sched') as HTMLInputElement|null);
     var promoSchedIso=null;
-    if(scheduleMode==='later'&&schedEl&&schedEl.value){
-      var pd=new Date(schedEl.value);
+    if(scheduleMode==='later'&&schedInputValue()){
+      var pd=new Date(schedInputValue());
       if(!isNaN(pd.getTime()))promoSchedIso=pd.toISOString();
     }
     var res=await api('validate-promo-code',{code:code,phone:phone,items:cart,rewardId:appliedReward,scheduledFor:promoSchedIso,token:token,groupCode:pendingGroupCode||''});
@@ -340,16 +340,13 @@ function deliveryZonePickerHTML(){
   // cliente escogía su zona de un desplegable, o sea escogía cuánto pagar de envío.
   if(km!==null){
     var base=deliveryFeeBase();
-    var lejos=km>DELIVERY_MAX_KM;
     return'<div style="margin-top:14px">'
       +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Envío //</div>'
-      +'<div style="background:var(--sw-card,#1B1F18);border:1px solid '+(lejos?'var(--sw-danger,#ff8888)':'var(--sw-border,#2C3228)')+';border-radius:10px;padding:12px 14px">'
-      +(lejos
-        ?'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger,#ff8888);line-height:1.5">Tu punto está a '+km.toFixed(1)+' km y por ahora llegamos hasta '+DELIVERY_MAX_KM+' km. Revisa el pin en el mapa.</div>'
-        :'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">'
+      +'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:12px 14px">'
+        +'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">'
           +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#EFEDE4)">'+km.toFixed(1)+' km hasta tu punto</div>'
           +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:'+GOLD+'">'+SOLES_TXT+pz(base)+'</div></div>'
-          +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.45;margin-top:4px">Se cobra por distancia real, '+SOLES_TXT+pz(DELIVERY_KM_RATE)+' por kilómetro. El motorizado te lo entrega en la puerta.</div>')
+          +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.45;margin-top:4px">Se cobra por distancia real, '+SOLES_TXT+pz(DELIVERY_KM_RATE)+' por kilómetro. El motorizado te lo entrega en la puerta.</div>'
       +'<button onclick="doGPS()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;border:1px solid '+GOLD+';color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.05em;padding:9px;border-radius:8px;text-align:center">Cambiar mi ubicación //</button>'
       +'</div></div>';
   }
@@ -1030,154 +1027,338 @@ function reciboHTML(base,total,combo,valle,organizador,recompensa){
     +PAPEL_TOTAL('TOTAL',total);
   return h;
 }
+// ── 30 G · EL PEDIDO ES UN RECIBO DE ESTRAZA (aprobada) + renglones y hojas ────────────────
+// docs/maquetas/aprobadas/30G-el-carrito.png y 30G-*.png (camino de compra, 2026-09-25).
+// Reemplaza «Confirmar sándwich» y «Tu carrito». Todo lo que se decide antes de pagar es un
+// renglón del mismo recibo —LLEGA, DÓNDE, RECIBE, y PUNTOS o CÓDIGO cuando aplican— y cada uno
+// abre una hoja o la 34. Las cuentas salen de cartDesglose()/payableTotal(), las mismas que
+// cobra el servidor: acá no se suma nada por cuenta propia.
+var hoja30:string|null=null,hojaLinea=-1,hojaErr='';
+function cuantasCosas(n:number):string{
+  var p=['','Una cosa','Dos cosas','Tres cosas','Cuatro cosas','Cinco cosas','Seis cosas','Siete cosas','Ocho cosas','Nueve cosas','Diez cosas'];
+  return p[n]||(n+' cosas');
+}
+function lineaNombre(it:any):string{
+  var x=it.qty>1?' ×'+it.qty:'';
+  if(it.type==='side'){var d=SIDES.find(function(y){return y.id===it.code;});return(d?d.l:'')+x;}
+  if(it.type==='sig'){var s=SIGS.find(function(y){return y.id===it.sigId;});return(s?s.n:'')+' '+it.size+'CM'+x;}
+  return'Arma el tuyo '+it.size+'CM'+x;
+}
+function lineaDetalle(it:any):string{
+  if(it.type==='side'){var d=SIDES.find(function(y){return y.id===it.code;});return d?d.s:'';}
+  var partes:string[]=[];
+  if(it.type==='byo'){var p=PROTS.find(function(y){return y.id===it.prot;});if(p)partes.push(p.l+(p.s?' '+p.s:''));}
+  var ex=itemExtrasLabel(it);if(ex)partes.push(ex);
+  if(it.note)partes.push(it.note);
+  return partes.join(' · ');
+}
+function llegaTexto():string{
+  if(scheduleMode==='later'&&schedSlot){
+    return(schedDay==='today'?'Hoy ':'Mañana ')+horaDoceMin(schedSlot);
+  }
+  return ventanaEstimadaTexto(null)||'Lo antes posible';
+}
+function horaDoceMin(hhmm:string):string{
+  var h=+hhmm.slice(0,2),m=hhmm.slice(3,5),suf=h<12?'a.m.':'p.m.',x=h%12===0?12:h%12;
+  return x+':'+m+' '+suf;
+}
+// La dirección está lista con el texto y el pin: el envío se cobra por distancia real y el distrito
+// ya no limita nada (dueño, 2026-09-30: «ya no hay limitante con distrito»). Exigirlo dejaba al
+// cliente en un bucle 30G → 34 → mapa cuando el geocodificador no lo reconocía.
+function direccionLista():boolean{return!!addrText&&deliveryKmNow()!==null;}
+function recibeListo():boolean{return!!confNom.trim()&&confPhone.replace(/\D/g,'').length>=6;}
+// La mejor recompensa que ESTE pedido puede usar ahora (la que más perdona). null si ninguna.
+function recompensaUsable(){
+  if(!cust)return null;
+  var mejor:any=null,ahorro=0;
+  RWDS.forEach(function(r){
+    if((cust.points||0)<r.pts)return;
+    var i=findRewardTargetIndex(r.id);if(i<0)return;
+    var a=rewardWaiverAmount(r.id,i);
+    if(a>ahorro){ahorro=a;mejor=r;}
+  });
+  return mejor;
+}
+function en30(etq:string,valor:string,accion:string,fn:string,falta?:boolean){
+  return'<button class="en'+(falta?' falta':'')+'" onclick="'+fn+'"><em>'+etq+'</em><n>'+esc(valor)+'</n><u>'+accion+'</u></button>';
+}
 function sOCart(){
   aplicarMetodoPreferido();
-  var baseTotal=cartBaseTotal();
+  if(!cart.length){
+    return'<div class="m30 kraft fi"><button class="sal" onclick="go(\'o_home\')" aria-label="Volver">←</button>'
+      +'<div class="tit"><em>Todavía nada</em><b>Tu pedido<br>está vacío</b></div>'
+      +VACIO('Carrito vacío','Elige un Signature o arma el tuyo — todo se junta acá antes de pagar.',null,'piensa')+'</div>';
+  }
+  var d=cartDesglose();
+  var envio=deliveryFeeAmount();
+  var dirOk=direccionLista(),recOk=recibeListo();
+  var lineas=cart.map(function(it,i){
+    return'<button class="li" onclick="hojaLinea='+i+';hoja30=\'linea\';render()"><i>'+String(i+1).padStart(2,'0')+'</i>'
+      +'<span class="q"><b>'+esc(lineaNombre(it))+'</b>'+(lineaDetalle(it)?'<s>'+esc(lineaDetalle(it))+'</s>':'')+'</span>'
+      +'<p>'+pz(itemLineTotal(it))+'</p></button>';
+  }).join('');
+  var ex='';
+  if(d.combo>0)ex+='<div class="ex"><span>Combo sándwich + bebida</span><span>−'+pz(d.combo)+'</span></div>';
+  if(d.organizador.monto>0)ex+='<div class="ex"><span>Sándwich del organizador</span><span>−'+pz(d.organizador.monto)+'</span></div>';
+  if(appliedReward){var rw=RWDS.find(function(x){return x.id===appliedReward;});var ra=rewardWaiverAmount(appliedReward,findRewardTargetIndex(appliedReward));if(ra>0)ex+='<div class="ex"><span>'+esc(rw?rw.n:'Recompensa')+'</span><span>−'+pz(ra)+'</span></div>';}
+  if(appliedPromo)ex+='<div class="ex"><span>Código '+esc(appliedPromo.code)+'</span><span>−'+pz(appliedPromo.discount)+'</span></div>';
+  ex+=dirOk&&envio>0
+    ?'<div class="ex"><span>Envío '+deliveryKmNow()+' km</span><span>'+pz(envio)+'</span></div>'
+    :'<div class="ex"><span>Envío</span><span>Al elegir dónde</span></div>';
+  var rw2=!appliedPromo?recompensaUsable():null;
+  var renglones=en30('Llega',llegaTexto(),'Programar',"hoja30='programar';initSchedDefault();render()")
+    +en30('Dónde',dirOk?addrText:'¿Dónde te lo dejamos?',dirOk?'Cambiar':'Elegir',"go('o_dir')",!dirOk)
+    +en30('Recibe',recOk?confNom.trim()+' · '+confPhone:'¿A nombre de quién?',recOk?'Cambiar':'Poner',"hoja30='recibe';hojaErr='';render()",!recOk)
+    +(cust&&!appliedPromo&&(appliedReward||rw2)
+      ?(appliedReward
+        ?en30('Puntos','Canjeando: '+((RWDS.find(function(x){return x.id===appliedReward;})||{n:''}).n),'Quitar',"toggleReward('"+appliedReward+"')")
+        :en30('Puntos','Tienes '+(cust.points||0)+' · '+rw2.n.toLowerCase(),'Usar',"toggleReward('"+rw2.id+"')"))
+      :'')
+    +(!appliedReward
+      ?(appliedPromo?en30('Código',appliedPromo.code,'Quitar','removePromoCode()'):en30('Código','¿Tienes uno?','Poner',"hoja30='codigo';hojaErr='';render()"))
+      :'');
   var t=payableTotal();
-  var empty=!cart.length;
-  var comboDiscount=cartComboDiscount();
-  var offPeakDiscount=cartOffPeakDrinkDiscount();
-  // Ya no se suman (ver cartStackedDiscount) — se muestra solo el que de verdad se
-  // aplicó, nunca los dos a la vez.
-  var showCombo=comboDiscount>0&&comboDiscount>=offPeakDiscount;
-  var showOffPeak=offPeakDiscount>0&&offPeakDiscount>comboDiscount;
-  var rewardIdx=appliedReward?findRewardTargetIndex(appliedReward):-1;
-  var rewardDiscount=appliedReward?rewardWaiverAmount(appliedReward,rewardIdx):0;
-  var orgDiscount=organizerFreeAmount();
-  return H('TU CARRITO',"syncConfirmFields();sndScreen='o_home';render()")+'<div style="flex:1;padding:20px 20px 160px;overflow-y:auto" class="fi">'
-    +cartItemsHTML()
-    +(cart.length?reciboHTML(baseTotal,t,showCombo?comboDiscount:0,showOffPeak?offPeakDiscount:0,orgDiscount,rewardDiscount):'')
-    // Antes estos 2 botones eran los únicos puntos de navegación de este carrito que NO
-    // llamaban syncConfirmFields() primero — el camino de "una cosa más" más común
-    // (agregar un side/otro sándwich) borraba nombre/correo/dirección ya tipeados.
-    +'<div style="display:flex;gap:8px;margin-bottom:20px"><div onclick="syncConfirmFields();go(\'o_home\')" style="flex:1;text-align:center;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:12px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">+ Sándwich</div><div onclick="syncConfirmFields();irABebidas(\'o_cart\')" style="flex:1;text-align:center;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:12px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">+ Bebida/side</div></div>'
-    +(empty?'':checkoutExtrasHTML())
-    // #60 — Dejar el carrito como pedido fijo. Solo se ofrece con sesión iniciada porque la
-    // recurrencia cuelga del teléfono del cliente; a un invitado no habría dónde guardarla
-    // ni a quién avisarle. El texto dice explícitamente que no se cobra solo: prometer un
-    // cobro automático que Culqi no permite (el token es de un solo uso) sería la clase de
-    // promesa falsa que ya obligó a retirar los badges MÁS PEDIDO y EDICIÓN LIMITADA.
-    +(cart.length&&cust?'<details style="margin-top:18px;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none">↻ Dejarlo fijo cada semana //</summary>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:10px;line-height:1.5">Te avisamos antes, con este mismo carrito armado, y confirmas en un toque. Cuando se vuelva costumbre, te guardamos el lugar a esa hora. <b style="color:var(--sw-text-body,#EFEDE4)">No te cobramos sin que confirmes.</b></div>'
-      +'<div style="display:flex;gap:8px;margin-top:12px">'
-      +'<select id="rec-day" style="flex:1;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:11px;color:var(--sw-text,#FFFFFF);font-size:15px;font-family:\'EB Garamond\',serif">'
-      +DIAS_SEMANA.map(function(d,i){return'<option value="'+i+'"'+(i===new Date().getDay()?' selected':'')+'>'+d+'</option>';}).join('')
-      +'</select>'
-      +'<select id="rec-slot" style="flex:1;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:11px;color:var(--sw-text,#FFFFFF);font-size:15px;font-family:\'EB Garamond\',serif">'
-      // Franjas de media hora dentro del horario más amplio de la semana: la recurrencia es
-      // para un día futuro, así que acotarla al horario de HOY escondería franjas válidas.
-      +recurringSlotOptions().map(function(s){return'<option value="'+s+'">'+s+'</option>';}).join('')
-      +'</select>'
-      +'</div>'
-      +'<button onclick="saveCartAsRecurring()" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(203,162,88,.14);border:1px solid rgba(203,162,88,.45);color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:13px 0;border-radius:8px;margin-top:10px">Guardar como fijo //</button>'
-      +'</details>':'')
-    +(cart.length?'<div onclick="clearCart()" style="text-align:center;margin-top:16px;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-danger,#ff8888);letter-spacing:.1em">Vaciar carrito</div>':'')
+  var sinEnvio=!dirOk||envio===0;
+  var h='<div class="m30 kraft fi"><button class="sal" onclick="go(\'o_home\')" aria-label="Seguir pidiendo">←</button>'
+    +'<div class="tit"><em>Va saliendo</em><b>'+esc(cuantasCosas(cart.length)).replace(' ','<br>')+'</b></div>'
+    +'<div class="papel"><div class="cinta c1"></div><div class="cinta c2"></div><div class="sello">'
+    +'<div class="hd"><span>SND//WCH · TRUJILLO</span><span></span></div>'
+    +lineas+ex+renglones
+    +'<div class="tt"><em>'+(sinEnvio?'Sin envío':'Total')+'</em><b>'+SOLES_TXT+pz(t)+'</b></div>'
+    +'</div></div>'
+    +'<div class="err" id="o-err" role="alert"></div>'
+    +'<div class="hermanos" aria-hidden="true"><img class="s" src="'+broPose('sando','saluda')+'" alt=""><img class="w" src="'+broPose('wicho','alegre')+'" alt=""></div>'
     +'</div>'
-    +AB(cart.length?t:null,cart.length>0&&!checkoutLocked,null,'doOrder()',payButtonLabel(t,'Pagar y enviar //'));
+    +hoja30HTML()
+    +'<div class="m30-go sw-barra">'+(hoja30?'<button class="oro" onclick="hojaListo()">'+hojaBoton()+'</button>'
+      :'<button class="oro" onclick="irAPagar()">Pagar</button><button class="cel" onclick="irAPagar()">'+SOLES_TXT+pz(t)+(sinEnvio?' + envío':'')+'</button>')+'</div>';
+  return h;
+}
+function hojaBoton(){return hoja30==='codigo'?'Aplicar':hoja30==='linea'?'Listo':'Listo';}
+function cerrarHoja(){hoja30=null;hojaLinea=-1;hojaErr='';render();}
+function hoja30HTML(){
+  if(!hoja30)return'';
+  var cuerpo='';
+  if(hoja30==='recibe'){
+    cuerpo='<em>Para el motorizado</em><h3>¿Quién lo<br>recibe?</h3>'
+      +'<label class="campo"><s>Nombre</s><input id="o-nom" type="text" autocomplete="name" value="'+esc(confNom)+'"></label>'
+      +'<label class="campo"><s>Celular</s><input id="o-phone" type="tel" inputmode="tel" autocomplete="tel" value="'+esc(confPhone)+'"></label>'
+      +'<div class="err" role="alert">'+esc(hojaErr)+'</div>'
+      +'<div class="nota">Solo para avisarte y para que el motorizado te ubique.<br>No te creamos ninguna cuenta.</div>';
+  }else if(hoja30==='programar'){
+    var dias=[{k:'today',l:'Hoy'},{k:'tomorrow',l:'Mañana'}];
+    var slots=schedSlotsDetailed(schedDay);
+    cuerpo='<em>Lo programas</em><h3>¿A qué<br>hora?</h3>'
+      +'<div class="dias">'+dias.map(function(x){
+        var cerrado=!STORE_HOURS[limaDayHour(schedDateForDay(x.k)).weekday];
+        return'<button aria-pressed="'+(schedDay===x.k)+'"'+(cerrado?' disabled':'')+' onclick="schedDay=\''+x.k+'\';schedSlot=null;initSchedDefault();render()">'+x.l+'</button>';
+      }).join('')
+      +(scheduleMode==='later'?'<button onclick="scheduleMode=\'now\';schedSlot=null;hoja30=null;render()">Lo antes posible</button>':'')+'</div>'
+      +(slots.length
+        ?'<div class="fr">'+slots.map(function(s){return'<button aria-pressed="'+(scheduleMode==='later'&&schedSlot===s.t)+'"'+(s.full?' disabled':'')+' onclick="scheduleMode=\'later\';schedSlot=\''+s.t+'\';render()">'+s.t+'</button>';}).join('')+'</div>'
+        :'<div class="nota">No hay horarios disponibles ese día.</div>')
+      +'<div class="nota" style="margin-top:14px">Las tachadas ya están llenas.<br>Te llega en la media hora que elijas.</div>';
+  }else if(hoja30==='codigo'){
+    cuerpo='<em>Descuento</em><h3>¿Tienes un<br>código?</h3>'
+      +'<label class="campo"><s>El código</s><input id="o-promo" type="text" autocapitalize="characters" value=""></label>'
+      +'<div class="err" id="o-promo-status" role="alert">'+esc(hojaErr||promoStatus||'')+'</div>'
+      +'<div class="nota">Se aplica sobre la comida, no sobre el envío.<br>Si no vale, te decimos por qué.</div>';
+  }else if(hoja30==='linea'){
+    var it=cart[hojaLinea];
+    if(!it){hoja30=null;return'';}
+    cuerpo='<em>Esta línea</em><h3>'+esc(lineaNombre(Object.assign({},it,{qty:1})))+'</h3>'
+      +'<div class="cant"><button onclick="cambiarCantidad('+hojaLinea+',-1)" aria-label="Uno menos">−</button><b>'+it.qty+'</b><button onclick="cambiarCantidad('+hojaLinea+',1)" aria-label="Uno más">+</button></div>'
+      +(it.type!=='side'?'<button class="op" onclick="hoja30=null;editCartItem('+hojaLinea+')"><span>Cambiarle algo</span><u>Editar</u></button>'
+        +'<button class="op" onclick="editItemNote('+hojaLinea+')"><span>'+esc(it.note?'Nota: '+it.note:'Una nota para la cocina')+'</span><u>'+(it.note?'Cambiar':'Poner')+'</u></button>':'')
+      +'<button class="op" onclick="quitarLinea('+hojaLinea+')"><span>Sacarla del pedido</span><u>Quitar</u></button>';
+  }
+  return'<div class="hvelo" onclick="cerrarHoja()"></div><div class="hoja" role="dialog" aria-modal="true">'+cuerpo+'</div>';
+}
+function cambiarCantidad(i:number,delta:number){
+  var it=cart[i];if(!it)return;
+  it.qty=Math.max(1,Math.min(20,it.qty+delta));
+  saveCart();render();
+}
+function quitarLinea(i:number){
+  cart.splice(i,1);
+  if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
+  saveCart();hoja30=null;hojaLinea=-1;render();
+}
+async function hojaListo(){
+  if(hoja30==='recibe'){
+    var n=(document.getElementById('o-nom') as HTMLInputElement|null),p=(document.getElementById('o-phone') as HTMLInputElement|null);
+    confNom=n?n.value:confNom;confPhone=p?p.value:confPhone;
+    if(!confNom.trim()){hojaErr='Escribe a nombre de quién va.';render();return;}
+    if(confPhone.replace(/\D/g,'').length<6){hojaErr='Escribe un celular válido.';render();return;}
+    hoja30=null;hojaErr='';render();return;
+  }
+  if(hoja30==='codigo'){
+    var el=(document.getElementById('o-promo') as HTMLInputElement|null);
+    if(!el||!el.value.trim()){hojaErr='Escribe el código.';render();return;}
+    if(!cust&&confPhone.replace(/\D/g,'').length<6){hojaErr='Primero dinos a nombre de quién va (el celular).';render();return;}
+    hojaErr='';
+    await applyPromoCode();
+    if(appliedPromo){hoja30=null;promoStatus='';render();}
+    return;
+  }
+  hoja30=null;render();
+}
+// PAGAR: lo que falta se resuelve donde vive (la 34 o la hoja de RECIBE); después la 31.
+function irAPagar(){
+  if(!direccionLista()){go('o_dir');return;}
+  if(!recibeListo()){hoja30='recibe';hojaErr='';render();return;}
+  var err=problemaDelPedido();
+  if(err){var e=document.getElementById('o-err');if(e)e.textContent=err;else showToast(err,'error');return;}
+  go('o_pagar');
 }
 
+// ── 34 · DÓNDE TE LO DEJAMOS (aprobada, fuente i1.html #D) ────────────────────────────────
+// Las direcciones guardadas con su distancia y su envío (kmADireccion/envioADireccion, la
+// misma cuenta del cobro). «Otra dirección» abre el mapa: el costo se sabe al marcarla.
+var dirElegida:any=null;
+function sODir(){
+  var lista=cust?myAddresses:[];
+  if(dirElegida===null&&pickedAddrId!=null)dirElegida=pickedAddrId;
+  var tarjetas=lista.map(function(a){
+    var km=kmADireccion(a),env=envioADireccion(a);
+    var sel=dirElegida!=null&&mismoId(dirElegida,a.id);
+    return'<button class="et" aria-pressed="'+sel+'" onclick="dirElegida='+JSON.stringify(a.id).replace(/"/g,'&quot;')+';render()">'
+      +'<span class="hd"><span>'+esc(a.label||'Guardada')+'</span><span>'+(km!=null?km.toFixed(1)+' km':'—')+'</span></span>'
+      +'<b>'+esc(a.address)+'</b>'+(a.reference?'<s>'+esc(a.reference)+'</s>':'')
+      +'<span class="pie"><i>'+(env!=null?'Envío '+SOLES_TXT+pz(env):'Márcala en el mapa')+'</i><u>Editar</u></span></button>';
+  }).join('');
+  var sel=lista.find(function(a){return dirElegida!=null&&mismoId(dirElegida,a.id);});
+  var envSel=sel?envioADireccion(sel):null;
+  return'<div class="m34 kraft fi"><button class="sal" onclick="dirElegida=null;go(\'o_cart\')" aria-label="Volver">←</button>'
+    +'<div class="tit"><em>'+(lista.length?'Tus direcciones':'Tu dirección')+'</em><b>Dónde te<br>lo dejamos</b></div>'
+    +tarjetas
+    +'<button class="et otra" onclick="otraDireccion()"><span class="hd"><span>Agregar</span><span>—</span></span>'
+    +'<b>Otra dirección</b><s>Te decimos el costo apenas la marques en el mapa</s></button>'
+    // La nota de la maqueta («Fuera de los distritos que cubrimos no llegamos todavía») se quitó:
+    // desde el 2026-09-30 no hay zonas ni tope de distancia (dueño). Una promesa que ya no es cierta.
+    +'</div>'
+    +'<div class="m30-go sw-barra">'+(sel&&envSel!=null
+      ?'<button class="oro" onclick="usarDireccion()">Usar esta</button><button class="cel" onclick="usarDireccion()">'+SOLES_TXT+pz(envSel)+'</button>'
+      :'<button class="oro" onclick="otraDireccion()">Marcar en el mapa</button>')+'</div>';
+}
+function usarDireccion(){
+  if(dirElegida==null)return;
+  pickAddr(dirElegida);
+  dirElegida=null;
+  go('o_cart');
+}
+// El mapa de siempre (openMap/confirmMap): al confirmarlo deja dirección, distrito y
+// coordenadas, y se vuelve a la 30G.
+var volverDelMapa=false;
+function otraDireccion(){
+  volverDelMapa=true;
+  if(typeof window._mLat==='number'&&typeof window._mLon==='number')openMap(window._mLat,window._mLon,false);
+  else doGPS();
+}
+
+// ── 31 · PAGAR CON YAPE (e1.html #Q) · CON TARJETA (y1.html #P) — aprobadas ──────────────
+// Yape es el medio por defecto (no suma comisión). La diferencia con tarjeta sale de
+// deliveryFeeAmount() con y sin comisión: nunca se escribe.
+function totalCon(tarjeta:boolean){
+  var antes=manualPayMethod;
+  manualPayMethod=tarjeta?null:'yape';
+  var t=payableTotal();
+  manualPayMethod=antes;
+  return t;
+}
+function montoPartido(v:number){
+  var s=pz(v),k=s.indexOf('.');
+  return SOLES_TXT+(k<0?s:s.slice(0,k)+'<i>'+s.slice(k)+'</i>');
+}
+var pagarErr='';
+function sOPagar(){
+  var t=payableTotal();
+  var envio=deliveryFeeAmount();
+  if(t===0||(useCredit&&cust&&(cust.credit_balance||0)>=t)){
+    // Sin nada que cobrar (recompensa que cubre todo, o crédito): no hay pasarela que explicar.
+    return'<div class="m31 t fi"><button class="sal" onclick="go(\'o_cart\')" aria-label="Volver">←</button>'
+      +'<div class="cab"><em>'+(t===0?'No pagas nada':'Pagas con tu crédito')+'</em><u></u></div>'
+      +'<div class="mt"><b>'+montoPartido(t)+'</b></div>'
+      +'<div class="err" role="alert">'+esc(pagarErr)+'</div></div>'
+      +'<div class="m30-go sw-barra"><button class="oro" onclick="confirmarPago()">Confirmar</button></div>';
+  }
+  if(manualPayMethod){
+    var conTarjeta=totalCon(true);
+    return'<div class="m31 y fi"><button class="sal" onclick="go(\'o_cart\')" aria-label="Volver">←</button>'
+      +'<div class="cab"><em>Pagar con Yape</em><u></u></div>'
+      +'<div class="mt"><b>'+montoPartido(t)+'</b><s>'+(envio>0?'Envío '+SOLES_TXT+pz(envio)+' incluido<br>':'')+'No se suma nada más</s></div>'
+      +'<div class="visor"><img src="img/yape-qr.png" alt="Código QR de Yape para pagar a '+esc(YAPE_PLIN_HOLDER||'')+'"><b class="a"></b><b class="b"></b><b class="c"></b><b class="d"></b></div>'
+      +'<div class="esc">Escanea desde Yape</div>'
+      +'<button class="alt" onclick="selectPayMethod(\'culqi\');render()"><n>Prefiero tarjeta</n><s>Son '+SOLES_TXT+pz(money(conTarjeta-t))+' más</s></button>'
+      +'<div class="fr">Apenas confirmes,<br>el pedido entra a la cocina</div>'
+      +'<img class="h" style="left:-14px;bottom:68px;width:112px" src="'+broPose('sando','cuerpo')+'" alt="" aria-hidden="true">'
+      +'<img class="h" style="right:-16px;bottom:68px;width:124px" src="'+broPose('wicho','cuerpo')+'" alt="" aria-hidden="true">'
+      +'<div class="err" role="alert">'+esc(pagarErr)+'</div>'
+      +'</div>'
+      +'<div class="m30-go sw-barra"><button class="oro" onclick="confirmarPago()">Ya pagué</button><button class="cel" onclick="confirmarPago()">'+SOLES_TXT+pz(t)+'</button></div>';
+  }
+  var conYape=totalCon(false);
+  return'<div class="m31 t fi"><button class="sal" onclick="go(\'o_cart\')" aria-label="Volver">←</button>'
+    +'<div class="cab"><em>Pagas con tarjeta</em><u></u></div>'
+    +'<div class="mt"><b>'+montoPartido(t)+'</b><div class="av"><k>'+SOLES_TXT+pz(conYape)+' con Yape</k>'
+    +'<s>+'+SOLES_TXT+pz(money(t-conYape))+' de comisión, sobre el envío</s></div></div>'
+    +'<div class="paso"><div class="p"><k>1</k><div class="t"><b>Se abre la ventana de Culqi</b><s>La pasarela, no nosotros</s></div></div>'
+    +'<div class="p"><k>2</k><div class="t"><b>Escribes tu tarjeta ahí</b><s>Nunca en esta app</s></div></div>'
+    +'<div class="p"><k>3</k><div class="t"><b>Vuelves y entra a la cocina</b><s>Te avisamos apenas salga</s></div></div></div>'
+    +'<div class="seg"><em>Qué vemos nosotros</em><s>Si el pago salió bien y los 4 últimos dígitos.<br>Ni el número completo ni el CVV pasan por acá.</s></div>'
+    +'<button class="vol" onclick="selectPayMethod(\'yape\');render()"><n>Mejor con Yape</n><s>No se suma nada</s></button>'
+    +'<img class="mano" src="'+broPose('sando','pulgar')+'" alt="" aria-hidden="true">'
+    +'<div class="fr">Si la ventana no abre,<br>vuelve y elige Yape.</div>'
+    +'<div class="err" role="alert">'+esc(pagarErr)+'</div>'
+    +'</div>'
+    +'<div class="m30-go sw-barra"><button class="oro" onclick="confirmarPago()">Ir a pagar</button><button class="cel" onclick="confirmarPago()">'+SOLES_TXT+pz(t)+'</button></div>';
+}
+function confirmarPago(){pagarErr='';doOrder(true);}
+
 var _pendingOrder=null;
-async function doOrder(){
+// Lo que impide pagar, o null. Lee el ESTADO del pedido (confNom, addrText, schedSlot…), no
+// campos de un formulario: la 30G guarda cada dato en su renglón. El servidor vuelve a validar.
+function problemaDelPedido():string|null{
+  if(!cart.length)return'Tu pedido está vacío.';
+  if(!confNom.trim())return'Falta a nombre de quién va el pedido.';
+  if(!addrText.trim())return'Falta dónde te lo dejamos.';
+  if(addressInExcludedZone(addressWithDistrict(addrText.trim(),deliveryDistrict)))return'Por ahora tu zona aún no está disponible para delivery, pero esperamos poder llegar pronto.';
+  if(confPhone.replace(/\D/g,'').length<6)return'Ingresa un celular de contacto válido.';
+  if(scheduleMode==='later'){
+    var v=schedInputValue();
+    if(!v)return'Elige una hora para tu pedido programado.';
+    var d=new Date(v);
+    if(isNaN(d.getTime())||d.getTime()<Date.now()-60000)return'La hora programada no es válida.';
+    if(!isWithinStoreHours(d))return'Esa hora está fuera de nuestro horario de atención.';
+    if(hourIsFull(d))return'Esa hora se llenó mientras armabas el pedido. Elige otra en «Programar».';
+  }else if(!storeStatus().open){
+    return'Estamos cerrados ahora mismo. Toca «Programar» para pedir dentro de nuestro horario.';
+  }else if(hourIsFull(new Date())){
+    var libre=nextFreeSlot();
+    return libre?'Esta hora ya está completa. La más cercana libre es '+libre.label+' a las '+libre.slot+': elígela en «Programar».'
+      :'Esta hora ya está completa — la cocina no da abasto para más pedidos ahora mismo. Prueba con otro día.';
+  }
+  if(!businessLaunched)return'Todavía no abrimos. Te avisamos apenas arranquemos.';
+  if(deliveryKmNow()===null)return'Marca tu ubicación en el mapa para calcular el envío: se cobra por distancia real.';
+  return null;
+}
+// `desdePagar`: viene de la 31, que ES la confirmación (se ve el monto y el QR); no se vuelve a
+// preguntar «¿ya transferiste?».
+async function doOrder(desdePagar?){
   if(_payingInProgress)return;
   if(!cart.length)return;
   if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
-  var nom=gv('o-nom').trim();
-  var phone=gv('o-phone').trim();
-  var email=gv('o-email').trim();
-  var addr=gv('o-addr').trim();
-  var notes=gv('o-notes').trim();
-  var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
-  // Además del aviso general de abajo, se marca el campo mismo: un mensaje al pie de un
-  // formulario largo no dice CUÁL de los campos está mal. fieldCheck con force=true es el
-  // mismo camino que usa el blur, así que los dos pintan exactamente igual.
-  if(!nom||!addr){
-    // Se marca el campo que DE VERDAD falta, no siempre el nombre. Y el mensaje al pie
-    // nombra solo lo que falta: decir "nombre y dirección" cuando el nombre está puesto
-    // manda a revisar un campo correcto.
-    if(!nom)fieldCheck(document.getElementById('o-nom'),'nombre',true);
-    if(!addr)fieldCheck(document.getElementById('o-addr'),'direccion',true);
-    if(errEl)errEl.textContent=(!nom&&!addr)?'Ingresa tu nombre y dirección.'
-      :(!nom?'Ingresa tu nombre.':'Ingresa tu dirección para poder llevarte el pedido.');
+  var problema=problemaDelPedido();
+  if(problema){
+    pagarErr=problema;
+    var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
+    if(sndScreen==='o_pagar')render();else if(errEl)errEl.textContent=problema;else showToast(problema,'error');
     return;
   }
-  // El distrito es obligatorio: es lo que decide si el pedido se puede entregar (los que
-  // están fuera de cobertura ni siquiera son seleccionables, ver districtPickerHTML). Se
-  // adjunta al texto de la dirección antes de validar y de mandarlo, así el motorizado lo
-  // ve impreso y el chequeo por substring de abajo lo cubre igual que si el cliente lo
-  // hubiera escrito a mano.
-  if(!deliveryDistrict){if(errEl)errEl.textContent='Elige tu distrito para poder llevarte el pedido.';return;}
-  addr=addressWithDistrict(addr,deliveryDistrict);
-  // Solo se avisa recién al intentar pagar, no mientras el cliente todavía está
-  // escribiendo la dirección — un aviso en vivo mientras tipea se siente como un
-  // rechazo prematuro antes de que termine de escribir. El servidor vuelve a validar
-  // esto mismo (assertAddressAllowed en orders.ts) por si alguien se salta el cliente.
-  if(addressInExcludedZone(addr)){if(errEl)errEl.textContent='Por ahora tu zona aún no está disponible para delivery, pero esperamos poder llegar pronto.';return;}
-  // Antes no había ningún teléfono en el checkout de invitado — la única forma de
-  // contactarlo era el mensaje de WhatsApp que él mismo debía enviar tras pagar, y si
-  // ese paso fallaba (bloqueo de pop-up, cerró la pestaña) un pedido ya cobrado quedaba
-  // sin ninguna manera de ubicar al cliente.
-  if(!phone||phone.replace(/\D/g,'').length<6){
-    fieldCheck(document.getElementById('o-phone'),'tel',true);
-    if(errEl)errEl.textContent='Ingresa un teléfono de contacto válido.';return;
-  }
-  var schedIso=null;
-  if(scheduleMode==='later'){
-    var schedEl=(document.getElementById('o-sched') as HTMLInputElement | null);
-    var schedVal=schedEl?schedEl.value:'';
-    if(!schedVal){if(errEl)errEl.textContent='Elige una hora para tu pedido programado.';return;}
-    var schedDate=new Date(schedVal);
-    if(isNaN(schedDate.getTime())||schedDate.getTime()<Date.now()-60000){if(errEl)errEl.textContent='La hora programada no es válida.';return;}
-    if(!isWithinStoreHours(schedDate)){if(errEl)errEl.textContent='Esa hora está fuera de nuestro horario de atención.';return;}
-    // La franja pudo llenarse entre que el cliente la eligió y que llegó a pagar: el
-    // selector se pinta una vez y la capacidad se refresca aparte. El servidor es la
-    // autoridad, pero avisar acá evita mandarlo a la pantalla de pago para nada.
-    if(hourIsFull(schedDate)){if(errEl)errEl.textContent='Esa hora se llenó mientras armabas el pedido. Elige otra franja, por favor.';return;}
-    schedIso=schedDate.toISOString();
-  }else if(!storeStatus().open){
-    // Antes solo se validaba el horario para pedidos programados — uno "AHORA" con la
-    // tienda cerrada se podía pagar igual, y la cocina nunca lo iba a preparar.
-    if(errEl)errEl.textContent='Estamos cerrados ahora mismo. Elige "PROGRAMAR" para pedir dentro de nuestro horario.';
-    return;
-  }else if(hourIsFull(new Date())){
-    // #23 — La hora actual ya llegó al tope. El servidor lo rechaza igual
-    // (`assertHourCapacity`), pero hasta ahora el cliente se enteraba con la tarjeta ya
-    // metida en la pantalla de Culqi. Se le manda a PROGRAMAR, donde las franjas libres
-    // están a la vista, en vez de dejarlo con un error sin salida.
-    // #25 — Rechazar sin ofrecer una alternativa manda al cliente a adivinar cuándo volver,
-    // y la mayoría no vuelve. Se nombra la siguiente franja libre concreta y se deja a un
-    // toque de distancia.
-    var libre=nextFreeSlot();
-    if(errEl){
-      errEl.textContent=libre
-        ? 'Esta hora ya está completa. La más cercana libre es '+libre.label+' a las '+libre.slot+'.'
-        : 'Esta hora ya está completa — la cocina no da abasto para más pedidos ahora mismo. Prueba con otro día.';
-    }
-    var alt=document.getElementById('o-alt-slot');
-    if(alt)alt.innerHTML=libre
-      ? '<button onclick="useNextFreeSlot()" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(203,162,88,.14);border:1px solid rgba(203,162,88,.45);color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.04em;padding:15px 0;border-radius:8px;margin-top:10px">Programar para '+libre.label+' a las '+libre.slot+' //</button>'
-      : '';
-    return;
-  }
-  // El negocio abre el 7 de septiembre. Hasta entonces NO se acepta ningún pedido, ni
-  // inmediato ni programado: el badge del home ya lo dice, pero el catálogo y Culqi
-  // seguían operativos y se podía pagar de verdad por comida que nadie iba a preparar.
-  // El servidor también lo rechaza (assertBusinessLaunched en orders.ts) — esto solo
-  // evita que el cliente descubra el bloqueo recién después de meter su tarjeta.
-  if(!businessLaunched){
-    if(errEl)errEl.textContent='Todavía no abrimos. Déjanos tu teléfono en la pantalla de inicio y te avisamos apenas arranquemos.';
-    return;
-  }
-  // El envío se cobra por DISTANCIA REAL desde el 2026-09-02, así que sin un punto
-  // confirmado en el mapa no hay tarifa que cobrar. Se pide UNA VEZ por dirección: al
-  // guardarla queda con sus coordenadas y los pedidos siguientes no vuelven a pedirlo
-  // [DECISIÓN del dueño]. Antes de esto el cliente elegía su propia zona de un desplegable,
-  // o sea elegía cuánto pagar de envío.
-  if(deliveryKmNow()===null){
-    if(errEl)errEl.textContent='Confirma tu ubicación en el mapa para calcular el envío — se cobra por distancia real.';
-    doGPS();
-    return;
-  }
-  if(errEl)errEl.textContent='';
+  var nom=confNom.trim(),phone=confPhone.trim(),email=confEmail.trim(),notes=confNotes.trim();
+  var addr=addressWithDistrict(addrText.trim(),deliveryDistrict);
+  var schedIso=scheduleMode==='later'?new Date(schedInputValue()).toISOString():null;
+  pagarErr='';
   var ref=oref();
   var t=payableTotal();
   var rewardObj=appliedReward?RWDS.find(function(x){return x.id===appliedReward;}):null;
@@ -1230,7 +1411,7 @@ async function doOrder(){
     // ningún cobro real detrás que lo confirme (a diferencia de Culqi), un tap
     // accidental generaba un pedido 'pending' real que el admin tenía que revisar y
     // descartar a mano sin que el cliente hubiera transferido nada todavía.
-    if(!(await showConfirm('¿Ya transferiste '+SOLES_TXT+pz(t)+' por Yape o Plin a '+YAPE_PLIN_PHONE+'? Tu pedido pasa a cocina recién cuando confirmemos que llegó.'))){
+    if(!desdePagar&&!(await showConfirm('¿Ya transferiste '+SOLES_TXT+pz(t)+' por Yape o Plin a '+YAPE_PLIN_PHONE+'? Tu pedido pasa a cocina recién cuando confirmemos que llegó.'))){
       _payingInProgress=false;render();return;
     }
     payWithManualMethod();
@@ -2345,6 +2526,8 @@ function confirmMap(){
   // adivinarlo de lo escrito, que es lo único que había antes.
   var inferred=window._mDistrict||districtFromAddress(a);
   if(inferred){deliveryDistrict=inferred;deliveryDistrictFromPin=!!window._mDistrict;}
+  // Desde «Otra dirección» de la 34: la dirección queda elegida y se vuelve al recibo.
+  if(volverDelMapa){volverDelMapa=false;pickedAddrId=null;go('o_cart');return;}
   render();
   var el=(document.getElementById('o-addr') as HTMLInputElement | null);
   // El resaltado usa el ACENTO del lado, no el azul de "pedido en preparación". Ese azul es
