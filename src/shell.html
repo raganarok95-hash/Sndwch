@@ -1330,6 +1330,38 @@ body.kb-open #app{padding-bottom:0}
 @media (min-width:900px){
   .m15 .plato.kraft .foto .baja{background:linear-gradient(90deg,transparent 80%,#C6A579 100%),linear-gradient(180deg,rgba(9,16,12,.5) 0%,transparent 14%)}
 }
+/* 29 · TUS PUNTOS — WICHO ES EL ESTADO (docs/maquetas/aprobadas/29-tus-puntos.png). Lo que
+   falta se cuenta en pedidos, con marcas de tinta; WICHO saluda desde la derecha. */
+.mw.mpt{padding:0 max(22px,calc(50% - 300px)) 150px}
+.mpt .sal{all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;margin-top:6px;font-size:20px;color:#15242D}
+.mpt .wicho{position:absolute;right:max(-30px,calc(50% - 330px));top:470px;width:186px;z-index:0;pointer-events:none;filter:drop-shadow(-8px 12px 22px rgba(21,36,45,.3))}
+.mpt .dice{margin-top:14px;z-index:1}
+.mpt .dice em{font:700 11px/1 Archivo,sans-serif;letter-spacing:.3em;color:#4A3D62;text-transform:uppercase;font-style:normal}
+.mpt .dice h1{margin:12px 0 0;font-family:Anton,sans-serif;font-weight:400;font-size:40px;line-height:.9;color:#15242D;text-transform:uppercase;text-wrap:balance}
+.mpt .dice .pts{margin:12px 0 0;font:500 13px/1 'IBM Plex Mono',monospace;color:#25404F}
+.mpt .medio{display:flex;align-items:center;gap:18px;margin-top:28px;z-index:1}
+.mpt .premio{flex:0 0 170px;height:170px;border:7px solid #FBF6EE;box-shadow:0 14px 30px rgba(21,36,45,.34);transform:rotate(-3deg);overflow:hidden}
+.mpt .premio img{width:100%;height:100%;object-fit:cover;display:block}
+.mpt .frase{flex:1;font-family:'EB Garamond',serif;font-style:italic;font-size:18px;color:#25404F;line-height:1.35}
+.mpt .marcas{display:flex;flex-wrap:wrap;gap:7px;margin-top:28px;z-index:1}
+.mpt .marcas i{width:34px;height:34px;border:3px solid rgba(21,36,45,.3);border-radius:999px;display:flex;align-items:center;justify-content:center;font-family:Anton,sans-serif;font-size:15px;color:#3E5666;font-style:normal;box-sizing:border-box}
+.mpt .marcas i.ok{background:#4A3D62;border-color:#4A3D62;color:#F3EAF9;transform:rotate(-5deg)}
+.mpt .otras{margin-top:26px;max-width:calc(100% - 150px);z-index:1}
+.mpt .otras .r{font:700 9px/1 Archivo,sans-serif;letter-spacing:.3em;color:#4A3D62;text-transform:uppercase}
+.mpt .otras .g{display:flex;align-items:baseline;gap:12px;padding:12px 0;border-bottom:1px solid rgba(21,36,45,.18)}
+.mpt .otras .g .n{flex:1;font-family:'EB Garamond',serif;font-size:15px;color:#25404F}
+.mpt .otras .g .d{font-family:Anton,sans-serif;font-size:15px;color:#4A3D62;white-space:nowrap}
+.mpt .otras .g.ya .n{color:#15242D;font-weight:600}
+.mpt .otras .g.ya .d{font:700 9px/1 Archivo,sans-serif;letter-spacing:.14em}
+.mpt .hist{all:unset;cursor:pointer;margin-top:18px;padding:12px 0;font-family:'EB Garamond',serif;font-size:15px;color:#15242D;text-decoration:underline;text-underline-offset:4px;z-index:1;align-self:flex-start}
+.mpt .pie{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:100%;max-width:480px;padding:12px 22px 16px;background:linear-gradient(transparent,#8CC8EC 30%);z-index:5;box-sizing:border-box}
+.mpt .go{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;background:#4A3D62;color:#FBF6EE;text-align:center;padding:18px 0;font:700 13px/1 Archivo,sans-serif;letter-spacing:.16em;text-transform:uppercase}
+.mpt .go:focus-visible,.mpt .hist:focus-visible,.mpt .sal:focus-visible{outline:2px solid #4A3D62;outline-offset:3px}
+.mpt .pie p{margin:8px 0 0;text-align:center;font:500 11px/1.3 'IBM Plex Mono',monospace;color:#25404F}
+.mph .otras.movs{max-width:none}
+.mph .otras .g .n s{display:block;text-decoration:none;font:500 11px/1.3 'IBM Plex Mono',monospace;color:#3E5666;margin-top:4px}
+.mph .otras .g.neg .d{color:#7A2E2E}
+.mph .cargando{margin-top:26px;font-style:italic;color:#25404F}
 /* ── LA APP EN PC Y LAPTOP (2026-09-30) ─────────────────────────────────────────────────
    El dueño: «para pc y laptop básicamente el app visualmente no sirve, sale recortada como si
    fuera en cel» — y pidió que NO sea otra maqueta: «debe ser pantalla adaptable». Hasta acá
