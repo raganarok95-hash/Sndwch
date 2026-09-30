@@ -1698,7 +1698,7 @@ function M15_PASAR(total:number,i:number,esSecreto:boolean,hayVault:boolean){
     var ultimoVault=hayVault&&k===total-1;
     marcas+='<i class="'+(k===i?'on':(ultimoVault?'vlt':''))+'"></i>';
   }
-  return'<div class="pasar" aria-hidden="true">'+marcas+'<em>'+(i===total-1?'Último':'Desliza')+'</em></div>';
+  return'<div class="pasar" aria-hidden="true">'+marcas+'<em>'+(i===total-1?'Último':'Baja ↓')+'</em></div>';
 }
 function sMundoSando(){
   var visibles=sigsEnOrden(SIGS.filter(function(x){return!x.secret&&sigAvailable(x);}));
@@ -1728,7 +1728,7 @@ function sMundoSando(){
     var hechos=Math.min(myTotal,secreto.minOrders);
     platoSecreto='<section class="plato v'+(abierto?' abierto':'')+'" aria-label="El sándwich secreto"><div class="forro"></div>'
       +'<div class="foto">'+(SIG_IMG[secreto.id]?'<img src="'+SIG_IMG[secreto.id]+'" alt="" loading="lazy">':'')+'<div class="baja"></div></div>'
-      +(abierto?'':'<img class="ojo sw-ojo" src="img/ojo-espiral.webp" alt="" aria-hidden="true">')
+      // El ojo espiral suelto sobre la foto borrosa se veía pegado (dueño 2026-09-30): se quitó.
       +'<div class="ficha"><div class="num">'+romano(total)+' de '+romano(total)+'<b>'+(abierto?'Abierto':'Cerrado')+'</b></div>'
       +'<h1>El sándwich<br>secreto</h1>'
       +'<div class="pitch">'+(abierto?'Ya es tuyo. Se revela cuando lo abres.':'No está en la carta. Cambia cada mes. No se dice qué lleva — se revela cuando lo pides.')+'</div>'

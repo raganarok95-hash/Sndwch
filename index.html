@@ -439,6 +439,10 @@ body.kb-open #app{padding-bottom:0}
 .pta .hs .cara{justify-content:flex-end}
 .pta .hw .cara{justify-content:flex-start}
 .pta .cara img{width:134%;max-height:100%;object-fit:contain;display:block;flex:0 0 auto}
+/* Cada mitad se ancla al CENTRO de la puerta: en pantallas altas la imagen se encoge dentro de su
+   caja y, centrada, dejaba un hueco entre las dos mitades de la cara (reportado por el dueño en su
+   celular, 2026-09-30). */
+.pta .hs .cara img{object-position:right center}.pta .hw .cara img{object-position:left center}
 .pta .txt{position:relative;padding:0 20px 34px}
 .pta .hs .txt{text-align:right}
 .pta .nom{font-size:10px;letter-spacing:.3em;font-weight:600;text-transform:uppercase}
@@ -468,20 +472,23 @@ body.kb-open #app{padding-bottom:0}
 .m15 .riel .c{all:unset;pointer-events:auto;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center}
 .m15 .riel .c span{width:30px;height:30px;border-radius:50%;background:#CBA258;color:#101B15;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}
 .m15 .riel .vacio{width:44px}
-.m15 .pistas{display:flex;height:100%;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none}
+/* Recorrido HACIA ABAJO (dueño 2026-09-30: «el scroll para la derecha se siente raro»). */
+.m15 .pistas{display:flex;flex-direction:column;height:100%;overflow-y:auto;overflow-x:hidden;scroll-snap-type:y mandatory;scrollbar-width:none;overscroll-behavior:contain}
 .m15 .pistas::-webkit-scrollbar{display:none}
-.m15 .plato{position:relative;flex:0 0 100%;height:100%;scroll-snap-align:start;overflow:hidden}
+/* La ficha y el precio se apilan de abajo hacia arriba en una columna: antes eran absolutos (ficha al
+   57%, precio a 74px del fondo) y un pitch largo o la letra grande del celular los encimaba. */
+.m15 .plato{position:relative;flex:0 0 100%;height:100%;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:0 20px 30px 22px;box-sizing:border-box}
 .m15 .foto{position:absolute;left:0;right:0;top:0;height:60%;overflow:hidden}
 .m15 .foto img{width:100%;height:100%;object-fit:cover;display:block}
 .m15 .foto .baja{position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,16,12,.55) 0%,transparent 28%,transparent 62%,#101B15 100%)}
 .m15 .forro{position:absolute;left:0;top:0;bottom:0;width:7px;background:#D8823C;z-index:6}
 .m15 .sirve{position:absolute;right:14px;top:calc(60% - 152px);width:104px;z-index:5;filter:drop-shadow(0 8px 20px rgba(0,0,0,.55))}
-.m15 .ficha{position:absolute;left:22px;right:20px;top:57%;z-index:4}
+.m15 .ficha{position:relative;z-index:4}
 .m15 .num{font-size:10px;letter-spacing:.34em;font-weight:600;color:#C9A87C;text-transform:uppercase}
 .m15 .num b{color:#D8823C;font-weight:600;margin-left:10px;letter-spacing:.2em}
 .m15 h1{font-family:'Bodoni Moda',serif;font-weight:640;font-size:44px;color:#F7F4EA;line-height:.96;margin:12px 0 0}
 .m15 .pitch{font-size:14px;color:#9BA890;line-height:1.55;margin-top:14px;max-width:31ch}
-.m15 .pie{position:absolute;left:22px;right:20px;bottom:74px;z-index:4}
+.m15 .pie{position:relative;z-index:4;margin-top:18px}
 .m15 .puno{height:9px;background:#26362C;margin-bottom:16px;background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.45) 0 2px,transparent 2px 6px)}
 .m15 .cuenta{display:flex;align-items:flex-end;justify-content:space-between;gap:14px}
 .m15 .cuenta .p{font-family:'Bodoni Moda',serif;font-weight:640;font-size:38px;color:#CBA258;line-height:.9}
@@ -489,7 +496,7 @@ body.kb-open #app{padding-bottom:0}
 .m15 .cuenta .b{all:unset;cursor:pointer;background:#CBA258;color:#101B15;padding:16px 28px;font-family:'Bodoni Moda',serif;font-weight:640;font-size:15px;flex:0 0 auto}
 .m15 .cuenta .b:focus-visible{outline:2px solid #F7F4EA;outline-offset:3px}
 .m15 .cuenta .b[disabled]{opacity:.5;cursor:default}
-.m15 .pasar{position:absolute;left:22px;right:20px;bottom:30px;display:flex;align-items:center;gap:7px;z-index:4}
+.m15 .pasar{position:relative;margin-top:26px;display:flex;align-items:center;gap:7px;z-index:4}
 .m15 .pasar i{height:3px;flex:1;background:#2B3B31;display:block}
 .m15 .pasar i.on{background:#F7F4EA}
 .m15 .pasar i.vlt{background:#4A3D62}
@@ -593,7 +600,9 @@ body.kb-open #app{padding-bottom:0}
 .m30{position:relative;min-height:100dvh;margin-bottom:calc(-1 * var(--sw-barra,0px));padding:0 26px 74px;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden}
 .m30 .sal{all:unset;cursor:pointer;position:absolute;top:8px;left:12px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#3A2710;z-index:40}
 .m30 .tit{padding-top:80px}
-.m30 .tit em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.26em;color:#7A5B33;text-transform:uppercase}
+.m30 .tit em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.26em;color:#4A3218;text-transform:uppercase}
+/* El estado vacío sobre el kraft: VACIO() trae colores de fondo oscuro, acá se leían a 1:1. */
+.m30 .vk div{color:#33230F !important}.m30 .vk p{color:#4A3218 !important}
 .m30 .tit b{display:block;font-family:Anton,sans-serif;font-weight:700;font-size:58px;line-height:.82;color:#3A2710;margin-top:11px;letter-spacing:-.025em;text-transform:uppercase}
 .m30 .papel{position:relative;margin-top:22px}
 .m30 .cinta{position:absolute;z-index:8;background:rgba(255,252,240,.5);width:96px;height:28px;border-left:1px solid rgba(255,255,255,.55);border-right:1px solid rgba(255,255,255,.55);top:-14px}
@@ -3644,7 +3653,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'c5e4cadc00';
+var APP_BUILD = '4aab831daa';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6833,7 +6842,7 @@ function M15_PASAR(total, i, esSecreto, hayVault) {
         var ultimoVault = hayVault && k === total - 1;
         marcas += '<i class="' + (k === i ? 'on' : (ultimoVault ? 'vlt' : '')) + '"></i>';
     }
-    return '<div class="pasar" aria-hidden="true">' + marcas + '<em>' + (i === total - 1 ? 'Último' : 'Desliza') + '</em></div>';
+    return '<div class="pasar" aria-hidden="true">' + marcas + '<em>' + (i === total - 1 ? 'Último' : 'Baja ↓') + '</em></div>';
 }
 function sMundoSando() {
     var visibles = sigsEnOrden(SIGS.filter(function (x) { return !x.secret && sigAvailable(x); }));
@@ -6863,7 +6872,7 @@ function sMundoSando() {
         var hechos = Math.min(myTotal, secreto.minOrders);
         platoSecreto = '<section class="plato v' + (abierto ? ' abierto' : '') + '" aria-label="El sándwich secreto"><div class="forro"></div>'
             + '<div class="foto">' + (SIG_IMG[secreto.id] ? '<img src="' + SIG_IMG[secreto.id] + '" alt="" loading="lazy">' : '') + '<div class="baja"></div></div>'
-            + (abierto ? '' : '<img class="ojo sw-ojo" src="img/ojo-espiral.webp" alt="" aria-hidden="true">')
+            // El ojo espiral suelto sobre la foto borrosa se veía pegado (dueño 2026-09-30): se quitó.
             + '<div class="ficha"><div class="num">' + romano(total) + ' de ' + romano(total) + '<b>' + (abierto ? 'Abierto' : 'Cerrado') + '</b></div>'
             + '<h1>El sándwich<br>secreto</h1>'
             + '<div class="pitch">' + (abierto ? 'Ya es tuyo. Se revela cuando lo abres.' : 'No está en la carta. Cambia cada mes. No se dice qué lleva — se revela cuando lo pides.') + '</div>'
@@ -8927,7 +8936,7 @@ function sOCart() {
     if (!cart.length) {
         return '<div class="m30 kraft fi"><button class="sal" onclick="go(\'o_home\')" aria-label="Volver">←</button>'
             + '<div class="tit"><em>Todavía nada</em><b>Tu pedido<br>está vacío</b></div>'
-            + VACIO('Carrito vacío', 'Elige un Signature o arma el tuyo — todo se junta acá antes de pagar.', null, 'piensa') + '</div>';
+            + '<div class="vk">' + VACIO('Carrito vacío', 'Elige un Signature o arma el tuyo — todo se junta acá antes de pagar.', null, 'piensa') + '</div></div>';
     }
     var d = cartDesglose();
     var envio = deliveryFeeAmount();
