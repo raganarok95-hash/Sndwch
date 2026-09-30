@@ -1293,6 +1293,7 @@ body.kb-open #app{padding-bottom:0}
         p30: 32.9,
         queso: "C02",
         foto: "img/sig09.jpg",
+        fotoVertical: "img/sig09_v.webp",
         pitch: "Res laminada fina, salteada al momento con cebolla y pimiento, y cheddar fundido encima. Sin salsa: no le hace falta."
       },
       {
@@ -1308,6 +1309,7 @@ body.kb-open #app{padding-bottom:0}
         p30: 28.9,
         queso: "C01",
         foto: "img/sig02.jpg",
+        fotoVertical: "img/sig02_v.webp",
         pitch: "Para la noche en que ya decidiste que no vas a cocinar. Albóndigas hechas acá, cocidas dentro de su propia marinara, con queso americano derretido hasta el borde. Se come con las dos manos y con servilleta al lado."
       },
       {
@@ -1322,6 +1324,7 @@ body.kb-open #app{padding-bottom:0}
         p15: 23.9,
         p30: 34.9,
         foto: "img/sig10.jpg",
+        fotoVertical: "img/sig10_v.webp",
         pitch: "Pavo horneado en lonjas finas, con lechuga, tomate, cebolla y pimiento, terminado con aceite y vinagre."
       },
       {
@@ -1337,6 +1340,7 @@ body.kb-open #app{padding-bottom:0}
         p30: 36.9,
         queso: "C02",
         foto: "img/sig12.jpg",
+        fotoVertical: "img/sig12_v.webp",
         pitch: "El Classic Tuna con cheddar fundido encima: atún en lascas gruesas, mayonesa y pimienta blanca, y el queso que lo junta todo."
       },
       {
@@ -1352,6 +1356,7 @@ body.kb-open #app{padding-bottom:0}
         p30: 33.9,
         queso: "C01",
         foto: "img/sig11.jpg",
+        fotoVertical: "img/sig11_v.webp",
         pitch: "Embutidos italianos en pliegues, queso americano, lechuga, tomate, cebolla y pimiento, con oil & vinegar, como en los delis de siempre."
       },
       {
@@ -1366,6 +1371,7 @@ body.kb-open #app{padding-bottom:0}
         p15: 20.9,
         p30: 34.9,
         foto: "img/sig04.jpg",
+        fotoVertical: "img/sig04_v.webp",
         pitch: "Para comer en el escritorio con una mano, sin que se desarme entre bocado y bocado: no lleva nada suelto adentro. Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Nada más."
       },
       {
@@ -1381,6 +1387,7 @@ body.kb-open #app{padding-bottom:0}
         p15: 24.9,
         p30: 30.9,
         foto: "img/sig05.jpg",
+        fotoVertical: "img/sig05_v.webp",
         pitch: "Solo para clientes iniciados. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo."
       }
     ]
@@ -1471,6 +1478,7 @@ body.kb-open #app{padding-bottom:0}
       })),
       SIDES: c2.bebidas.map((x2) => ({ id: x2.id, l: x2.nombre, s: x2.sabor, p: x2.precio, d: x2.desc, icon: x2.icono })),
       SIG_IMG: foto(c2.signatures),
+      SIG_IMG_V: Object.fromEntries(c2.signatures.filter((x2) => x2.fotoVertical).map((x2) => [x2.id, x2.fotoVertical])),
       PROT_IMG: foto(c2.proteinas),
       DRINK_IMG: foto(c2.bebidas),
       /** Posición de cada Signature en la carta, para ordenar lo que llega de la base. */
@@ -2646,6 +2654,14 @@ function sigTypeTag(tag) {
 // Turkey (SIG10) y Tuna Melt (SIG12) todavía no tienen foto: se pintan sin ella, a la misma
 // altura (ver FUENTES.md, «las dos que faltan»).
 var SIG_IMG = CARTA_VIEJA.SIG_IMG;
+// La foto del plato en el Mundo SANDO (2026-09-30): allí el recuadro es VERTICAL y la foto
+// apaisada solo dejaba ver el centro del pan. `sigNN_v.webp` muestra el sándwich entero (ver
+// scripts/tratar_fotos.py). Si el panel cambió la foto de un Signature, manda la del panel:
+// la vertical es de la foto vieja y mostraría otro sándwich.
+function fotoDelPlato(id) {
+    var v = CARTA_VIEJA.SIG_IMG_V[id];
+    return v && SIG_IMG[id] === CARTA_VIEJA.SIG_IMG[id] ? v : (SIG_IMG[id] || '');
+}
 // Fotos reales de cada proteína en ARMA EL TUYO — igual que SIG_IMG arriba, solo se
 // muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
 // proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
@@ -3653,7 +3669,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '4aab831daa';
+var APP_BUILD = '025512f393';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6853,7 +6869,7 @@ function sMundoSando() {
         var av = sigInStock(s);
         var marca = s.recommended ? 'La estrella' : (sigBadge(s) || '');
         return '<section class="plato" aria-label="' + esc(s.n) + '"><div class="forro"></div>'
-            + '<div class="foto">' + (SIG_IMG[s.id] ? '<img src="' + SIG_IMG[s.id] + '" alt="" ' + (i > 0 ? 'loading="lazy"' : '') + (av ? '' : ' style="filter:grayscale(1)"') + '>' : '') + '<div class="baja"></div></div>'
+            + '<div class="foto">' + (fotoDelPlato(s.id) ? '<img src="' + fotoDelPlato(s.id) + '" alt="" ' + (i > 0 ? 'loading="lazy"' : '') + (av ? '' : ' style="filter:grayscale(1)"') + '>' : '') + '<div class="baja"></div></div>'
             + '<img class="sirve" src="' + sirve + '" alt="" aria-hidden="true">'
             + '<div class="ficha"><div class="num">' + romano(i + 1) + ' de ' + romano(visibles.length) + (marca ? '<b>' + esc(marca) + '</b>' : '') + '</div>'
             + '<h1>' + esc(s.n) + '</h1><div class="pitch">' + esc(s.pitch || '') + '</div></div>'
@@ -6871,7 +6887,7 @@ function sMundoSando() {
         var abierto = !!cust && falta === 0;
         var hechos = Math.min(myTotal, secreto.minOrders);
         platoSecreto = '<section class="plato v' + (abierto ? ' abierto' : '') + '" aria-label="El sándwich secreto"><div class="forro"></div>'
-            + '<div class="foto">' + (SIG_IMG[secreto.id] ? '<img src="' + SIG_IMG[secreto.id] + '" alt="" loading="lazy">' : '') + '<div class="baja"></div></div>'
+            + '<div class="foto">' + (fotoDelPlato(secreto.id) ? '<img src="' + fotoDelPlato(secreto.id) + '" alt="" loading="lazy">' : '') + '<div class="baja"></div></div>'
             // El ojo espiral suelto sobre la foto borrosa se veía pegado (dueño 2026-09-30): se quitó.
             + '<div class="ficha"><div class="num">' + romano(total) + ' de ' + romano(total) + '<b>' + (abierto ? 'Abierto' : 'Cerrado') + '</b></div>'
             + '<h1>El sándwich<br>secreto</h1>'

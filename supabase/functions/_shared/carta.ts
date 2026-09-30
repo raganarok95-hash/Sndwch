@@ -85,6 +85,8 @@ export type Signature = {
   /** El cliente puede quitarle o elegirle el queso. */
   quesoOpcional?: boolean;
   foto?: string;
+  /** La misma foto en vertical, para el Mundo SANDO (la genera scripts/tratar_fotos.py). */
+  fotoVertical?: string;
   /** Posición en la carta (de menor a mayor). */
   orden: number;
   /** El que se recomienda primero: el que más deja por unidad. */
@@ -186,19 +188,19 @@ export const CARTA: Carta = {
   // Orden de la carta v4: la estrella primero (Philly, la mayor contribución por unidad), y
   // después alternando lo caliente y lo frío para que la carta no se lea como dos bloques.
   signatures: [
-    { id: "SIG09", nombre: "Philly Cheesesteak", tipo: "Signature", orden: 1, estrella: true, pan: "B01", prot: "P09", vegetales: ["T10", "T06"], salsas: [], p15: 22.9, p30: 32.9, queso: "C02", foto: "img/sig09.jpg",
+    { id: "SIG09", nombre: "Philly Cheesesteak", tipo: "Signature", orden: 1, estrella: true, pan: "B01", prot: "P09", vegetales: ["T10", "T06"], salsas: [], p15: 22.9, p30: 32.9, queso: "C02", foto: "img/sig09.jpg", fotoVertical: "img/sig09_v.webp",
       pitch: "Res laminada fina, salteada al momento con cebolla y pimiento, y cheddar fundido encima. Sin salsa: no le hace falta." },
-    { id: "SIG02", nombre: "Meatball Marinara", tipo: "Signature", orden: 2, pan: "B01", prot: "P06", vegetales: ["T01", "T03"], salsas: ["S06"], p15: 21.9, p30: 28.9, queso: "C01", foto: "img/sig02.jpg",
+    { id: "SIG02", nombre: "Meatball Marinara", tipo: "Signature", orden: 2, pan: "B01", prot: "P06", vegetales: ["T01", "T03"], salsas: ["S06"], p15: 21.9, p30: 28.9, queso: "C01", foto: "img/sig02.jpg", fotoVertical: "img/sig02_v.webp",
       pitch: "Para la noche en que ya decidiste que no vas a cocinar. Albóndigas hechas acá, cocidas dentro de su propia marinara, con queso americano derretido hasta el borde. Se come con las dos manos y con servilleta al lado." },
-    { id: "SIG10", nombre: "Turkey", tipo: "Signature", orden: 3, pan: "B01", prot: "P08", vegetales: ["T09", "T01", "T03", "T06"], salsas: ["S06"], p15: 23.9, p30: 34.9, foto: "img/sig10.jpg",
+    { id: "SIG10", nombre: "Turkey", tipo: "Signature", orden: 3, pan: "B01", prot: "P08", vegetales: ["T09", "T01", "T03", "T06"], salsas: ["S06"], p15: 23.9, p30: 34.9, foto: "img/sig10.jpg", fotoVertical: "img/sig10_v.webp",
       pitch: "Pavo horneado en lonjas finas, con lechuga, tomate, cebolla y pimiento, terminado con aceite y vinagre." },
-    { id: "SIG12", nombre: "Tuna Melt", tipo: "Signature", orden: 4, pan: "B01", prot: "P04", vegetales: [], salsas: [], p15: 22.9, p30: 36.9, queso: "C02", foto: "img/sig12.jpg",
+    { id: "SIG12", nombre: "Tuna Melt", tipo: "Signature", orden: 4, pan: "B01", prot: "P04", vegetales: [], salsas: [], p15: 22.9, p30: 36.9, queso: "C02", foto: "img/sig12.jpg", fotoVertical: "img/sig12_v.webp",
       pitch: "El Classic Tuna con cheddar fundido encima: atún en lascas gruesas, mayonesa y pimienta blanca, y el queso que lo junta todo." },
-    { id: "SIG11", nombre: "Italian Hoagie", tipo: "Signature", orden: 5, pan: "B01", prot: "P05", vegetales: ["T09", "T01", "T03", "T06"], salsas: ["S06"], p15: 23.9, p30: 33.9, queso: "C01", foto: "img/sig11.jpg",
+    { id: "SIG11", nombre: "Italian Hoagie", tipo: "Signature", orden: 5, pan: "B01", prot: "P05", vegetales: ["T09", "T01", "T03", "T06"], salsas: ["S06"], p15: 23.9, p30: 33.9, queso: "C01", foto: "img/sig11.jpg", fotoVertical: "img/sig11_v.webp",
       pitch: "Embutidos italianos en pliegues, queso americano, lechuga, tomate, cebolla y pimiento, con oil & vinegar, como en los delis de siempre." },
-    { id: "SIG04", nombre: "Classic Tuna", tipo: "Signature", orden: 6, pan: "B01", prot: "P04", vegetales: [], salsas: [], p15: 20.9, p30: 34.9, foto: "img/sig04.jpg",
+    { id: "SIG04", nombre: "Classic Tuna", tipo: "Signature", orden: 6, pan: "B01", prot: "P04", vegetales: [], salsas: [], p15: 20.9, p30: 34.9, foto: "img/sig04.jpg", fotoVertical: "img/sig04_v.webp",
       pitch: "Para comer en el escritorio con una mano, sin que se desarme entre bocado y bocado: no lleva nada suelto adentro. Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Nada más." },
-    { id: "SIG05", nombre: "Menú secreto", tipo: "Reserve", orden: 99, secreto: { minPedidos: 3 }, pan: "B03", prot: "P03", vegetales: ["T04", "T06", "T03"], salsas: ["S02", "S12"], p15: 24.9, p30: 30.9, foto: "img/sig05.jpg",
+    { id: "SIG05", nombre: "Menú secreto", tipo: "Reserve", orden: 99, secreto: { minPedidos: 3 }, pan: "B03", prot: "P03", vegetales: ["T04", "T06", "T03"], salsas: ["S02", "S12"], p15: 24.9, p30: 30.9, foto: "img/sig05.jpg", fotoVertical: "img/sig05_v.webp",
       pitch: "Solo para clientes iniciados. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo." },
   ],
 };

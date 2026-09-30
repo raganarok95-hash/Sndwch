@@ -209,6 +209,14 @@ function sigTypeTag(tag){
 // Turkey (SIG10) y Tuna Melt (SIG12) todavía no tienen foto: se pintan sin ella, a la misma
 // altura (ver FUENTES.md, «las dos que faltan»).
 var SIG_IMG:Record<string,string>=CARTA_VIEJA.SIG_IMG;
+// La foto del plato en el Mundo SANDO (2026-09-30): allí el recuadro es VERTICAL y la foto
+// apaisada solo dejaba ver el centro del pan. `sigNN_v.webp` muestra el sándwich entero (ver
+// scripts/tratar_fotos.py). Si el panel cambió la foto de un Signature, manda la del panel:
+// la vertical es de la foto vieja y mostraría otro sándwich.
+function fotoDelPlato(id:string):string{
+  var v=CARTA_VIEJA.SIG_IMG_V[id];
+  return v&&SIG_IMG[id]===CARTA_VIEJA.SIG_IMG[id]?v:(SIG_IMG[id]||'');
+}
 // Fotos reales de cada proteína en ARMA EL TUYO — igual que SIG_IMG arriba, solo se
 // muestra la miniatura para los códigos que ya tengan un archivo real en img/. Las
 // proteínas sin entrada aquí siguen mostrando la tarjeta sin foto (sin placeholder falso).
