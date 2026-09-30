@@ -1739,10 +1739,28 @@ function M15_PASAR(total:number,i:number,esSecreto:boolean,hayVault:boolean){
   }
   return'<div class="pasar" aria-hidden="true">'+marcas+'<em>'+(i===total-1?'Último':'Baja ↓')+'</em></div>';
 }
+// EL PLATO DEL PEDIDO EN GRUPO (dueño 2026-09-30: «los pedidos grupales son de los que más
+// suman»; «en la 2 mejor pon solo el logo en grande»). Va segundo, justo después de la estrella:
+// nadie lo pasa de largo. El pack de 5 es el mismo grupo llenado por una sola persona. La regla
+// (desde cuántos, cuál va gratis) sale de la carta.
+function platoGrupo(total:number,hayVault:boolean):string{
+  return'<section class="plato kraft grupo" aria-label="Pedido en grupo"><div class="forro"></div>'
+    +'<div class="logo" aria-hidden="true"><img src="img/marca/avatar-1024-transparente.png" alt=""></div>'
+    +'<div class="ficha"><div class="num">Para varios</div>'
+    +'<h1>Pedido en grupo</h1><div class="pitch">Mandas un enlace y cada uno elige el suyo desde su celular, Signature o armado. Tú pagas una vez y llega todo junto.</div>'
+    +'<div class="regla">Desde '+ORGANIZER_FREE_MIN_SANDWICHES+' sándwiches, el más barato va gratis</div></div>'
+    +'<div class="pie"><div class="cuenta">'
+    +'<button class="solo" onclick="empezarGrupo()">O llénalo tú: pack de '+ORGANIZER_FREE_MIN_SANDWICHES+'</button>'
+    +'<button class="b" onclick="empezarGrupo()">Armar el grupo</button>'
+    +'</div></div>'
+    +M15_PASAR(total,1,false,hayVault)
+    +'</section>';
+}
 function sMundoSando(){
   var visibles=sigsEnOrden(SIGS.filter(function(x){return!x.secret&&sigAvailable(x);}));
   var secreto=SIGS.find(function(s){return s.secret;});
-  var total=visibles.length+(secreto?1:0);
+  // +1: el plato del pedido en grupo, que va segundo (ver platoGrupo).
+  var total=visibles.length+1+(secreto?1:0);
   var sirve=broPose('sando','cuerpo');
   var platos=visibles.map(function(s,i){
     var av=sigInStock(s);
@@ -1759,8 +1777,9 @@ function sMundoSando(){
       +'<div class="p">'+SOLES_TXT+pz(s.p15)+'<s>30CM · '+SOLES_TXT+pz(s.p30)+'</s></div>'
       +(av?'<button class="b" onclick="startOrderWithSig(\''+s.id+'\')">Lo quiero</button>':'<button class="b" disabled>Agotado</button>')
       +'</div></div>'
-      +M15_PASAR(total,i,false,!!secreto)
-      +'</section>';
+      +M15_PASAR(total,i===0?0:i+1,false,!!secreto)
+      +'</section>'
+      +(i===0?platoGrupo(total,!!secreto):'');
   }).join('');
   var platoSecreto='';
   if(secreto){
