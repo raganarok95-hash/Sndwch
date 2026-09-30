@@ -1,56 +1,43 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, pedirUnSignature } from './helpers';
 import { nombreDe, unaBebida } from './carta';
 
 const BEBIDA = unaBebida();
 
-// Una bebida se tenía que poder comprar sola, y no se podía llegar a ella.
+// LAS BEBIDAS SE VEN Y SE ENTRA DIRECTO, PERO VAN CON UN SÁNDWICH (dueño, 2026-09-30).
 //
-// El checkout NUNCA exigió un sándwich — solo mira `cart.length` —, así que un pedido de
-// pura bebida ya funcionaba de punta a punta. Lo que no existía era el camino: el único
-// acceso a las bebidas era un botón DENTRO de la pantalla del carrito, o sea que para
-// comprar una bebida había que armar un sándwich primero. El dueño lo reportó probando
-// la app.
+// Hasta hoy esta prueba exigía lo contrario —«se puede pedir una bebida sola»—, por un pedido
+// anterior del dueño y porque las bebidas son lo de mejor margen. El 2026-09-30 lo decidió de
+// nuevo, con las dos opciones delante: «No, solo con sándwich». Se entra a las bebidas y se
+// ven sin armar nada; lo que no se puede es PAGAR un pedido que solo trae bebidas. El servidor
+// lo exige igual (assertTraeSandwich en orders.ts, probado en tests-api/solo-bebidas.test.ts).
 //
-// Importa por plata, no por comodidad: las infusiones cuestan 19-32% de su precio contra
-// ~45% de un sándwich, así que son el ítem de mejor margen del catálogo. Esconderlas
-// detrás de otra compra era regalar la venta más rentable.
-//
-// ⚠ EL MODO DE FALLO DE ESTO ES SILENCIO. Si alguien quita la pestaña, no revienta nada:
-// las bebidas simplemente vuelven a ser inalcanzables y la app se ve perfectamente bien.
-// Por eso la prueba fija el CAMINO COMPLETO — llegar, agregar, y pagar sin sándwich — y
-// no solo que el botón exista.
+// Modo de fallo: silencio en los dos sentidos. Si el aviso desaparece, un pedido de pura bebida
+// llega al servidor y rebota ahí, al final; si el aviso sale tarde, el cliente llena dirección y
+// datos para enterarse al último de que no puede pagar.
 
-test('se puede pedir una bebida sola, sin armar ningún sándwich', async ({ page }) => {
+test('solo con bebidas no se llega a pagar, y el aviso sale antes de pedir dirección', async ({ page }) => {
   const calls = await gotoApp(page, {});
-
-  // 1 · Llegar. La pestaña vive en el menú, al lado de los Signatures y ARMA EL TUYO.
-  await page.getByRole('button', { name: 'Bebidas' }).click();
+  // La entrada directa a las bebidas se restituye con su maqueta; mientras tanto se entra igual
+  // que ese botón: a la pantalla de bebidas, sin armar nada.
+  await page.evaluate(() => (window as any).irABebidas('o_home'));
   await expect(page.getByText(nombreDe(BEBIDA), { exact: false }).first()).toBeVisible();
+  await page.evaluate((id) => { (window as any).bebidaSel = id; (window as any).agregarBebidaElegida(); }, BEBIDA);
 
-  // 2 · Agregar, sin pasar por el armador.
-  await page.locator(`[onclick*="addSideToCart('${BEBIDA}')"]`).first().click();
-
-  // 3 · El carrito acepta un pedido que no lleva ni un sándwich. Se llega por la tarjeta
-  // del home, que aparece recién cuando el carrito tiene algo — o sea que su sola
-  // presencia ya prueba que la bebida entró sin pasar por el armador.
-  await page.locator('[onclick*="o_cart"]').first().click();
-  await expect(page.getByText(nombreDe(BEBIDA), { exact: false }).first()).toBeVisible();
-
-  // Y el botón de pagar queda habilitado: si algún día alguien agrega una guarda de
-  // "mínimo un sándwich", esto falla acá en vez de en producción.
-  const pagar = page.locator('[onclick*="doOrder()"]');
-  await expect(pagar.first()).toBeVisible();
-  expect(calls.length).toBeGreaterThan(0);
+  await page.evaluate(() => (window as any).go('o_cart'));
+  await page.locator('.m30').waitFor();
+  await page.locator('.m30-go .oro').click();
+  // Se queda en la 30G con el aviso: ni la 34 (dirección) ni la hoja de datos, ni un pedido.
+  await expect(page.getByText('Las bebidas van con un sándwich', { exact: false }).first()).toBeVisible();
+  await expect(page.locator('.m34')).toHaveCount(0);
+  await expect(page.locator('.m31')).toHaveCount(0);
+  expect(calls.find((c) => c.action === 'place-order' || c.action === 'prepare-order')).toBeFalsy();
 });
 
-// La promesa se dice en la pantalla, no solo se cumple en el código: alguien que llega a
-// la pestaña tiene que saber que puede pedir la bebida sola, o va a armar un sándwich
-// igual "por si acaso".
-test('la pestaña dice que la bebida se puede pedir sola', async ({ page }) => {
+test('con un sándwich, la bebida sí se paga', async ({ page }) => {
   await gotoApp(page, {});
-  // Desde el rediseño la promesa va en la tarjeta de bebidas del inicio —«Se piden solas o con
-  // tu sándwich»—, que es donde el cliente decide si entra. Antes era otra frase en la pestaña.
-  const tarjeta = page.locator('button[onclick^="irABebidas("]').first();
-  await expect(tarjeta).toContainText(/se piden solas/i);
+  await pedirUnSignature(page, { size: '15' });
+  await page.evaluate((id) => (window as any).addSideToCart(id), BEBIDA);
+  await page.locator('.m30-go .oro').click();
+  await expect(page.getByText('Las bebidas van con un sándwich', { exact: false })).toHaveCount(0);
 });

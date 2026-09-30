@@ -3644,7 +3644,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'b182ff2660';
+var APP_BUILD = '322ac93817';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -9091,7 +9091,19 @@ async function hojaListo() {
     render();
 }
 // PAGAR: lo que falta se resuelve donde vive (la 34 o la hoja de RECIBE); después la 31.
+var FALTA_SANDWICH = 'Las bebidas van con un sándwich: agrega uno para pedir.';
+function faltaSandwich() { return cart.length > 0 && !cart.some(function (it) { return it.type !== 'side'; }); }
 function irAPagar() {
+    // Antes de pedir dirección o datos: a quien solo lleva bebidas no se le hace llenar todo para
+    // decirle al final que no puede pagar.
+    if (faltaSandwich()) {
+        var e0 = document.getElementById('o-err');
+        if (e0)
+            e0.textContent = FALTA_SANDWICH;
+        else
+            showToast(FALTA_SANDWICH, 'error');
+        return;
+    }
     if (!direccionLista()) {
         go('o_dir');
         return;
@@ -9224,6 +9236,10 @@ var _pendingOrder = null;
 function problemaDelPedido() {
     if (!cart.length)
         return 'Tu pedido está vacío.';
+    // Las bebidas se ven y se entra a ellas directo, pero van con un sándwich (dueño, 2026-09-30).
+    // El servidor lo exige igual (assertTraeSandwich en orders.ts): esto solo lo avisa antes.
+    if (faltaSandwich())
+        return FALTA_SANDWICH;
     if (!confNom.trim())
         return 'Falta a nombre de quién va el pedido.';
     if (!addrText.trim())

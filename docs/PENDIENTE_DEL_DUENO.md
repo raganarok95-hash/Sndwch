@@ -11,6 +11,13 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 
 ---
 
+> **Verificado el 2026-09-30 contra producción** (no por lectura del código): los **42 crons están
+> activos**; el servidor ya devuelve `metaPixelId`, la llave de Google Maps y el `googleClientId`,
+> así que **P5 y P23 están hechos** (los tokens de Meta que solo usa el servidor —CAPI, página— no
+> se ven desde fuera: el dueño confirma que están puestos). El **QR de Yape** que el dueño mandó ese
+> día es el mismo que ya usa la app (`img/yape-qr.png`, mismo contenido decodificado). Sigue
+> `businessLaunched: false`: se activa al abrir. P14 (rotar el secreto de cron) no se pudo verificar.
+
 ## 1. Antes de abrir — sin esto no se puede operar
 
 | # | Qué | Por qué importa |

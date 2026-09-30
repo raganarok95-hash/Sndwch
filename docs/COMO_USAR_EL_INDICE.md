@@ -19,7 +19,7 @@ cargar toda la historia, y encuentra lo que necesita por búsqueda.
 
 ### 1 · Al empezar una sesión
 Cada sesión en la nube es un contenedor NUEVO: el índice y su modelo (2 GB) no vienen con el repo.
-Primero se lanza, **en segundo plano**, lo que los deja listos (máquina, no tokens; ~20-30 min):
+Primero se lanza, **en segundo plano**, lo que los deja listos (máquina, no tokens; ~20 min en CPU):
 ```
 bash scripts/preparar-indice.sh      # idempotente: instala, baja el modelo y reindexa lo que falte
 ```
@@ -62,9 +62,12 @@ no se indexa.
 
 ### 5 · Reindexar
 ```
-npm run indice                     # incremental, por tandas, solo lo cambiado; en segundo plano
+npm run indice                     # docs/ (hechos, sesiones y el resto), incremental; en segundo plano
 python3 scripts/indice.py --forzar # SOLO si cambió .knowledge-rag/config.yaml (exclusiones o categorías)
+python3 scripts/indice.py --todo   # también el código: HORAS en CPU; casi nunca vale la pena
 ```
+**El índice cubre `docs/`, no el código.** En CPU, indexar el repo entero no terminó en una hora;
+para el código, `grep -n` es exacto y gratis. Lo que ahorra contexto es ubicar datos y memoria.
 Tras commitear un bloque de docs o código. Cuesta máquina (~4 GB de RAM de pico, minutos), no tokens:
 se lanza en segundo plano con `run_in_background` y no se mira su salida más que la última línea.
 

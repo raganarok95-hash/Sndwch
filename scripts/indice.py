@@ -10,8 +10,11 @@ EN TANDAS (2026-09-25). Todo el repo de una vez muere por memoria en el contened
 fragmentos, no de a 500. Una tanda que muere no se lleva a las demás, y al volver a correr solo
 se procesa lo que quedó pendiente. `--tanda docs` corre una sola.
 
-La poda de archivos borrados (lo que ya no existe en el repo) solo se hace en la corrida
-completa sin --tanda: podar con la lista de UNA carpeta borraría del índice todas las demás.
+SOLO docs/ POR DEFECTO (2026-09-30). En CPU, indexar docs/ (36 archivos) tomó 18 minutos y el
+repo entero no terminó en una hora. Lo que ahorra contexto es ubicar DATOS de negocio y memoria
+(docs/hechos, docs/sesiones, el resto de docs/); para el código, `grep` es exacto y gratis. La
+corrida por defecto indexa docs/ y poda todo lo demás del índice. `--todo` indexa también el código
+(TANDAS) con la poda al final; `--tanda X` corre una sola carpeta sin podar.
 
 ⚠ Nunca correr `knowledge-rag` a secas: sin KNOWLEDGE_RAG_DIR arranca con la configuración por
 defecto, crea data/ y documents/ en la raíz del repo y se queda vigilando cambios.
@@ -59,9 +62,19 @@ def indexar(carpeta):
 sola = arg("--tanda")
 if sola:
     indexar(sola)
-else:
+elif "--todo" in sys.argv:
     for c in TANDAS:
         indexar(c)
     # Lo que no cae en ninguna carpeta (raíz, docs sueltos) y la poda de lo borrado. A esta
     # altura casi todo ya está al día, así que esta pasada solo procesa lo que falta.
     indexar(None)
+else:
+    # Solo docs/, CON poda: lo que no es docs/ sale del índice (ver la explicación de arriba).
+    orq.parser.parse_directory = lambda directory=None: leer_todo(Path(RAIZ) / "docs")
+    orq._prune_orphan_documents = podar
+    t = time.time()
+    res = orq.index_all(force=forzar)
+    res["tanda"] = "docs (con poda)"
+    res["segundos"] = round(time.time() - t)
+    res["memoria_max_mb"] = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss // 1024
+    print(json.dumps({k: res[k] for k in ("tanda", "total_files", "indexed", "updated", "skipped", "deleted", "errors", "segundos", "memoria_max_mb") if k in res}, ensure_ascii=False), flush=True)

@@ -130,6 +130,7 @@ Por cada par sándwich + bebida el pedido cuesta S/1 menos (el combo).
 ## Pago
 - Yape por defecto (sin recargo). Con tarjeta (Culqi) el ENVÍO se cobra ÷ (1 − 0.055) para que la comisión no se coma lo del motorizado; la comisión sobre la comida la absorbe el margen.
 - Reportar un problema: hasta **48 h** después de la entrega.
+- Un pedido lleva **al menos un sándwich**: las bebidas se ven y se entra a ellas directo, pero no se paga un pedido de solo bebidas (dueño, 2026-09-30; `assertTraeSandwich` en `api/actions/orders.ts`).
 
 ## Descuentos del dinero (`dinero.ts`)
 - Combo: −S/1 por cada par sándwich + bebida.
@@ -309,6 +310,7 @@ abierto, no hay un solo pedido real. Supuestos y resultados: `PREDICCION_V14.md`
 ## Pago
 - Yape por defecto (sin recargo). Con tarjeta (Culqi) el ENVÍO se cobra ÷ (1 − 0.055) para que la comisión no se coma lo del motorizado; la comisión sobre la comida la absorbe el margen.
 - Reportar un problema: hasta **48 h** después de la entrega.
+- Un pedido lleva **al menos un sándwich**: las bebidas se ven y se entra a ellas directo, pero no se paga un pedido de solo bebidas (dueño, 2026-09-30; `assertTraeSandwich` en `api/actions/orders.ts`).
 
 ## Descuentos del dinero (`dinero.ts`)
 - Combo: −S/1 por cada par sándwich + bebida.

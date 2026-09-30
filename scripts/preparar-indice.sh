@@ -4,7 +4,7 @@
 # Cada sesión en la nube arranca en un contenedor limpio: el índice (.knowledge-rag/data) y el
 # modelo (.knowledge-rag/models_cache, 2 GB) están ignorados por git y NO vienen con el repo.
 # Este script es idempotente: instala solo lo que falta, baja el modelo solo si no está, y
-# reindexa de forma incremental. Cuesta máquina (descarga + ~20-30 min de CPU), no tokens: se
+# reindexa docs/ de forma incremental. Cuesta máquina (descarga + ~20 min de CPU), no tokens: se
 # lanza en segundo plano al empezar la sesión. Mientras corre, docs/sesiones/ y docs/hechos/ se
 # leen igual: son archivos, no dependen del índice.
 set -euo pipefail
