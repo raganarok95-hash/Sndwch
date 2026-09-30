@@ -168,65 +168,65 @@ function sPOrders(){
     +'</div>';
 }
 var _sndOd=null;
+// ── DETALLE DE UN PEDIDO (maqueta aprobada `detalle-de-un-pedido.png`, «me agradan, aprobadas»).
+// El recibo kraft: arriba lo que pasó con la hora («Llegó a las 7:52 p.m.»), la caja de lo
+// pedido / prometido / llegado, cada línea con su precio y abajo lo que se puede hacer.
+// ⚠ LA CUENTA TIENE QUE PODER SEGUIRSE: cada línea usa el `precio` que el servidor guardó ESE
+// día (catalog.ts, deriveCart). Un pedido anterior a eso no lo trae y entonces no se muestran
+// precios por línea: recalcular con la carta de hoy sería un número que el cliente no pagó.
+// Los descuentos (combo, recompensa, código) salen de la resta, no de otra cuenta.
+var MEDIO_DE_PAGO:any={yape:'Yape',plin:'Plin',card:'tarjeta',transfer:'transferencia',credit:'crédito'};
+function titularDelPedido(o:any):string{
+  if(o.status==='CANCELADO')return'Se canceló';
+  if(o.status==='ENTREGADO')return o.delivered_at?'Llegó a las '+horaLima(Date.parse(o.delivered_at)):'Llegó';
+  return(STATUSES[o.status]?STATUSES[o.status].label:String(o.status||''));
+}
+// En un recibo todo monto lleva sus dos decimales («5.00», no «5»), como en la maqueta.
+function montoFmt(n:number):string{return money(n).toFixed(2);}
 function sOrdDetail(){
-  var o=myOrders.find(function(x){return x.id==_sndOd||x.id===_sndOd;});
+  var o=myOrders.find(function(x){return mismoId(x.id,_sndOd);});
   if(!o)return sPOrders();
-  var ci=STEPS.indexOf(o.status);
-  // ── ETIQUETA ──────────────────────────────────────────────────────────────────────
-  // De todas las pantallas de la app, ÉSTA es la que el dueño describió cuando dijo
-  // "etiqueta, pero solo para los recibos de pago": un pedido que ya se pagó, mirado
-  // después. No es una tarjeta de producto ni un formulario — es el comprobante.
-  //
-  // ⚠ LA CUENTA TIENE QUE PODER SEGUIRSE, y acá casi no se podía: se mostraba un número
-  // grande y nada más. `total` INCLUYE el envío, así que sin separarlo el cliente ve un
-  // monto que no coincide con lo que recuerda haber pedido y no tiene forma de saber por
-  // qué. Es el mismo defecto que descuadraba el recibo del carrito, con la diferencia de
-  // que acá ya no puede preguntar: el pedido está cerrado.
-  var envioPedido=Number(o.delivery_fee);
-  var hayEnvio=Number.isFinite(envioPedido)&&envioPedido>0;
-  var kmPedido=Number(o.delivery_km);
-  var consumo=hayEnvio?money(Number(o.total)-envioPedido):Number(o.total);
-  return H('DETALLE',"sndScreen='p_orders';render()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
-    +PAPEL_ABRE(String(o.ref||'TU PEDIDO')+' · NO ES BOLETA')
-    +reciboLinea('Fecha',esc(String(o.date||'')),'mudo')
-    +reciboLinea('A nombre de',esc(String(o.customer_name||'')))
-    // «Prometimos» es lo que el servidor dejó escrito al crear el pedido, no lo que diría
-    // la cola de hoy; «llegó» se compara contra eso (maqueta del detalle).
-    +(ventanaDelPedido(o)?reciboLinea('Prometimos',esc(ventanaDelPedido(o))):'')
-    +(o.delivered_at?reciboLinea('Llegó',esc(horaLima(Date.parse(o.delivered_at)))+(llegoDentro(o)===true?' · dentro':llegoDentro(o)===false?' · tarde':''),llegoDentro(o)===true?'ahorro':undefined):'')
-    +'<div style="font-size:11px;line-height:1.5;padding:6px 0 2px">'+esc(String(o.summary||''))+'</div>'
-    +'<div style="border-top:1px dashed '+PAPEL_TINTA+';margin:7px 0"></div>'
-    // El envío solo aparece cuando de verdad se sabe cuánto fue. Un pedido consultado por
-    // referencia (sin sesión) no trae esa columna, y partir el total con un número
-    // inventado sería peor que no partirlo.
-    +(hayEnvio
-      ?reciboLinea('Consumo',SOLES+pz(consumo))
-        +reciboLinea(Number.isFinite(kmPedido)&&kmPedido>0?'Envío · '+kmPedido+' km':'Envío',SOLES+pz(envioPedido))
-      :'')
-    +(o.redeemed_reward?reciboLinea('Recompensa canjeada',esc(String(o.redeemed_reward)),'ahorro'):'')
-    +PAPEL_TOTAL('TOTAL',Number(o.total))
-    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:4px">Dirección //</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted4,#C8D6CE);margin-bottom:12px">'+esc(String(o.customer_address||''))+'</div>'
-    +'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:16px;margin-bottom:12px">'
-    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:10px">Estado //</div>'
-    +'<div style="display:flex;gap:4px;margin-bottom:12px">'+STEPS.map(function(st,i){var dn=i<=ci;return'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px"><div style="height:5px;width:100%;background:'+(dn?GOLD:'#2C3228')+';border-radius:4px"></div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:'+(dn?GOLD:'#73776C')+';text-align:center;line-height:1.3">'+((STATUSES[st]||{}).label||st).replace(' ','<br>')+'</div></div>';}).join('')+'</div>'
-    +stBadge(o.status)
-    +'</div>'
-    // Antes la página de Cambios y Devoluciones prometía "puedes cancelar sin costo antes
-    // de que la cocina empiece a preparar tu pedido", pero no existía ningún botón para
-    // hacerlo desde la app — la única forma real era escribir por WhatsApp y esperar a que
-    // un operador lo cancelara manualmente (hallazgo de la auditoría de flujo de pedidos:
-    // una promesa que la app no cumplía por sí sola). Este botón cumple esa promesa
-    // directamente mientras el pedido sigue en RECIBIDO.
-    +(o.status==='RECIBIDO'?BTN('Cancelar pedido //','doCancelMyOrder(\''+o.id+'\',\''+o.ref+'\')',true):'')
-    +(!pedidoTerminado(o.status)?'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);text-align:center;margin-top:10px" class="blink">&#8635; Toca Actualizar en Mis Pedidos</div>'
-      :o.status==='ENTREGADO'?'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-ok,#25D366);text-align:center;margin-top:10px">&#9989; ¡Entregado!</div>'
-      :'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);text-align:center;margin-top:10px">Este pedido se canceló.</div>')
-    +ratingHTML(o)
-    // «Algo salió mal · hasta 48 h después» (maqueta del detalle). Solo mientras se puede:
-    // pasado el plazo el botón desaparece en vez de llevar a una pantalla que dice que no.
-    +(puedeReportarPedido(o)&&cust?BTN('Algo salió mal · hasta '+REPORTE_PLAZO_HORAS+' h después //','abrirAlgoSalioMal(\''+esc(String(o.ref))+'\')',true):'')
-    +'</div>'+NAV();
+  var fu=fechaDelPedido(o);
+  var envio=Number(o.delivery_fee),hayEnvio=Number.isFinite(envio)&&envio>0;
+  var km=Number(o.delivery_km);
+  var pagado=Number(o.total)||0;
+  var consumo=hayEnvio?money(pagado-envio):pagado;
+  var its=o.items||[];
+  var conPrecio=its.length>0&&its.every(function(it:any){return Number.isFinite(Number(it.precio));});
+  var lista=0;
+  var lineas=its.map(function(it:any,k:number){
+    var q=it.qty||1,monto=conPrecio?money(Number(it.precio)*q):0;
+    lista+=monto;
+    var extra=itemExtrasLabel(it);
+    return'<div class="ln"><i>'+String(k+1).padStart(2,'0')+'</i><div class="q"><b>'+esc(lineaNombre(it))+'</b>'+(extra?'<s>'+esc(extra)+'</s>':'')+'</div>'
+      +(conPrecio?'<span>'+montoFmt(monto)+'</span>':'')+'</div>';
+  }).join('');
+  var desc=conPrecio?money(lista-consumo):0;
+  var medio=MEDIO_DE_PAGO[o.payment_method]||'';
+  var caja=''
+    +(fu?'<div class="c"><em>Lo pediste</em><b>'+esc(horaLima(Date.parse(o.created_at)))+'</b></div>':'')
+    +(ventanaDelPedido(o)?'<div class="c"><em>Prometimos</em><b>'+esc(ventanaDelPedido(o))+'</b></div>':'')
+    +(o.delivered_at?'<div class="c"><em>Llegó</em><b class="'+(llegoDentro(o)===true?'ok':llegoDentro(o)===false?'tarde':'')+'">'+esc(horaLima(Date.parse(o.delivered_at)))+(llegoDentro(o)===true?' · dentro':llegoDentro(o)===false?' · tarde':'')+'</b></div>':'');
+  var repetible=its.some(cartItemRepeatable);
+  var acc=''
+    +(repetible&&o.status!=='CANCELADO'?'<button class="ac" onclick="loadCart(myOrders.find(function(x){return mismoId(x.id,_sndOd);}).items)"><span>Pedir lo mismo</span><s>'+SOLES_TXT+pz(precioDeRepetir(o))+' hoy</s></button>':'')
+    +(o.status==='RECIBIDO'?'<button class="ac" onclick="doCancelMyOrder(\''+esc(String(o.id))+'\',\''+esc(String(o.ref))+'\')"><span>Cancelar pedido</span><s>antes de que la cocina empiece</s></button>':'')
+    +(puedeReportarPedido(o)&&cust?'<button class="ac" onclick="abrirAlgoSalioMal(\''+esc(String(o.ref))+'\')"><span>Algo salió mal</span><s>hasta '+REPORTE_PLAZO_HORAS+' h después</s></button>':'')
+    +'<button class="ac" onclick="window.print()"><span>Guardar el recibo</span><s>PDF · no es boleta</s></button>';
+  return'<div class="mct mod fi">'
+    +'<button class="sal" onclick="sndScreen=\'p_orders\';render()" aria-label="Volver">←</button>'
+    +'<span class="marca-der" aria-hidden="true"><img src="img/marca/avatar-1024-transparente.png" alt="">SND<span class="wm-mark"><i></i><i></i></span>WCH</span>'
+    +'<div class="cab"><em>Pedido '+esc(String(o.ref||''))+(fu?' · '+fu.getUTCDate()+' '+MESES_CORTOS[fu.getUTCMonth()]:'')+'</em><h1>'+esc(titularDelPedido(o))+'</h1></div>'
+    +(caja?'<div class="caja">'+caja+'</div>':'')
+    +'<div class="lns">'+lineas+'</div>'
+    +(desc>0.004?'<div class="x"><span>'+(o.redeemed_reward?'Recompensa y combo':'Combo y descuentos')+'</span><span>−'+montoFmt(desc)+'</span></div>':'')
+    +(hayEnvio?'<div class="x"><span>Envío'+(Number.isFinite(km)&&km>0?' '+km+' km':'')+(medio?' · pagado con '+medio:'')+'</span><span>'+montoFmt(envio)+'</span></div>'
+      :(medio?'<div class="x"><span>Pagado con '+medio+'</span><span></span></div>':''))
+    +'<div class="tot"><em>'+(o.status==='CANCELADO'?'Ibas a pagar':'Pagaste')+'</em><b>'+SOLES_TXT+montoFmt(pagado)+'</b></div>'
+    +(o.customer_address?'<p class="dir">'+esc(String(o.customer_address))+'</p>':'')
+    +'<div class="acs">'+acc+'</div>'
+    +'<div class="calif">'+ratingHTML(o)+'</div>'
+    +'</div>';
 }
 var _cancelMyOrderInProgress=false;
 // Guard contra doble-tap — el servidor ya reclama el pedido de forma atómica

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, entrarConTelefono } from './helpers';
+import { gotoApp, abrirPedidoDesdeLaCuenta } from './helpers';
 
 // Flujo de dinero sin ningún test de regresión (hallazgo de auditoría de código, ALTO):
 // actCancelMyOrder trae un fix crítico documentado (revertir puntos/crédito/total_orders
@@ -32,12 +32,7 @@ test('cliente cancela un pedido RECIBIDO pagado con crédito antes de que cocina
     },
   });
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await entrarConTelefono(page, '900000001', '1234');
-
-  await page.locator('[onclick*="sndScreen=\'p_orders\';loadMyOrders()"]').click();
-  await expect(page.locator('text=' + MOCK_ORDER.ref)).toBeVisible({ timeout: 10000 });
-  await page.locator('text=' + MOCK_ORDER.ref).click();
+  await abrirPedidoDesdeLaCuenta(page, MOCK_ORDER.ref, { points: 50 });
 
   await expect(page.getByRole('button', { name: /Cancelar pedido/ })).toBeVisible();
   await page.getByRole('button', { name: /Cancelar pedido/ }).click();

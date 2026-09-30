@@ -1362,6 +1362,41 @@ body.kb-open #app{padding-bottom:0}
 .mph .otras .g .n s{display:block;text-decoration:none;font:500 11px/1.3 'IBM Plex Mono',monospace;color:#3E5666;margin-top:4px}
 .mph .otras .g.neg .d{color:#7A2E2E}
 .mph .cargando{margin-top:26px;font-style:italic;color:#25404F}
+/* DETALLE DE UN PEDIDO (maqueta aprobada detalle-de-un-pedido.png): el recibo kraft. */
+.mct.mod{padding-left:max(26px,calc(50% - 300px));padding-right:max(26px,calc(50% - 300px))}
+.mod .marca-der{position:absolute;top:18px;right:max(26px,calc(50% - 300px));display:flex;align-items:center;gap:6px;font:700 15px/1 Archivo,sans-serif;color:#33230F}
+.mod .marca-der img{width:26px;height:26px;object-fit:contain}
+.mod .cab h1{font-size:40px;text-transform:uppercase}
+.mod .caja{margin-top:26px;border:2px solid #4A3218;padding:4px 16px}
+.mod .caja .c{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 0;border-bottom:1px solid rgba(74,50,24,.3)}
+.mod .caja .c:last-child{border-bottom:0}
+.mod .caja em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#5E4526;text-transform:uppercase;font-style:normal}
+.mod .caja b{font:500 13px/1.2 'IBM Plex Mono',monospace;color:#33230F;text-align:right;text-transform:none;letter-spacing:0}
+.mod .caja b.ok{color:#2C5A22}.mod .caja b.tarde{color:#7A2E2E}
+.mod .lns{margin-top:10px}
+.mod .ln{display:flex;align-items:baseline;gap:12px;padding:14px 0;border-bottom:1px dashed rgba(74,50,24,.4)}
+.mod .ln i{font:500 11px/1 'IBM Plex Mono',monospace;color:#6E4F2A;font-style:normal}
+.mod .ln .q{flex:1;min-width:0}
+.mod .ln b{display:block;font:800 15px/1.15 Archivo,sans-serif;color:#33230F;text-transform:uppercase}
+.mod .ln s{display:block;text-decoration:none;margin-top:6px;font:500 9px/1.4 'IBM Plex Mono',monospace;color:#6E4F2A;text-transform:uppercase;letter-spacing:.04em}
+.mod .ln>span,.mod .x span:last-child{font:500 13px/1 'IBM Plex Mono',monospace;color:#33230F;white-space:nowrap}
+.mod .x{display:flex;justify-content:space-between;gap:12px;padding:10px 0 0;font:500 11px/1.4 'IBM Plex Mono',monospace;color:#5E4526;text-transform:uppercase}
+.mod .tot{display:flex;justify-content:space-between;align-items:baseline;margin-top:14px;padding-top:12px;border-top:2px solid #4A3218}
+.mod .tot em{font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#5E4526;font-style:normal}
+.mod .tot b{font-family:Anton,sans-serif;font-weight:400;font-size:40px;line-height:1;color:#33230F}
+.mod .dir{margin:14px 0 0;font:500 11px/1.5 'IBM Plex Mono',monospace;color:#5E4526}
+.mod .acs{margin-top:34px}
+.mod .ac{all:unset;box-sizing:border-box;cursor:pointer;display:flex;width:100%;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 0;border-top:1px dashed rgba(74,50,24,.4)}
+.mod .ac span{font:700 13px/1 Archivo,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#4A3218}
+.mod .ac s{text-decoration:none;font:500 9px/1.3 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:#5E4526;text-align:right}
+.mod .ac:focus-visible{outline:2px solid #9C5F14;outline-offset:2px}
+.mod .calif:not(:empty){margin-top:22px;border-radius:12px;overflow:hidden}
+@media print{
+  body *{visibility:hidden}
+  .mod,.mod *{visibility:visible}
+  .mod{position:absolute;inset:0 auto auto 0;width:100%}
+  .mod .sal,.mod .acs,.mod .calif{display:none}
+}
 /* ── LA APP EN PC Y LAPTOP (2026-09-30) ─────────────────────────────────────────────────
    El dueño: «para pc y laptop básicamente el app visualmente no sirve, sale recortada como si
    fuera en cel» — y pidió que NO sea otra maqueta: «debe ser pantalla adaptable». Hasta acá
