@@ -1229,25 +1229,25 @@ body.kb-open #app{padding-bottom:0}
     // Precios y doble de la v4 (docs/MENU_CLASICOS_USA.md, modelo/rentabilidad_por_parte.py).
     proteinas: [
       { id: "P03", nombre: "Pollo", sabor: "Cajun", desc: "Pechuga deshilachada con la mezcla cajún de la casa. Calor seco, no picante de salsa.", p15: 13.9, p30: 23.9, dbl15: 6, dbl30: 11, soloSecreto: true },
-      { id: "P04", nombre: "Atún", sabor: "House", desc: "En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.", p15: 16.9, p30: 32.9, dbl15: 10.9, dbl30: 21.9, foto: "img/prot_p04.webp" },
+      { id: "P04", nombre: "Atún", sabor: "House", desc: "En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.", p15: 23.9, p30: 35.9, dbl15: 10.9, dbl30: 21.9, foto: "img/prot_p04.webp" },
       { id: "P05", nombre: "Embutido", sabor: "Italiano", desc: "Tres fiambres ahumados laminados finos y puestos en pliegues, nunca planos.", p15: 16.9, p30: 32.9, dbl15: 9.9, dbl30: 19.9, soloEnSignature: true, foto: "img/prot_p05.webp" },
-      { id: "P06", nombre: "Albóndiga", sabor: "Marinara", desc: "Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.", p15: 14.9, p30: 26.9, dbl15: 6, dbl30: 12, foto: "img/prot_p06.webp" },
-      { id: "P08", nombre: "Pavo", sabor: "Horneado", desc: "Lonjas de un milímetro puestas en pliegues, laminadas el mismo día.", p15: 15.9, p30: 28.9, dbl15: 9, dbl30: 17, foto: "img/prot_p08.webp" },
-      { id: "P09", nombre: "Res", sabor: "Laminada", desc: "Laminada fina y salteada al momento.", p15: 12.9, p30: 22.9, dbl15: 7, dbl30: 13, foto: "img/prot_p09.webp" }
+      { id: "P06", nombre: "Albóndiga", sabor: "Marinara", desc: "Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.", p15: 23.9, p30: 35.9, dbl15: 6.9, dbl30: 13.9, foto: "img/prot_p06.webp" },
+      { id: "P08", nombre: "Pavo", sabor: "Horneado", desc: "Lonjas de un milímetro puestas en pliegues, laminadas el mismo día.", p15: 24.9, p30: 36.9, dbl15: 9, dbl30: 17, foto: "img/prot_p08.webp" },
+      { id: "P09", nombre: "Res", sabor: "Laminada", desc: "Laminada fina y salteada al momento.", p15: 23.9, p30: 35.9, dbl15: 7, dbl30: 13.9, foto: "img/prot_p09.webp" }
     ],
     vegetales: [
       { id: "T01", nombre: "Tomate", sabor: "Fresco", desc: "En rodajas gruesas, cortado el mismo día." },
       { id: "T03", nombre: "Cebolla", sabor: "Morada juliana", desc: "En pluma fina y cruda. Dulce al entrar, con filo al final." },
-      { id: "T04", nombre: "Jalapeño", sabor: "Encurtido", desc: "Picor limpio y corto, del que no tapa lo demás.", soloSecreto: true },
-      { id: "T05", nombre: "Aceituna", sabor: "Negra en rodajas", desc: "Salada, con un fondo amargo que despierta el resto." },
-      { id: "T06", nombre: "Pimiento", sabor: "Curado", desc: "Curado en aceite: dulce, ahumado y sin nada de agua." },
+      { id: "T04", nombre: "Jalapeño", sabor: "Encurtido", desc: "Picor limpio y corto, del que no tapa lo demás.", picante: true },
+      { id: "T02", nombre: "Pickles", sabor: "Encurtidos", desc: "Pepinillo encurtido en rodajas: ácido y crocante." },
+      { id: "T11", nombre: "Pepinillo", sabor: "Fresco", desc: "En rodajas finas, frío. Agua y crujido." },
+      { id: "T06", nombre: "Pimiento", sabor: "Verde", desc: "Fresco, en tiras finas. Crujiente, con su punto amargo." },
       { id: "T09", nombre: "Lechuga", sabor: "Fresca", desc: "En tiras y fría. Es lo que hace crujir los bordes." },
       { id: "T10", nombre: "Cebolla", sabor: "Salteada", desc: "Blanca, salteada junto con la res.", soloEnSignature: true }
     ],
     quesos: [
-      { id: "C01", nombre: "Mozzarella", desc: "Se derrite hasta el borde y estira al morder." },
-      { id: "C02", nombre: "Cheddar", desc: "Curado y salado. No se pierde debajo de la carne." },
-      { id: "C03", nombre: "Edam", desc: "Cremoso y discreto. El que no tapa nada." }
+      { id: "C01", nombre: "Americano", desc: "Se funde parejo y cubre todo, de borde a borde." },
+      { id: "C02", nombre: "Cheddar", desc: "Curado y salado. No se pierde debajo de la carne." }
     ],
     salsas: [
       { id: "S01", nombre: "Aioli", sabor: "Signature", desc: "Ajo y limón sobre base cremosa. Suave: va con todo." },
@@ -1293,13 +1293,13 @@ body.kb-open #app{padding-bottom:0}
         orden: 2,
         pan: "B01",
         prot: "P06",
-        vegetales: ["T01", "T03", "T05"],
+        vegetales: ["T01", "T03"],
         salsas: ["S06"],
         p15: 21.9,
         p30: 28.9,
         queso: "C01",
         foto: "img/sig02.jpg",
-        pitch: "Para la noche en que ya decidiste que no vas a cocinar. Albóndigas hechas acá, cocidas dentro de su propia marinara, con mozzarella derretida hasta el borde. Se come con las dos manos y con servilleta al lado."
+        pitch: "Para la noche en que ya decidiste que no vas a cocinar. Albóndigas hechas acá, cocidas dentro de su propia marinara, con queso americano derretido hasta el borde. Se come con las dos manos y con servilleta al lado."
       },
       {
         id: "SIG10",
@@ -1343,7 +1343,7 @@ body.kb-open #app{padding-bottom:0}
         p30: 33.9,
         queso: "C01",
         foto: "img/sig11.jpg",
-        pitch: "Embutidos italianos en pliegues, mozzarella, lechuga, tomate, cebolla y pimiento, con oil & vinegar, como en los delis de siempre."
+        pitch: "Embutidos italianos en pliegues, queso americano, lechuga, tomate, cebolla y pimiento, con oil & vinegar, como en los delis de siempre."
       },
       {
         id: "SIG04",
@@ -3644,7 +3644,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '322ac93817';
+var APP_BUILD = 'c5e4cadc00';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por

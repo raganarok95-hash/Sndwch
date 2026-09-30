@@ -51,7 +51,11 @@ STICKER       = _I.STICKER.valor            # por PEDIDO
 EMPAQUE_REAL  = PAPEL_MANTECA + BOLSA_KRAFT + STICKER
 EMPAQUE = _I.EMPAQUE_CONSERVADOR.valor      # [CONSERVADOR] hasta que cierren sticker y bolsa
 SALSA   = (0.266, 0.532) # por porción, 15CM / 30CM
-QUESO   = (0.385, 0.770) # [ESTIMADO] proxy S/35/kg; hay un dato de S/22.50/kg para mozzarella
+# Quesos al estilo Subway (dueño 2026-09-30): americano y cheddar, 2 tajadas por sándwich. El
+# código de queso de la carta decide cuál: C02 es cheddar; los demás pasan a americano.
+QUESO_POR = {"C02": _I.queso_porcion(_I.QUESO_CHEDDAR_KG)}
+QUESO_AMER = _I.queso_porcion(_I.QUESO_AMERICANO_KG)
+QUESO   = tuple((a + c) / 2 for a, c in zip(QUESO_AMER, QUESO_POR["C02"]))   # promedio, para el armador
 TOPS_KG = 4.00           # [ESTIMADO] promedio ponderado de los toppings de frasco y frescos
 
 PAN = {  # [COTIZADO por el dueño] sub S/2 la unidad (15CM usa medio); focaccia S/13 = 10x15CM
@@ -64,14 +68,15 @@ PROT = {
     "P03": (2.49, 4.97, "[COTIZADO] pollo cajún, mismo rendimiento"),
     "P04": (3.25, 6.50, "[COTIZADO 2026-09-04] atún S/4 la lata de 140 g neto = S/43.96/kg"),
     "P05": (4.29, 8.59, "[ESTIMADO] embutido S/48/kg confirmado por el dueño, porción sin cotizar"),
-    "P06": (1.34, 2.68, "[ESTIMADO] albóndiga, carne molida ~S/10/kg — SIN COTIZAR"),
+    # Desde su receta (insumos.albondiga_porcion, 2026-09-30): carne molida S/23.50/kg y la marinara.
+    "P06": (*_I.albondiga_porcion(), "[DERIVADO] receta de la tanda: carne molida S/23.50/kg + marinara"),
     # P08 es la ÚNICA con rendimiento 1.00: es fiambre, no se cocina. Por eso su costo por
     # porción es literalmente el precio del kilo por el gramaje, sin el ~1.85x de merma que
     # llevan las que sí pasan por la olla.
     "P08": (3.76, 7.51, "[WEB] pavo S/44.20/kg (retail Braedt S/43.75) — sin merma, rendimiento 1.00"),
     # P09 entra con la carta v4 (2026-09-24): la res del Philly, laminada en frío y salteada.
     # Rendimiento 0.70 SUPUESTO — hay que medirlo en la primera tanda (ver insumos.py).
-    "P09": (2.43, 4.86, "[COTIZADO] res ~S/20/kg laminada en frío, rendimiento 0.70 SUPUESTO"),
+    "P09": (*_I.porcion_derivada("P09"), "[COTIZADO] aguja S/25/kg laminada en frío, rendimiento 0.70 SUPUESTO"),
 }
 # Las que salieron con la carta v4 (2026-09-24): ya no se preparan. Se guardan SOLO para poder
 # costear la carta de apertura en comparaciones históricas (SIG_APERTURA, abajo).
@@ -97,7 +102,7 @@ FUERA_DEL_ARMADOR = {p["id"] for p in _CARTA["proteinas"] if p.get("soloEnSignat
 # Gramaje de toppings — estándar Subway desde 2026-09-04
 # T10 (cebolla blanca salteada, solo Philly): 70 g crudos que quedan en ~40 g. Se costea al
 # promedio de vegetales (S/4/kg) y no a su S/3/kg: sobreestima unos centavos, del lado seguro.
-TOPS_G = {"T01": 35, "T02": 12, "T03": 7, "T04": 7, "T05": 3, "T06": 7, "T08": 7, "T09": 21, "T10": 70}
+TOPS_G = {"T01": 35, "T02": 12, "T03": 7, "T04": 7, "T05": 3, "T06": 7, "T08": 7, "T09": 21, "T10": 70, "T11": 10}
 
 # ── PRECIOS: los de la carta (proteínas del armador y Signatures públicos) ─────────────
 BYO = {p["id"]: (p["p15"], p["p30"], p["dbl15"], p["dbl30"]) for p in _CARTA["proteinas"]}
@@ -170,12 +175,25 @@ REF_INVITA, REF_INVITADO = 400, 160
 def veg(gramos, i):
     return (gramos if i == 0 else gramos * 2) / 1000 * TOPS_KG
 
+# Precio por kilo DE CADA vegetal (2026-09-30): el promedio de S/4/kg escondía que los encurtidos
+# cuestan diez veces lo fresco. La aceituna (T05) salió de la carta ese día.
+TOPS_PRECIO = {"T01": _I.TOMATE_KG.valor, "T02": _I.PICKLES_KG.valor, "T03": _I.CEBOLLA_KG.valor,
+               "T04": _I.JALAPENO_KG.valor, "T06": _I.PIMIENTO_KG.valor, "T09": _I.LECHUGA_KG.valor,
+               "T10": _I.CEBOLLA_KG.valor, "T11": _I.PEPINILLO_KG.valor}
+def veg_de(tops, i):
+    f = 1 if i == 0 else 2
+    return sum(TOPS_G.get(t, 10) * f / 1000 * TOPS_PRECIO.get(t, TOPS_KG) for t in tops if t != "T05")
+# El armador al estilo Subway: el peor caso es que el cliente pida TODOS.
+# Sin extras (dueño 2026-09-30): pickles (T02) y jalapeño (T04) van INCLUIDOS en el armador y su costo
+# lo absorbe el precio de la proteína: el peor caso es que el cliente pida todo.
+TOPS_BYO_SUBWAY = ["T09", "T01", "T11", "T06", "T03", "T04", "T02"]
+
 
 def costo_sig(sid, i, carta=None):
     _n, base, p, tops, ns, queso, _p15, _p30 = (carta or SIG)[sid]
-    c = {**PROT_RETIRADA, **PROT}[p][i] + PAN[base][i] + EMPAQUE + SALSA[i] * ns + veg(sum(TOPS_G[t] for t in tops), i)
+    c = {**PROT_RETIRADA, **PROT}[p][i] + PAN[base][i] + EMPAQUE + SALSA[i] * ns + veg_de(tops, i)
     if queso:
-        c += QUESO[i]
+        c += QUESO_POR.get(queso, QUESO_AMER)[i]
     return c
 
 
@@ -185,7 +203,7 @@ PAN_BASE = next(x["id"] for x in _CARTA["panes"] if not x.get("recargo"))
 
 def costo_byo(p, i, pan=None):
     return (PROT[p][i] + PAN[pan or PAN_BASE][i] + EMPAQUE + SALSA[i] * NS_BYO
-            + veg(TOPS_BYO_G, i) + QUESO[i] * FQ_BYO)
+            + veg_de(TOPS_BYO_SUBWAY, i) + QUESO[i] * FQ_BYO)
 
 
 def fila(nombre, precio, costo, nota=""):

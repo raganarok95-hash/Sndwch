@@ -17,14 +17,12 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import rentabilidad_por_parte as R
 
-# ── CAMBIO DE QUESOS Y VEGETALES (dueño 2026-09-30) ──────────────────────────────────────────
-# [ESTIMADO] queso americano / cheddar TAJADO ~S/52/kg en supermercado (Laive/Bonlé 200 g ≈ S/10–11).
-# Sin cotización: el modelo anterior usaba S/35/kg. Porción 11 g (15CM) / 22 g (30CM).
-R.QUESO = (0.011 * 52, 0.022 * 52)
-# [ESTIMADO] el set de Subway suma encurtidos (pepinillo, jalapeño, aceituna ~S/20–25/kg) a lo
-# fresco (~S/2.5–4.5/kg): el promedio ponderado sube de S/4.00 a S/5.00 por kg.
-R.TOPS_KG = 5.00
-
+# ── EMPAQUE REAL (2026-09-30) ────────────────────────────────────────────────────────────────
+# El modelo de costos usa un techo de S/1.30 por sándwich mientras faltan bolsa y sticker. Acá se
+# usa lo real: papel manteca por sándwich + bolsa y sticker por PEDIDO (vía por_sandwich, que
+# exige decir cuántos sándwiches trae el pedido). Quesos, vegetales y la albóndiga salen de
+# insumos.py (precios del 2026-09-30).
+import insumos as _I
 # ── SUPUESTOS DE OPERACIÓN ───────────────────────────────────────────────────────────────────
 DIAS_MES = 26                  # [HECHO] abre de martes a domingo (reglas.ts STORE_HOURS)
 SAND_POR_PEDIDO = 1.15         # [SUPUESTO] sándwiches por pedido
@@ -41,6 +39,9 @@ ESCENARIOS = {                 # [SUPUESTO] pedidos por día, meses 1–3; techo
     "Base": (8, 12, 16),
     "Optimista": (12, 17, 22),
 }
+
+R.EMPAQUE = (_I.por_sandwich(_I.PAPEL_MANTECA) + _I.por_sandwich(_I.BOLSA_KRAFT, sand_por_pedido=SAND_POR_PEDIDO)
+             + _I.por_sandwich(_I.STICKER, sand_por_pedido=SAND_POR_PEDIDO))
 
 sigs = [s for s in R.SIG if not s.startswith("SIG05")]
 def prom_sig(i):
@@ -117,5 +118,7 @@ if __name__ == "__main__":
     print(f"- [SUPUESTO] {SAND_POR_PEDIDO} sándwiches por pedido; {MIX_SIG:.0%} Signature; {MIX15:.0%} en 15CM; "
           f"{ATTACH:.0%} lleva bebida (con el combo de S/{R.COMBO:.0f}); {PAGO_TARJETA:.0%} paga con tarjeta.")
     print("- [SUPUESTO] pedidos por día de cada escenario; sin anuncios el primer mes y S/300/mes de prueba después.")
-    print("- [ESTIMADO] quesos americano y cheddar a ~S/52/kg y vegetales al estilo Subway a ~S/5/kg promedio: sin cotizar.")
+    print("- Costos de insumos de modelo/insumos.py (2026-09-30): carne molida S/18.50/kg, quesos americano y cheddar tajados")
+    print("  (1 tajada por 15CM, como Subway), pepinillo y jalapeño cotizados; lechuga, tomate, pepino y la lata de tomate estimados.")
+    print("- Empaque real: papel manteca por sándwich + bolsa y sticker por pedido (bolsa estimada, sticker sin cotizar).")
     print("- No incluye: inversión inicial ni su recuperación (dato del dueño), impuestos, ni el envío (pasa íntegro al motorizado).")
