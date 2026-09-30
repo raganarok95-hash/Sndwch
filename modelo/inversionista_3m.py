@@ -112,13 +112,36 @@ if __name__ == "__main__":
                 neg = k == "Utilidad del mes"
                 print(f"| {'**'+k+'**' if neg else k} | " + " | ".join(S(x) for x in v) + f" | {'**'+S(sum(v))+'**' if neg else S(sum(v))} |")
         print()
+    # ── Palancas: cuánto mueve cada una la utilidad de un mes a 16 pedidos al día ──────────
+    def util_mes(d):
+        return d * DIAS_MES * por_pedido()[4] - FIJOS - SUELDO - PAUTA[2]
+    base_u = util_mes(16)
+    print("## Cuánto queda al mes y qué lo mueve\n")
+    print("Utilidad de un mes (26 días, ya pagados fijos, sueldo del dueño y S/300 de pauta):\n")
+    print("| pedidos al día | " + " | ".join(str(d) for d in (8, 12, 16, 20, 25, 30)) + " |")
+    print("|---|" + "---|" * 6)
+    print("| utilidad del mes | " + " | ".join(S(util_mes(d)) for d in (8, 12, 16, 20, 25, 30)) + " |\n")
+    print(f"Palancas, medidas sobre el mes de 16 pedidos al día ({S(base_u)}):\n")
+    print("| palanca | cambio | utilidad del mes |\n|---|---|---|")
+    palancas = [("+4 pedidos al día", None), ("Sándwiches por pedido", ("SAND_POR_PEDIDO", 1.30)),
+                ("Pedidos que llevan bebida", ("ATTACH", 0.45)), ("Pagos con Yape en vez de tarjeta", ("PAGO_TARJETA", 0.15))]
+    for nombre, cambio in palancas:
+        if cambio is None:
+            print(f"| {nombre} | 16 → 20 | +{S(util_mes(20) - base_u)} |"); continue
+        k, v = cambio; viejo = globals()[k]; globals()[k] = v
+        nuevo = util_mes(16); globals()[k] = viejo
+        print(f"| {nombre} | {viejo:g} → {v:g} | +{S(nuevo - base_u)} |")
+    print()
+    print("Lo que más mueve es **vender más pedidos** y **más sándwiches por pedido** (packs, el pedido en")
+    print("grupo, «¿uno para mañana?»). La bebida y Yape suman poco por pedido. Subir la mezcla de Signature")
+    print("ya no mueve nada: el armador quedó igual de rentable (decisión del dueño, 2026-09-30).\n")
     print("## Supuestos\n")
     print(f"- [HECHO] {DIAS_MES} días de atención al mes (martes a domingo); techo de cocina 40 pedidos/día.")
     print(f"- [HECHO del dueño] costos fijos {S(FIJOS)}/mes y sueldo del dueño {S(SUELDO)}/mes.")
     print(f"- [SUPUESTO] {SAND_POR_PEDIDO} sándwiches por pedido; {MIX_SIG:.0%} Signature; {MIX15:.0%} en 15CM; "
           f"{ATTACH:.0%} lleva bebida (con el combo de S/{R.COMBO:.0f}); {PAGO_TARJETA:.0%} paga con tarjeta.")
     print("- [SUPUESTO] pedidos por día de cada escenario; sin anuncios el primer mes y S/300/mes de prueba después.")
-    print("- Costos de insumos de modelo/insumos.py (2026-09-30): carne molida S/18.50/kg, quesos americano y cheddar tajados")
+    print("- Costos de insumos de modelo/insumos.py (2026-09-30): carne molida S/15/kg, aguja S/25/kg, quesos americano y cheddar tajados")
     print("  (1 tajada por 15CM, como Subway), pepinillo y jalapeño cotizados; lechuga, tomate, pepino y la lata de tomate estimados.")
     print("- Empaque real: papel manteca por sándwich + bolsa y sticker por pedido (bolsa estimada, sticker sin cotizar).")
     print("- No incluye: inversión inicial ni su recuperación (dato del dueño), impuestos, ni el envío (pasa íntegro al motorizado).")
