@@ -332,6 +332,7 @@ function swTab(t){sndTab=t;sndScreen=t==='order'?'o_home':(cust?'p_home':'p_auth
 function loadBuild(bld){
   if(!bld)return;
   mode=bld.mode;sigId=bld.sigId||null;base=bld.base||null;prot=bld.prot||null;
+  sinIng=Array.isArray(bld.sin)?bld.sin.slice():[];
   cheese=bld.cheese||null;tops=(bld.tops||[]).slice();sauces=(bld.sauces||[]).slice();
   size=bld.size||null;doubleProt=!!bld.doubleProt;
   // Salsa extra requiere al menos una salsa base en BUILD YOUR OWN (ver catalog.ts) — un
@@ -348,7 +349,7 @@ function loadBuild(bld){
 // build abandonado (o de un pedido anterior en la misma sesión) reaparezca
 // precargado en un pedido sin relación.
 function resetBuilder(){
-  sigId=null;base=null;prot=null;cheese=null;tops=[];sauces=[];size=null;doubleProt=false;extraSauce=false;
+  sigId=null;base=null;prot=null;cheese=null;tops=[];sauces=[];size=null;doubleProt=false;extraSauce=false;sinIng=[];
   byoStep=0;
   editingItemQty=null;
 }
@@ -420,7 +421,7 @@ var editingItemQty=null;
 function currentBuiltItem(){
   var qty=editingItemQty||1;
   return mode==='sig'
-    ?{type:'sig',sigId:sigId,size:size,doubleProt:doubleProt,extraSauce:extraSauce,cheese:cheese,qty:qty}
+    ?Object.assign({type:'sig',sigId:sigId,size:size,doubleProt:doubleProt,extraSauce:extraSauce,cheese:cheese,qty:qty},sinIng.length?{sin:sinIng.slice()}:{})
     :{type:'byo',base:base,prot:prot,cheese:cheese,tops:tops.slice(),sauces:sauces.slice(),size:size,doubleProt:doubleProt,extraSauce:extraSauce,qty:qty};
 }
 var quickPayEligible=false;
@@ -574,6 +575,11 @@ function itemRecipeLines(item){
     if(!sig)return['⚠ '+(item.sigId||'este Signature')+' ya no está en la carta — llama al cliente antes de armarlo'];
     base=sig.base;prot=sig.prot;tops=sig.tops||[];sauces=sig.sauces||[];
     cheese=sig.fixedCheese||item.cheese||null;
+    // Lo que el cliente quitó no se lista como si fuera: cocina lo lee en la línea SIN.
+    var quita=Array.isArray(item.sin)?item.sin:[];
+    tops=tops.filter(function(t){return quita.indexOf(t)<0;});
+    sauces=sauces.filter(function(t){return quita.indexOf(t)<0;});
+    if(cheese&&quita.indexOf(cheese)>=0)cheese=null;
   }else{
     base=item.base;prot=item.prot;tops=item.tops||[];sauces=item.sauces||[];
     cheese=item.cheese||null;
@@ -587,6 +593,7 @@ function itemRecipeLines(item){
   // armador tenían cada una su nombre.
   lines.push('Vegetales: '+(tops.length?tops.map(function(id){return nombreOId(TOPS,id,'vegetal');}).join(' · '):'sin vegetales'));
   lines.push('Salsas: '+(sauces.length?sauces.map(function(id){return nombreOId(SAUCES,id,'salsa');}).join(' + '):'sin salsa')+(item.extraSauce?' (+EXTRA)':''));
+  if(item.type==='sig'&&item.sin&&item.sin.length)lines.push('SIN: '+item.sin.map(nombreIngrediente).join(', ').toUpperCase());
   if(item.note)lines.push('Nota: '+item.note);
   return lines;
 }
@@ -626,6 +633,7 @@ function itemExtrasLabel(item){
   if(item.doubleProt)parts.push('doble proteína');
   if(item.extraSauce)parts.push('salsa extra');
   if(item.type==='sig'&&item.cheese)parts.push('con '+fn(CHEESE,item.cheese).toLowerCase());
+  if(item.type==='sig'&&item.sin&&item.sin.length)parts.push(sinTexto(item.sin));
   if(item.note)parts.push('nota: '+item.note);
   return parts.join(' · ');
 }
@@ -1764,6 +1772,26 @@ function nombreDe(lista:any[],id:string|null|undefined):string{
   var x=id?lista.find(function(y){return y.id===id;}):null;
   return x?x.l:'';
 }
+function nombreIngrediente(id:string):string{
+  return nombreDe(TOPS,id)||nombreDe(SAUCES,id)||nombreDe(CHEESE,id)||id;
+}
+function sinTexto(ids:string[]):string{
+  return 'sin '+ids.map(function(id){return nombreIngrediente(id).toLowerCase();}).join(', sin ');
+}
+function alternarSin(id:string){
+  var i=sinIng.indexOf(id);
+  if(i>=0)sinIng.splice(i,1);else sinIng.push(id);
+  render();
+}
+// EL COMBO A LA VISTA EN LA FICHA (dueño 2026-09-30, del estudio de Subway): cuánto sale con
+// la bebida más barata de hoy, con el descuento del combo ya aplicado. La cifra sale de las
+// mismas funciones que cobra el carrito, nunca escrita.
+function conBebidaTexto(precio:number):string{
+  var lista=bebidasDisponibles();
+  if(!lista.length)return'';
+  var min=Math.min.apply(null,lista.map(function(d){return precioEnCombo(d);}));
+  return'<s>Con bebida '+SOLES_TXT+pz(money(precio+min))+'</s>';
+}
 function sOSig(){
   var s=SIGS.find(function(x){return x.id===sigId;});
   if(!s){go('o_home');return'';}
@@ -1782,6 +1810,13 @@ function sOSig(){
     var p=itemUnitPrice({type:'sig',sigId:s.id,size:sz,doubleProt:false,extraSauce:false,cheese:cheese,qty:1});
     return'<button class="'+(size===sz?'on':'')+'" aria-pressed="'+(size===sz)+'" onclick="size=\''+sz+'\';render()">'+sz+'CM<s>'+SOLES_TXT+pz(p)+'</s></button>';
   };
+  // QUITAR (dueño 2026-09-30): cada vegetal, salsa y el queso fijo se pueden sacar; nada se
+  // agrega. El pan y la proteína no se quitan: sin ellos ya no es ese Signature.
+  var quitables:string[]=[].concat(queso?[queso]:[],s.tops||[],s.sauces||[]).filter(Boolean);
+  var quitar=quitables.length?'<div class="quita"><em>¿Le quitas algo?</em><div class="ops">'
+    +quitables.map(function(id){var fuera=sinIng.indexOf(id)>=0;
+      return'<button aria-pressed="'+fuera+'" class="'+(fuera?'off':'')+'" onclick="alternarSin(\''+id+'\')">'+(fuera?'Sin ':'')+esc(nombreIngrediente(id).toLowerCase())+'</button>';}).join('')
+    +'</div></div>':'';
   var dbl=dblProtRef();
   var fila='';
   if(dbl){
@@ -1798,10 +1833,11 @@ function sOSig(){
     +'<div class="cuerpo"><div class="num">'+(i>=0?romano(i+1):'')+(marca?' · '+esc(marca):'')+'</div>'
     +'<h1>'+esc(s.n)+'</h1>'
     +filas.map(function(f){return'<div class="fila"><em>'+f[0]+'</em><span>'+esc(f[1])+'</span></div>';}).join('')
+    +quitar
     +'<div class="tam">'+tam('15')+tam('30')+'</div>'
     +fila
     +'</div>'
-    +'<div class="pie sw-barra"><span class="p">'+SOLES_TXT+pz(itemUnitPrice(currentBuiltItem()))+'</span>'
+    +'<div class="pie sw-barra"><span class="p">'+SOLES_TXT+pz(itemUnitPrice(currentBuiltItem()))+conBebidaTexto(itemUnitPrice(currentBuiltItem()))+'</span>'
     +'<button onclick="loQuiero()">'+(editingItemQty?'Listo':'Lo quiero')+'</button></div>'
     +'</div>';
 }

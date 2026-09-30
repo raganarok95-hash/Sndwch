@@ -1052,6 +1052,10 @@ function setLado(l){
 // invitado de vuelta al login en vez de al home. Se fija justo antes de cada navegación.
 var bkTo=null;
 var mode=null,sigId=null,base=null,prot=null,cheese=null;
+// Lo que el cliente le QUITA a un Signature (dueño 2026-09-30, del estudio de Subway: «sin
+// cebolla»). Solo se quita, nunca se agrega: la receta sigue cerrada. Ids de vegetal, salsa o
+// del queso fijo; el precio no cambia.
+var sinIng:string[]=[];
 var tops=[],sauces=[],size=null,doubleProt=false,extraSauce=false;
 // Paso actual del asistente de ARMA EL TUYO. El orden REAL es el del mostrador de Subway y
 // vive en `BYO_STEP_LABELS` (04-armado): 0=pan, 1=proteína, 2=queso, 3=vegetales, 4=salsas.

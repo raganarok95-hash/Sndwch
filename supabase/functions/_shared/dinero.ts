@@ -66,7 +66,7 @@ export type Precios = {
 /** Una línea del carrito, con lo que el dinero necesita saber de ella. */
 export type LineaDelCarrito =
   | { type: 'side'; code: string; qty: number }
-  | { type: 'sig'; sigId: string; size: Tamano; doubleProt?: boolean; extraSauce?: boolean; qty: number }
+  | { type: 'sig'; sigId: string; size: Tamano; doubleProt?: boolean; extraSauce?: boolean; sin?: string[]; qty: number }
   | {
     type: 'byo';
     base: string;

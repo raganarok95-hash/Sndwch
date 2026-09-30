@@ -1187,6 +1187,14 @@ body.kb-open #app{padding-bottom:0}
 }
 @media (prefers-reduced-motion:reduce){.sw-spiral{animation:none}}
 .leaflet-container{background:#1a1a2e}
+/* QUITAR y el precio con bebida en la ficha (dueño, 2026-09-30). */
+.f01 .quita{margin-top:14px}
+.f01 .quita em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.22em;color:#5A6A52;text-transform:uppercase}
+.f01 .quita .ops{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.f01 .quita button{all:unset;box-sizing:border-box;cursor:pointer;min-height:36px;padding:0 13px;display:inline-flex;align-items:center;border:1px solid #1E2B22;border-radius:999px;font-family:'EB Garamond',serif;font-size:15px;color:#1E2B22}
+.f01 .quita button.off{background:#1E2B22;color:#EFE6D4}
+.f01 .quita button:focus-visible{outline:2px solid #D8823C;outline-offset:2px}
+.f01 .pie .p s{display:block;text-decoration:none;font:500 11px/1 'IBM Plex Mono',monospace;color:#C9BFA8;margin-top:6px;letter-spacing:.04em}
 /* ── EL PLATO EN KRAFT (dueño, 2026-09-30) ───────────────────────────────────────────────
    Cada Signature del Mundo SANDO se sirve sobre el kraft de la bolsa y del ticket; el secreto
    (.v) sigue de noche. Tinta café oscuro en vez de crema, y el dorado cede el precio y el botón
@@ -3655,6 +3663,10 @@ function setLado(l) {
 // invitado de vuelta al login en vez de al home. Se fija justo antes de cada navegación.
 var bkTo = null;
 var mode = null, sigId = null, base = null, prot = null, cheese = null;
+// Lo que el cliente le QUITA a un Signature (dueño 2026-09-30, del estudio de Subway: «sin
+// cebolla»). Solo se quita, nunca se agrega: la receta sigue cerrada. Ids de vegetal, salsa o
+// del queso fijo; el precio no cambia.
+var sinIng = [];
 var tops = [], sauces = [], size = null, doubleProt = false, extraSauce = false;
 // Paso actual del asistente de ARMA EL TUYO. El orden REAL es el del mostrador de Subway y
 // vive en `BYO_STEP_LABELS` (04-armado): 0=pan, 1=proteína, 2=queso, 3=vegetales, 4=salsas.
@@ -3749,7 +3761,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '0777bb082b';
+var APP_BUILD = '340f86d573';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -5330,6 +5342,7 @@ function loadBuild(bld) {
     sigId = bld.sigId || null;
     base = bld.base || null;
     prot = bld.prot || null;
+    sinIng = Array.isArray(bld.sin) ? bld.sin.slice() : [];
     cheese = bld.cheese || null;
     tops = (bld.tops || []).slice();
     sauces = (bld.sauces || []).slice();
@@ -5358,6 +5371,7 @@ function resetBuilder() {
     size = null;
     doubleProt = false;
     extraSauce = false;
+    sinIng = [];
     byoStep = 0;
     editingItemQty = null;
 }
@@ -5450,7 +5464,7 @@ var editingItemQty = null;
 function currentBuiltItem() {
     var qty = editingItemQty || 1;
     return mode === 'sig'
-        ? { type: 'sig', sigId: sigId, size: size, doubleProt: doubleProt, extraSauce: extraSauce, cheese: cheese, qty: qty }
+        ? Object.assign({ type: 'sig', sigId: sigId, size: size, doubleProt: doubleProt, extraSauce: extraSauce, cheese: cheese, qty: qty }, sinIng.length ? { sin: sinIng.slice() } : {})
         : { type: 'byo', base: base, prot: prot, cheese: cheese, tops: tops.slice(), sauces: sauces.slice(), size: size, doubleProt: doubleProt, extraSauce: extraSauce, qty: qty };
 }
 var quickPayEligible = false;
@@ -5628,6 +5642,12 @@ function itemRecipeLines(item) {
         tops = sig.tops || [];
         sauces = sig.sauces || [];
         cheese = sig.fixedCheese || item.cheese || null;
+        // Lo que el cliente quitó no se lista como si fuera: cocina lo lee en la línea SIN.
+        var quita = Array.isArray(item.sin) ? item.sin : [];
+        tops = tops.filter(function (t) { return quita.indexOf(t) < 0; });
+        sauces = sauces.filter(function (t) { return quita.indexOf(t) < 0; });
+        if (cheese && quita.indexOf(cheese) >= 0)
+            cheese = null;
     }
     else {
         base = item.base;
@@ -5646,6 +5666,8 @@ function itemRecipeLines(item) {
     // armador tenían cada una su nombre.
     lines.push('Vegetales: ' + (tops.length ? tops.map(function (id) { return nombreOId(TOPS, id, 'vegetal'); }).join(' · ') : 'sin vegetales'));
     lines.push('Salsas: ' + (sauces.length ? sauces.map(function (id) { return nombreOId(SAUCES, id, 'salsa'); }).join(' + ') : 'sin salsa') + (item.extraSauce ? ' (+EXTRA)' : ''));
+    if (item.type === 'sig' && item.sin && item.sin.length)
+        lines.push('SIN: ' + item.sin.map(nombreIngrediente).join(', ').toUpperCase());
     if (item.note)
         lines.push('Nota: ' + item.note);
     return lines;
@@ -5694,6 +5716,8 @@ function itemExtrasLabel(item) {
         parts.push('salsa extra');
     if (item.type === 'sig' && item.cheese)
         parts.push('con ' + fn(CHEESE, item.cheese).toLowerCase());
+    if (item.type === 'sig' && item.sin && item.sin.length)
+        parts.push(sinTexto(item.sin));
     if (item.note)
         parts.push('nota: ' + item.note);
     return parts.join(' · ');
@@ -7003,6 +7027,30 @@ function nombreDe(lista, id) {
     var x = id ? lista.find(function (y) { return y.id === id; }) : null;
     return x ? x.l : '';
 }
+function nombreIngrediente(id) {
+    return nombreDe(TOPS, id) || nombreDe(SAUCES, id) || nombreDe(CHEESE, id) || id;
+}
+function sinTexto(ids) {
+    return 'sin ' + ids.map(function (id) { return nombreIngrediente(id).toLowerCase(); }).join(', sin ');
+}
+function alternarSin(id) {
+    var i = sinIng.indexOf(id);
+    if (i >= 0)
+        sinIng.splice(i, 1);
+    else
+        sinIng.push(id);
+    render();
+}
+// EL COMBO A LA VISTA EN LA FICHA (dueño 2026-09-30, del estudio de Subway): cuánto sale con
+// la bebida más barata de hoy, con el descuento del combo ya aplicado. La cifra sale de las
+// mismas funciones que cobra el carrito, nunca escrita.
+function conBebidaTexto(precio) {
+    var lista = bebidasDisponibles();
+    if (!lista.length)
+        return '';
+    var min = Math.min.apply(null, lista.map(function (d) { return precioEnCombo(d); }));
+    return '<s>Con bebida ' + SOLES_TXT + pz(money(precio + min)) + '</s>';
+}
 function sOSig() {
     var s = SIGS.find(function (x) { return x.id === sigId; });
     if (!s) {
@@ -7028,6 +7076,15 @@ function sOSig() {
         var p = itemUnitPrice({ type: 'sig', sigId: s.id, size: sz, doubleProt: false, extraSauce: false, cheese: cheese, qty: 1 });
         return '<button class="' + (size === sz ? 'on' : '') + '" aria-pressed="' + (size === sz) + '" onclick="size=\'' + sz + '\';render()">' + sz + 'CM<s>' + SOLES_TXT + pz(p) + '</s></button>';
     };
+    // QUITAR (dueño 2026-09-30): cada vegetal, salsa y el queso fijo se pueden sacar; nada se
+    // agrega. El pan y la proteína no se quitan: sin ellos ya no es ese Signature.
+    var quitables = [].concat(queso ? [queso] : [], s.tops || [], s.sauces || []).filter(Boolean);
+    var quitar = quitables.length ? '<div class="quita"><em>¿Le quitas algo?</em><div class="ops">'
+        + quitables.map(function (id) {
+            var fuera = sinIng.indexOf(id) >= 0;
+            return '<button aria-pressed="' + fuera + '" class="' + (fuera ? 'off' : '') + '" onclick="alternarSin(\'' + id + '\')">' + (fuera ? 'Sin ' : '') + esc(nombreIngrediente(id).toLowerCase()) + '</button>';
+        }).join('')
+        + '</div></div>' : '';
     var dbl = dblProtRef();
     var fila = '';
     if (dbl) {
@@ -7044,10 +7101,11 @@ function sOSig() {
         + '<div class="cuerpo"><div class="num">' + (i >= 0 ? romano(i + 1) : '') + (marca ? ' · ' + esc(marca) : '') + '</div>'
         + '<h1>' + esc(s.n) + '</h1>'
         + filas.map(function (f) { return '<div class="fila"><em>' + f[0] + '</em><span>' + esc(f[1]) + '</span></div>'; }).join('')
+        + quitar
         + '<div class="tam">' + tam('15') + tam('30') + '</div>'
         + fila
         + '</div>'
-        + '<div class="pie sw-barra"><span class="p">' + SOLES_TXT + pz(itemUnitPrice(currentBuiltItem())) + '</span>'
+        + '<div class="pie sw-barra"><span class="p">' + SOLES_TXT + pz(itemUnitPrice(currentBuiltItem())) + conBebidaTexto(itemUnitPrice(currentBuiltItem())) + '</span>'
         + '<button onclick="loQuiero()">' + (editingItemQty ? 'Listo' : 'Lo quiero') + '</button></div>'
         + '</div>';
 }
