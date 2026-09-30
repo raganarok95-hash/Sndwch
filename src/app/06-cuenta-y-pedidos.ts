@@ -368,34 +368,80 @@ async function loadHist(){
   if(!done){done=true;clearTimeout(timer);listLoading=false;render();}
 }
 function sPHistory(){
+  // El historial de puntos, en el mundo de la 29: un renglón por movimiento, sin la barra vieja.
   var txns=(cust&&cust._txns)||[];
-  var h=H('HISTORIAL DE PUNTOS',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
-  if(listLoading){
-    h+=skeletonCards(5,48);
-  }else if(!txns.length){
-    // Mismo criterio que el carrito: era una estrellita gris al 50% de opacidad en una app
-    // cuyos otros cinco vacíos reciben con un hermano. Un ícono atenuado no dice qué va a
-    // aparecer acá; la frase sí.
-    h+=VACIO('Sin movimientos','Cada pedido suma puntos. Acá vas a ver de dónde salió cada uno y en qué se fue.',null,'piensa');
-  }else{
-    h+=txns.map(function(t){
-      var pos=(t.points||0)>=0;
-      return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#EFEDE4)">'+esc(t.description||t.type)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(t.date||'')+'</div></div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+(pos?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)')+'">'+(pos?'+':'')+t.points+'</div></div>';
-    }).join('');
-  }
-  h+='</div>'+NAV();
-  return h;
+  var h='<div class="mw mpt mph fi"><button class="sal" onclick="sndScreen=\'p_rewards\';render()" aria-label="Volver">←</button>'
+    +'<div class="dice"><em>Tus puntos</em><h1>De dónde salió cada uno</h1></div>';
+  if(listLoading)h+='<p class="cargando">Buscando tus movimientos…</p>';
+  else if(!txns.length)h+=VACIO('Sin movimientos','Cada pedido suma puntos. Aquí verás de dónde salió cada uno y en qué se fue.',null,'piensa');
+  else h+='<div class="otras movs">'+txns.map(function(t:any){
+    var pos=(t.points||0)>=0;
+    return'<div class="g'+(pos?'':' neg')+'"><span class="n">'+esc(t.description||t.type)+(t.date?'<s>'+esc(t.date)+'</s>':'')+'</span><span class="d">'+(pos?'+':'')+t.points+'</span></div>';
+  }).join('')+'</div>';
+  return h+'</div>';
 }
 
+// 29 · WICHO ES EL ESTADO (docs/maquetas/aprobadas/29-tus-puntos.png). No hay barra: lo que
+// falta se cuenta en PEDIDOS, que es como lo piensa el cliente, no en puntos.
+// Un pedido vale lo que el cliente suele gastar en comida (1 punto por sol, el envío no
+// cuenta); sin pedidos cargados, lo que cuesta el 15CM del Signature estrella. Es una
+// estimación y se dice como tal: «unos N pedidos».
+function puntosPorPedido(){
+  var com=(myOrders||[]).filter(function(o:any){return o.status!=='CANCELADO'&&o.total>0;});
+  if(com.length){
+    var s=com.reduce(function(a:number,o:any){return a+Math.max(0,(o.total||0)-(o.delivery_fee||0));},0);
+    var p=Math.round(s/com.length);
+    if(p>0)return p;
+  }
+  var est=SIGS.filter(function(s:any){return s.estrella;})[0]||SIGS[0];
+  return Math.max(1,Math.round((est&&est.p15)||20));
+}
+function metaEnPalabras(r:any){
+  var t:any={sandwich:'Un sándwich gratis',subir30:'Tu 30CM gratis',bebida:'Una bebida gratis',doble:'Doble proteína gratis',salsa:'Una salsa extra gratis'};
+  return t[r.tipo]||(r.n+' '+r.s);
+}
+function pedidosQueFaltan(r:any,pts:number){return Math.max(0,Math.ceil((r.pts-pts)/puntosPorPedido()));}
+function fotoDeLaMeta(){
+  var ult=(myOrders||[])[0];
+  var sig=ult&&(ult.items||[]).find(function(it:any){return it.type==='sig';});
+  var id=sig?sig.sigId:((SIGS.filter(function(s:any){return s.estrella;})[0]||SIGS[0]||{}).id);
+  return id?(SIG_IMG[id]||''):'';
+}
 function sPRewards(){
-  var pts=cust.points||0;
-  return H('RECOMPENSAS','sndScreen=\'p_home\';render()')+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px">Tu balance //</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:56px;font-weight:640;color:#fff;margin-bottom:12px;line-height:1">'+pts+'<span style="color:'+GOLD+';font-size:22px"> pts</span></div><p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:24px;line-height:1.5">Las recompensas se aplican directamente a tu pedido — elígelas en la pantalla de confirmar cuando tengas puntos suficientes.</p>'// La tarjeta bloqueada usaba una paleta gris propia (#141C19/#666/#555/#444/#1a1a1a/
-// #2a2a2a) en vez de los tokens ya establecidos para "no disponible ahora" (CARDOFF/
-// TOPOFF: var(--sw-card2)+var(--sw-text-muted)) — se unifica aquí, pero SIN el
-// opacity:.35 de esas dos porque esta tarjeta sigue siendo accionable (barra de
-// progreso + "faltan X puntos"), no un ítem agotado — hallazgo de auditoría visual,
-// MEDIO.
-+RWDS.map(function(r){var ok=pts>=r.pts,pct=Math.min((pts/r.pts)*100,100);return'<div style="background:var(--sw-card2,#171A14);border:1px solid '+(ok?ACC():'var(--sw-border,#2C3228)')+';border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:'+(ok?10:6)+'px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:'+(ok?'#fff':'var(--sw-text-muted,#9DA096)')+';letter-spacing:.04em">'+r.n+'<span style="color:'+(ok?GOLD:'var(--sw-text-muted,#9DA096)')+'"> // </span>'+r.s+'</div><p style="font-family:\'EB Garamond\',serif;font-size:13px;color:'+(ok?'#888':'var(--sw-text-muted,#9DA096)')+';margin-top:2px">'+r.d+'</p>'+(r.sizeOnly?'<p style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-warn,#ffa500);margin-top:4px;display:flex;align-items:center;gap:4px">'+icon('warning',10,'var(--sw-warn,#ffa500)')+'<span>Válido solo en tamaño '+r.sizeOnly+'CM</span></p>':'')+'</div><div style="text-align:right;flex-shrink:0;margin-left:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+(ok?GOLD:'var(--sw-text-muted,#9DA096)')+';line-height:1">'+r.pts+'</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:'+GOLD+'">Pts</div></div></div>'+(!ok?'<div style="background:var(--sw-card,#16241D);border-radius:4px;height:3px;overflow:hidden;margin-bottom:4px"><div style="background:'+GOLD+';height:100%;width:'+pct+'%;border-radius:4px"></div></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+'">Faltan '+(r.pts-pts)+' puntos</div>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-ok,#25D366)">✓ Disponible en tu próximo pedido</div>')+'</div>';}).join('')+BTN('Hacer un pedido //','swTab(\'order\')')+'</div>'+NAV();
+  var pts=(cust&&cust.points)||0;
+  var orden=RWDS.slice().sort(function(a,b){return a.pts-b.pts;});
+  // La meta es la recompensa más grande que todavía no alcanza; si ya alcanza todas, la más grande.
+  var faltan=orden.filter(function(r){return pts<r.pts;});
+  var meta=faltan.length?faltan[faltan.length-1]:orden[orden.length-1];
+  var ya=meta&&pts>=meta.pts;
+  var n=meta?pedidosQueFaltan(meta,pts):0;
+  // Las marcas son el TRAMO FINAL: los pedidos que faltan y, antes, los últimos ya hechos,
+  // hasta 8 en total. Si faltan más de 7, no se dibujan: la frase basta.
+  var hechosTot=Math.floor(pts/puntosPorPedido());
+  var hechos=(meta&&!ya&&n<=7)?Math.min(hechosTot,8-n):0;
+  var total=(meta&&!ya&&n<=7)?n+hechos:0;
+  var frase=ya?'“Ya es tuyo. Pídelo cuando quieras.”'
+    :(n<=1?'“Un pedido más y te lo doy yo mismo.”':'“Unos '+(n<=10?['','uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez'][n]:String(n))+' pedidos más y te lo doy yo mismo.”');
+  var marcas='';
+  for(var i=0;i<total;i++)marcas+=i<hechos?'<i class="ok" aria-hidden="true">✓</i>':'<i aria-hidden="true">'+(i+1)+'</i>';
+  var otras=orden.filter(function(r){return r!==meta;}).map(function(r){
+    var ok=pts>=r.pts,k=pedidosQueFaltan(r,pts);
+    return'<div class="g'+(ok?' ya':'')+'"><span class="n">'+esc(metaEnPalabras(r))+'</span><span class="d">'+(ok?'YA LA TIENES':(k===1?'1 pedido':'~'+k+' pedidos'))+'</span></div>';
+  }).join('');
+  var alcanza=orden.some(function(r){return pts>=r.pts;});
+  var foto=fotoDeLaMeta();
+  return'<div class="mw mpt fi">'
+    +'<button class="sal" onclick="sndScreen=\'p_home\';render()" aria-label="Volver">←</button>'
+    +'<img class="wicho" src="'+broPose('wicho','saluda')+'" alt="">'
+    +'<div class="dice"><em>'+(ya?'Ya tienes':'Vas por')+'</em><h1>'+esc(meta?metaEnPalabras(meta):'Tu primer premio')+'</h1>'
+    +'<p class="pts">'+pts+' puntos'+(meta&&!ya?' · te faltan '+(meta.pts-pts):'')+'</p></div>'
+    +'<div class="medio">'+(foto?'<div class="premio"><img src="'+foto+'" alt=""></div>':'')+'<div class="frase">'+frase+'</div></div>'
+    +(total?'<div class="marcas" role="img" aria-label="'+hechos+' de '+total+' pedidos">'+marcas+'</div>':'')
+    +(otras?'<div class="otras"><div class="r">O cambia de meta</div>'+otras+'</div>':'')
+    +'<button class="hist" onclick="loadHist()">De dónde salió cada punto →</button>'
+    +'<div class="pie sw-barra"><button class="go" onclick="volverALaPuerta()">'+(alcanza?'Canjear algo ahora':'Pedir y sumar')+'</button>'
+    +(alcanza?'<p>Lo eliges al pagar, en PUNTOS.</p>':'')+'</div>'
+    +'</div>';
 }
 
 
