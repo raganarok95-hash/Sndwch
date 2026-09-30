@@ -340,3 +340,17 @@ export async function cartaDeLaApp(page: Page): Promise<Carta> {
 export async function soles(page: Page, n: number): Promise<string> {
   return page.evaluate((x) => (window as any).SOLES_TXT + (window as any).pz(x), Math.round(n * 100) / 100);
 }
+
+// Llega al detalle de un pedido por el camino real con sesión: la esquina de la puerta → tu
+// cuenta → «Pedidos» (que pide `my-orders`) → el sello del pedido.
+export async function abrirPedidoDesdeLaCuenta(page: Page, ref: string, cliente: Record<string, unknown> = {}) {
+  await page.evaluate((c: any) => {
+    const w = window as any;
+    w.cust = { id: 'c1', name: 'Cliente de Prueba', phone: '900000001', points: 0, total_orders: 1, credit_balance: 0, ...c };
+    w.token = 'tok'; w.volverALaPuerta();
+  }, cliente);
+  await page.locator('.pta .yo').click();
+  await page.locator('.mcu .cifras button', { hasText: 'Pedidos' }).click();
+  await page.getByRole('button', { name: 'Pedido ' + ref }).click();
+  await page.locator('.mod').waitFor();
+}

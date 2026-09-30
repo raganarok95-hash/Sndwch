@@ -1055,7 +1055,10 @@ export function deriveCart(
   }
   const total = d.total;
 
-  return { ingredients, expectedTotal: total, sanitizedItems: priced.map((p) => p.item) };
+  // Cada línea guardada lleva su precio unitario de ESE día (`precio`, en soles): el detalle del
+  // pedido lo muestra después sin recalcular con la carta de hoy, que el panel puede cambiar.
+  // No viaja de vuelta: priceCartItem arma la línea con sus propios campos y lo descarta.
+  return { ingredients, expectedTotal: total, sanitizedItems: priced.map((p) => ({ ...p.item, precio: p.unitPrice })) };
 }
 
 // Precio aproximado de una línea de carrito YA guardada en un pedido — usado solo para

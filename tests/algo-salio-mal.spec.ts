@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, entrarConTelefono } from './helpers';
+import { gotoApp, abrirPedidoDesdeLaCuenta } from './helpers';
 
 // «Algo salió mal» (pantalla 35, maqueta docs/maquetas/aprobadas/35-algo-salio-mal.png).
 // Se entra desde el detalle de un pedido ENTREGADO, dentro de las 48 h que dicen los
@@ -22,10 +22,7 @@ const RECIENTE = { ...base, id: 'ord-r', ref: 'ORD-RECI-0001', created_at: HACE(
 const VIEJO = { ...base, id: 'ord-v', ref: 'ORD-VIEJ-0002', created_at: HACE(60), delivered_at: HACE(49) };
 
 async function abrirPedido(page, ref: string) {
-  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await entrarConTelefono(page);
-  await page.locator('[onclick*="sndScreen=\'p_orders\';loadMyOrders()"]').click();
-  await page.locator('text=' + ref).click();
+  await abrirPedidoDesdeLaCuenta(page, ref);
 }
 
 const LOGIN = { customer: { phone: '900000001', name: 'Cliente de Prueba', points: 0, credit_balance: 0 }, isAdmin: false, token: 'tok' };
@@ -39,7 +36,7 @@ test('dentro de las 48 h: marca un motivo y el reporte sale con ESE motivo', asy
     'report-order-problem': (b: any) => { enviado = b; return { success: true, respondeAntesDe: new Date(Date.now() + 3600000).toISOString() }; },
   });
   await abrirPedido(page, RECIENTE.ref);
-  await page.getByRole('button', { name: /Algo salió mal · hasta 48 h/ }).click();
+  await page.getByRole('button', { name: /Algo salió mal.*hasta 48 h/ }).click();
 
   await expect(page.getByText('Dime qué pasó.')).toBeVisible();
   // Sin marcar nada no se manda: lo dice, no se queda callado.
@@ -59,7 +56,7 @@ test('dentro de las 48 h: marca un motivo y el reporte sale con ESE motivo', asy
 test('pasadas las 48 h el detalle ya no ofrece reportar', async ({ page }) => {
   await gotoApp(page, { login: LOGIN, 'my-orders': { orders: [VIEJO] } });
   await abrirPedido(page, VIEJO.ref);
-  await expect(page.getByText('¡Entregado!')).toBeVisible();
+  await expect(page.locator('.mod h1')).toContainText('Llegó');
   await expect(page.getByRole('button', { name: /Algo salió mal/ })).toHaveCount(0);
 });
 
