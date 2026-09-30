@@ -423,15 +423,12 @@ function currentBuiltItem(){
     ?{type:'sig',sigId:sigId,size:size,doubleProt:doubleProt,extraSauce:extraSauce,cheese:cheese,qty:qty}
     :{type:'byo',base:base,prot:prot,cheese:cheese,tops:tops.slice(),sauces:sauces.slice(),size:size,doubleProt:doubleProt,extraSauce:extraSauce,qty:qty};
 }
-// Entrada a la pantalla de revisar UN sándwich recién armado. Si el carrito estaba
-// vacío (caso mayoritario: un solo sándwich), se habilita el pago directo — el
-// sándwich se refleja de inmediato en `cart` y esta misma pantalla incluye los
-// campos de checkout, evitando el paso extra de pasar por "TU CARRITO".
 var quickPayEligible=false;
 function enterConfirm(){
-  quickPayEligible=cart.length===0;
-  if(quickPayEligible){cart=[currentBuiltItem()];initCheckoutFields();}
-  go('o_item_confirm');
+  // Ya no hay pantalla de «Confirmar sándwich»: el último paso del armador suma el sándwich al
+  // pedido igual que «Lo quiero» de la ficha (ver loQuiero, 2026-09-25).
+  quickPayEligible=false;
+  loQuiero();
 }
 // Vuelve al builder desde la confirmación — si se había habilitado el pago directo,
 // se retira el sándwich en borrador del carrito (estaba vacío antes de entrar aquí).
@@ -1244,33 +1241,6 @@ function RIEL_CARRITO(){
 }
 
 // El mundo de SANDO: su carta cerrada.
-function sMundoSando(){
-  var visibles=sigsEnOrden(SIGS.filter(function(x){return!x.secret&&sigAvailable(x);}));
-  var cuerpo=LINEA_ESTADO()
-    +SECCION('Ya está resuelto','Recetas cerradas. Eliges una y no hay nada más que decidir.')
-    +BLOQUE('<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">'
-      +visibles.map(function(x,i){return TILE_SIGNATURE(x,i===0);}).join('')+'</div>')
-    +vaultSection()
-    +SECCION('Y además')
-    +BLOQUE('<div style="border-bottom:1px solid var(--sw-border-soft,#16241C)">'
-      +PUERTA({titulo:'Bebidas',dato:'desde '+SOLES_TXT+pz(precioBebidaMin()),
-               bajada:'Medio litro, hechas acá. Se piden solas o con tu sándwich.',
-               fn:"irABebidas('o_home')"})
-      +PUERTA({titulo:'Pedido en grupo',
-               bajada:'Mandas un link, cada quien arma el suyo y el delivery se divide entre todos.',
-               fn:"doCreateGroupOrder()"})
-      +(cust&&myFavorites.length
-        ?PUERTA({titulo:'Tus favoritos',dato:String(myFavorites.length),
-                 bajada:'Los armados que guardaste. Se piden en un toque.',
-                 fn:"sndScreen='p_favorites';render()"}):'')
-      +PUERTA({titulo:'Tus puntos',dato:cust?String(cust.points||0)+' pts':'',
-               bajada:cust?'Canjéalos por salsas, upgrades y sándwiches gratis.':'Gana puntos con cada pedido. El primero ya suma.',
-               fn:"swTab('points')"})
-      +'</div>')
-    +BLOQUE(contactFooterHTML(),'padding-bottom:26px');
-  return PANTALLA(RIEL({derecha:RIEL_CARRITO()||BOTON_PUERTA()}),cuerpo)+NAV();
-}
-
 // La bebida mas barata, derivada. Un "desde S/5" escrito a mano se vuelve mentira el dia
 // que el dueno repricie una bebida desde el panel, sin tocar una linea de codigo.
 function precioBebidaMin(){
@@ -1279,70 +1249,77 @@ function precioBebidaMin(){
   return ps.length?Math.min.apply(null,ps):0;
 }
 
-// BEBIDAS - pantalla propia, no una fila. Es el producto de mejor margen del catalogo y la
-// palanca de attach que el modelo mide; en la app anterior era una lista de filas de 48px
-// con una miniatura, o sea el mismo componente que un item de carrito.
+// ── BEBIDAS · lado SANDO: el vaso a sangre · lado WICHO: tres franjas (maquetas aprobadas) ──
+// docs/maquetas/aprobadas/bebidas-lado-sando.png, bebidas-lado-wicho.png y
+// bebidas-sando-sigo-sin-bebida.png. Es la misma pantalla para los dos lados, pintada como el
+// lado por el que se entró (ladoActual). Tras «Lo quiero», si el pedido no trae bebida, se
+// pasa por acá con «Sigo sin bebida →» (ofrecerBebida).
+// El precio con sándwich sale de COMBO_DISCOUNT_PER_PAIR: nunca se escribe.
+var bebidaSel:string|null=null;
+function precioEnCombo(d:any){return money(Math.max(0,d.p-COMBO_DISCOUNT_PER_PAIR));}
+function bebidasDisponibles(){return SIDES.filter(function(d){return isAvail(d.id);});}
+function bebidaElegida(){
+  var lista=bebidasDisponibles();
+  return lista.find(function(d){return d.id===bebidaSel;})||lista[0]||null;
+}
+// En el lado de SANDO la elegida es la que está a la vista: se sigue el deslizamiento sin
+// volver a pintar toda la pantalla (solo el pie y los puntos).
+function bebidaDeslizada(el:HTMLElement){
+  var i=Math.round(el.scrollLeft/Math.max(1,el.clientWidth));
+  var lista=bebidasDisponibles();
+  if(!lista[i]||lista[i].id===bebidaSel)return;
+  bebidaSel=lista[i].id;
+  var pie=document.getElementById('bebida-precio');
+  if(pie)pie.textContent=SOLES_TXT+pz(precioBebidaAhora(lista[i]));
+}
+function precioBebidaAhora(d:any){
+  var conSandwich=cart.some(function(it){return it.type!=='side';});
+  return conSandwich?precioEnCombo(d):d.p;
+}
+function agregarBebidaElegida(){
+  var d=bebidaElegida();
+  if(!d)return;
+  addSideToCart(d.id);
+  salirDeBebidas();
+}
+function salirDeBebidas(){
+  var volver=ofrecerBebida?'o_cart':bebidasVolverA;
+  ofrecerBebida=false;bebidaSel=null;
+  go(volver);
+}
 function sMundoBebidas(){
-  // ⚠ EL PANEL NO ES UN BOTON GIGANTE. La primera version lo era, y quedaba una pantalla
-  // preciosa donde nada decia que se pudiera agregar algo: el producto de mejor margen del
-  // catalogo sin una sola llamada a la accion. Ademas un <button> no puede llevar botones
-  // dentro, asi que el contador de cantidad no cabia. Ahora la foto es el escenario y la
-  // accion vive en su esquina, que ademas es donde llega el pulgar.
-  var panel=function(d){
-    var av=isAvail(d.id);
-    var enCarrito=cart.find(function(it){return it.type==='side'&&it.code===d.id;});
-    var qty=enCarrito?enCarrito.qty:0;
-    var img=DRINK_IMG[d.id];
-    var foto=img
-      ?'<img src="'+img+'" alt="'+esc(d.l)+'" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;'
-       +'object-fit:cover'+(av?'':';filter:grayscale(1)')+'">'
-      :'';
-    // El velo arranca opaco a la izquierda, donde va el texto, y se abre hacia la derecha
-    // para que la bebida se vea. Sin foto el velo sobra: seria oscurecer un fondo liso.
-    var velo=foto
-      ?'<div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.92) 0%,rgba(0,0,0,.62) 46%,rgba(0,0,0,.08) 100%)"></div>'
-      :'';
-    var accion=!av
-      ?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-danger,#ff8888)">Agotado</span>'
-      :(qty>0
-        ?'<div style="display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.55);border-radius:999px;padding:5px">'
-         +'<button type="button" onclick="sideQtyChange(\''+d.id+'\',-1)" aria-label="Quitar uno de '+esc(d.l)+'" '
-         +'style="all:unset;cursor:pointer;width:30px;height:30px;border-radius:999px;display:flex;align-items:center;'
-         +'justify-content:center;background:rgba(255,255,255,.14);color:var(--sw-text,#fff);font-size:15px">−</button>'
-         +'<span class="bump" style="min-width:14px;text-align:center;font-family:\'Bodoni Moda\',serif;'
-         +'font-optical-sizing:auto;font-size:15px;font-weight:640;color:var(--sw-text,#fff)">'+qty+'</span>'
-         +'<button type="button" onclick="sideQtyChange(\''+d.id+'\',1)" aria-label="Agregar otro '+esc(d.l)+'" '
-         +'style="all:unset;cursor:pointer;width:30px;height:30px;border-radius:999px;display:flex;align-items:center;'
-         +'justify-content:center;background:'+ACC()+';color:'+ACC_INK()+';font-size:15px">+</button></div>'
-        :'<button type="button" onclick="addSideToCart(\''+d.id+'\')" aria-label="Agregar '+esc(d.l)+' al carrito" '
-         +'style="all:unset;cursor:pointer;background:'+ACC()+';color:'+ACC_INK()+';border-radius:999px;'
-         +'padding:11px 20px;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;'
-         +'font-weight:640;letter-spacing:.03em">Agregar</button>');
-    return'<article style="position:relative;display:flex;align-items:center;min-height:186px;overflow:hidden;'
-      +'border-radius:12px;background:var(--sw-card2,#122019)'+(av?'':';opacity:.55')+'">'
-      +foto+velo
-      +'<div style="position:relative;padding:18px;max-width:24ch">'
-      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;'
-      +'color:var(--sw-text,#fff);line-height:1.04;text-shadow:0 1px 8px rgba(0,0,0,.85)">'+esc(d.l)+'</div>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.22em;'
-      +'text-transform:uppercase;color:rgba(255,255,255,.75);margin-top:4px">'+esc(d.s)+'</div>'
-      +'<p style="font-family:\'EB Garamond\',serif;font-size:11px;line-height:1.5;color:rgba(255,255,255,.88);'
-      +'margin-top:9px;text-shadow:0 1px 6px rgba(0,0,0,.8)">'+esc(d.d)+'</p>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:18px;color:'+ACC()+';margin-top:11px;'
-      +'text-shadow:0 1px 8px rgba(0,0,0,.85)">'+SOLES+pz(d.p)+'</div>'
-      +'</div>'
-      +'<div style="position:absolute;right:14px;bottom:14px;display:flex;align-items:center">'+accion+'</div>'
-      +'</article>';
-  };
-  var cuerpo=SECCION('Bebidas','Medio litro, hechas acá. No son gaseosa de reventa: son infusiones de la casa.')
-    +BLOQUE('<div style="display:flex;flex-direction:column;gap:10px">'+SIDES.map(panel).join('')+'</div>')
-    // El combo se nombra con la constante, nunca con un numero escrito: es exactamente el
-    // defecto que ya rompio tres promesas publicas (ver CLAUDE.md).
-    +BLOQUE('<p style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;line-height:1.6;'
-      +'color:var(--sw-text-muted,#9DA096);padding:16px 0 4px">Con un sándwich en el mismo pedido, el combo te descuenta '
-      +SOLES_TXT+pz(COMBO_DISCOUNT_PER_PAIR)+'.</p>')
-    +BLOQUE(contactFooterHTML(),'padding-bottom:26px');
-  return PANTALLA(RIEL({volver:"go('"+bebidasVolverA+"')",titulo:'Bebidas',derecha:RIEL_CARRITO()}),cuerpo)+NAV();
+  var lista=bebidasDisponibles();
+  var d=bebidaElegida();
+  if(!d){return'<div class="bw">'+VACIO('Sin bebidas hoy','Se acabaron por hoy. Mañana vuelven.',null)+'</div>';}
+  var pie='<div class="bebida-go sw-barra"><button class="oro" onclick="agregarBebidaElegida()">Agregar</button>'
+    +'<button class="cel" onclick="agregarBebidaElegida()" id="bebida-precio">'+SOLES_TXT+pz(precioBebidaAhora(d))+'</button></div>';
+  var sin=ofrecerBebida?'Sigo sin bebida →':'';
+  if(ladoActual()==='wicho'){
+    return'<div class="bw fi"><button class="sal" onclick="salirDeBebidas()" aria-label="Volver">←</button>'
+      +'<div class="cab"><em>Algo para tomar</em><u>'+lista.length+(lista.length===1?', bien helada':', bien heladas')+'</u></div>'
+      +lista.map(function(x){
+        return'<button class="bd" aria-pressed="'+(x.id===d.id)+'" onclick="bebidaSel=\''+x.id+'\';render()">'
+          +(DRINK_IMG[x.id]?'<img src="'+DRINK_IMG[x.id]+'" alt="" loading="lazy">':'')+'<div class="v"></div>'
+          +'<div class="tx"><b>'+esc(x.l)+'</b><s>'+esc(x.s)+'</s></div>'
+          +'<div class="pz"><n>'+SOLES_TXT+pz(x.p)+'</n><s>En combo '+SOLES_TXT+pz(precioEnCombo(x))+'</s></div></button>';
+      }).join('')
+      +'<div class="pie">Con cualquier sándwich, la bebida baja '+SOLES_TXT+pz(COMBO_DISCOUNT_PER_PAIR)+'.<br>Se aplica sola en el carrito.'
+      +(sin?'<br><button onclick="salirDeBebidas()">'+sin+'</button>':'')+'</div>'
+      +'</div>'+pie;
+  }
+  return'<div class="b3 fi"><button class="sal" onclick="salirDeBebidas()" aria-label="Volver">←</button>'
+    +'<div class="pistas" onscroll="bebidaDeslizada(this)">'
+    +lista.map(function(x,i){
+      return'<section class="vaso" aria-label="'+esc(x.l)+'"><div class="fo">'+(DRINK_IMG[x.id]?'<img src="'+DRINK_IMG[x.id]+'" alt="" '+(i?'loading="lazy"':'')+'>':'')+'<div class="v"></div></div>'
+        +'<div class="arr"><em>Algo para tomar</em><u>'+(lista.length>1?'Desliza →':'')+'</u></div>'
+        +'<div class="nom"><b>'+esc(x.l)+'</b><s>'+esc(x.s+' · '+primeraFrase(x.d||''))+'</s></div>'
+        +'<div class="pz"><n>'+SOLES_TXT+pz(x.p)+'</n><s>Con sándwich '+SOLES_TXT+pz(precioEnCombo(x))+'</s></div>'
+        +'<div class="cn" aria-hidden="true">'+lista.map(function(_y,k){return'<i class="'+(k===i?'on':'')+'"></i>';}).join('')+'</div>'
+        +'</section>';
+    }).join('')
+    +'</div>'
+    +(sin?'<button class="sinb" onclick="salirDeBebidas()">'+sin+'</button>':'')
+    +'</div>'+pie;
 }
 
 // Cuantos Signatures hay HOY, en palabras. Se cuenta sobre la misma lista que pinta el
@@ -1705,158 +1682,151 @@ function pagarParteGrupo(ref:string,total:number){
   stopGroupPoll();sndScreen='o_sent';render();
 }
 
-function sOSig(){
-  // "Tu de siempre" — mismo repetir-último-pedido que ya existe en el home, pero
-  // visible también aquí (donde el cliente ya está decidiendo qué pedir) para el que
-  // ya sabe qué quiere y prefiere decidir en un tap en vez de volver al home primero.
-  var lastOrdSig=cust?lastPaidOrder():null;
-  var recoItemsSig=lastOrdSig?lastOrdSig.items:null;
-  var recoCardSig=recoItemsSig?'<div onclick="loadCart('+JSON.stringify(recoItemsSig).replace(/"/g,'&quot;')+')" style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:14px 16px;cursor:pointer;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:6px">↻ Tu de siempre //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#EFEDE4)">'+esc(lastOrdSig.summary||'')+'</div></div>':'';
-  // "SIGNATURE BUILDS" / "Elige tu build" eran el último inglés suelto visible del cliente
-  // (2026-09-12, comprobado línea por línea: todo el resto de "BUILD YOUR OWN" que queda en
-  // el repo está en comentarios, que nombran el modo por su nombre viejo y no los ve nadie).
-  // "Signature" se queda: es el nombre de la línea de producto, aparece en cada tarjeta como
-  // "// Signature" y en la marca. "Build" no era un nombre, era la palabra inglesa para
-  // "armado" — y la pestaña de al lado ya dice "Arma el tuyo" en español.
-  var h=H('SIGNATURES','go(\'o_home\')',true)+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">'+CAB('sando',sigId?'Buena elección. Tres salsas van incluidas.':'Estas ya están decididas. Yo respondo por cada una.',!!sigId)+SZTOG()+recoCardSig+ST('01','Elige el tuyo','Tres salsas incluidas.')+sigsEnOrden(SIGS).map(function(s){
-    // Menú secreto (ver s.secret/s.minOrders) — invisible para invitados, y para un
-    // cliente logueado que todavía no llega al rango exigido se muestra como una
-    // tarjeta bloqueada (genera aspiración) en vez de ocultarse sin explicación.
-    if(s.secret){
-      if(!cust)return'';
-      var myTotal=cust.total_orders||0;
-      if(myTotal<s.minOrders){
-        var missing=s.minOrders-myTotal;
-        return'<div style="background:var(--sw-card2,#171A14);border:1px dashed rgba(203,162,88,.35);border-radius:10px;padding:16px;margin-bottom:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#9DA096);display:flex;align-items:center;gap:8px">'+icon('lock',15,'#9DA096')+s.n+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+sigTypeTag(s.s)+'</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:8px">Se desbloquea con '+s.minOrders+' pedidos — te faltan '+missing+' pedido'+(missing===1?'':'s')+'.</div></div>';
-      }
-    }
-    var sel=sigId===s.id,pr=PROTS.find(function(x){return x.id===s.prot;}),bs=BASES.find(function(x){return x.id===s.base;});
-    var av=sigInStock(s);
-    // ⚠ ACÁ EL PRECIO ERA UN GUION (corregido 2026-09-12).
-    //
-    // `size` arranca en null, así que al entrar desde el home TODAS las tarjetas mostraban
-    // `—` donde el home acababa de mostrar «S/21.90» en dorado a 22px. El cliente venía de
-    // ver cinco precios y se encontraba cinco guiones: para recuperarlos tenía que tocar un
-    // tamaño que a lo mejor todavía no había pensado, en un paso que además va ANTES de
-    // elegir el sándwich.
-    //
-    // Lo que se muestra sin tamaño es exactamente lo que ya mostraba el home: el precio del
-    // 15CM, con el de 30CM debajo. No es un default disfrazado —`size` sigue en null y el
-    // botón Continuar sigue exigiendo la elección— es dejar de esconder un precio que la
-    // pantalla anterior ya había dicho. Dos pantallas seguidas del mismo flujo no pueden
-    // contradecirse sobre cuánto cuesta lo mismo.
-    var priceTag=size?SOLES+pz(sigPrice(s)):SOLES+pz(s.p15);
-    var priceSub=size||s.p30<=s.p15?'':'30CM '+SOLES+pz(s.p30);
-    if(!av){
-      var notifyRequested=restockNotified.indexOf(s.id)>=0;
-      return'<div style="background:var(--sw-card-danger,#1A2420);border:1px solid rgba(255,85,85,.3);border-radius:10px;padding:16px;margin-bottom:10px;opacity:.7"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+s.n+'<span style="color:var(--sw-text-muted,#9DA096)"> // </span>'+sigTypeTag(s.s)+'</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888)">Agotado</span></div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:8px">'+(bs?bs.l+' // '+bs.s:'')+' · '+(pr?pr.l+' // '+pr.s:'')+'</div>'
-        // Antes esto desaparecía sin dejar rastro para un invitado sin cuenta — parecía un
-        // callejón sin salida en vez de una invitación a registrarse (hallazgo de auditoría
-        // UX, MEDIO).
-        +(cust?'<button onclick="doRequestRestockNotify(\''+s.id+'\')" '+(notifyRequested?'disabled':'')+' style="all:unset;cursor:'+(notifyRequested?'default':'pointer')+';display:block;margin-top:10px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+(notifyRequested?'var(--sw-ok,#25D366)':GOLD)+';letter-spacing:.08em">'+(notifyRequested?'✓ Te avisamos cuando vuelva':'Avísame cuando vuelva →')+'</button>':'<div onclick="swTab(\'points\')" style="cursor:pointer;display:block;margin-top:10px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.08em">Inicia sesión para que te avisemos →</div>')
-        +'</div>';
-    }
-    // Antes, sin foto real (ver SIG_IMG — hoy los 7 signatures públicos ya la tienen, así
-    // que esta reserva ya no debería activarse en la práctica, pero se deja como red de
-    // seguridad para el día que se agregue un signature nuevo sin foto todavía), la
-    // tarjeta simplemente no mostraba nada a la izquierda — el texto arrancaba pegado al
-    // borde en esas filas mientras las demás tenían una miniatura, dando una lista
-    // "parchada" (hallazgo del dueño). Mismo bloque de reserva que ya usa
-    // sigPreviewOverlayHTML cuando no hay foto, a la misma escala que la miniatura real —
-    // nunca se inventa una foto, solo se pareja el espacio que ocupa.
-    // ── A SANGRE ──────────────────────────────────────────────────────────────
-    // Dirección visual elegida por el dueño. La foto DEJA de ser una miniatura de 64 px
-    // al costado del texto y pasa a SER la tarjeta: se sirve a sangre, y el texto vive
-    // encima sobre un degradado. El argumento no es estético — en la versión anterior la
-    // decisión de compra se tomaba leyendo, y la foto era una nota al pie que además
-    // exigía un tap ("Ver foto →") para verse de verdad. Se vende comida: la foto es el
-    // producto.
-    //
-    // ⚠ Lo que NO se perdió al mover el texto encima de la foto, porque cada línea
-    // costaba algo cuando no estaba:
-    //   · el pitch, que es lo único que distingue un Signature de otro de un vistazo;
-    //   · `lowStockNote`, que avisa que quedan pocas unidades ANTES de elegir;
-    //   · el aviso de tamaño único, sin el cual el precio parece no reaccionar al 30CM.
-    // Todo eso sigue en la tarjeta. Lo que sí se fue es la línea de ingredientes en
-    // texto plano, que ahora vive en la ficha (un tap, igual que antes) — la foto la
-    // reemplaza mejor de lo que la reemplazaba una lista.
-    var foto=SIG_IMG[s.id];
-    // Sin foto no se inventa una: se pinta el mismo bloque a la misma altura, para que la
-    // lista no quede "parchada" con una tarjeta más baja que las demás. Es la red de
-    // seguridad para un Signature nuevo que todavía no tiene fotografía.
-    var lienzo=foto
-      ?'<img src="'+foto+'" alt="'+esc(s.n)+'" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block">'
-      :'<div style="position:absolute;inset:0;background:linear-gradient(160deg,var(--sw-card,#1B1F18),var(--sw-card2,#171A14));display:flex;align-items:center;justify-content:center;opacity:.55">'+icon('sandwich',64,GOLD)+'</div>';
-    // El degradado es lo que hace legible el texto sobre CUALQUIER foto — una foto clara
-    // debajo de texto blanco es ilegible, y no controlamos qué foto sube el dueño desde
-    // el panel. Oscurece abajo (donde va el nombre) y un poco arriba (donde van las
-    // píldoras), dejando el centro de la foto casi intacto.
-    var velo='<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.52) 0%,rgba(0,0,0,.06) 20%,rgba(0,0,0,.20) 40%,rgba(0,0,0,.72) 68%,rgba(0,0,0,.94) 100%)"></div>';
-    // El precio va SIEMPRE en dorado: es el color del dinero en toda la app y no cambia
-    // con el lado ni con la selección. Un precio que cambia de color según dónde estás es
-    // la clase de duda que no queremos en un flujo de compra.
-    // El precio de 30CM va DEBAJO de la píldora, no a su lado: el contenedor de esta fila es
-    // un flex, así que un <div> suelto se vuelve otro ítem de la fila y el subprecio queda
-    // flotando sobre la foto, separado de su propio precio. Se envuelven los dos juntos.
-    var pastPrecio='<span style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">'
-      +PILL(priceTag,true)
-      +(priceSub?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:rgba(255,255,255,.9);text-shadow:0 1px 4px rgba(0,0,0,.85)">'+priceSub+'</span>':'')
-      +'</span>';
-    // El sello de recomendado también faltaba acá, que es donde se decide: el home lo
-    // pintaba y la pantalla siguiente no, así que el empujón se apagaba justo al entrar.
-    var pastBadge=(s.recommended?PILL('Recomendado',true)+' ':'')+PILL(sigBadge(s),false);
-    // "quedan N" también sube a píldora: sobre una foto, un texto suelto en dorado puede
-    // caer encima de una zona dorada de la comida y volverse invisible. El fondo propio
-    // de la píldora es lo que garantiza que se lea sea cual sea la foto.
-    var quedan=lowStockNote(s.prot)?' '+PILL(esc(String(invQty[s.prot]))+' en stock',false):'';
-    // Antes el pitch se truncaba a UNA línea porque competía por espacio con la lista de
-    // ingredientes. Sobre la foto hay sitio para dos, que es lo que hace falta para que
-    // una frase entera se entienda sin abrir la ficha.
-    // ⚠ EN LA TARJETA VA LA PRIMERA FRASE, NO EL PITCH RECORTADO A DOS LINEAS.
-    // Los cinco pitches miden ~210 caracteres (unas 6 lineas a este ancho) y la tarjeta
-    // les daba 2 con `-webkit-line-clamp`, asi que los CINCO se cortaban a media palabra
-    // ("...cocidas dentro de su propia...", "...puestos en pliegues so..."). Cinco
-    // tarjetas cortadas a media palabra en la pantalla de compra se leen como descuido,
-    // y subir el recorte a 3 lineas solo mueve el corte de sitio.
-    //
-    // La primera frase es el GANCHO DE OCASION con el que se reescribieron a proposito
-    // ("Para la noche en que ya decidiste que no vas a cocinar."): termina en un limite
-    // real, nunca parte una palabra, y es la parte mas fuerte. El pitch completo va en la
-    // ficha del producto, que es donde el cliente ya decidio mirar ese sandwich.
-    var pitchPreview=s.pitch?'<div style="font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.45;color:rgba(255,255,255,.82);margin-top:5px;text-shadow:0 1px 4px rgba(0,0,0,.7)">'+esc(primeraFrase(s.pitch))+'</div>':'';
-    // Precio/receta fijos sin importar el tamaño elegido (hoy solo THE CHICAGO, plato
-    // tradicional que no se vende "para compartir") — el selector 15CM/30CM de arriba
-    // sigue siendo genérico para todos los Signature, así que sin este aviso el cliente
-    // no tenía forma de saber por qué el precio no cambiaba al tocar 30CM (auditoría de
-    // menú, BAJO).
-    var singleSizeNote=s.p15===s.p30?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';margin-top:5px;text-shadow:0 1px 4px rgba(0,0,0,.7)">Tamaño único — mismo precio en 15CM y 30CM.</div>':'';
-    // El menú secreto, incluso YA desbloqueado, no revela su composición: es el punto de
-    // un menú secreto (pedido explícito del dueño). Lo que sí cambia es el rótulo del
-    // enlace — "Ver ingredientes" sobre algo que no los muestra sería una promesa falsa.
-    var verMas='<div onclick="event.stopPropagation();openSigPreview(\''+s.id+'\')" style="display:inline-flex;align-items:center;gap:5px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.1em;cursor:pointer;text-shadow:0 1px 4px rgba(0,0,0,.7);margin-top:9px">'+(s.secret?'Ver la ficha →':'Ver ingredientes →')+'</div>';
-    // doubleProt/extraSauce reseteados también acá (no solo cheese) — antes, activar
-    // "Doble proteína" en un Signature, volver a esta lista y tocar OTRO Signature distinto
-    // heredaba el cargo sin que el cliente lo hubiera elegido para ese producto nuevo
-    // (resetBuilder() solo corre al ENTRAR al flujo, no al cambiar de tarjeta ya adentro —
-    // hallazgo de auditoría UX, CRÍTICO: cobro no consentido).
-    //
-    // La selección se marca con un aro dorado de 2 px MÁS un rótulo con palabras. Solo el
-    // aro no alcanza sobre una foto: el dorado puede caer sobre una zona dorada de la
-    // comida y desaparecer. Lo que nunca desaparece es la palabra.
-    return'<div onclick="sigId=\''+s.id+'\';cheese=null;doubleProt=false;extraSauce=false;render()" style="position:relative;height:236px;border-radius:12px;overflow:hidden;cursor:pointer;margin-bottom:12px;box-shadow:'+(sel?'0 0 0 2px '+GOLD+',0 6px 18px rgba(0,0,0,.4)':SHADOW_SM)+';transition:box-shadow .15s">'
-      +lienzo+velo
-      +'<div style="position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px">'
-      +'<span>'+pastBadge+quedan+(sel?' '+PILL('&#10003; Elegido',true):'')+'</span>'
-      +pastPrecio
-      +'</div>'
-      +'<div style="position:absolute;left:16px;right:16px;bottom:14px">'
-      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:#fff;line-height:1.05;text-shadow:0 2px 8px rgba(0,0,0,.75)">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div>'
-      +pitchPreview+singleSizeNote+verMas
-      +'</div></div>';
-  }).join('');
-  var sig=SIGS.find(function(x){return x.id===sigId;});
-  return h+'</div>'+(previewSigId?sigPreviewOverlayHTML():'')+AB(size&&sig?sigPrice(sig):null,!!(size&&sigId),'go(\'o_home\')','enterConfirm()');
+// ── MUNDO SANDO · un plato a la vez (maqueta M15, aprobada) ───────────────────────────────
+// docs/maquetas/aprobadas/mundo-sando-M15.png (fuente m8.html). «Ya está resuelto» no es una
+// lista para comparar: es que él ya decidió. Cada Signature ocupa la pantalla y se pasa al
+// siguiente de costado; el último plato es el secreto. El orden, los nombres, las frases y los
+// precios salen de la carta (sigsEnOrden, SIGS): la maqueta los trae de muestra.
+function romano(n:number):string{
+  var t:[number,string][]=[[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']],out='';
+  t.forEach(function(p){while(n>=p[0]){out+=p[1];n-=p[0];}});
+  return out;
 }
+function M15_PASAR(total:number,i:number,esSecreto:boolean,hayVault:boolean){
+  var marcas='';
+  for(var k=0;k<total;k++){
+    var ultimoVault=hayVault&&k===total-1;
+    marcas+='<i class="'+(k===i?'on':(ultimoVault?'vlt':''))+'"></i>';
+  }
+  return'<div class="pasar" aria-hidden="true">'+marcas+'<em>'+(i===total-1?'Último':'Desliza')+'</em></div>';
+}
+function sMundoSando(){
+  var visibles=sigsEnOrden(SIGS.filter(function(x){return!x.secret&&sigAvailable(x);}));
+  var secreto=SIGS.find(function(s){return s.secret;});
+  var total=visibles.length+(secreto?1:0);
+  var sirve=broPose('sando','cuerpo');
+  var platos=visibles.map(function(s,i){
+    var av=sigInStock(s);
+    var marca=s.recommended?'La estrella':(sigBadge(s)||'');
+    return'<section class="plato" aria-label="'+esc(s.n)+'"><div class="forro"></div>'
+      +'<div class="foto">'+(SIG_IMG[s.id]?'<img src="'+SIG_IMG[s.id]+'" alt="" '+(i>0?'loading="lazy"':'')+(av?'':' style="filter:grayscale(1)"')+'>':'')+'<div class="baja"></div></div>'
+      +'<img class="sirve" src="'+sirve+'" alt="" aria-hidden="true">'
+      +'<div class="ficha"><div class="num">'+romano(i+1)+' de '+romano(visibles.length)+(marca?'<b>'+esc(marca)+'</b>':'')+'</div>'
+      +'<h1>'+esc(s.n)+'</h1><div class="pitch">'+esc(s.pitch||'')+'</div></div>'
+      +'<div class="pie"><div class="puno"></div><div class="cuenta">'
+      +'<div class="p">'+SOLES_TXT+pz(s.p15)+'<s>30CM · '+SOLES_TXT+pz(s.p30)+'</s></div>'
+      +(av?'<button class="b" onclick="startOrderWithSig(\''+s.id+'\')">Lo quiero</button>':'<button class="b" disabled>Agotado</button>')
+      +'</div></div>'
+      +M15_PASAR(total,i,false,!!secreto)
+      +'</section>';
+  }).join('');
+  var platoSecreto='';
+  if(secreto){
+    var myTotal=cust?(cust.total_orders||0):0;
+    var falta=Math.max(0,secreto.minOrders-myTotal);
+    var abierto=!!cust&&falta===0;
+    var hechos=Math.min(myTotal,secreto.minOrders);
+    platoSecreto='<section class="plato v'+(abierto?' abierto':'')+'" aria-label="El sándwich secreto"><div class="forro"></div>'
+      +'<div class="foto">'+(SIG_IMG[secreto.id]?'<img src="'+SIG_IMG[secreto.id]+'" alt="" loading="lazy">':'')+'<div class="baja"></div></div>'
+      +(abierto?'':'<img class="ojo sw-ojo" src="img/ojo-espiral.webp" alt="" aria-hidden="true">')
+      +'<div class="ficha"><div class="num">'+romano(total)+' de '+romano(total)+'<b>'+(abierto?'Abierto':'Cerrado')+'</b></div>'
+      +'<h1>El sándwich<br>secreto</h1>'
+      +'<div class="pitch">'+(abierto?'Ya es tuyo. Se revela cuando lo abres.':'No está en la carta. Cambia cada mes. No se dice qué lleva — se revela cuando lo pides.')+'</div>'
+      +(abierto?'':'<div class="barra"><b style="width:'+Math.round(hechos/Math.max(1,secreto.minOrders)*100)+'%"></b></div>'
+        +'<div class="falta">'+hechos+' de '+secreto.minOrders+' pedidos</div>')
+      +'</div>'
+      +'<div class="pie"><div class="puno"></div><div class="cuenta">'
+      +(abierto
+        ?'<div class="p">'+SOLES_TXT+pz(secreto.p15)+'<s>el mes que corre</s></div><button class="b" onclick="go(\'o_secreto\')">Abrirlo</button>'
+        :'<div class="p">Te faltan '+falta+' '+(falta===1?'pedido':'pedidos')+'<s>y se abre solo</s></div>')
+      +'</div></div>'
+      +M15_PASAR(total,total-1,true,true)
+      +'</section>';
+  }
+  var n=cart.reduce(function(a,it){return a+(it.qty||1);},0);
+  return'<div class="m15 fi">'
+    +'<div class="riel"><button class="x" onclick="volverALaPuerta()" aria-label="Cambiar de lado">&#10005;</button>'
+    +'<span class="wm">SND<span class="wm-mark" aria-hidden="true"><i></i><i></i></span>WCH</span>'
+    +(n?'<button class="c" onclick="go(\'o_cart\')" aria-label="Tu pedido, '+n+(n===1?' cosa':' cosas')+'"><span>'+n+'</span></button>':'<span class="vacio"></span>')
+    +'</div>'
+    +'<div class="pistas">'+platos+platoSecreto+'</div>'
+    +'</div>';
+}
+
+// ── 01 · FICHA DE UN SIGNATURE (aprobada) + la fila de doble proteína ─────────────────────
+// docs/maquetas/aprobadas/01-ficha-de-un-signature.png y 01-ficha-con-doble-proteina.png.
+// Lo que lleva sale de la receta (proteína, queso, verdes, salsa); el precio, de
+// itemUnitPrice() — el mismo que cobra el servidor. «Lo quiero» lo suma al pedido.
+function nombreDe(lista:any[],id:string|null|undefined):string{
+  var x=id?lista.find(function(y){return y.id===id;}):null;
+  return x?x.l:'';
+}
+function sOSig(){
+  var s=SIGS.find(function(x){return x.id===sigId;});
+  if(!s){go('o_home');return'';}
+  if(!size)size='15';
+  var visibles=sigsEnOrden(SIGS.filter(function(x){return!x.secret&&sigAvailable(x);}));
+  var i=visibles.findIndex(function(x){return x.id===s.id;});
+  var marca=s.recommended?'La estrella':(sigBadge(s)||'');
+  var pr=PROTS.find(function(x){return x.id===s.prot;});
+  var queso=s.fixedCheese||cheese;
+  var filas:[string,string][]=[];
+  if(pr)filas.push(['Proteína',pr.l+(pr.s?' · '+pr.s.toLowerCase():'')]);
+  if(queso)filas.push(['Queso',nombreDe(CHEESE,queso)]);
+  if(s.tops&&s.tops.length)filas.push(['Verdes',s.tops.map(function(t){return nombreDe(TOPS,t);}).filter(Boolean).join(' · ')]);
+  filas.push(['Salsa',s.sauces&&s.sauces.length?s.sauces.map(function(t){return nombreDe(SAUCES,t);}).filter(Boolean).join(' · '):'Sin salsa']);
+  var tam=function(sz){
+    var p=itemUnitPrice({type:'sig',sigId:s.id,size:sz,doubleProt:false,extraSauce:false,cheese:cheese,qty:1});
+    return'<button class="'+(size===sz?'on':'')+'" aria-pressed="'+(size===sz)+'" onclick="size=\''+sz+'\';render()">'+sz+'CM<s>'+SOLES_TXT+pz(p)+'</s></button>';
+  };
+  var dbl=dblProtRef();
+  var fila='';
+  if(dbl){
+    var recargo=dblFee(dbl,size);
+    fila='<button class="dp" aria-pressed="'+(!!doubleProt)+'" onclick="doubleProt=!doubleProt;render()">'
+      +'<span><em>Doble proteína</em><n>El doble de '+esc((dbl.l||'').toLowerCase())+'</n></span>'
+      +'<span class="r">+'+SOLES_TXT+pz(recargo)+'<span class="sw"></span></span></button>';
+  }
+  return'<div class="f01 fi"><div class="forro"></div>'
+    +'<div class="foto">'+(SIG_IMG[s.id]?'<img src="'+SIG_IMG[s.id]+'" alt="'+esc(s.n)+'">':'')+'</div>'
+    +'<button class="sal" onclick="'+(editingItemQty?'cancelarEdicionFicha()':'go(\'o_home\')')+'" aria-label="Volver">←</button>'
+    +'<div class="cuerpo"><div class="num">'+(i>=0?romano(i+1):'')+(marca?' · '+esc(marca):'')+'</div>'
+    +'<h1>'+esc(s.n)+'</h1>'
+    +filas.map(function(f){return'<div class="fila"><em>'+f[0]+'</em><span>'+esc(f[1])+'</span></div>';}).join('')
+    +'<div class="tam">'+tam('15')+tam('30')+'</div>'
+    +fila
+    +'</div>'
+    +'<div class="pie sw-barra"><span class="p">'+SOLES_TXT+pz(itemUnitPrice(currentBuiltItem()))+'</span>'
+    +'<button onclick="loQuiero()">'+(editingItemQty?'Listo':'Lo quiero')+'</button></div>'
+    +'</div>';
+}
+// «Lo quiero»: suma el sándwich al pedido. Si el pedido todavía no trae bebida y hay alguna,
+// pasa por las bebidas (con «Sigo sin bebida»); si no, directo a la 30G. Lo usan la ficha y el
+// último paso del armador, así que los dos caminos llegan igual al pedido.
+var ofrecerBebida=false;
+function loQuiero(){
+  var editando=!!editingItemQty;
+  var wasEmpty=cart.length===0;
+  // Una línea editada vuelve a SU lugar del recibo, no al final.
+  if(_lineaEnEdicion)cart.splice(_lineaEnEdicion.idx,0,currentBuiltItem());else cart.push(currentBuiltItem());
+  _lineaEnEdicion=null;
+  editingItemQty=null;
+  if(wasEmpty)initCheckoutFields();
+  resetBuilder();mode=null;
+  saveCart();
+  if(!editando)fbTrack('AddToCart',{currency:'PEN',value:money(itemUnitPrice(cart[cart.length-1]))});
+  var traeBebida=cart.some(function(it){return it.type==='side';});
+  var hayBebida=SIDES.some(function(d){return isAvail(d.id);});
+  if(!editando&&!traeBebida&&hayBebida){ofrecerBebida=true;irABebidas('o_cart');return;}
+  go('o_cart');
+}
+// Salir de la ficha mientras se edita una línea: la línea vuelve al pedido tal como estaba.
+var _lineaEnEdicion:any=null;
+function cancelarEdicionFicha(){
+  if(_lineaEnEdicion){cart.splice(_lineaEnEdicion.idx,0,_lineaEnEdicion.item);saveCart();}
+  _lineaEnEdicion=null;editingItemQty=null;resetBuilder();mode=null;go('o_cart');
+}
+
 function openSigPreview(id){previewSigId=id;render();}
 function closeSigPreview(){previewSigId=null;render();}
 // Vista previa "referencial" de un Signature build — hasta tener fotografía

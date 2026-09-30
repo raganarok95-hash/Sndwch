@@ -274,7 +274,6 @@ export const STORE_LAT = R.STORE_LAT;
 export const STORE_LON = R.STORE_LON;
 // Techo de cobertura. Más allá de esto no se entrega: sin un tope, un pin mal puesto (o una
 // dirección en otra ciudad) generaría una tarifa absurda que el cliente vería en el checkout.
-export const DELIVERY_MAX_KM = R.DELIVERY_MAX_KM;
 // El delivery es pass-through puro (arriba): el negocio no gana nada con él, solo lo
 // cobra para pagarle exacto al motorizado. Pero cuando se paga con TARJETA, Culqi
 // descuenta su comisión (~4-5.5%, confirmado por el dueño) del cargo COMPLETO, incluido

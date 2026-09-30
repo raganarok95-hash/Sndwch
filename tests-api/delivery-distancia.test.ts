@@ -17,7 +17,7 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
 }
 import { haversineKm, billableKm, deliveryFeeForKm } from "../supabase/functions/api/actions/orders.ts";
 import {
-  DELIVERY_KM_RATE, DELIVERY_ROAD_FACTOR, DELIVERY_MIN_FEE, DELIVERY_MAX_KM,
+  DELIVERY_KM_RATE, DELIVERY_ROAD_FACTOR, DELIVERY_MIN_FEE,
   STORE_LAT, STORE_LON,
 } from "../supabase/functions/api/env.ts";
 
@@ -82,10 +82,13 @@ Deno.test("el redondeo va hacia ARRIBA al medio sol, nunca hacia abajo", () => {
   }
 });
 
+// Sin tope de cobertura desde el 2026-09-30: se barre hasta más allá de lo que mide la ciudad.
+const HASTA_KM = 40;
+
 Deno.test("la tarifa nunca queda por debajo de lo que cuesta el viaje", () => {
   // La única forma en que este cálculo NO se puede equivocar: cobrar menos de lo que hay que
   // pagarle al motorizado. Se barre todo el rango de cobertura.
-  for (let km = 0; km <= DELIVERY_MAX_KM; km += 0.1) {
+  for (let km = 0; km <= HASTA_KM; km += 0.1) {
     const fee = deliveryFeeForKm(km);
     assertEquals(fee >= km * DELIVERY_KM_RATE, true, `a ${km.toFixed(1)} km cobra ${fee} y cuesta ${(km * DELIVERY_KM_RATE).toFixed(2)}`);
   }
@@ -93,7 +96,7 @@ Deno.test("la tarifa nunca queda por debajo de lo que cuesta el viaje", () => {
 
 Deno.test("la tarifa crece con la distancia, sin saltos hacia atrás", () => {
   let previa = -1;
-  for (let km = 0; km <= DELIVERY_MAX_KM; km += 0.05) {
+  for (let km = 0; km <= HASTA_KM; km += 0.05) {
     const fee = deliveryFeeForKm(km);
     assertEquals(fee >= previa, true, `a ${km.toFixed(2)} km la tarifa BAJÓ de ${previa} a ${fee}`);
     previa = fee;

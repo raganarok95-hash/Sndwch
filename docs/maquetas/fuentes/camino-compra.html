@@ -1,0 +1,118 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}s,u,i,em,n,k{text-decoration:none;font-style:normal;display:block}
+body{background:#2a2a2a;padding:22px;display:flex;flex-wrap:wrap;gap:20px;width:2130px}
+.f{width:372px;height:812px;position:relative;overflow:hidden}
+.tag{position:absolute;top:0;left:0;z-index:70;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.sal{position:absolute;top:18px;left:22px;font-size:20px;z-index:40}
+.go{position:absolute;left:0;right:0;bottom:0;height:74px;z-index:45;display:flex}
+.go .mi{flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
+.go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
+
+/* ═════ 30 · G ═════ Esta vez NO es un promedio de dos pantallas. La base es el papel de
+   estraza —el material del negocio, con carácter propio— y lo que se le trae de la otra
+   es el TITULAR estampado. La hora, la dirección y el poder cambiarlas son parte del
+   mismo documento, no un bloque aparte pegado abajo.                              */
+#G{background:#C6A579;
+  background-image:repeating-linear-gradient(0deg,rgba(80,52,20,.05) 0 1px,transparent 1px 3px),
+                   repeating-linear-gradient(90deg,rgba(80,52,20,.045) 0 1px,transparent 1px 4px),
+                   radial-gradient(130% 70% at 18% 0%,rgba(255,242,218,.45),transparent 62%)}
+#G .tit{position:absolute;left:26px;top:80px;z-index:6}
+#G .tit em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#7A5B33;text-transform:uppercase}
+#G .tit b{font-family:Anton,sans-serif;font-size:58px;line-height:.82;color:#3A2710;margin-top:11px;letter-spacing:-.025em}
+#G .cinta{position:absolute;z-index:8;background:rgba(255,252,240,.5);width:96px;height:28px;
+  border-left:1px solid rgba(255,255,255,.55);border-right:1px solid rgba(255,255,255,.55)}
+#G .c1{top:196px;left:10px;transform:rotate(-23deg)}
+#G .c2{top:196px;right:10px;transform:rotate(25deg)}
+#G .sello{position:absolute;left:26px;right:26px;top:210px;z-index:6;border:2px solid #4A3218;
+  padding:16px 16px 14px;transform:rotate(-1deg);background:rgba(242,228,202,.34)}
+#G .sello .hd{display:flex;justify-content:space-between;border-bottom:1.5px solid #4A3218;padding-bottom:10px;
+  font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#4A3218}
+#G .sello .li{display:flex;align-items:baseline;gap:9px;padding:10px 0;border-bottom:1px dashed rgba(74,50,24,.42)}
+#G .sello .li i{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7A5B33;width:17px}
+#G .sello .li b{font:800 14px/1.2 Archivo,sans-serif;color:#33230F;text-transform:uppercase;letter-spacing:-.01em}
+#G .sello .li s{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#7A5B33;margin-top:4px}
+#G .sello .li p{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#33230F}
+#G .sello .ex{display:flex;justify-content:space-between;padding:6px 0;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E4F2A}
+#G .sello .en{display:flex;align-items:baseline;gap:9px;padding:8px 0;border-top:1px dashed rgba(74,50,24,.42)}
+#G .sello .en em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#7A5B33;width:52px;text-transform:uppercase}
+#G .sello .en n{flex:1;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#33230F}
+#G .sello .en u{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#9C5F14;text-transform:uppercase}
+#G .sello .tt{display:flex;align-items:flex-end;justify-content:space-between;margin-top:10px;border-top:2px solid #4A3218;padding-top:11px}
+#G .sello .tt em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6E4F2A;padding-bottom:7px}
+#G .sello .tt b{font-family:Anton,sans-serif;font-size:46px;line-height:.82;color:#33230F;letter-spacing:-.02em}
+
+/* ═════ 31 · TARJETA ═════ Misma estructura que aprobaste. Corregido el número: el
+   recargo real sale de engordar el ENVÍO, no el total — con S/7.00 de envío son S/0.41.
+   Y el hueco que sentías: ahí va la mano de uno de ellos, que todavía no existe.   */
+#P{background:#191C21;background-image:linear-gradient(160deg,#252A33 0%,#14171B 58%,#1F232A 100%)}
+#P .cab{position:absolute;left:24px;right:24px;top:80px;z-index:6;display:flex;justify-content:space-between;align-items:baseline}
+#P .cab em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#9BA3AE;text-transform:uppercase}
+#P .cab u{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6B7280}
+#P .mt{position:absolute;left:24px;right:24px;top:112px;z-index:6}
+#P .mt b{font-family:Anton,sans-serif;font-size:74px;line-height:.82;color:#fff;letter-spacing:-.03em}
+#P .mt b i{font-size:32px;display:inline}
+#P .mt .av{margin-top:15px}
+#P .mt .av k{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6B7280;text-decoration:line-through}
+#P .mt .av s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#E0A03C;letter-spacing:.1em;margin-top:6px}
+#P .paso{position:absolute;left:24px;right:24px;top:264px;z-index:6}
+#P .paso .p{display:flex;gap:14px;padding:15px 0;border-bottom:1px solid #2A313A}
+#P .paso .p k{font-family:Anton,sans-serif;font-size:22px;color:#39414C;width:26px;line-height:1}
+#P .paso .p .t b{font:800 14px/1.2 Archivo,sans-serif;color:#E9EDF2}
+#P .paso .p .t s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7B8390;margin-top:6px;line-height:1.7}
+#P .seg{position:absolute;left:24px;right:24px;top:478px;z-index:6;border:1px solid #2F3945;padding:14px 16px}
+#P .seg em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.22em;color:#8CC8EC;text-transform:uppercase}
+#P .seg s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#9BA3AE;margin-top:8px;line-height:1.75}
+#P .vol{position:absolute;left:24px;right:24px;top:562px;z-index:6;border-top:1px solid #2A313A;border-bottom:1px solid #2A313A;
+  padding:16px 0;display:flex;justify-content:space-between;align-items:center}
+#P .vol n{font:800 15px/1 Archivo,sans-serif;color:#C9CFD8}
+#P .vol s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#E0A03C;letter-spacing:.08em}
+#P .hueco{position:absolute;right:20px;bottom:84px;width:148px;height:118px;z-index:6;
+  border:1px dashed #3A424E;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center}
+#P .hueco em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#5A6472;text-transform:uppercase}
+#P .hueco s{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#495260;line-height:1.7;padding:0 12px}
+#P .fr{position:absolute;left:24px;bottom:116px;width:150px;z-index:6;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6B7280;line-height:1.8}
+
+#G .sello .en.falta n{color:#9C5F14}
+#G .sello .en.falta u{background:#33230F;color:#F2E4CA;padding:4px 6px}
+.velo{position:absolute;inset:0;background:rgba(40,26,10,.45);z-index:60}
+.hoja{position:absolute;left:0;right:0;bottom:0;z-index:65;background:#F0EBDE;padding:22px 26px 100px;border-top:3px solid #33230F}
+.hoja em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#7A5B33;text-transform:uppercase}
+.hoja h3{font-family:Anton,sans-serif;font-size:34px;line-height:.9;color:#33230F;margin:10px 0 20px;letter-spacing:-.02em}
+.hoja .campo{border-bottom:2px solid #33230F;padding-bottom:10px;margin-bottom:20px}
+.hoja .campo s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#7A5B33;text-transform:uppercase}
+.hoja .campo n{font-family:'IBM Plex Mono',monospace;font-size:18px;color:#33230F;margin-top:10px}
+.hoja .campo n u{display:inline-block;width:2px;height:18px;background:#9C5F14;vertical-align:-3px;margin-left:2px}
+.hoja .nota{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#8A6A3C;line-height:1.9;text-transform:uppercase}
+.go .oro:only-child{justify-content:center;padding:0}
+.marca{position:absolute;z-index:95;border:2px dashed #FF5A36}
+.marca span{position:absolute;top:-19px;left:-2px;background:#FF5A36;color:#fff;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;padding:4px 6px;white-space:nowrap;text-transform:uppercase}
+.rot{font:700 11px/1.3 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#eee;margin-bottom:8px}
+.col{display:flex;flex-direction:column}
+.lead{width:100%;font:400 15px/1.6 'IBM Plex Mono',monospace;color:#bbb;margin-bottom:10px}
+
+.png{width:372px;height:812px;display:block}
+.rel{position:relative;width:372px;height:812px;overflow:hidden}
+.nuevo{position:absolute;z-index:20}
+.dp{left:22px;right:18px;top:680px;height:44px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(30,43,34,.18);border-bottom:1px solid rgba(30,43,34,.18);background:#EFE6D4}
+.dp .l em{display:block;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6C7C64;text-transform:uppercase}
+.dp .l n{display:block;font-family:'EB Garamond',serif;font-size:15px;color:#1E2B22;margin-top:5px}
+.dp .r{display:flex;align-items:center;gap:10px;font:600 13px/1 'IBM Plex Mono',monospace;color:#1E2B22}
+.dp .sw{width:38px;height:22px;border-radius:999px;background:#C9C1AD;position:relative}
+.dp .sw:after{content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff}
+.sinb{left:26px;top:700px;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#fff;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:4px}
+.hoja .fr{display:flex;flex-wrap:wrap;gap:8px}
+.hoja .fr b{font:600 13px/1 'IBM Plex Mono',monospace;color:#33230F;border:1px solid rgba(51,35,15,.35);padding:11px 10px;flex:0 0 calc(33.3% - 6px);text-align:center;box-sizing:border-box}
+.hoja .fr b.on{background:#33230F;color:#F2E4CA}
+.hoja .fr b.off{color:#B8A583;text-decoration:line-through}
+.hoja .dias{display:flex;gap:8px;margin-bottom:14px}
+.hoja .dias b{font:700 10px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;padding:9px 12px;border:1px solid #33230F;color:#33230F}
+.hoja .dias b.on{background:#33230F;color:#F2E4CA}
+.flecha{width:70px;flex:0 0 auto;text-align:center;font:600 11px/1.35 'IBM Plex Mono',monospace;color:#bdbdbd;align-self:center}
+.flecha big{display:block;font-size:30px;color:#CBA258;line-height:1;margin-bottom:6px}
+.fila{display:flex;align-items:flex-start;gap:0;margin-bottom:40px}
+h2{font:700 13px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#CBA258;text-transform:uppercase;margin:6px 0 16px}
+</style></head><body style="display:block"><div class="lead" style="max-width:2000px">Hoy «Confirmar sándwich» es la app vieja y hace nueve cosas. En las maquetas aprobadas (01 → 30G → 34 → 31) caben casi todas: el tamaño en la 01, la dirección en la 34, el pago en la 31. Para lo que no tenía lugar, esta es la propuesta: todo como renglón u hoja de lo ya aprobado, sin pantallas nuevas.</div><h2>El camino</h2><div class="fila"><div class="col"><div class="rot"><span style="background:#CBA258;color:#2A2113;padding:3px 6px;margin-right:8px">NUEVO</span>01 ficha + doble proteína</div><div class="rel"><img class="png" src="../../../docs/maquetas/aprobadas/01-ficha-de-un-signature.png"><div class="nuevo dp"><div class="l"><em>Doble proteína</em><n>El doble de albóndiga</n></div><div class="r">+S/7.00<span class="sw"></span></div></div><div class="marca" style="left:18px;right:14px;top:676px;height:52px"><span>la única fila nueva</span></div></div></div><div class="flecha"><big>→</big>LO QUIERO</div><div class="col"><div class="rot"><span style="background:#CBA258;color:#2A2113;padding:3px 6px;margin-right:8px">NUEVO</span>Bebidas SANDO, si el pedido no trae una</div><div class="rel"><img class="png" src="../../../docs/maquetas/aprobadas/bebidas-lado-sando.png"><div class="nuevo sinb">Sigo sin bebida →</div><div class="marca" style="left:20px;top:692px;width:190px;height:26px"><span>nuevo: saltarla</span></div></div></div><div class="flecha"><big>→</big>AGREGAR<br>o seguir</div><div class="col"><div class="rot"><span style="background:#CBA258;color:#2A2113;padding:3px 6px;margin-right:8px">NUEVO</span>30G con todos sus renglones</div><div class="f" id="G"><div class="sal" style="color:#3A2710">←</div><div class="tit"><em>Va saliendo</em><b>DOS<br>COSAS</b></div><div class="cinta c1"></div><div class="cinta c2"></div><div class="sello"><div class="hd"><span>SND//WCH · TRUJILLO</span><span>#1042</span></div><div class="li"><i>01</i><div style="flex:1"><b>The Marinara 30CM</b><s>DOBLE PROTEÍNA</s></div><p>28.90</p></div><div class="li"><i>02</i><div style="flex:1"><b>The Midnight</b><s>HELADA</s></div><p>5.00</p></div><div class="ex"><span>COMBO SANDWICH + BEBIDA</span><span>−1.00</span></div><div class="ex"><span>ENVIO 3.4 KM</span><span>7.00</span></div><div class="en"><em>Llega</em><n>7:40 – 8:05 p.m.</n><u>Programar</u></div><div class="en"><em>Dónde</em><n>Av. Larco 1234, Dpto 302</n><u>Cambiar</u></div><div class="en"><em>Recibe</em><n>Mafe Ríos · 987 654 321</n><u>Cambiar</u></div><div class="en"><em>Puntos</em><n>Tienes 420 · bebida gratis</n><u>Usar</u></div><div class="en"><em>Código</em><n>¿Tienes uno?</n><u>Poner</u></div><div class="tt"><em>Total</em><b>S/39.90</b></div></div><img style="position:absolute;left:-16px;bottom:44px;width:110px;transform:rotate(-7deg);z-index:7" src="../../../img/sando2_sonrie.png"><img style="position:absolute;right:-16px;bottom:44px;width:106px;transform:rotate(6deg);z-index:7" src="../../../img/wicho_rie.png"><div class="marca" style="left:22px;right:22px;top:488px;height:58px"><span style="top:auto;bottom:-19px">puntos y código: solo si aplican</span></div><div class="go"><div class="mi oro">Pagar</div><div class="mi cel">S/39.90</div></div></div></div></div><h2>Lo que abre cada renglón</h2><div class="fila"><div class="col"><div class="rot"><span style="background:#CBA258;color:#2A2113;padding:3px 6px;margin-right:8px">NUEVO</span>«Programar»: una hoja</div><div class="f" id="G"><div class="sal" style="color:#3A2710">←</div><div class="tit"><em>Va saliendo</em><b>DOS<br>COSAS</b></div><div class="cinta c1"></div><div class="cinta c2"></div><div class="sello"><div class="hd"><span>SND//WCH · TRUJILLO</span><span>#1042</span></div><div class="li"><i>01</i><div style="flex:1"><b>The Marinara 30CM</b><s>DOBLE PROTEÍNA</s></div><p>28.90</p></div><div class="li"><i>02</i><div style="flex:1"><b>The Midnight</b><s>HELADA</s></div><p>5.00</p></div><div class="ex"><span>COMBO SANDWICH + BEBIDA</span><span>−1.00</span></div><div class="ex"><span>ENVIO 3.4 KM</span><span>7.00</span></div><div class="en"><em>Llega</em><n>7:40 – 8:05 p.m.</n><u>Programar</u></div><div class="en"><em>Dónde</em><n>Av. Larco 1234, Dpto 302</n><u>Cambiar</u></div><div class="en"><em>Recibe</em><n>Mafe Ríos · 987 654 321</n><u>Cambiar</u></div><div class="en"><em>Puntos</em><n>Tienes 420 · bebida gratis</n><u>Usar</u></div><div class="en"><em>Código</em><n>¿Tienes uno?</n><u>Poner</u></div><div class="tt"><em>Total</em><b>S/39.90</b></div></div><img style="position:absolute;left:-16px;bottom:44px;width:110px;transform:rotate(-7deg);z-index:7" src="../../../img/sando2_sonrie.png"><img style="position:absolute;right:-16px;bottom:44px;width:106px;transform:rotate(6deg);z-index:7" src="../../../img/wicho_rie.png"><div class="velo"></div><div class="hoja"><em>Lo programas</em><h3>¿A QUÉ<br>HORA?</h3><div class="dias"><b class="on">Hoy</b><b>Mañana</b></div><div class="fr"><b class="off">7:00</b><b>7:30</b><b class="on">8:00</b><b>8:30</b><b class="off">9:00</b><b>9:30</b></div><div class="nota" style="margin-top:14px">Las tachadas ya están llenas.<br>Te llega en la media hora que elijas.</div></div><div class="go"><div class="mi oro">Listo</div></div></div></div><div class="flecha"></div><div class="col"><div class="rot"><span style="background:#CBA258;color:#2A2113;padding:3px 6px;margin-right:8px">NUEVO</span>«Código»: una hoja</div><div class="f" id="G"><div class="sal" style="color:#3A2710">←</div><div class="tit"><em>Va saliendo</em><b>DOS<br>COSAS</b></div><div class="cinta c1"></div><div class="cinta c2"></div><div class="sello"><div class="hd"><span>SND//WCH · TRUJILLO</span><span>#1042</span></div><div class="li"><i>01</i><div style="flex:1"><b>The Marinara 30CM</b><s>DOBLE PROTEÍNA</s></div><p>28.90</p></div><div class="li"><i>02</i><div style="flex:1"><b>The Midnight</b><s>HELADA</s></div><p>5.00</p></div><div class="ex"><span>COMBO SANDWICH + BEBIDA</span><span>−1.00</span></div><div class="ex"><span>ENVIO 3.4 KM</span><span>7.00</span></div><div class="en"><em>Llega</em><n>7:40 – 8:05 p.m.</n><u>Programar</u></div><div class="en"><em>Dónde</em><n>Av. Larco 1234, Dpto 302</n><u>Cambiar</u></div><div class="en"><em>Recibe</em><n>Mafe Ríos · 987 654 321</n><u>Cambiar</u></div><div class="en"><em>Puntos</em><n>Tienes 420 · bebida gratis</n><u>Usar</u></div><div class="en"><em>Código</em><n>¿Tienes uno?</n><u>Poner</u></div><div class="tt"><em>Total</em><b>S/39.90</b></div></div><img style="position:absolute;left:-16px;bottom:44px;width:110px;transform:rotate(-7deg);z-index:7" src="../../../img/sando2_sonrie.png"><img style="position:absolute;right:-16px;bottom:44px;width:106px;transform:rotate(6deg);z-index:7" src="../../../img/wicho_rie.png"><div class="velo"></div><div class="hoja"><em>Descuento</em><h3>¿TIENES UN<br>CÓDIGO?</h3><div class="campo"><s>El código</s><n>AMIGOS10<u></u></n></div><div class="nota">Se aplica sobre la comida, no sobre el envío.<br>Si no vale, te decimos por qué.</div></div><div class="go"><div class="mi oro">Aplicar</div></div></div></div><div class="flecha"></div><div class="col"><div class="rot" style="color:#bbb">«Recibe» y «Dónde»: ya propuesta / aprobada (34)</div></div></div></body></html>

@@ -539,7 +539,7 @@ function addressInExcludedZone(addr){
 // `out:true` acá Y se agrega el nombre a DELIVERY_EXCLUDED_ZONES en los DOS lados
 // (este archivo y supabase/functions/api/env.ts) — el substring del servidor sigue siendo
 // la única defensa real, este selector es la capa de experiencia, no la de autorización.
-var DELIVERY_DISTRICTS=[
+var DELIVERY_DISTRICTS:{id:string;l:string;out?:boolean}[]=[
   {id:'trujillo',l:'Trujillo (Centro)'},
   {id:'victor_larco',l:'Víctor Larco Herrera'},
   {id:'la_esperanza',l:'La Esperanza'},
@@ -548,8 +548,8 @@ var DELIVERY_DISTRICTS=[
   {id:'moche',l:'Moche'},
   {id:'salaverry',l:'Salaverry'},
   {id:'florencia_de_mora',l:'Florencia de Mora'},
-  {id:'el_porvenir',l:'El Porvenir',out:true},
-  {id:'el_milagro',l:'El Milagro',out:true},
+  {id:'el_porvenir',l:'El Porvenir'},
+  {id:'el_milagro',l:'El Milagro'},
   {id:'otro',l:'Otro / no está en la lista'}
 ];
 // Vacío = todavía no eligió. Es obligatorio para pagar (ver doOrder) — a diferencia de la
@@ -655,7 +655,6 @@ function baseSurcharge(base,size){var b=BASE_SURCHARGE[base];return b?(size==='1
 var DELIVERY_KM_RATE=REGLAS_N.DELIVERY_KM_RATE;          // S/ por kilómetro
 var DELIVERY_ROAD_FACTOR=REGLAS_N.DELIVERY_ROAD_FACTOR;    // línea recta → ruta real en moto
 var DELIVERY_MIN_FEE=REGLAS_N.DELIVERY_MIN_FEE;          // piso real del motorizado por viaje corto (dueño 2026-09-02)
-var DELIVERY_MAX_KM=REGLAS_N.DELIVERY_MAX_KM;          // techo de cobertura
 // Kilómetros COBRABLES desde el pin confirmado. `null` significa "no se puede medir" y nunca
 // 0: un 0 silencioso le cobraría el mínimo a alguien que vive a 10 km.
 function deliveryKmNow(){
@@ -684,7 +683,7 @@ function deliveryFeeForKm(km){
 function kmADireccion(a:any):number|null{
   if(!a||typeof a.lat!=='number'||typeof a.lon!=='number')return null;
   var km=Math.round(haversineKm(a.lat,a.lon,STORE_LAT,STORE_LON)*DELIVERY_ROAD_FACTOR*100)/100;
-  return isFinite(km)&&km<=DELIVERY_MAX_KM?km:null;
+  return isFinite(km)?km:null;
 }
 function envioADireccion(a:any):number|null{
   var km=kmADireccion(a);
@@ -1015,6 +1014,8 @@ function elegirLado(id){
 var bebidasVolverA='o_home';
 function irABebidas(desde){
   bebidasVolverA=desde||'o_home';
+  // Se entra siempre por la primera: en el lado de SANDO la elegida es la que está a la vista.
+  bebidaSel=null;
   sndScreen='o_sides';render();
 }
 // Volver a la puerta: olvida el lado guardado y vuelve a mostrar la cara partida. Es la

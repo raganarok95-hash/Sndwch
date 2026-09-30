@@ -64,6 +64,13 @@ vive en el chat o en `/tmp`, no existe.
 | 06 A · aviso de puntos (invitado) | `06A-aviso-de-puntos.png` | `aviso-puntos.html` #1 | «aprobado todo go» (2026-09-25) — el ÚNICO lugar donde se ofrece la cuenta a quien pagó sin ella; +51 es de muestra |
 | 06 A · aviso · correo y DNI | `06A-aviso-correo-y-dni.png` | `aviso-puntos.html` #2 | ídem — la losa sube en el mismo lugar; nombre y celular salen del checkout |
 | 06 A · aviso · el código | `06A-aviso-el-codigo.png` | `aviso-puntos.html` #3 | ídem |
+| 01 · ficha + doble proteína | `01-ficha-con-doble-proteina.png` | `camino-compra.html` (sobre la 01) | «Si aprobadas, go» (2026-09-25) — la única fila nueva de la 01; el precio sale de la carta |
+| Bebidas SANDO · sigo sin bebida | `bebidas-sando-sigo-sin-bebida.png` | `camino-compra.html` | «Si aprobadas, go» (2026-09-25) — aparece tras «Lo quiero» si el pedido no trae bebida |
+| 30 G · todos los renglones | `30G-todos-los-renglones.png` | `camino-compra.html` | «Si aprobadas, go» (2026-09-25) — RECIBE siempre; PUNTOS y CÓDIGO solo si aplican |
+| 30 G · hoja programar | `30G-hoja-programar.png` | `camino-compra.html` | «Si aprobadas, go» (2026-09-25) |
+| 30 G · hoja código | `30G-hoja-codigo.png` | `camino-compra.html` | «Si aprobadas, go» (2026-09-25) |
+| 30 G · invitado, lo que falta | `30G-invitado-lo-que-falta.png` | `camino-recibe.html` #1 | «Si aprobadas, go» (2026-09-25) |
+| 30 G · hoja recibe | `30G-hoja-recibe.png` | `camino-recibe.html` #2 | «Si aprobadas, go» (2026-09-25) — sin correo: el comprobante queda para quien crea cuenta en la 06A |
 
 ## Lo que todavía no tiene maqueta aprobada
 

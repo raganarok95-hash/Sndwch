@@ -557,6 +557,8 @@ function renderScreen(){
     case'o_build':     h=sOBuild();break;
     case'o_item_confirm':h=sOItemConfirm();break;
     case'o_cart':      h=sOCart();break;
+    case'o_dir':       h=sODir();break;
+    case'o_pagar':     h=sOPagar();break;
     case'o_sides':     h=sOSides();break;
     case'o_sent':      h=sOSent();break;
     case'p_auth':      h=sPAuth();break;

@@ -19,6 +19,33 @@ documents:
     - "index.html"
     - "admin.js"
     - "*.d.ts"
+    # LIMPIEZA 2026-09-30: el índice mezclaba lo vigente con lo viejo y devolvía números
+    # muertos (predicciones v7–v13, planes cerrados). Solo se indexa lo que describe HOY:
+    - "historico"          # docs/historico/: consultar a mano, no por búsqueda
+    - "migrations"         # el esquema vigente es supabase/esquema-actual.sql
+    - "migrations-al-mergear"
+    - "tests"              # las pruebas repiten los datos de la carta con otros nombres
+    - "tests-api"
+    - "tests-e2e"
+    - "tests-db"
+    - "backup"
+    - "CLAUDE.md"          # ya va inyectado en cada turno: indexarlo es pagarlo dos veces
+    - "MANUAL_DETALLADO.md" # copia larga de CLAUDE.md, se lee a mano cuando hace falta
+    - "PROMPTS_OTRA_IA.md"  # docs/hechos repetido tres veces para pegar en otra IA
+    # Versiones del modelo que ya nada importa (v10 y v11 sí: los usan comparativa_menu y v14).
+    - "modelo_v7.py"
+    - "modelo_v8.py"
+    - "modelo_v9.py"
+    - "modelo_v13.py"
+    - "escenarios_v7.py"
+    - "escenarios_v8.py"
+    - "socio_v8.py"
+    - "meta_5000.py"
+    - "menu_v2_cotizado.py"
+    - "menu_v3_subway.py"
+    - "menu_desde_la_raiz.py"
+    - "gen_docs.py"
+    - "gen_presentacion.py"
 # El proxy de este entorno bloquea HuggingFace (403). El único modelo MULTILINGÜE que fastembed
 # publica también en Google Cloud Storage es multilingual-e5-large, y casi todo el repo está en
 # español. Los e5 exigen los prefijos "query: " / "passage: ". El reordenador (cross-encoder)
@@ -31,3 +58,15 @@ models:
     passage_prefix: "passage: "
   reranker:
     enabled: false
+# Categorías por carpeta (2026-09-30): `npm run buscar -- --cat hechos "..."` busca solo ahí.
+# Gana el patrón más largo. Cambiarlas exige reindexar con --forzar (la categoría se guarda al indexar).
+category_mappings:
+  "docs/hechos": "hechos"
+  "docs/sesiones": "sesiones"
+  "docs/maquetas": "maquetas"
+  "docs": "docs"
+  "src/app": "cliente"
+  "src/shell": "cliente"
+  "supabase/functions": "servidor"
+  "modelo": "modelo"
+  "scripts": "scripts"
