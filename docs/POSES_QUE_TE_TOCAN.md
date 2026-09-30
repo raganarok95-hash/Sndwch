@@ -268,3 +268,444 @@ Full body, both feet fully visible, generous margin — nothing touching the can
 No text, no letters, no numbers, no logotype, no watermark.
 PNG, 2048 px on the long side.
 ```
+
+---
+
+## El sándwich de WICHO — las capas del armador (2026-09-30)
+
+> El dueño aprobó «El corte de WICHO» (`docs/maquetas/propuestas/el-corte-de-wicho.png`) pero
+> pidió cambiar el dibujo: «en lugar de la representación del sándwich en ese dibujo que está muy
+> poco logrado fuera una animación del mismo estilo pero con un dibujo similar a wicho o sando o al
+> logo, y animación de que se va ingresando al sándwich. Sin el corte //».
+>
+> Cada capa es una imagen aparte. En el armador caen una encima de otra, con un rebote, en el
+> orden en que se eligen; al final baja el pan de arriba y WICHO celebra.
+
+**Referencia a subir en TODAS: `docs/referencias/sandwich-del-logo.png`** (el sándwich del logo,
+fondo blanco, al doble). Ignora los pedazos de cara que asoman detrás: solo importa el sándwich.
+
+**Orden para pedirlas:** primero `wicho_capa_pan_b01_abajo`. Cuando salga bien, súbela TAMBIÉN
+como segunda referencia en todas las demás, para que tengan el mismo ancho y el mismo ángulo.
+
+**Fondo `#EAF4FB` plano**: es el color del escenario del armador. Se recorta sobre ese color.
+
+| archivo | qué es |
+|---|---|
+| `wicho_capa_pan_b01_abajo.png` | Classic (pan blanco) — mitad de abajo |
+| `wicho_capa_pan_b01_arriba.png` | Classic (pan blanco) — mitad de arriba |
+| `wicho_capa_pan_b03_abajo.png` | Focaccia — mitad de abajo |
+| `wicho_capa_pan_b03_arriba.png` | Focaccia — mitad de arriba |
+| `wicho_capa_p09_res.png` | Res laminada |
+| `wicho_capa_p08_pavo.png` | Pavo horneado |
+| `wicho_capa_p06_albondiga.png` | Albóndigas en marinara |
+| `wicho_capa_p04_atun.png` | Atún |
+| `wicho_capa_c01_americano.png` | Queso americano |
+| `wicho_capa_c02_cheddar.png` | Cheddar |
+| `wicho_capa_t09_lechuga.png` | Lechuga |
+| `wicho_capa_t01_tomate.png` | Tomate |
+| `wicho_capa_t03_cebolla.png` | Cebolla morada |
+| `wicho_capa_t06_pimiento.png` | Pimiento verde |
+| `wicho_capa_t11_pepinillo.png` | Pepinillo (pepino fresco) |
+| `wicho_capa_t02_pickles.png` | Pickles (pepinillo encurtido) |
+| `wicho_capa_t04_jalapeno.png` | Jalapeño |
+| `wicho_capa_salsa_clara.png` | Salsa clara (aioli, SNDWCH, peanut) |
+| `wicho_capa_salsa_oscura.png` | Salsa oscura (BBQ, teriyaki) |
+| `wicho_capa_salsa_amarilla.png` | Salsa amarilla (honey mustard, dijon) |
+| `wicho_capa_salsa_verde.png` | Salsa verde (chimichurri) |
+| `wicho_capa_salsa_aceite.png` | Oil & vinegar |
+
+### `wicho_capa_pan_b01_abajo.png` — Classic (pan blanco) — mitad de abajo
+
+```
+Illustration of the BOTTOM HALF of a long soft white sub roll (Italian-style white bread), cut side up, golden crust underneath, soft pale crumb on top. Empty, nothing on it.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_pan_b01_arriba.png` — Classic (pan blanco) — mitad de arriba
+
+```
+Illustration of the TOP HALF of the same long soft white sub roll, crust side up, golden-brown with a few diagonal score marks, as if about to close the sandwich.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_pan_b03_abajo.png` — Focaccia — mitad de abajo
+
+```
+Illustration of the BOTTOM HALF of a long rustic focaccia roll, cut side up, airy crumb with olive-oil sheen, coarse salt visible on the crust edge. Empty.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_pan_b03_arriba.png` — Focaccia — mitad de arriba
+
+```
+Illustration of the TOP HALF of the same focaccia roll, crust up, dimpled golden surface with olive oil gloss and coarse salt crystals.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_p09_res.png` — Res laminada
+
+```
+Illustration of a layer of thinly sliced seared beef strips piled loosely, with some grilled onion and green pepper strips tangled in, as it would lie on the bread.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_p08_pavo.png` — Pavo horneado
+
+```
+Illustration of a layer of thin folded slices of oven-roasted turkey breast, pale pink-beige with a golden edge, overlapping in soft folds.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_p06_albondiga.png` — Albóndigas en marinara
+
+```
+Illustration of a row of five round meatballs glazed in bright red marinara sauce, a little sauce dripping between them.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_p04_atun.png` — Atún
+
+```
+Illustration of a generous layer of chunky flaked tuna mixed with a little mayonnaise, in thick flakes, never a smooth paste.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_c01_americano.png` — Queso americano
+
+```
+Illustration of two square slices of American cheese, pale orange-yellow, slightly melted, corners drooping over the sides.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_c02_cheddar.png` — Cheddar
+
+```
+Illustration of two slices of deep orange cheddar cheese, melted and draping, with a glossy melted edge.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_t09_lechuga.png` — Lechuga
+
+```
+Illustration of a ruffled layer of fresh green lettuce leaves with wavy crisp edges sticking out on both sides.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_t01_tomate.png` — Tomate
+
+```
+Illustration of a row of four round fresh red tomato slices, juicy, seeds visible.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_t03_cebolla.png` — Cebolla morada
+
+```
+Illustration of a scatter of thin red-purple onion rings, loose and overlapping.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_t06_pimiento.png` — Pimiento verde
+
+```
+Illustration of thin strips of fresh green bell pepper, a few bright green strips crisscrossing.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_t11_pepinillo.png` — Pepinillo (pepino fresco)
+
+```
+Illustration of a row of thin round slices of FRESH cucumber, pale green center and dark green rim. Not pickled.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_t02_pickles.png` — Pickles (pepinillo encurtido)
+
+```
+Illustration of a row of wavy-cut dill pickle slices, olive-green, glossy, crinkle-cut edges. These are PICKLED, darker than fresh cucumber.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_t04_jalapeno.png` — Jalapeño
+
+```
+Illustration of a scatter of round sliced pickled jalapeño rings, bright green with pale seeds, the only spicy thing.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_salsa_clara.png` — Salsa clara (aioli, SNDWCH, peanut)
+
+```
+Illustration of a generous zigzag drizzle of thick creamy off-white sauce, glossy, laid across the length.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_salsa_oscura.png` — Salsa oscura (BBQ, teriyaki)
+
+```
+Illustration of a generous zigzag drizzle of thick glossy dark brown sauce, laid across the length.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_salsa_amarilla.png` — Salsa amarilla (honey mustard, dijon)
+
+```
+Illustration of a generous zigzag drizzle of thick glossy mustard-yellow sauce, laid across the length.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_salsa_verde.png` — Salsa verde (chimichurri)
+
+```
+Illustration of a spoonful of chunky green chimichurri spread along the length, herbs and bits visible.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
+
+### `wicho_capa_salsa_aceite.png` — Oil & vinegar
+
+```
+Illustration of a light sprinkle of golden olive oil and dark vinegar droplets glistening across the length.
+
+BACKGROUND: completely FLAT solid colour #EAF4FB edge to edge. No gradient, no floor,
+no shadow, no ellipse, no reflection, no vignette, no frame.
+CAMERA: straight SIDE view at the same slight three-quarter angle as the sandwich in the
+reference image, horizontal, centred, with generous empty space around it. Nothing touches
+the border. Same width as the bread in the bread images, so layers stack exactly.
+ART STYLE (match the reference image exactly): the sandwich of the SND//WCH logo — bold dark
+green-black outline of varying weight, painted cel shading with soft highlights, saturated
+appetising colour, sticker-art energy. NOT photorealistic, NOT flat vector.
+ONLY this one element — no bread (unless the element IS the bread), no hands, no characters,
+no faces, no plate.
+Size: at least 2048 px on the long side. ZERO text, letters, numbers, logos or watermarks.
+```
