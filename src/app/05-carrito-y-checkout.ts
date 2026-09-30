@@ -1087,7 +1087,7 @@ function sOCart(){
   if(!cart.length){
     return'<div class="m30 kraft fi"><button class="sal" onclick="go(\'o_home\')" aria-label="Volver">←</button>'
       +'<div class="tit"><em>Todavía nada</em><b>Tu pedido<br>está vacío</b></div>'
-      +VACIO('Carrito vacío','Elige un Signature o arma el tuyo — todo se junta acá antes de pagar.',null,'piensa')+'</div>';
+      +'<div class="vk">'+VACIO('Carrito vacío','Elige un Signature o arma el tuyo — todo se junta acá antes de pagar.',null,'piensa')+'</div></div>';
   }
   var d=cartDesglose();
   var envio=deliveryFeeAmount();
