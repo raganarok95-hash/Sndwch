@@ -129,8 +129,8 @@ PROTEINA_KG = {
     "P04": (Insumo(43.96, KG, COTIZADO, "atún S/4 la lata de 140 g neto = S/43.96/kg "
                                         "escurrido", "2026-09-04"), 1.00),
     "P05": (Insumo(48.00, KG, COTIZADO, "embutido premium S/48/kg", "2026-08-01"), None),
-    "P06": (Insumo(10.00, KG, SIN_COTIZAR, "carne molida ~S/10/kg — nunca se cotizó",
-                   "2026-08-04"), None),
+    "P06": (Insumo(15.00, KG, COTIZADO, "carne molida S/15/kg, cotizada por el dueño el 2026-09-30 "
+                                        "(online: Tottus S/23.50, Metro S/24.90)", "2026-09-30"), None),
     "P08": (Insumo(44.20, KG, COTIZADO, "pavo S/44.20/kg al por mayor — el mismo que el "
                                         "retail de Braedt", "2026-09-12"), 1.00),
 }
@@ -139,7 +139,7 @@ PROTEINA_KG = {
 # cocinan. De P05 y P06 NUNCA se documentó ninguno.
 # Res laminada en frío: el corte del Philly. El rendimiento es SUPUESTO y hay que medirlo en
 # la primera tanda — con 0.55 en vez de 0.70 el Philly 15CM pasa de 23.6% a 27.9% de costo.
-RES_LAMINADA_KG = (Insumo(20.00, KG, COTIZADO, "res ~S/20/kg, laminada en frío", "2026-08-01"),
+RES_LAMINADA_KG = (Insumo(25.00, KG, COTIZADO, "aguja de res S/25/kg (dueño, 2026-09-30), laminada en frío", "2026-09-30"),
                    0.70)
 # Carta v4 (2026-09-24): la res laminada ES una proteína del catálogo (P09, Philly y armador).
 PROTEINA_KG["P09"] = RES_LAMINADA_KG
@@ -148,7 +148,7 @@ PROTEINA_KG["P09"] = RES_LAMINADA_KG
 # derivación de arriba; las cuatro que no reconcilian salen nombradas en su salida.
 PORCION_EN_USO = {
     "P01": (3.15, 6.30), "P02": (2.47, 4.95), "P03": (2.49, 4.97), "P04": (3.25, 6.50),
-    "P05": (4.29, 8.59), "P06": (1.34, 2.68), "P08": (3.76, 7.51), "P09": (2.43, 4.86),
+    "P05": (4.29, 8.59), "P06": (2.95, 5.90), "P08": (3.76, 7.51), "P09": (3.04, 6.07),
 }
 # P01 y P02 salieron de la carta con la v4 (2026-09-24). Siguen acá porque el modelo todavía
 # costea la carta de apertura para compararla (SIG_APERTURA en rentabilidad_por_parte.py).
@@ -168,11 +168,56 @@ def porcion_derivada(code: str):
     return tuple(round(ins.valor * g / rend, 4) for g in GRAMAJE)
 
 
+# ═══ CARTA AL ESTILO SUBWAY (dueño, 2026-09-30) ═════════════════════════════════════════
+# Quesos: americano y cheddar tajados, 2 tajadas por sándwich (receta del dueño: «Queso: 2
+# tajadas»). Precios de góndola online; en Makro al por mayor suelen bajar: confirmar ahí.
+QUESO_AMERICANO_KG = Insumo(64.41, KG, COTIZADO,
+                            "queso americano fundido tajado Lunchitas 170 g S/10.95 (Tottus online)", "2026-09-30")
+QUESO_CHEDDAR_KG   = Insumo(52.94, KG, COTIZADO,
+                            "queso cheddar fundido en tajadas Gloria 136 g S/7.20 (Tottus online)", "2026-09-30")
+TAJADA_G = 17          # g por tajada: 170 g / 10 tajadas (Lunchitas), 136 g / 8 (Gloria)
+TAJADAS_POR_SANDWICH = (1, 2)   # 15CM / 30CM — igual que Subway (dueño 2026-09-30): 1 tajada por 15CM
+# Nombres del dueño (2026-09-30): PICKLES = pepinillo encurtido; PEPINILLO = pepino fresco en rodajas.
+PICKLES_KG   = Insumo(40.00, KG, COTIZADO, "pickles (pepinillo encurtido) S/10 los 250 g escurridos (dueño)", "2026-09-30")
+JALAPENO_KG  = Insumo(39.56, KG, COTIZADO,
+                      "jalapeños en rodajas Valle Fértil frasco (225 g escurridos) S/8.90 Tottus; S/9.50 Vivanda",
+                      "2026-09-30")
+PEPINILLO_KG = Insumo(1.85, KG, COTIZADO, "pepinillo fresco (pepino) Tottus S/1.85/kg online; en mercado suele bajar", "2026-09-30")
+LECHUGA_KG   = Insumo(4.00, KG, ESTIMADO, "lechuga a granel, Trujillo — cotizar en mercado", "2026-09-30")
+TOMATE_KG    = Insumo(3.50, KG, ESTIMADO, "tomate a granel, Trujillo — cotizar en mercado", "2026-09-30")
+
+def queso_porcion(ficha: Insumo):
+    """(15CM, 30CM) en soles: tajadas × gramos × precio del kilo."""
+    return tuple(round(n * TAJADA_G / 1000 * ficha.valor, 4) for n in TAJADAS_POR_SANDWICH)
+
+# ── LA ALBÓNDIGA SE COSTEA DESDE SU RECETA (production_recipes id 3, la del panel) ──────────
+# Tanda de 2 kg de carne → 90 albóndigas de 25 g → 30 porciones de 15CM (3 albóndigas), con su
+# marinara. Cada ingrediente con su estado; el que pesa y no está cotizado es la lata de tomate.
+ALBONDIGA_TANDA = [
+    ("carne molida 15-20% grasa", 2.0,  PROTEINA_KG["P06"][0]),
+    ("pan del día (200 g)",       1.0,  Insumo(2.67, PEDIDO, ESTIMADO, "200 g de pan sub a S/2 la unidad de ~150 g", "2026-09-30")),
+    ("leche 220 ml",              1.0,  Insumo(1.06, PEDIDO, ESTIMADO, "leche ~S/4.80 el litro", "2026-09-30")),
+    ("huevo ×2",                  1.0,  Insumo(1.00, PEDIDO, ESTIMADO, "huevo ~S/0.50 la unidad", "2026-09-30")),
+    ("queso rallado 100 g",       0.10, Insumo(72.47, KG, COTIZADO, "parmesano granulado 454 g S/32.90 (Tottus online)", "2026-09-30")),
+    ("ajo, perejil, sal, pimienta, orégano", 1.0, Insumo(1.82, PEDIDO, ESTIMADO, "condimentos de la tanda", "2026-09-30")),
+    ("tomate pelado en lata 2.5 kg", 2.5, Insumo(16.25, KG, SIN_COTIZAR, "~S/6.50 la lata de 400 g — sin precio online", "2026-09-30")),
+    ("aceite de oliva 100 ml",    1.0,  Insumo(3.50, PEDIDO, ESTIMADO, "aceite de oliva ~S/35 el litro", "2026-09-30")),
+    ("cebolla 200 g",             0.2,  CEBOLLA_KG),
+]
+ALBONDIGA_PORCIONES = 30
+def albondiga_porcion():
+    tanda = sum(q * float(f.valor) for _, q, f in ALBONDIGA_TANDA)
+    return round(tanda / ALBONDIGA_PORCIONES, 4), round(2 * tanda / ALBONDIGA_PORCIONES, 4)
+
 TODAS = {
     "PAPEL_MANTECA": PAPEL_MANTECA, "BOLSA_KRAFT": BOLSA_KRAFT, "STICKER": STICKER,
     "EMPAQUE_CONSERVADOR": EMPAQUE_CONSERVADOR, "PAN_SUB": PAN_SUB,
     "PAN_FOCACCIA": PAN_FOCACCIA, "SALSA_PORCION": SALSA_PORCION,
     "QUESO_PORCION": QUESO_PORCION, "VEGETALES_KG": VEGETALES_KG, "CEBOLLA_KG": CEBOLLA_KG,
     "PIMIENTO_KG": PIMIENTO_KG, "RES_LAMINADA_KG": RES_LAMINADA_KG[0],
+    "QUESO_AMERICANO_KG": QUESO_AMERICANO_KG, "QUESO_CHEDDAR_KG": QUESO_CHEDDAR_KG,
+    "PICKLES_KG": PICKLES_KG, "JALAPENO_KG": JALAPENO_KG, "PEPINILLO_KG": PEPINILLO_KG,
+    "LECHUGA_KG": LECHUGA_KG, "TOMATE_KG": TOMATE_KG,
+    **{f"ALBONDIGA_{i}": f for i, (_, _, f) in enumerate(ALBONDIGA_TANDA)},
     **{f"PROTEINA_{k}": v[0] for k, v in PROTEINA_KG.items()},
 }

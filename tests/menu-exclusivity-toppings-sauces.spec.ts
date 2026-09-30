@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, irAlArmador, siguientePaso } from './helpers';
+import { gotoApp, irAlArmador, siguientePaso, ponerRecibe, ponerDireccion, pagarConYape } from './helpers';
 import { unVegetalDelArmador } from './carta';
 import { CARTA } from '../supabase/functions/_shared/carta.ts';
 
@@ -33,15 +33,17 @@ async function hastaLosVegetales(page: any) {
 // mecanismo sigOnly/SIG_ONLY_* sigue vivo en el código y vuelve a tener cobertura en
 // cuanto SIG07 (u otro Signature con ingrediente propio) regrese.
 
-test('JALAPEÑO + SPICY MAYO/PICANTE MIEL (exclusivos del menú secreto) no aparecen en ARMA EL TUYO', async ({ page }) => {
+// El JALAPEÑO dejó de ser exclusivo el 2026-09-30 (dueño: «sin jalapeño no tenemos algo picante»):
+// ahora es lo picante del armador. Las dos salsas del menú secreto SIGUEN siendo exclusivas.
+test('el jalapeño se ofrece en ARMA EL TUYO; SPICY MAYO y PICANTE MIEL (menú secreto) no', async ({ page }) => {
   await gotoApp(page, {});
 
   // ⚠ Hay que llegar de verdad al paso de VEGETALES: en el del queso "Jalapeño" no aparece
   // jamás, así que la aserción pasaría en falso. hastaLosVegetales() lo comprueba por el título.
   await hastaLosVegetales(page);
 
-  // Paso de vegetales: Jalapeño no debe listarse.
-  await expect(page.locator('text=Jalapeño')).not.toBeVisible();
+  // Paso de vegetales: el jalapeño se lista, marcado como picante por la carta.
+  await expect(page.locator('text=Jalapeño').first()).toBeVisible();
   await siguientePaso(page); // vegetales -> salsas
 
   // Otras salsas siguen disponibles normalmente.
@@ -87,15 +89,14 @@ test('cada vegetal del armador aparece, y lo elegido viaja al pedido', async ({ 
 
   await siguientePaso(page); // vegetales -> salsas
   await page.locator('[onclick^="byoToggleSalsa("]').first().click();
-  await siguientePaso(page); // «Listo» -> confirmar
+  await siguientePaso(page); // «Listo» -> bebidas o tu pedido
 
-  await expect(page.locator('text=CONFIRMAR SÁNDWICH')).toBeVisible();
-  await page.locator('#o-nom').fill('Cliente Lechuga');
-  await page.locator('#o-phone').fill('987654399');
-  await page.locator('#o-addr').fill('Av. España 123, Trujillo');
-  await page.locator('#o-district').selectOption('trujillo');
-  await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
-  await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
+  const sin = page.getByRole('button', { name: /Sigo sin bebida/ });
+  await Promise.race([sin.waitFor(), page.locator('.m30').waitFor()]);
+  if (await sin.isVisible()) await sin.click();
+  await ponerRecibe(page, 'Cliente Lechuga', '987654399');
+  await ponerDireccion(page, 'Av. España 123, Trujillo', '');
+  await pagarConYape(page);
   await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 
   // Lo elegido viaja al servidor dentro del ítem, no se pierde en el camino.
