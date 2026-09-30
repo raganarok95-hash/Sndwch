@@ -26,6 +26,7 @@ vive en el chat o en `/tmp`, no existe.
 | Grupo · plato del Mundo SANDO | `grupo-2-plato.png` | captura de la app | «En la 2 mejor pon solo el logo en grande» (2026-09-30): segundo plato, logo grande, sin los hermanos. La puerta NO lleva el grupo: «Sin tocar la puerta, mejor» |
 | Grupo · armador de WICHO | `grupo-3-armador-wicho.png` | `../propuestas/pedido-en-grupo.html` #3 | «Aprobado 3 y 4» (2026-09-30): «¿Son varios?» en el primer paso del armador |
 | Grupo · carrito | `grupo-4-carrito.png` | `../propuestas/pedido-en-grupo.html` #4 | «Aprobado 3 y 4» (2026-09-30): el sello «¿Pides para más gente?» que convierte el pedido en grupo |
+| Armador · el corte de WICHO | `armador-el-corte-de-wicho.png` | `../propuestas/el-corte-de-wicho.html` | «Me agrada muchísimo lo de wicho» (2026-09-30): WICHO pregunta con globo, etapas con nombre, el sándwich se arma a la vista. El dibujo del sándwich NO se aprobó: va con las 22 capas de `docs/prompts-capas-wicho.txt` (animación de que cada ingrediente entra al pan, sin el corte //) |
 | 01 · Ficha de un Signature (SANDO) | `01-ficha-de-un-signature.png` | perdida — recorte de captura | «La pantalla de la ficha, me agrada para sando» |
 | 06 · Pedido enviado | `06-pedido-enviado.png` | `p2.html` #3 | «Pedido ya está en la cocina, esa pantalla bien» |
 | 06 A · la losa | `06A-pedido-enviado-la-losa.png` | `y1.html` #1 | «La losa, pero bien hecho» (2026-09-24) — **la vigente**: SANDO entero hasta la losa, sin la columna que le cortaba la cara |

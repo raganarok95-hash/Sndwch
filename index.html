@@ -1270,6 +1270,45 @@ body.kb-open #app{padding-bottom:0}
 .msl .sello.on em{color:#CBA258}
 .msl .sello.x{opacity:.45}
 .msl .pie{margin-top:40px;font:500 11px/1.8 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#5A6A52;text-transform:uppercase}
+/* «EL CORTE DE WICHO» (aprobado 2026-09-30): el sándwich se arma a la vista, WICHO pregunta,
+   las etapas tienen nombre. Las capas dibujadas llegan como img/wicho_capa_*.png; mientras
+   tanto cada capa es una ficha con su nombre y su color. */
+.mw.corte .escena{position:relative;margin:4px 14px 0;background:#EAF4FB;border-radius:20px;padding:16px 14px 12px;display:flex;flex-direction:column;align-items:center;min-height:132px;justify-content:flex-end;overflow:hidden}
+.mw.corte .sand{width:74%;display:flex;flex-direction:column;align-items:stretch;transition:width .35s ease}
+.mw.corte .sand.largo{width:100%}
+.mw.corte .capa{height:15px;margin-top:-2px;display:flex;align-items:center;justify-content:center;border:2px solid #15242D;border-radius:8px;box-sizing:border-box}
+.mw.corte .capa span{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#15242D;background:rgba(255,255,255,.72);padding:1px 5px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:92%}
+.mw.corte .capa.pan{height:24px}
+.mw.corte .capa.pan.arriba{border-radius:22px 22px 8px 8px}
+.mw.corte .capa.pan.abajo{border-radius:8px 8px 14px 14px}
+.mw.corte .capa.vacia{border-style:dashed;background:transparent}
+.mw.corte .capa.img{height:auto;border:0;background:none;margin-top:-18%}
+.mw.corte .capa.img img{width:100%;display:block}
+.mw.corte .capa.cae{animation:capaCae .5s cubic-bezier(.3,1.5,.5,1)}
+@keyframes capaCae{0%{transform:translateY(-70px) rotate(-3deg);opacity:0}60%{opacity:1}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.mw.corte .capa.cae{animation:none}.mw.corte .sand{transition:none}}
+.mw.corte .escena .tam{margin-top:8px;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#15242D;border:1.5px solid #15242D;border-radius:999px;padding:5px 10px}
+.mw.corte .etapas{display:flex;gap:4px;padding:12px 12px 0;overflow-x:auto;scrollbar-width:none}
+.mw.corte .etapas::-webkit-scrollbar{display:none}
+.mw.corte .etapas button{all:unset;flex:0 0 auto;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.02em;text-transform:uppercase;padding:7px 7px;border-radius:999px;background:rgba(255,255,255,.4);color:#15242D}
+.mw.corte .etapas button.ok{background:#CBA258;color:#2A2113;cursor:pointer}
+.mw.corte .etapas button.now{background:#15242D;color:#EAF4FB}
+.mw.corte .etapas button:focus-visible{outline:2px solid #4A3D62;outline-offset:2px}
+.mw.corte .preg.voz{min-height:0;display:flex;align-items:flex-end;gap:8px;padding:12px 14px 4px}
+.mw.corte .preg.voz img{width:58px;flex:0 0 auto}
+.mw.corte .preg.voz .globo{flex:1;background:#EAF4FB;border-radius:14px 14px 14px 4px;padding:10px 13px}
+.mw.corte .preg.voz h2{margin:0;font-size:18px;line-height:1.15}
+.mw.corte .preg.voz .ay{margin-top:4px}
+.mw.corte .rej{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:6px 14px 0}
+.mw.corte .rej .wb{border-radius:14px;overflow:hidden}
+.mw.corte .rej .wb .foto{height:132px}
+.mw.corte .rej .wb .velo{background:linear-gradient(180deg,rgba(8,16,22,0) 25%,rgba(8,16,22,.86) 100%)}
+.mw.corte .rej .wb .txt{left:10px;right:10px;top:auto;bottom:10px;transform:none;max-width:none}
+.mw.corte .rej .wb .n{font-size:18px}
+.mw.corte .rej .wb .n s{display:block;margin:3px 0 0}
+.mw.corte .rej .wb .d{display:none}
+.mw.corte .rej .wb.sel{box-shadow:0 0 0 3px #15242D}
+.mw.corte .rej .wb.sel .velo{background:linear-gradient(180deg,rgba(28,18,46,0) 25%,rgba(28,18,46,.9) 100%)}
 /* ── EL PLATO EN KRAFT (dueño, 2026-09-30) ───────────────────────────────────────────────
    Cada Signature del Mundo SANDO se sirve sobre el kraft de la bolsa y del ticket; el secreto
    (.v) sigue de noche. Tinta café oscuro en vez de crema, y el dorado cede el precio y el botón
@@ -3836,7 +3875,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'ebf578c7f7';
+var APP_BUILD = 'b8bb30734a';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -7485,21 +7524,23 @@ function byoIrAPaso(i) {
 // Un segmento por paso. Oscuro = hecho, lila = donde estás, apagado = falta. Lo hecho es
 // tocable: cada segmento es el atajo a su paso.
 function BYO_LINEA() {
+    // «El corte de WICHO» (aprobado 2026-09-30): las etapas llevan su nombre y lo hecho lleva ✓.
     var segs = '';
     for (var i = 0; i < BYO_STEP_LABELS.length; i++) {
         var hecho = i < byoStep, aqui = i === byoStep;
         segs += '<button type="button"' + (i <= byoStep ? ' onclick="byoIrAPaso(' + i + ')"' : ' disabled')
             + ' class="' + (hecho ? 'ok' : aqui ? 'now' : '') + '"'
-            + ' aria-label="' + esc(BYO_STEP_LABELS[i]) + (hecho ? ' (hecho)' : aqui ? ' (aquí)' : ' (falta)') + '"></button>';
+            + ' aria-label="' + esc(BYO_STEP_LABELS[i]) + (hecho ? ' (hecho)' : aqui ? ' (aquí)' : ' (falta)') + '">'
+            + (hecho ? '✓ ' : '') + esc(BYO_STEP_LABELS[i].charAt(0) + BYO_STEP_LABELS[i].slice(1).toLowerCase()) + '</button>';
     }
-    return '<div class="linea">' + segs + '</div>';
+    return '<div class="etapas">' + segs + '</div>';
 }
 // ── LA CABECERA DEL PASO ───────────────────────────────────────────────────────────────
 // Volver, en qué paso vas, y el carrito si hay algo. Sin logotipo: dentro del armador ya
 // sabes dónde estás.
 function BYO_CABEZA() {
     var n = cart.length ? unidadesEnCarrito() : 0;
-    return '<div class="mw-arriba">' + BYO_LINEA()
+    return '<div class="mw-arriba">'
         + '<div class="cab">'
         + '<button type="button" class="fl" onclick="byoStepBack()" aria-label="Volver">&#8592;</button>'
         + '<div class="t">' + esc(BYO_STEP_LABELS[byoStep]) + '<s>' + (byoStep + 1) + '/' + BYO_STEP_LABELS.length + '</s></div>'
@@ -7510,7 +7551,7 @@ function BYO_CABEZA() {
 // ── LA PREGUNTA ────────────────────────────────────────────────────────────────────────
 // Va en pregunta y no en sustantivo: el cliente está respondiendo, no leyendo un índice.
 function BYO_PREGUNTA(q, ayuda) {
-    return '<div class="preg"><h2>' + q + '</h2>' + (ayuda ? '<div class="ay">' + ayuda + '</div>' : '') + '</div>';
+    return '<div class="preg voz"><img src="' + broPose('wicho', 'alegre') + '" alt="" aria-hidden="true"><div class="globo"><h2>' + q + '</h2>' + (ayuda ? '<div class="ay">' + ayuda + '</div>' : '') + '</div></div>';
 }
 // ── DOS MITADES ────────────────────────────────────────────────────────────────────────
 // Para el pan: dos opciones, y la decisión es una comparación. Lado a lado se comparan de
@@ -7636,7 +7677,8 @@ function BYO_LOQUELLEVAS() {
 function BYO_PIE() {
     var listo = byoStepCanContinue();
     var precio = (size && prot) ? itemUnitPrice(currentBuiltItem()) : 0;
-    var etiqueta = byoStep < BYO_ULTIMO ? 'Siguiente' : 'Listo';
+    var prox = BYO_STEP_LABELS[byoStep + 1] || '';
+    var etiqueta = byoStep < BYO_ULTIMO ? 'Sigue: ' + prox.toLowerCase() + ' →' : 'Lo quiero';
     return '<div class="mw-pie sw-barra">'
         + '<div style="flex:1;min-width:0">'
         + (precio > 0 ? '<div class="pr">' + SOLES + pz(precio) + '</div>' : '')
@@ -7644,6 +7686,64 @@ function BYO_PIE() {
         + '</div>'
         + '<button type="button" class="bt"' + (listo ? ' onclick="byoStepNext()"' : ' disabled') + '>'
         + (listo ? etiqueta : byoStepHint()) + '</button>'
+        + '</div>';
+}
+// ── EL ESCENARIO: TU SÁNDWICH ARMÁNDOSE («El corte de WICHO», aprobado 2026-09-30) ──────────
+// Cada cosa elegida cae encima de la anterior, en el orden del mostrador; al final baja el pan de
+// arriba. El dueño pidió el dibujo en el estilo del logo («un dibujo similar a wicho o sando o al
+// logo, y animación de que se va ingresando al sándwich. Sin el corte //»): cada capa es una
+// imagen `img/wicho_capa_*.png` pedida en docs/prompts-capas-wicho.txt. Mientras una capa no
+// exista, se pinta como una ficha con su nombre y su color — nunca una imagen rota.
+var CAPAS_DIBUJADAS = []; // ids con imagen ya recortada en img/ (se llena al llegar)
+var COLOR_CAPA = { B01: '#E9C68E', B03: '#D9A55E', P04: '#C9B79A', P06: '#8A3B22', P08: '#E7C7B0', P09: '#6B3A25',
+    C01: '#F3B94A', C02: '#E98A2B', T01: '#D8452E', T02: '#7C8F3A', T03: '#9C5A96', T04: '#5E9A34', T06: '#3F8A34', T09: '#6FB043', T11: '#9CCB70' };
+var _capasAntes = [];
+function capasDelArmado() {
+    var c = [];
+    if (prot) {
+        var p = PROTS.find(function (x) { return x.id === prot; });
+        if (p) {
+            c.push({ id: prot, t: p.l });
+            if (doubleProt)
+                c.push({ id: prot, t: p.l + ' (doble)' });
+        }
+    }
+    if (cheese) {
+        var q = CHEESE.find(function (x) { return x.id === cheese; });
+        if (q)
+            c.push({ id: cheese, t: q.l });
+    }
+    tops.forEach(function (id) { var t = TOPS.find(function (x) { return x.id === id; }); if (t)
+        c.push({ id: id, t: t.l }); });
+    sauces.forEach(function (id) { var s = SAUCES.find(function (x) { return x.id === id; }); if (s)
+        c.push({ id: id, t: s.l }); });
+    return c;
+}
+function BYO_CAPA(id, texto, clase, nueva) {
+    var cls = 'capa ' + clase + (nueva ? ' cae' : '');
+    if (CAPAS_DIBUJADAS.indexOf(id) >= 0)
+        return '<div class="' + cls + ' img"><img src="img/wicho_capa_' + id.toLowerCase() + '.png" alt=""></div>';
+    var fondo = COLOR_CAPA[id] || '#EAD9A8';
+    return '<div class="' + cls + '" style="background:' + fondo + '"><span>' + esc(texto) + '</span></div>';
+}
+function BYO_ESCENARIO() {
+    var b = base ? BASES.find(function (x) { return x.id === base; }) : null;
+    var capas = capasDelArmado();
+    var claves = capas.map(function (c) { return c.id + '|' + c.t; });
+    var html = '';
+    // Se apilan de abajo arriba; la que no estaba en el pintado anterior es la que «cae».
+    capas.slice().reverse().forEach(function (c) {
+        html += BYO_CAPA(c.id, c.t, 'relleno', _capasAntes.indexOf(c.id + '|' + c.t) < 0);
+    });
+    _capasAntes = claves;
+    var cerrado = byoStep === BYO_ULTIMO && !!prot;
+    return '<div class="escena" aria-label="Tu sándwich hasta ahora">'
+        + '<div class="sand' + (size === '30' ? ' largo' : '') + '">'
+        + (cerrado && b ? BYO_CAPA(b.id, b.l, 'pan arriba', false) : '')
+        + html
+        + (b ? BYO_CAPA(b.id, b.l, 'pan abajo', false) : '<div class="capa pan abajo vacia"><span>Aquí va tu pan</span></div>')
+        + '</div>'
+        + (size ? '<div class="tam">' + (size === '30' ? '30CM' : '15CM') + '</div>' : '')
         + '</div>';
 }
 // Desde cuánto sale un sándwich de este tamaño, sobre las proteínas que HOY se pueden elegir:
@@ -7692,7 +7792,7 @@ function sOBuild() {
         var puedeDoble = elegida && !(size === '30' ? elegida.noDouble30 : elegida.noDouble);
         var recargoDbl = elegida ? (size === '30' ? elegida.pDbl30 : elegida.pDbl) : 0;
         cuerpo = BYO_PREGUNTA('¿Qué va adentro?', 'Lo que elijas acá es el sándwich.')
-            + dispo.map(BYO_PROTEINA).join('<div class="sep"></div>')
+            + '<div class="rej">' + dispo.map(BYO_PROTEINA).join('') + '</div>'
             + (puedeDoble
                 ? '<div class="extra">' + BYO_PIEZA({ t: 'Doble de ' + elegida.l, s: '+' + SOLES_TXT + pz(recargoDbl), sel: doubleProt,
                     fn: "doubleProt=!doubleProt;render()" }) + '</div>' : '')
@@ -7743,9 +7843,10 @@ function sOBuild() {
                     fn: "extraSauce=!extraSauce;render()" })
                 + '</div>' : '');
     }
-    return '<div class="mw">'
-        + '<div class="wicho" aria-hidden="true"><img src="' + broPose('wicho', 'cuerpo') + '" alt=""></div>'
+    return '<div class="mw corte">'
         + BYO_CABEZA()
+        + BYO_ESCENARIO()
+        + BYO_LINEA()
         + '<div class="cuerpo fi">' + cuerpo + '</div>'
         + '</div>' + BYO_PIE();
 }

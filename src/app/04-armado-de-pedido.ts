@@ -99,14 +99,16 @@ function byoIrAPaso(i){
 // Un segmento por paso. Oscuro = hecho, lila = donde estás, apagado = falta. Lo hecho es
 // tocable: cada segmento es el atajo a su paso.
 function BYO_LINEA(){
+  // «El corte de WICHO» (aprobado 2026-09-30): las etapas llevan su nombre y lo hecho lleva ✓.
   var segs='';
   for(var i=0;i<BYO_STEP_LABELS.length;i++){
     var hecho=i<byoStep,aqui=i===byoStep;
     segs+='<button type="button"'+(i<=byoStep?' onclick="byoIrAPaso('+i+')"':' disabled')
       +' class="'+(hecho?'ok':aqui?'now':'')+'"'
-      +' aria-label="'+esc(BYO_STEP_LABELS[i])+(hecho?' (hecho)':aqui?' (aquí)':' (falta)')+'"></button>';
+      +' aria-label="'+esc(BYO_STEP_LABELS[i])+(hecho?' (hecho)':aqui?' (aquí)':' (falta)')+'">'
+      +(hecho?'✓ ':'')+esc(BYO_STEP_LABELS[i].charAt(0)+BYO_STEP_LABELS[i].slice(1).toLowerCase())+'</button>';
   }
-  return'<div class="linea">'+segs+'</div>';
+  return'<div class="etapas">'+segs+'</div>';
 }
 
 // ── LA CABECERA DEL PASO ───────────────────────────────────────────────────────────────
@@ -114,7 +116,7 @@ function BYO_LINEA(){
 // sabes dónde estás.
 function BYO_CABEZA(){
   var n=cart.length?unidadesEnCarrito():0;
-  return'<div class="mw-arriba">'+BYO_LINEA()
+  return'<div class="mw-arriba">'
     +'<div class="cab">'
     +'<button type="button" class="fl" onclick="byoStepBack()" aria-label="Volver">&#8592;</button>'
     +'<div class="t">'+esc(BYO_STEP_LABELS[byoStep])+'<s>'+(byoStep+1)+'/'+BYO_STEP_LABELS.length+'</s></div>'
@@ -126,7 +128,7 @@ function BYO_CABEZA(){
 // ── LA PREGUNTA ────────────────────────────────────────────────────────────────────────
 // Va en pregunta y no en sustantivo: el cliente está respondiendo, no leyendo un índice.
 function BYO_PREGUNTA(q,ayuda){
-  return'<div class="preg"><h2>'+q+'</h2>'+(ayuda?'<div class="ay">'+ayuda+'</div>':'')+'</div>';
+  return'<div class="preg voz"><img src="'+broPose('wicho','alegre')+'" alt="" aria-hidden="true"><div class="globo"><h2>'+q+'</h2>'+(ayuda?'<div class="ay">'+ayuda+'</div>':'')+'</div></div>';
 }
 
 // ── DOS MITADES ────────────────────────────────────────────────────────────────────────
@@ -238,7 +240,8 @@ function BYO_LOQUELLEVAS(){
 function BYO_PIE(){
   var listo=byoStepCanContinue();
   var precio=(size&&prot)?itemUnitPrice(currentBuiltItem()):0;
-  var etiqueta=byoStep<BYO_ULTIMO?'Siguiente':'Listo';
+  var prox=BYO_STEP_LABELS[byoStep+1]||'';
+  var etiqueta=byoStep<BYO_ULTIMO?'Sigue: '+prox.toLowerCase()+' →':'Lo quiero';
   return'<div class="mw-pie sw-barra">'
     +'<div style="flex:1;min-width:0">'
     +(precio>0?'<div class="pr">'+SOLES+pz(precio)+'</div>':'')
@@ -246,6 +249,51 @@ function BYO_PIE(){
     +'</div>'
     +'<button type="button" class="bt"'+(listo?' onclick="byoStepNext()"':' disabled')+'>'
     +(listo?etiqueta:byoStepHint())+'</button>'
+    +'</div>';
+}
+
+// ── EL ESCENARIO: TU SÁNDWICH ARMÁNDOSE («El corte de WICHO», aprobado 2026-09-30) ──────────
+// Cada cosa elegida cae encima de la anterior, en el orden del mostrador; al final baja el pan de
+// arriba. El dueño pidió el dibujo en el estilo del logo («un dibujo similar a wicho o sando o al
+// logo, y animación de que se va ingresando al sándwich. Sin el corte //»): cada capa es una
+// imagen `img/wicho_capa_*.png` pedida en docs/prompts-capas-wicho.txt. Mientras una capa no
+// exista, se pinta como una ficha con su nombre y su color — nunca una imagen rota.
+var CAPAS_DIBUJADAS:string[]=[];   // ids con imagen ya recortada en img/ (se llena al llegar)
+var COLOR_CAPA:Record<string,string>={B01:'#E9C68E',B03:'#D9A55E',P04:'#C9B79A',P06:'#8A3B22',P08:'#E7C7B0',P09:'#6B3A25',
+  C01:'#F3B94A',C02:'#E98A2B',T01:'#D8452E',T02:'#7C8F3A',T03:'#9C5A96',T04:'#5E9A34',T06:'#3F8A34',T09:'#6FB043',T11:'#9CCB70'};
+var _capasAntes:string[]=[];
+function capasDelArmado():{id:string,t:string}[]{
+  var c:{id:string,t:string}[]=[];
+  if(prot){var p=PROTS.find(function(x){return x.id===prot;});if(p){c.push({id:prot,t:p.l});if(doubleProt)c.push({id:prot,t:p.l+' (doble)'});}}
+  if(cheese){var q=CHEESE.find(function(x){return x.id===cheese;});if(q)c.push({id:cheese,t:q.l});}
+  tops.forEach(function(id){var t=TOPS.find(function(x){return x.id===id;});if(t)c.push({id:id,t:t.l});});
+  sauces.forEach(function(id){var s=SAUCES.find(function(x){return x.id===id;});if(s)c.push({id:id,t:s.l});});
+  return c;
+}
+function BYO_CAPA(id:string,texto:string,clase:string,nueva:boolean){
+  var cls='capa '+clase+(nueva?' cae':'');
+  if(CAPAS_DIBUJADAS.indexOf(id)>=0)return'<div class="'+cls+' img"><img src="img/wicho_capa_'+id.toLowerCase()+'.png" alt=""></div>';
+  var fondo=COLOR_CAPA[id]||'#EAD9A8';
+  return'<div class="'+cls+'" style="background:'+fondo+'"><span>'+esc(texto)+'</span></div>';
+}
+function BYO_ESCENARIO(){
+  var b=base?BASES.find(function(x){return x.id===base;}):null;
+  var capas=capasDelArmado();
+  var claves=capas.map(function(c){return c.id+'|'+c.t;});
+  var html='';
+  // Se apilan de abajo arriba; la que no estaba en el pintado anterior es la que «cae».
+  capas.slice().reverse().forEach(function(c){
+    html+=BYO_CAPA(c.id,c.t,'relleno',_capasAntes.indexOf(c.id+'|'+c.t)<0);
+  });
+  _capasAntes=claves;
+  var cerrado=byoStep===BYO_ULTIMO&&!!prot;
+  return'<div class="escena" aria-label="Tu sándwich hasta ahora">'
+    +'<div class="sand'+(size==='30'?' largo':'')+'">'
+    +(cerrado&&b?BYO_CAPA(b.id,b.l,'pan arriba',false):'')
+    +html
+    +(b?BYO_CAPA(b.id,b.l,'pan abajo',false):'<div class="capa pan abajo vacia"><span>Aquí va tu pan</span></div>')
+    +'</div>'
+    +(size?'<div class="tam">'+(size==='30'?'30CM':'15CM')+'</div>':'')
     +'</div>';
 }
 
@@ -297,7 +345,7 @@ function sOBuild(){
     var puedeDoble=elegida&&!(size==='30'?elegida.noDouble30:elegida.noDouble);
     var recargoDbl=elegida?(size==='30'?elegida.pDbl30:elegida.pDbl):0;
     cuerpo=BYO_PREGUNTA('¿Qué va adentro?','Lo que elijas acá es el sándwich.')
-      +dispo.map(BYO_PROTEINA).join('<div class="sep"></div>')
+      +'<div class="rej">'+dispo.map(BYO_PROTEINA).join('')+'</div>'
       +(puedeDoble
         ?'<div class="extra">'+BYO_PIEZA({t:'Doble de '+elegida.l,s:'+'+SOLES_TXT+pz(recargoDbl),sel:doubleProt,
                      fn:"doubleProt=!doubleProt;render()"})+'</div>':'')
@@ -349,9 +397,10 @@ function sOBuild(){
         +'</div>':'');
   }
 
-  return'<div class="mw">'
-    +'<div class="wicho" aria-hidden="true"><img src="'+broPose('wicho','cuerpo')+'" alt=""></div>'
+  return'<div class="mw corte">'
     +BYO_CABEZA()
+    +BYO_ESCENARIO()
+    +BYO_LINEA()
     +'<div class="cuerpo fi">'+cuerpo+'</div>'
     +'</div>'+BYO_PIE();
 }
