@@ -780,6 +780,14 @@ function tasarYValidar(raw: any): Omit<PricedItem, "elegible"> {
     // silenciosamente cheese si el Signature no lo permite.
     const cheese = raw.cheese ? String(raw.cheese) : null;
     const priced = priceSigBuild(String(raw.sigId || ""), size, doubleProt, extraSauce, cheese);
+    // QUITAR (dueño 2026-09-30): el cliente puede sacarle a un Signature un vegetal, una salsa o
+    // el queso fijo — nunca agregar, y nunca el pan ni la proteína. El precio no cambia. Solo
+    // se acepta lo que la receta de verdad lleva (un id ajeno se descarta en silencio), y lo
+    // quitado sale también de los ingredientes: no se descuenta del inventario lo que no se usó.
+    const receta = SIG_DATA[String(raw.sigId || "")];
+    const quitables = receta ? [...receta.tops, ...receta.sauces, ...(receta.fixedCheese ? [receta.fixedCheese] : [])] : [];
+    const sin = Array.isArray(raw?.sin) ? [...new Set((raw.sin as unknown[]).map(String))].filter((id) => quitables.includes(id)) : [];
+    if (sin.length) priced.ingredientsPerUnit = priced.ingredientsPerUnit.filter((id) => !sin.includes(id));
     return {
       // `snapIngredients`: foto de la composición REAL al momento de pedir. A diferencia de
       // BUILD YOUR OWN (que guarda base/prot/tops/sauces en el propio ítem, así que
@@ -790,7 +798,7 @@ function tasarYValidar(raw: any): Omit<PricedItem, "elegible"> {
       // sándwich secreto de ESTE mes, no los del que de verdad se vendió — corrompiendo el
       // stock en silencio (hallazgo de auditoría). restockOrderItems la prefiere cuando
       // existe y solo re-deriva para pedidos legados anteriores a este cambio.
-      item: { type: "sig", sigId: raw.sigId, size, doubleProt, extraSauce, cheese, note, qty, snapIngredients: priced.ingredientsPerUnit },
+      item: { type: "sig", sigId: raw.sigId, size, doubleProt, extraSauce, cheese, note, qty, snapIngredients: priced.ingredientsPerUnit, ...(sin.length ? { sin } : {}) },
       qty,
       unitPrice: priced.basePrice + priced.dblSurcharge + priced.sauceSurcharge,
       basePrice: priced.basePrice,

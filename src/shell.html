@@ -1187,6 +1187,35 @@ body.kb-open #app{padding-bottom:0}
 }
 @media (prefers-reduced-motion:reduce){.sw-spiral{animation:none}}
 .leaflet-container{background:#1a1a2e}
+/* QUITAR y el precio con bebida en la ficha (dueño, 2026-09-30). */
+.f01 .quita{margin-top:14px}
+.f01 .quita em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.22em;color:#5A6A52;text-transform:uppercase}
+.f01 .quita .ops{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.f01 .quita button{all:unset;box-sizing:border-box;cursor:pointer;min-height:36px;padding:0 13px;display:inline-flex;align-items:center;border:1px solid #1E2B22;border-radius:999px;font-family:'EB Garamond',serif;font-size:15px;color:#1E2B22}
+.f01 .quita button.off{background:#1E2B22;color:#EFE6D4}
+.f01 .quita button:focus-visible{outline:2px solid #D8823C;outline-offset:2px}
+.f01 .pie .p s{display:block;text-decoration:none;font:500 11px/1 'IBM Plex Mono',monospace;color:#C9BFA8;margin-top:6px;letter-spacing:.04em}
+/* ── EL PLATO EN KRAFT (dueño, 2026-09-30) ───────────────────────────────────────────────
+   Cada Signature del Mundo SANDO se sirve sobre el kraft de la bolsa y del ticket; el secreto
+   (.v) sigue de noche. Tinta café oscuro en vez de crema, y el dorado cede el precio y el botón
+   al café: sobre kraft el dorado no llega al contraste de texto. */
+.m15 .plato.kraft .foto .baja{background:linear-gradient(180deg,rgba(9,16,12,.5) 0%,transparent 28%,transparent 62%,#C6A579 100%)}
+.m15 .plato.kraft .num{color:#3A2812}
+.m15 .plato.kraft .num b{color:#6A2A08}
+.m15 .plato.kraft h1{color:#2A1D0E}
+.m15 .plato.kraft .pitch{color:#4A3218}
+.m15 .plato.kraft .puno{background-color:#AE8D62;background-image:repeating-linear-gradient(90deg,rgba(60,38,14,.35) 0 2px,transparent 2px 6px)}
+.m15 .plato.kraft .cuenta .p{color:#2A1D0E}
+.m15 .plato.kraft .cuenta .p s{color:#4A3218}
+.m15 .plato.kraft .cuenta .b{background:#2A1D0E;color:#F2E4CA}
+.m15 .plato.kraft .cuenta .b:focus-visible{outline-color:#2A1D0E}
+.m15 .plato.kraft .pasar i{background:#A88758}
+.m15 .plato.kraft .pasar i.on{background:#2A1D0E}
+.m15 .plato.kraft .pasar i.vlt{background:#6E5A86}
+.m15 .plato.kraft .pasar em{color:#4A3218}
+@media (min-width:900px){
+  .m15 .plato.kraft .foto .baja{background:linear-gradient(90deg,transparent 80%,#C6A579 100%),linear-gradient(180deg,rgba(9,16,12,.5) 0%,transparent 14%)}
+}
 /* ── LA APP EN PC Y LAPTOP (2026-09-30) ─────────────────────────────────────────────────
    El dueño: «para pc y laptop básicamente el app visualmente no sirve, sale recortada como si
    fuera en cel» — y pidió que NO sea otra maqueta: «debe ser pantalla adaptable». Hasta acá

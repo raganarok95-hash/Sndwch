@@ -1,0 +1,71 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Pedido en grupo — dónde vive</title>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:wght@600&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9E4D8;font-family:'EB Garamond',serif;padding:30px 26px;color:#1b1b1b}
+h2{font:600 28px/1.1 'Bodoni Moda',serif;margin:0 0 6px}.sub{margin:0 0 24px;color:#555;font-size:15px;max-width:1150px}
+.fila{display:flex;gap:22px;align-items:flex-start}
+figure{margin:0;width:281px}
+.tel{position:relative;width:390px;height:844px;transform:scale(.72);transform-origin:0 0;overflow:hidden;border-radius:26px;box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+.hueco{width:281px;height:608px;position:relative}
+.tel>img.base{position:absolute;inset:0;width:390px;height:844px}
+figcaption{margin-top:10px}figcaption b{display:block;font:600 17px 'Bodoni Moda',serif}figcaption span{display:block;font-size:14px;color:#444;margin-top:4px;line-height:1.35}
+.nuevo{outline:3px dashed #D8823C;outline-offset:3px}
+/* 1 · puerta */
+.banda{position:absolute;left:0;right:0;bottom:22px;height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#241D38;color:#F6F2E8;font-family:'IBM Plex Mono',monospace}
+.banda b{display:block;font-size:11px;letter-spacing:.2em;color:#CBA258}.banda s{display:block;text-decoration:none;font-size:11px;color:#CFE6F5;margin-top:6px}
+.banda i{font-style:normal;font-size:22px;color:#8CC8EC}
+.legal{position:absolute;left:0;right:0;bottom:0;height:22px;background:#110F0C;color:#8E8A80;font:500 9px/22px 'IBM Plex Mono',monospace;text-align:center;letter-spacing:.06em}
+.techo{position:absolute;left:0;right:0;top:0;height:84px;background:linear-gradient(90deg,#1B1813 50%,#E4F0F9 50%);display:flex;justify-content:space-between;align-items:center;padding:0 16px}
+.techo b{font:620 19px 'Bodoni Moda',serif;color:#F6F2E8;text-shadow:0 0 1px #000}.techo em{font:600 10px 'EB Garamond';letter-spacing:.22em;color:#241D38;font-style:normal}
+/* 2 · plato del grupo */
+.plato{position:absolute;inset:0;background:#C6A579;background-image:repeating-linear-gradient(0deg,rgba(80,52,20,.05) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(80,52,20,.045) 0 1px,transparent 1px 4px)}
+.plato .forro{position:absolute;left:0;top:0;bottom:0;width:7px;background:linear-gradient(180deg,#CBA258 50%,#8CC8EC 50%)}
+.plato .riel{position:absolute;top:14px;left:0;right:0;text-align:center;font:600 13px 'Bodoni Moda',serif;color:#2A1D0E}
+.plato .dos{position:absolute;left:0;right:0;top:70px;height:330px;display:flex;justify-content:center;align-items:flex-end;gap:0}
+.plato .dos img{height:270px;max-width:49%;object-fit:contain;object-position:bottom}
+.plato .ficha{position:absolute;left:24px;right:22px;bottom:34px}
+.plato .num{font:600 10px 'EB Garamond';letter-spacing:.34em;color:#3A2812;text-transform:uppercase}
+.plato h1{font:640 44px/.96 'Bodoni Moda',serif;color:#2A1D0E;margin:12px 0 0}
+.plato p{font-size:15px;line-height:1.5;color:#4A3218;margin:14px 0 0;max-width:32ch}
+.plato .regla{margin-top:16px;border-top:1px solid rgba(42,29,14,.35);border-bottom:1px solid rgba(42,29,14,.35);padding:10px 0;font:500 11px/1.7 'IBM Plex Mono',monospace;color:#2A1D0E;text-transform:uppercase;letter-spacing:.06em}
+.plato .cuenta{display:flex;justify-content:space-between;align-items:center;margin-top:18px}
+.plato .cuenta button{border:0;background:#2A1D0E;color:#F2E4CA;padding:16px 24px;font:640 15px 'Bodoni Moda',serif}
+.plato .cuenta u{font-size:15px;color:#2A1D0E}
+/* 3 · armador */
+.puente{position:absolute;left:14px;right:14px;bottom:92px;background:#15242D;color:#EAF4FB;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+.puente b{display:block;font:600 17px 'Bodoni Moda',serif}.puente s{display:block;text-decoration:none;font:500 11px 'IBM Plex Mono',monospace;color:#8CC8EC;margin-top:5px}
+.puente i{font-style:normal;font-size:22px;color:#CBA258}
+/* 4 · carrito */
+.sello{position:absolute;left:26px;right:26px;top:596px;border:2px dashed #33230F;background:rgba(242,228,202,.55);padding:12px 14px;transform:rotate(.6deg)}
+.sello b{display:block;font:700 11px 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#33230F;text-transform:uppercase}
+.sello span{display:block;font-size:15px;color:#33230F;margin-top:6px;line-height:1.35}
+.sello u{display:inline-block;margin-top:8px;font:700 11px 'IBM Plex Mono',monospace;color:#33230F;letter-spacing:.14em;text-transform:uppercase}
+.tapa{position:absolute;left:0;right:0;top:580px;height:190px;background:#C6A579}
+</style></head><body>
+<h2>El pedido en grupo, a la vista en los dos mundos</h2>
+<p class="sub">No va escondido en una sección «Y además»: aparece en la puerta, como un plato más en el Mundo SANDO, al empezar a armar en el de WICHO y en el carrito. <b>El pack de 5 es el mismo pedido en grupo llenado por una sola persona</b>: desde 5 sándwiches el más barato va gratis, sin regla de dinero nueva. Lo punteado en naranja es lo nuevo; lo demás es la app tal como está hoy.</p>
+<div class="fila">
+<figure><div class="hueco"><div class="tel"><img class="base" src="base/01-puerta.png" style="top:-84px">
+ <div class="techo"><span></span><b>SND//WCH</b><em>ENTRAR →</em></div>
+ <div class="banda nuevo"><div><b>¿Son varios?</b><s>Pedido en grupo · desde 5, uno va gratis</s></div><i>→</i></div>
+ <div class="legal nuevo">Libro de Reclamaciones · Términos · Contacto</div></div></div>
+ <figcaption><b>1 · En la puerta</b><span>Una franja de los dos (el morado de la puerta, dorado y celeste) sobre el pie. Abajo, en letra chica, la línea legal: el Libro de Reclamaciones queda visible desde la primera pantalla.</span></figcaption></figure>
+
+<figure><div class="hueco"><div class="tel"><div class="plato nuevo"><div class="forro"></div><div class="riel">SND//WCH</div>
+ <div class="dos"><img src="../../../img/sando2_frente.png"><img src="../../../img/wicho2_celebra.png"></div>
+ <div class="ficha"><div class="num">Para varios</div><h1>Pedido en grupo</h1>
+ <p>Mandas un enlace y cada uno elige el suyo desde su celular, Signature o armado. Tú pagas una vez y llega todo junto.</p>
+ <div class="regla">Desde 5 sándwiches, el más barato va gratis</div>
+ <div class="cuenta"><u>O llénalo tú: pack de 5</u><button>Armar el grupo</button></div></div></div></div></div>
+ <figcaption><b>2 · Mundo SANDO: un plato más</b><span>Va segundo, justo después de la estrella: nadie lo pasa de largo. Es el único plato con los dos hermanos, porque es lo que comparten.</span></figcaption></figure>
+
+<figure><div class="hueco"><div class="tel"><img class="base" src="base/10-armador-tam.png">
+ <div class="puente nuevo"><div><b>¿Son varios?</b><s>Cada uno arma el suyo · con 5, uno gratis</s></div><i>→</i></div></div></div>
+ <figcaption><b>3 · Mundo WICHO: al empezar</b><span>En el primer paso del armador, la misma invitación con la voz de WICHO: cada uno arma el suyo.</span></figcaption></figure>
+
+<figure><div class="hueco"><div class="tel"><img class="base" src="base/05-m30.png"><div class="tapa"></div>
+ <div class="sello nuevo"><b>¿Pides para más gente?</b><span>Hazlo grupo: comparte el enlace y cada uno suma el suyo. Con 5, el más barato va gratis.</span><u>Convertir en grupo →</u></div></div></div>
+ <figcaption><b>4 · En el carrito</b><span>Cuando ya hay algo en el pedido, un sello invita a convertirlo en grupo sin perder lo elegido. Los hermanos del pie se mueven arriba del sello.</span></figcaption></figure>
+</div>
+<p class="sub" style="margin-top:22px"><b>Lo demás que iba en «Y además»:</b> <b>Bebidas</b> sigue ofreciéndose al tocar «Lo quiero» y queda un acceso directo en la barra de arriba de cada mundo. <b>Tus puntos y Favoritos</b> quedan dentro de «Entrar / Tú» (esquina de la puerta). <b>La línea legal</b> va en la puerta (1) y al pie del pago.</p>
+</body></html>
