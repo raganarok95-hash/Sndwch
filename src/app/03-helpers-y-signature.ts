@@ -1788,7 +1788,9 @@ function sOSig(){
       +'<span class="r">+'+SOLES_TXT+pz(recargo)+'<span class="sw"></span></span></button>';
   }
   return'<div class="f01 fi"><div class="forro"></div>'
-    +'<div class="foto">'+(SIG_IMG[s.id]?'<img src="'+SIG_IMG[s.id]+'" alt="'+esc(s.n)+'">':'')+'</div>'
+    // En escritorio la foto es media pantalla de alto completo: ahí va la vertical, que muestra
+    // el sándwich entero (la apaisada se recortaría por las puntas otra vez).
+    +'<div class="foto">'+(SIG_IMG[s.id]?'<picture>'+(fotoDelPlato(s.id)!==SIG_IMG[s.id]?'<source media="(min-width:900px)" srcset="'+fotoDelPlato(s.id)+'">':'')+'<img src="'+SIG_IMG[s.id]+'" alt="'+esc(s.n)+'"></picture>':'')+'</div>'
     +'<button class="sal" onclick="'+(editingItemQty?'cancelarEdicionFicha()':'go(\'o_home\')')+'" aria-label="Volver">←</button>'
     +'<div class="cuerpo"><div class="num">'+(i>=0?romano(i+1):'')+(marca?' · '+esc(marca):'')+'</div>'
     +'<h1>'+esc(s.n)+'</h1>'
