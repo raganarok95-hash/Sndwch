@@ -129,6 +129,7 @@ r += `
 ## Pago
 - Yape por defecto (sin recargo). Con tarjeta (Culqi) el ENVÍO se cobra ÷ (1 − ${R.CULQI_FEE_RATE}) para que la comisión no se coma lo del motorizado; la comisión sobre la comida la absorbe el margen.
 - Reportar un problema: hasta **${R.REPORTE_PLAZO_HORAS} h** después de la entrega.
+- Un pedido lleva **al menos un sándwich**: las bebidas se ven y se entra a ellas directo, pero no se paga un pedido de solo bebidas (dueño, 2026-09-30; \`assertTraeSandwich\` en \`api/actions/orders.ts\`).
 
 ## Descuentos del dinero (\`dinero.ts\`)
 - Combo: −${S(REGLAS.comboPorPar)} por cada par sándwich + bebida.

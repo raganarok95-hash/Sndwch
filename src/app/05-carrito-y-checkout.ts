@@ -1204,7 +1204,12 @@ async function hojaListo(){
   hoja30=null;render();
 }
 // PAGAR: lo que falta se resuelve donde vive (la 34 o la hoja de RECIBE); después la 31.
+var FALTA_SANDWICH='Las bebidas van con un sándwich: agrega uno para pedir.';
+function faltaSandwich():boolean{return cart.length>0&&!cart.some(function(it:any){return it.type!=='side';});}
 function irAPagar(){
+  // Antes de pedir dirección o datos: a quien solo lleva bebidas no se le hace llenar todo para
+  // decirle al final que no puede pagar.
+  if(faltaSandwich()){var e0=document.getElementById('o-err');if(e0)e0.textContent=FALTA_SANDWICH;else showToast(FALTA_SANDWICH,'error');return;}
   if(!direccionLista()){go('o_dir');return;}
   if(!recibeListo()){hoja30='recibe';hojaErr='';render();return;}
   var err=problemaDelPedido();
@@ -1320,6 +1325,9 @@ var _pendingOrder=null;
 // campos de un formulario: la 30G guarda cada dato en su renglón. El servidor vuelve a validar.
 function problemaDelPedido():string|null{
   if(!cart.length)return'Tu pedido está vacío.';
+  // Las bebidas se ven y se entra a ellas directo, pero van con un sándwich (dueño, 2026-09-30).
+  // El servidor lo exige igual (assertTraeSandwich en orders.ts): esto solo lo avisa antes.
+  if(faltaSandwich())return FALTA_SANDWICH;
   if(!confNom.trim())return'Falta a nombre de quién va el pedido.';
   if(!addrText.trim())return'Falta dónde te lo dejamos.';
   if(addressInExcludedZone(addressWithDistrict(addrText.trim(),deliveryDistrict)))return'Por ahora tu zona aún no está disponible para delivery, pero esperamos poder llegar pronto.';

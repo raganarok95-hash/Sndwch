@@ -94,11 +94,12 @@ export const FLUJOS = {
     const { token, phone } = await registrarYEntrar(s);
     s.sql(`insert into inventory (product_code, stock_qty) values ('${carta.bebida(1)}', 5) on conflict (product_code) do update set stock_qty = 5`);
     const puntosAntes = valor(s, `select points from customers where phone = '${phone}'`);
-    const items = [{ type: 'side', code: carta.bebida(1), qty: 2 }];
+    // Las bebidas van con un sándwich (dueño, 2026-09-30): el pedido lleva uno.
+    const items = [{ type: 'sig', sigId: carta.signature(2), size: '15', qty: 1 }, { type: 'side', code: carta.bebida(1), qty: 2 }];
     const total = resolverCarrito(items, {}, precios).total + ENVIO_MINIMO;
     const r = await s.llamar('place-order', {
       token, ref: 'E2E-YAPE', name: 'Cliente', phone, address: 'Av. España 123, Trujillo', ...TIENDA,
-      items, total, paymentMethod: 'yape', summary: '2x The Cool', deliveryZone: 'trujillo',
+      items, total, paymentMethod: 'yape', summary: '1x sándwich + 2x bebida', deliveryZone: 'trujillo',
     });
     afirmar(r.status === 200, `place-order yape: ${r.status} ${r.error || ''}`);
     afirmar(valor(s, `select payment_status from orders where ref = 'E2E-YAPE'`) === 'pending', 'el pedido Yape no quedó pendiente');
@@ -109,6 +110,18 @@ export const FLUJOS = {
     afirmar(c.status === 200, `cancel-my-order: ${c.status} ${c.error || ''}`);
     afirmar(valor(s, `select status from orders where ref = 'E2E-YAPE'`) === 'CANCELADO', 'el pedido no quedó cancelado');
     afirmar(valor(s, `select stock_qty from inventory where product_code = '${carta.bebida(1)}'`) === '5', 'cancelar no devolvió el stock');
+  },
+
+  async 'un pedido de solo bebidas se rechaza y no deja nada en la base'(s, precios, carta) {
+    const { token, phone } = await registrarYEntrar(s);
+    const items = [{ type: 'side', code: carta.bebida(1), qty: 2 }];
+    const total = resolverCarrito(items, {}, precios).total + ENVIO_MINIMO;
+    const r = await s.llamar('place-order', {
+      token, ref: 'E2E-SOLOBEB', name: 'Cliente', phone, address: 'Av. España 123, Trujillo', ...TIENDA,
+      items, total, paymentMethod: 'yape', summary: '2x bebida', deliveryZone: 'trujillo',
+    });
+    afirmar(r.status === 400, `un pedido de solo bebidas debió rechazarse y respondió ${r.status}`);
+    afirmar(valor(s, `select count(*) from orders where ref = 'E2E-SOLOBEB'`) === '0', 'quedó un pedido de solo bebidas en la base');
   },
 
   async 'el dueño confirma el Yape: recién ahí se ganan los puntos, y el historial cuadra'(s, precios, carta) {

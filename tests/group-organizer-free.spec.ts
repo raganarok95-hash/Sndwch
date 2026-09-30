@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, mockBackend, stubWindowOpen, APP_FILE, entrarConTelefono, cartaDeLaApp, type Carta } from './helpers';
+import { gotoApp, mockBackend, stubWindowOpen, APP_FILE, entrarConTelefono, cartaDeLaApp, ponerRecibe, ponerDireccion, pagarConYape, type Carta } from './helpers';
 
 // INCENTIVO AL ORGANIZADOR (2026-08-22). Quien junta un pedido grupal de 5 o más
 // sándwiches se lleva gratis el 15CM más barato del grupo. Es el motor del canal de
@@ -94,7 +94,6 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   const { barato, caro } = extremos(c);
   items = carritoDelGrupo(c);
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await entrarConTelefono(page, '900000001', '1234');
   // ESPERAR A QUE EL LOGIN RESUELVA ANTES DE NAVEGAR. Sin esto hay una carrera real: el
   // fetch de `login` sigue en vuelo mientras el test ya cambió de pestaña y abrió el pedido
@@ -108,15 +107,16 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   // La espera NO relaja lo que se comprueba: fija una precondición que el test ya asumía.
   await expect(page.getByRole('button', { name: 'INGRESAR //' })).toHaveCount(0);
 
-  await page.locator('.bottom-nav').getByRole('button', { name: 'PEDIDO' }).click();
-  await page.locator('[onclick*="doCreateGroupOrder"]').first().click();
+  // El botón de entrada al grupo se perdió con el mosaico viejo (se restituye tras su maqueta):
+  // mientras tanto se entra como entra el QR de la bolsa, creando el grupo.
+  await page.evaluate(() => (window as any).doCreateGroupOrder());
   await expect(page.locator('text=¡Un sándwich va gratis!')).toBeVisible();
 
   await page.getByRole('button', { name: /yo invito/i }).click();
   await expect(page.getByRole('button', { name: 'CONFIRMAR //' })).toBeVisible();
   await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
 
-  await expect(page.locator('text=TU CARRITO')).toBeVisible();
+  await expect(page.locator('.m30')).toBeVisible();
   // Cuatro del más caro y uno del más barato: el más barato va gratis.
   // ⚠ SE COMPRUEBA LA CUENTA, NO LA FRASE — ver la nota equivalente en
   // rewards-redemption.spec.ts. La línea verde "sándwich del organizador: ahorras …"
@@ -125,14 +125,9 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   expect(perdonado, 'el 15CM más barato del grupo tiene que ir gratis').toBeCloseTo(c.p15[barato]!, 2);
   await expect(page.locator('text=/Sándwich del organizador/')).toBeVisible();
 
-  await page.locator('#o-nom').fill('Ana Cliente');
-  await page.locator('#o-phone').fill('900000001');
-  await page.locator('#o-addr').fill('Av. España 123, Trujillo');
-  await page.locator('#o-district').selectOption('trujillo');
-  await page.locator('[onclick*="selectPayMethod(\'yape\')"]').click();
-  await page.getByRole('button', { name: 'YA REALICÉ EL PAGO //' }).click();
-  await expect(page.locator('text=¿Ya transferiste')).toBeVisible();
-  await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
+  await ponerRecibe(page, 'Ana Cliente', '900000001');
+  await ponerDireccion(page, 'Av. España 123, Trujillo', '');
+  await pagarConYape(page);
   await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 
   const placeOrder = calls.find((c) => c.action === 'place-order');

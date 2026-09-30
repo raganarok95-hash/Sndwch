@@ -608,6 +608,16 @@ export async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ 
 // por motorizados que el dueño coordina a mano, así que una dirección en una zona que no
 // cubre no debe llegar a cobrarse/reservarse nunca. Comparación por substring, sin
 // acentos/mayúsculas, contra DELIVERY_EXCLUDED_ZONES (env.ts).
+// SOLO BEBIDAS, NO (dueño, 2026-09-30): «pueden accederse y verse pero no pedir solo bebida,
+// aunque sí ingresar directamente». Se valida al CREAR el pedido (place-order y prepare-order) y
+// no en deriveCart, que también tasa la parte de cada quien en un pedido en grupo: ahí alguien
+// sí puede haber pedido solo su bebida, y el pedido del grupo lleva sándwiches.
+export function assertTraeSandwich(items: Record<string, unknown>[]): void {
+  if (!items.some((it) => it.type !== "side")) {
+    throw new ApiError("Las bebidas van con un sándwich: agrega uno para pedir.", 400);
+  }
+}
+
 function assertAddressAllowed(address: string): void {
   const normalized = address.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const hit = DELIVERY_EXCLUDED_ZONES.find((zone) => normalized.includes(zone));
@@ -879,6 +889,7 @@ export async function actPrepareOrder(b: any) {
 
   await loadCatalogPrices();
   const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b));
+  assertTraeSandwich(sanitizedItems);
 
   // Sesión (si hay token) se resuelve ANTES del código promocional — el teléfono de la
   // CUENTA autenticada (no contactPhone, campo de texto libre del checkout que un
@@ -1267,6 +1278,7 @@ export async function actPlaceOrder(b: any) {
   // ver loadCatalogPrices/catalog_prices.
   await loadCatalogPrices();
   const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b));
+  assertTraeSandwich(sanitizedItems);
 
   // Sesión (si hay token) se resuelve ANTES del código promocional — mismo criterio y
   // mismo motivo que en actPrepareOrder (hallazgo de auditoría, ALTO): la identidad real
