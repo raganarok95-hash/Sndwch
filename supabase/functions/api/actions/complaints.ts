@@ -3,6 +3,7 @@
 // Consumidor. Público (no requiere sesión: cualquier consumidor debe poder reclamar,
 // tenga o no cuenta), genera un código correlativo, y notifica por correo tanto al
 // consumidor (copia de su reclamo) como al negocio (para que pueda responder).
+import type { Entrada } from "../../_shared/contrato.ts";
 import { sbGet, sbInsert, sbUpdate, rpc } from "../db.ts";
 import { ApiError, isValidEmail } from "../types.ts";
 import { requireAdmin, verifyCronSecret } from "../session.ts";
@@ -18,7 +19,7 @@ import { sendPushToAdmins } from "../push.ts";
 const COMPLAINT_RATE_LIMIT = 5;
 const COMPLAINT_RATE_WINDOW_MINUTES = 60;
 
-export async function actSubmitComplaint(b: any) {
+export async function actSubmitComplaint(b: Entrada<"submit-complaint"> & { _ip?: string }) {
   const kind = String(b.kind || "").trim();
   if (kind !== "reclamo" && kind !== "queja") throw new ApiError("Indica si es un reclamo o una queja.");
   const consumerName = String(b.consumerName || "").trim();

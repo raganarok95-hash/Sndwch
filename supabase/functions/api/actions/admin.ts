@@ -405,7 +405,7 @@ export async function actAdminExportOrders(b: Entrada<"export-orders"> & { _ip?:
   await logAdminAction(s.phone, "export-orders", undefined, { count: Math.min(rows.length, EXPORT_LIMIT) });
   return { orders: rows.slice(0, EXPORT_LIMIT), truncated: rows.length > EXPORT_LIMIT };
 }
-export async function actAdminExportCustomers(b: any) {
+export async function actAdminExportCustomers(b: Entrada<"export-customers"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const rows = await sbGet(
     "customers",
@@ -430,7 +430,7 @@ function estimatedProfitRange(revenue: number): { low: number; high: number } {
 }
 
 const DASHBOARD_WINDOW_LIMIT = 5000;
-export async function actDashboardStats(b: any) {
+export async function actDashboardStats(b: Entrada<"dashboard-stats"> & { _ip?: string }) {
   await requireAdmin(b.token);
   // Sin esto, "productos más vendidos" atribuiría ingresos con precios viejos si el
   // dueño cambió alguno desde que se desplegó la función por última vez.
@@ -569,7 +569,7 @@ export async function actDashboardStats(b: any) {
         recentAvgTicket: count ? Math.round((revenue / count) * 100) / 100 : 0,
       };
     })
-    .sort((a, b) => b.signups - a.signups)
+    .sort((x, y) => y.signups - x.signups)
     .slice(0, 8);
 
   // Confirmados vs. abandonados por Yape/Plin (misma ventana reciente que topProducts,

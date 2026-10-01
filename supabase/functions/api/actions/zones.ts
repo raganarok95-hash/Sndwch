@@ -4,6 +4,7 @@
 // que avisar. Ahora el cliente queda anotado con su distrito, y el dueño —cuando decide
 // abrir esa zona— avisa a todos de una vez desde el panel. Cada persona recibe UN aviso por
 // zona: después queda marcada (notified_at) y no se le vuelve a escribir.
+import type { Entrada } from "../../_shared/contrato.ts";
 import { sbGet, sbInsert, sbUpdate } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, requireAdmin } from "../session.ts";
@@ -18,7 +19,7 @@ export function distritoValido(d: unknown): string | null {
   return /^[a-z_]{3,40}$/.test(s) && s !== "otro" ? s : null;
 }
 
-export async function actZoneWaitlistJoin(b: any) {
+export async function actZoneWaitlistJoin(b: Entrada<"zone-waitlist-join"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const district = distritoValido(b.district);
   if (!district) throw new ApiError("Falta el distrito.");

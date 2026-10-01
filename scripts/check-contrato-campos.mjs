@@ -58,7 +58,7 @@ for (const a of Object.keys(declarados)) {
   const leidos = new Set([...c.matchAll(/\bb\??\.([a-zA-Z_][a-zA-Z0-9_]*)/g)].map((x) => x[1]).concat([...anotados]));
   for (const campo of leidos) if (campo !== '_ip' && !declarados[a].has(campo)) malos.push(`${a}: lee b.${campo} y el contrato no lo declara (llegaría vacío)`);
   const sinCuerpo = c.replace(/\/\/[^\n]*/g, '');
-  if (/\(\s*b\s*[,)]|,\s*b\s*\)/.test(sinCuerpo.replace(/^export async function \w+\(b[^)]*\)/, '')) && !anotados.size)
+  if (/\(\s*b\s*(?:[,)]|\|\|)|,\s*b\s*\)/.test(sinCuerpo.replace(/^export async function \w+\(b[^)]*\)/, '')) && !anotados.size)
     malos.push(`${a}: pasa \`b\` entero a otra función; desármalo o anota «contrato-campos: … lee x, y»`);
 }
 if (malos.length) { console.error('✗ check:contrato-campos\n  ' + malos.join('\n  ')); process.exit(1); }

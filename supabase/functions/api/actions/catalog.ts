@@ -1,6 +1,7 @@
 // SND//WCH — api / actions/catalog
 // Exponer el catálogo de precios vigente al cliente, y la edición admin de precios
 // (ver la tabla catalog_prices y loadCatalogPrices en ../catalog.ts).
+import type { Entrada } from "../../_shared/contrato.ts";
 import { sbUpsert, sbGet, sbInsert } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin } from "../session.ts";
@@ -10,7 +11,7 @@ import { ID_SECRETO, esSecreto } from "../../_shared/carta.ts";
 
 // Acción pública (sin sesión) para que el cliente sepa los precios vigentes sin tener
 // que redesplegar el sitio estático cada vez que el dueño cambia uno desde el panel.
-export async function actGetCatalog(_b: any) {
+export async function actGetCatalog(_b: Entrada<"get-catalog">) {
   await loadCatalogPrices();
   const sigs: Record<string, { p15: number; p30: number }> = {};
   for (const code of Object.keys(SIG_DATA)) sigs[code] = { p15: SIG_DATA[code].p15, p30: SIG_DATA[code].p30 };

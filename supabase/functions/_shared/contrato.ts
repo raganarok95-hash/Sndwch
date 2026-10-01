@@ -181,6 +181,62 @@ export const CONTRATO = {
     }),
   ),
 
+  // ── EL RESTO DEL CLIENTE (2026-10-01). Booleanos, números, listas y coordenadas pasan sin
+  // tocar (sinRevisar): cada acción ya los interpreta a su manera y cambiar esa lectura sería
+  // cambiar su comportamiento. Los textos tienen topes holgados; el comprobante (imageBase64)
+  // no tiene tope de texto: lo cortaría en silencio.
+  'get-catalog': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'get-store-hours': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'my-history': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'favorites-list': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'dashboard-stats': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'export-customers': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'set-ad-tracking': accion<Record<string, unknown>>()(e.objeto({ token, optOut: e.sinRevisar() })),
+  'set-preferences': accion<Record<string, unknown>>()(
+    e.objeto({ token, notifPrefs: e.sinRevisar(), preferredPayment: e.sinRevisar() }),
+  ),
+  'addresses-add': accion<Record<string, unknown>>()(
+    e.objeto({ token, label: e.textoOpcional(80), address: e.textoOpcional(500), reference: e.textoOpcional(500), lat: e.sinRevisar(), lon: e.sinRevisar() }),
+  ),
+  'addresses-update': accion<Record<string, unknown>>()(
+    e.objeto({ token, id: e.textoOpcional(64), label: e.textoOpcional(80), address: e.textoOpcional(500), reference: e.textoOpcional(500), lat: e.sinRevisar(), lon: e.sinRevisar() }),
+  ),
+  'addresses-delete': accion<Record<string, unknown>>()(e.objeto({ token, id: e.textoOpcional(64) })),
+  'favorites-add': accion<Record<string, unknown>>()(
+    e.objeto({
+      token, name: e.textoOpcional(80), mode: e.textoOpcional(20), sigId: e.textoOpcional(20),
+      size: e.sinRevisar(), base: e.sinRevisar(), prot: e.sinRevisar(), doubleProt: e.sinRevisar(),
+      cheese: e.sinRevisar(), tops: e.sinRevisar(), sauces: e.sinRevisar(), extraSauce: e.sinRevisar(),
+    }),
+  ),
+  'submit-rating': accion<Record<string, unknown>>()(
+    e.objeto({ token, ref: e.textoOpcional(40), stars: e.sinRevisar(), comment: e.textoOpcional(2000), testimonialConsent: e.sinRevisar() }),
+  ),
+  'confirm-delivery': accion<Record<string, unknown>>()(e.objeto({ token, deliveryToken: e.textoOpcional(200) })),
+  'upload-receipt': accion<Record<string, unknown>>()(
+    e.objeto({ token, ref: e.textoOpcional(40), mime: e.textoOpcional(60), imageBase64: e.sinRevisar() }),
+  ),
+  'push-subscribe': accion<Record<string, unknown>>()(
+    e.objeto({ token, endpoint: e.textoOpcional(2000), p256dh: e.textoOpcional(500), auth: e.textoOpcional(500) }),
+  ),
+  'push-unsubscribe': accion<Record<string, unknown>>()(e.objeto({ token, endpoint: e.textoOpcional(2000) })),
+  'submit-complaint': accion<Record<string, unknown>>()(
+    e.objeto({
+      token, kind: e.textoOpcional(40), consumerName: e.textoOpcional(200), consumerDni: e.textoOpcional(40),
+      consumerAddress: e.textoOpcional(500), consumerPhone: e.textoOpcional(40), consumerEmail: e.textoOpcional(254),
+      detail: e.textoOpcional(10_000), consumerRequest: e.textoOpcional(10_000), isMinor: e.sinRevisar(),
+      guardianName: e.textoOpcional(200), claimedAmount: e.sinRevisar(), orderRef: e.textoOpcional(40),
+    }),
+  ),
+  'report-client-error': accion<Record<string, unknown>>()(
+    e.objeto({ token, donde: e.textoOpcional(200), mensaje: e.textoOpcional(1000), pila: e.textoOpcional(2000), pantalla: e.textoOpcional(100), version: e.textoOpcional(100) }),
+  ),
+  'zone-waitlist-join': accion<Record<string, unknown>>()(
+    e.objeto({ token, district: e.textoOpcional(60), lat: e.sinRevisar(), lon: e.sinRevisar() }),
+  ),
+  'anniversary-greeting': accion<Record<string, unknown>>()(e.objeto({ token, cronSecret: e.textoOpcional(500) })),
+  'sync-cart': accion<Record<string, unknown>>()(e.objeto({ token, items: e.sinRevisar() })),
+
   'recurring-skip': accion<{ success: true; skipOn: string | null }>()(
     e.objeto({ token, id: e.uuid('Falta el pedido fijo.'), deshacer: e.bandera() }),
   ),

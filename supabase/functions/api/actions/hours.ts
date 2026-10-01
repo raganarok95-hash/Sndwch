@@ -1,6 +1,7 @@
 // SND//WCH — api / actions/hours
 // Horario de atención editable desde el panel admin (antes era un array hardcodeado en
 // env.ts que exigía redesplegar la función para cambiar un horario feriado o de temporada).
+import type { Entrada } from "../../_shared/contrato.ts";
 import { STORE_HOURS, loadStoreHours, META_PIXEL_ID, GOOGLE_CLIENT_ID, GOOGLE_MAPS_KEY, MAX_ORDERS_PER_HOUR, QUEUE_MINUTES_PER_ORDER } from "../env.ts";
 import { sbGet, sbUpdate, sbUpsert } from "../db.ts";
 import { ApiError } from "../types.ts";
@@ -44,7 +45,7 @@ export async function promosKilled(): Promise<boolean> {
   }
 }
 
-export async function actGetStoreHours(_b: any) {
+export async function actGetStoreHours(_b: Entrada<"get-store-hours">) {
   await loadStoreHours();
   const settings = await sbGet("app_settings", "select=business_launched,paused_until,promos_killed_at&id=eq.true");
   const pausedUntilRaw = settings?.[0]?.paused_until;
