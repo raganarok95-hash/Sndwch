@@ -299,7 +299,7 @@
       "queso": "C02",
       "foto": "img/sig09.jpg",
       "fotoVertical": "img/sig09_v.webp",
-      "pitch": "Res laminada fina, salteada al momento con cebolla y pimiento, y cheddar fundido encima. Sin salsa: no le hace falta."
+      "pitch": "El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. Tan jugoso que no lleva salsa. Es el que pides cuando el hambre va en serio."
     },
     {
       "id": "SIG02",
@@ -320,7 +320,7 @@
       "queso": "C01",
       "foto": "img/sig02.jpg",
       "fotoVertical": "img/sig02_v.webp",
-      "pitch": "Para la noche en que ya decidiste que no vas a cocinar. Albóndigas hechas acá, cocidas dentro de su propia marinara, con queso americano derretido hasta el borde. Se come con las dos manos y con servilleta al lado."
+      "pitch": "Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. Caliente, contundente, de los que se comen con las dos manos. Para la noche en que ya decidiste no cocinar."
     },
     {
       "id": "SIG10",
@@ -342,7 +342,7 @@
       "p30": 34.9,
       "foto": "img/sig10.jpg",
       "fotoVertical": "img/sig10_v.webp",
-      "pitch": "Pavo horneado en lonjas finas, con lechuga, tomate, cebolla y pimiento, terminado con aceite y vinagre."
+      "pitch": "Pavo horneado en lonjas finas con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. Llena sin pesar: el almuerzo que no te tumba la tarde."
     },
     {
       "id": "SIG12",
@@ -358,7 +358,7 @@
       "queso": "C02",
       "foto": "img/sig12.jpg",
       "fotoVertical": "img/sig12_v.webp",
-      "pitch": "El Classic Tuna con cheddar fundido encima: atún en lascas gruesas, mayonesa y pimienta blanca, y el queso que lo junta todo."
+      "pitch": "Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco. Cremoso, caliente y con todo el sabor del clásico americano."
     },
     {
       "id": "SIG11",
@@ -381,7 +381,7 @@
       "queso": "C01",
       "foto": "img/sig11.jpg",
       "fotoVertical": "img/sig11_v.webp",
-      "pitch": "Embutidos italianos en pliegues, queso americano, lechuga, tomate, cebolla y pimiento, con oil & vinegar, como en los delis de siempre."
+      "pitch": "Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. El sándwich de deli de toda la vida: cada capa suma sabor y ninguna sobra. Para cuando quieres de todo en un solo pan."
     },
     {
       "id": "SIG04",
@@ -396,7 +396,7 @@
       "p30": 31.9,
       "foto": "img/sig04.jpg",
       "fotoVertical": "img/sig04_v.webp",
-      "pitch": "Para comer en el escritorio con una mano, sin que se desarme entre bocado y bocado: no lleva nada suelto adentro. Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Nada más."
+      "pitch": "Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Simple y bien hecho: no lleva nada suelto, así que se come con una mano, en el escritorio o en camino."
     },
     {
       "id": "SIG05",

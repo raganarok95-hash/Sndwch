@@ -31,32 +31,32 @@ Abre a más tardar la segunda semana de octubre de 2026: todavía no hay cliente
 ### Philly Cheesesteak ★ (la estrella: la que más deja por unidad)
 - **Precio:** 15CM S/22.90 · 30CM S/33.90 · doble proteína +S/7 / +S/13.90
 - **Receta:** pan Classic // White · Res // Laminada · vegetales: Cebolla // Salteada, Pimiento // Verde · salsas: — · queso: Cheddar
-- **Cómo se vende:** Res laminada fina, salteada al momento con cebolla y pimiento, y cheddar fundido encima. Sin salsa: no le hace falta.
+- **Cómo se vende:** El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. Tan jugoso que no lleva salsa. Es el que pides cuando el hambre va en serio.
 
 ### Meatball Marinara
 - **Precio:** 15CM S/21.90 · 30CM S/32.90 · doble proteína +S/6.90 / +S/13.90
 - **Receta:** pan Classic // White · Albóndiga // Marinara · vegetales: Tomate // Fresco, Cebolla // Morada juliana · salsas: Oil & Vinegar // Classic · queso: Americano
-- **Cómo se vende:** Para la noche en que ya decidiste que no vas a cocinar. Albóndigas hechas acá, cocidas dentro de su propia marinara, con queso americano derretido hasta el borde. Se come con las dos manos y con servilleta al lado.
+- **Cómo se vende:** Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. Caliente, contundente, de los que se comen con las dos manos. Para la noche en que ya decidiste no cocinar.
 
 ### Turkey
 - **Precio:** 15CM S/23.90 · 30CM S/34.90 · doble proteína +S/9 / +S/17
 - **Receta:** pan Classic // White · Pavo // Horneado · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: no lleva
-- **Cómo se vende:** Pavo horneado en lonjas finas, con lechuga, tomate, cebolla y pimiento, terminado con aceite y vinagre.
+- **Cómo se vende:** Pavo horneado en lonjas finas con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. Llena sin pesar: el almuerzo que no te tumba la tarde.
 
 ### Tuna Melt
 - **Precio:** 15CM S/22.90 · 30CM S/33.90 · doble proteína +S/10.90 / +S/21.90
 - **Receta:** pan Classic // White · Atún // House · vegetales: — · salsas: — · queso: Cheddar
-- **Cómo se vende:** El Classic Tuna con cheddar fundido encima: atún en lascas gruesas, mayonesa y pimienta blanca, y el queso que lo junta todo.
+- **Cómo se vende:** Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco. Cremoso, caliente y con todo el sabor del clásico americano.
 
 ### Italian Hoagie
 - **Precio:** 15CM S/23.90 · 30CM S/34.90 · doble proteína +S/9.90 / +S/19.90
 - **Receta:** pan Classic // White · Embutido // Italiano · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: Americano
-- **Cómo se vende:** Embutidos italianos en pliegues, queso americano, lechuga, tomate, cebolla y pimiento, con oil & vinegar, como en los delis de siempre.
+- **Cómo se vende:** Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. El sándwich de deli de toda la vida: cada capa suma sabor y ninguna sobra. Para cuando quieres de todo en un solo pan.
 
 ### Classic Tuna
 - **Precio:** 15CM S/20.90 · 30CM S/31.90 · doble proteína +S/10.90 / +S/21.90
 - **Receta:** pan Classic // White · Atún // House · vegetales: — · salsas: — · queso: no lleva
-- **Cómo se vende:** Para comer en el escritorio con una mano, sin que se desarme entre bocado y bocado: no lleva nada suelto adentro. Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Nada más.
+- **Cómo se vende:** Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Simple y bien hecho: no lleva nada suelto, así que se come con una mano, en el escritorio o en camino.
 
 ## Menú secreto (Reserve)
 - Se desbloquea desde el pedido número **3** (el número real es editable desde el panel: `secret_signature.min_orders`).
@@ -169,32 +169,32 @@ Abre a más tardar la segunda semana de octubre de 2026: todavía no hay cliente
 ### Philly Cheesesteak ★ (la estrella: la que más deja por unidad)
 - **Precio:** 15CM S/22.90 · 30CM S/33.90 · doble proteína +S/7 / +S/13.90
 - **Receta:** pan Classic // White · Res // Laminada · vegetales: Cebolla // Salteada, Pimiento // Verde · salsas: — · queso: Cheddar
-- **Cómo se vende:** Res laminada fina, salteada al momento con cebolla y pimiento, y cheddar fundido encima. Sin salsa: no le hace falta.
+- **Cómo se vende:** El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. Tan jugoso que no lleva salsa. Es el que pides cuando el hambre va en serio.
 
 ### Meatball Marinara
 - **Precio:** 15CM S/21.90 · 30CM S/32.90 · doble proteína +S/6.90 / +S/13.90
 - **Receta:** pan Classic // White · Albóndiga // Marinara · vegetales: Tomate // Fresco, Cebolla // Morada juliana · salsas: Oil & Vinegar // Classic · queso: Americano
-- **Cómo se vende:** Para la noche en que ya decidiste que no vas a cocinar. Albóndigas hechas acá, cocidas dentro de su propia marinara, con queso americano derretido hasta el borde. Se come con las dos manos y con servilleta al lado.
+- **Cómo se vende:** Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. Caliente, contundente, de los que se comen con las dos manos. Para la noche en que ya decidiste no cocinar.
 
 ### Turkey
 - **Precio:** 15CM S/23.90 · 30CM S/34.90 · doble proteína +S/9 / +S/17
 - **Receta:** pan Classic // White · Pavo // Horneado · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: no lleva
-- **Cómo se vende:** Pavo horneado en lonjas finas, con lechuga, tomate, cebolla y pimiento, terminado con aceite y vinagre.
+- **Cómo se vende:** Pavo horneado en lonjas finas con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. Llena sin pesar: el almuerzo que no te tumba la tarde.
 
 ### Tuna Melt
 - **Precio:** 15CM S/22.90 · 30CM S/33.90 · doble proteína +S/10.90 / +S/21.90
 - **Receta:** pan Classic // White · Atún // House · vegetales: — · salsas: — · queso: Cheddar
-- **Cómo se vende:** El Classic Tuna con cheddar fundido encima: atún en lascas gruesas, mayonesa y pimienta blanca, y el queso que lo junta todo.
+- **Cómo se vende:** Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco. Cremoso, caliente y con todo el sabor del clásico americano.
 
 ### Italian Hoagie
 - **Precio:** 15CM S/23.90 · 30CM S/34.90 · doble proteína +S/9.90 / +S/19.90
 - **Receta:** pan Classic // White · Embutido // Italiano · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: Americano
-- **Cómo se vende:** Embutidos italianos en pliegues, queso americano, lechuga, tomate, cebolla y pimiento, con oil & vinegar, como en los delis de siempre.
+- **Cómo se vende:** Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. El sándwich de deli de toda la vida: cada capa suma sabor y ninguna sobra. Para cuando quieres de todo en un solo pan.
 
 ### Classic Tuna
 - **Precio:** 15CM S/20.90 · 30CM S/31.90 · doble proteína +S/10.90 / +S/21.90
 - **Receta:** pan Classic // White · Atún // House · vegetales: — · salsas: — · queso: no lleva
-- **Cómo se vende:** Para comer en el escritorio con una mano, sin que se desarme entre bocado y bocado: no lleva nada suelto adentro. Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Nada más.
+- **Cómo se vende:** Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Simple y bien hecho: no lleva nada suelto, así que se come con una mano, en el escritorio o en camino.
 
 ## Menú secreto (Reserve)
 - Se desbloquea desde el pedido número **3** (el número real es editable desde el panel: `secret_signature.min_orders`).

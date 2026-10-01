@@ -190,3 +190,4 @@
 20260924231828  fotos_sig10_sig12
 20260930130101  carta_estilo_subway_y_armador_rentable
 20261001020631  precios_parejos_armador_igual_al_signature
+20261001031336  descripciones_que_venden
