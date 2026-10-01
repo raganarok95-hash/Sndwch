@@ -1431,7 +1431,7 @@ export async function actMyOrders(b: Entrada<"my-orders"> & { _ip?: string }) {
   return { orders: [] };
 }
 
-export async function actMyHistory(b: any) {
+export async function actMyHistory(b: Entrada<"my-history"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   return { transactions: await sbGet("transactions", `customer_phone=eq.${encodeURIComponent(s.phone)}&order=created_at.desc&limit=50`) };
 }
@@ -1812,7 +1812,7 @@ function newDeliveryToken(): string {
 // `delivery_token` es la autorización — un identificador no adivinable que solo recibe quien
 // lleva ESE pedido, el mismo criterio con el que `ref` deja a un invitado ver o cancelar el
 // suyo.
-export async function actConfirmDelivery(b: any) {
+export async function actConfirmDelivery(b: Entrada<"confirm-delivery"> & { _ip?: string }) {
   const token = String(b.deliveryToken || "").trim();
   // Se exige la forma exacta antes de tocar la base: así una petición con basura ni siquiera
   // llega a consultar, y no sirve para sondear si un token existe por el tiempo de respuesta.
@@ -2246,7 +2246,7 @@ export function duplicateReceiptRefs(rows: { ref: string }[], currentRef: string
     .filter((ref) => ref && ref !== currentRef);
 }
 
-export async function actUploadReceipt(b: any) {
+export async function actUploadReceipt(b: Entrada<"upload-receipt"> & { _ip?: string }) {
   const ref = String(b.ref || "").trim().slice(0, 40);
   const mime = String(b.mime || "");
   const imageBase64 = String(b.imageBase64 || "");

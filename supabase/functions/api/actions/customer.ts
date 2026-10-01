@@ -607,7 +607,7 @@ const MAX_ADDRESSES = 6;
 // pantalla pinte el estado nuevo desde lo que dice el SERVIDOR, y no desde lo que el
 // navegador cree haber guardado. Si la escritura fallara, el interruptor volvería solo a
 // su sitio en vez de quedarse mintiendo en la posición contraria.
-export async function actSetAdTracking(b: any) {
+export async function actSetAdTracking(b: Entrada<"set-ad-tracking"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const optOut = b.optOut === true;
   const rows = await sbUpdate(
@@ -634,7 +634,8 @@ export function preferenciasValidas(b: any): Record<string, unknown> {
   if (!Object.keys(upd).length) throw new ApiError("No hay nada que guardar.");
   return upd;
 }
-export async function actSetPreferences(b: any) {
+export async function actSetPreferences(b: Entrada<"set-preferences"> & { _ip?: string }) {
+  // contrato-campos: b pasa entero a preferenciasValidas, que lee notifPrefs, preferredPayment
   const s = await requireSession(b.token);
   const rows = await sbUpdate("customers", `phone=eq.${encodeURIComponent(s.phone)}`, preferenciasValidas(b));
   return { success: true, customer: safeCustomer(rows[0]) };
@@ -649,7 +650,7 @@ export async function actAddressesList(b: Entrada<"addresses-list">): Promise<Sa
   );
   return { addresses };
 }
-export async function actAddressesAdd(b: any) {
+export async function actAddressesAdd(b: Entrada<"addresses-add"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const label = String(b.label || "").trim();
   const address = String(b.address || "").trim();
@@ -669,7 +670,7 @@ export async function actAddressesAdd(b: any) {
 }
 // Antes solo se podía agregar/eliminar — un typo en la dirección obligaba a borrar y
 // crear de nuevo en vez de corregirla in-place (hallazgo de auditoría UX, BAJO).
-export async function actAddressesUpdate(b: any) {
+export async function actAddressesUpdate(b: Entrada<"addresses-update"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const id = String(b.id || "");
   const label = String(b.label || "").trim();
@@ -690,7 +691,7 @@ export async function actAddressesUpdate(b: any) {
   if (!rows.length) throw new ApiError("Dirección no encontrada.", 404);
   return { success: true, address: rows[0] };
 }
-export async function actAddressesDelete(b: any) {
+export async function actAddressesDelete(b: Entrada<"addresses-delete"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const id = String(b.id || "");
   if (!id) throw new ApiError("Falta la dirección.");
@@ -699,11 +700,12 @@ export async function actAddressesDelete(b: any) {
 }
 
 const MAX_FAVORITES = 10;
-export async function actFavoritesList(b: any) {
+export async function actFavoritesList(b: Entrada<"favorites-list"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   return { favorites: await sbGet("favorites", `customer_phone=eq.${encodeURIComponent(s.phone)}&order=created_at.desc`) };
 }
-export async function actFavoritesAdd(b: any) {
+export async function actFavoritesAdd(b: Entrada<"favorites-add"> & { _ip?: string }) {
+  // contrato-campos: b pasa entero a buildFromOrder y deriveOrder, que lee mode, sigId, size, base, prot, doubleProt, cheese, tops, sauces, extraSauce
   // verifyActiveSession (no requireSession) porque necesitamos total_orders real de la
   // fila del cliente para el gate de rango de abajo — el payload del token no lo trae.
   const active = await verifyActiveSession(b.token);
@@ -731,9 +733,9 @@ export async function actFavoritesAdd(b: any) {
   return { success: true, favorite: rows[0] };
 }
 
-export async function actSubmitRating(b: any) {
+export async function actSubmitRating(b: Entrada<"submit-rating"> & { _ip?: string }) {
   const ref = String(b.ref || "").trim();
-  const stars = parseInt(b.stars, 10);
+  const stars = parseInt(String(b.stars), 10);
   if (!ref || !stars || stars < 1 || stars > 5) throw new ApiError("Calificación inválida.");
   const orders = await sbGet("orders", `ref=eq.${encodeURIComponent(ref)}&select=ref,customer_phone,status`);
   if (!orders.length) throw new ApiError("Pedido no encontrado.", 404);
@@ -851,7 +853,7 @@ export async function actCreditGift(b: Entrada<"credit-gift"> & { _ip?: string }
   return { success: true };
 }
 
-export async function actPushSubscribe(b: any) {
+export async function actPushSubscribe(b: Entrada<"push-subscribe"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const endpoint = String(b.endpoint || "");
   const p256dh = String(b.p256dh || "");
@@ -874,7 +876,7 @@ export async function actPushSubscribe(b: any) {
   return { success: true };
 }
 
-export async function actPushUnsubscribe(b: any) {
+export async function actPushUnsubscribe(b: Entrada<"push-unsubscribe"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const endpoint = String(b.endpoint || "");
   if (!endpoint) throw new ApiError("Falta el endpoint.");
@@ -1012,7 +1014,7 @@ export async function actRemindPeakHour(b: any) {
 // hay en un carrito sin terminar de pagar. No es la fuente de verdad del carrito (esa
 // sigue siendo localStorage/el propio cliente); si el upsert falla, no bloquea nada más
 // que el recordatorio.
-export async function actSyncCart(b: any) {
+export async function actSyncCart(b: Entrada<"sync-cart"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const items = Array.isArray(b.items) ? b.items : [];
   const existing = await sbGet("cart_snapshots", `customer_phone=eq.${encodeURIComponent(s.phone)}&select=customer_phone`);
@@ -1432,7 +1434,7 @@ export async function actRemindNeverOrdered(b: any) {
 // existe hoy (no hay una columna de "fecha del primer pedido" separada), así que se usa
 // como proxy — para la enorme mayoría de clientes coincide con su primer pedido de todas
 // formas, ya que la cuenta se crea al comprar.
-export async function actAnniversaryGreeting(b: any) {
+export async function actAnniversaryGreeting(b: Entrada<"anniversary-greeting"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
   const touchedToday = await phonesTouchedToday();

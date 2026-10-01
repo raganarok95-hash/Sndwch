@@ -10,6 +10,7 @@
 // Esto lo anota en `debug_logs` con `stage: "exception"` y `source: "cliente"`, que es lo que el
 // resumen diario ya cuenta como «error técnico». Es una puerta abierta (el error puede pasar
 // antes de iniciar sesión), así que todo se acota: largo de cada campo y cantidad por IP.
+import type { Entrada } from "../../_shared/contrato.ts";
 import { sbInsert, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 
@@ -27,7 +28,8 @@ export function errorDelCliente(b: Record<string, unknown>): ErrorDelCliente | n
   return { stage: "exception", donde, mensaje, pila: txt(b.pila, 800), pantalla: txt(b.pantalla, 40), version: txt(b.version, 40) };
 }
 
-export async function actReportClientError(b: any) {
+export async function actReportClientError(b: Entrada<"report-client-error"> & { _ip?: string }) {
+  // contrato-campos: b pasa entero a errorDelCliente, que lee donde, mensaje, pila, pantalla, version
   const e = errorDelCliente(b || {});
   if (!e) throw new ApiError("Falta el error.");
   // Un teléfono con un bucle de errores, o alguien llenando la tabla a propósito, no puede

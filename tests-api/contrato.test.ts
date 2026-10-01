@@ -70,7 +70,7 @@ Deno.test("sin token NO es un 400: pasa vacío para que la sesión responda 401 
 });
 
 Deno.test("una acción todavía sin contrato recibe el cuerpo tal cual, más la IP del servidor", () => {
-  const r = validarEntrada("get-catalog", { algo: 1, _ip: "falsa" }, "1.2.3.4");
+  const r = validarEntrada("admin-orders", { algo: 1, _ip: "falsa" }, "1.2.3.4");
   assertEquals(r, { algo: 1, _ip: "1.2.3.4" });
 });
 
