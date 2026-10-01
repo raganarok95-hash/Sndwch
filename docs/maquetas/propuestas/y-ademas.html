@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Y además · SANDO y WICHO</title>
+<style>
+/* Propuesta 2026-10-01. Los nombres y precios de muestra salen de _shared/carta.ts; en la app
+   se leen del código, nunca de esta lámina. */
+*{box-sizing:border-box;margin:0}
+body{background:#e8e6e1;font-family:Archivo,system-ui,sans-serif;padding:24px;color:#1b1b18}
+.fila{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start}
+.col{width:360px}
+.tit{font-weight:800;font-size:18px;margin-bottom:4px}
+.sub{font-size:13px;color:#45463f;line-height:1.4;min-height:54px;margin-bottom:10px}
+.tel{width:360px;height:760px;border-radius:22px;overflow:hidden;border:6px solid #111;position:relative}
+.nota{margin-top:10px;font-size:12.5px;line-height:1.45;color:#2b2c27}
+/* SANDO: la última carta del mazo, en kraft como sus platos */
+.s{background:#C9A878 url() ;color:#33230F;height:100%;display:flex;flex-direction:column;padding:18px 18px 0}
+.s .top{display:flex;justify-content:space-between;align-items:center;font:800 11px/1 'IBM Plex Mono',monospace;letter-spacing:.2em}
+.s .naipe{font:700 11px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#6B4E28;margin-top:22px}
+.s h1{font:900 40px/0.95 Georgia,serif;margin:8px 0 14px}
+.s .t{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.s .k{background:#FBF4E6;border-radius:12px;padding:12px;min-height:108px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+.s .k b{font:800 15px/1.2 Archivo,sans-serif}
+.s .k span{font:500 13px/1.35 Archivo,sans-serif;color:#5C4426}
+.s .k.grupo{grid-column:1 / 3;background:#33230F;color:#FBF4E6;min-height:96px;flex-direction:row;align-items:center;gap:12px}
+.s .k.grupo span{color:#E7D3AE}
+.s .k.grupo img{height:84px;margin:-6px 0 -12px}
+.s .beb{display:flex;gap:4px;margin-top:6px}
+.s .beb img{width:30px;height:40px;object-fit:cover;border-radius:4px}
+.legal{margin-top:auto;padding:14px 0 18px;border-top:1px solid rgba(51,35,15,.25);font:500 11px/1.8 Archivo,sans-serif}
+.legal a{color:inherit;text-decoration:underline;margin-right:12px}
+.legal .lib{display:inline-flex;align-items:center;gap:6px;font-weight:800}
+.pasar{display:flex;gap:6px;justify-content:center;margin:10px 0 0}
+.pasar i{width:22px;height:3px;background:rgba(51,35,15,.25)}.pasar i.on{background:#33230F}
+/* WICHO: la misma hoja, en su mundo celeste */
+.w{background:#BFE0F4;height:100%;display:flex;flex-direction:column}
+.w .arm{padding:14px 16px 0;opacity:.45}
+.w .arm .bar{height:110px;border-radius:12px;background:#EAF5FC;margin-top:10px}
+.w .pill{position:absolute;top:12px;right:14px;background:#0E2430;color:#BFE0F4;border-radius:999px;padding:7px 12px;font:800 11px/1 Archivo,sans-serif;letter-spacing:.08em}
+.w .hoja{position:absolute;left:0;right:0;bottom:0;top:190px;background:#F3FAFE;border-radius:20px 20px 0 0;padding:18px 16px 0;display:flex;flex-direction:column;box-shadow:0 -8px 30px rgba(14,36,48,.25)}
+.w .hoja h2{font:900 28px/1 Archivo,sans-serif;color:#0E2430;display:flex;align-items:center;gap:8px}
+.w .hoja h2 img{height:56px;margin:-14px 0 -6px auto}
+.w .lst{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.w .r{display:flex;align-items:center;gap:12px;background:#fff;border-radius:12px;padding:12px;border:1px solid #CFE6F4}
+.w .r .ic{width:40px;height:40px;border-radius:10px;background:#8CC8EC;display:flex;align-items:center;justify-content:center;font:800 18px Archivo;color:#0E2430;flex:none}
+.w .r b{display:block;font:800 15px/1.2 Archivo,sans-serif;color:#0E2430}
+.w .r span{font:500 13px/1.3 Archivo,sans-serif;color:#41606F}
+.w .r .ir{margin-left:auto;font:800 18px Archivo;color:#0E2430}
+.w .r.grupo{background:#0E2430;border-color:#0E2430}.w .r.grupo b{color:#fff}.w .r.grupo span{color:#BFE0F4}.w .r.grupo .ir{color:#8CC8EC}
+.w .legal{color:#0E2430;border-top-color:rgba(14,36,48,.2)}
+</style></head><body><div class="fila">
+
+<div class="col"><div class="tit">SANDO · la última carta del mazo</div>
+<div class="sub">Después del último Signature y del secreto, una carta más: «Y además». Se llega pasando las cartas como siempre; los puntitos de abajo ya dicen que existe.</div>
+<div class="tel"><div class="s">
+ <div class="top"><span>✕</span><span>SND//WCH</span><span></span></div>
+ <div class="naipe">ÚLTIMA · Y ADEMÁS</div>
+ <h1>Y además</h1>
+ <div class="t">
+  <div class="k grupo"><img src="../../../img/sando2_sonrie.png" alt=""><div><b>Pedido en grupo</b><br><span>Cada uno elige lo suyo desde el enlace. Con 5, el más barato va gratis.</span></div></div>
+  <div class="k"><b>Bebidas</b><div class="beb"><img src="../../../img/drink_d06.jpg" alt=""><img src="../../../img/drink_d07.jpg" alt=""><img src="../../../img/drink_d08.jpg" alt=""></div><span>Desde S/5 · sueltas o en combo</span></div>
+  <div class="k"><b>Tus favoritos</b><span>Lo que guardaste, a un toque de pedirlo otra vez.</span></div>
+  <div class="k"><b>Tus puntos</b><span>Cuánto tienes y qué te falta para el siguiente.</span></div>
+  <div class="k"><b>Tus pedidos</b><span>Pedir lo mismo, y en qué va el de hoy.</span></div>
+ </div>
+ <div class="pasar"><i></i><i></i><i></i><i></i><i></i><i></i><i class="on"></i></div>
+ <div class="legal"><a class="lib">📕 Libro de Reclamaciones</a><br><a>Términos</a><a>Privacidad</a><a>Cambios y devoluciones</a><br><a>WhatsApp</a><a>Correo</a><a>Instagram</a></div>
+</div></div>
+<div class="nota"><b>Fuerte:</b> no agrega pantallas ni botones a las cartas; vive donde el cliente ya pasa el dedo. <b>Débil:</b> quien no llega al final del mazo no lo ve (por eso el grupo sigue también en el carrito).</div></div>
+
+<div class="col"><div class="tit">WICHO · la misma hoja, desde el armador</div>
+<div class="sub">Arriba a la derecha del armador, una píldora «Y además». Abre una hoja con lo mismo, en su mundo celeste. El armador queda detrás, sin perder el paso.</div>
+<div class="tel"><div class="w">
+ <div class="arm"><div style="font:800 11px Archivo;letter-spacing:.2em;color:#0E2430">TAMAÑO 1/6</div><div class="bar"></div></div>
+ <div class="pill">Y ADEMÁS ↓</div>
+ <div class="hoja">
+  <h2>Y además <img src="../../../img/wicho_rie.png" alt=""></h2>
+  <div class="lst">
+   <div class="r grupo"><div class="ic">5</div><div><b>Pedido en grupo</b><span>Comparte el enlace. Con 5, uno gratis.</span></div><div class="ir">→</div></div>
+   <div class="r"><div class="ic">🥤</div><div><b>Bebidas</b><span>The Bloom · The Midnight · The Cool</span></div><div class="ir">→</div></div>
+   <div class="r"><div class="ic">♥</div><div><b>Tus favoritos</b><span>Tus armados guardados</span></div><div class="ir">→</div></div>
+   <div class="r"><div class="ic">★</div><div><b>Tus puntos</b><span>Y el siguiente premio</span></div><div class="ir">→</div></div>
+   <div class="r"><div class="ic">↻</div><div><b>Tus pedidos</b><span>Pedir lo mismo</span></div><div class="ir">→</div></div>
+  </div>
+  <div class="legal"><a class="lib">📕 Libro de Reclamaciones</a><br><a>Términos</a><a>Privacidad</a><a>Cambios y devoluciones</a><br><a>WhatsApp</a><a>Correo</a><a>Instagram</a></div>
+ </div>
+</div></div>
+<div class="nota"><b>Fuerte:</b> el armador no pierde el paso: es una hoja encima. <b>Débil:</b> es un botón más arriba; si estorba, puede ir como último paso del riel («Y además»).</div></div>
+
+</div></body></html>
