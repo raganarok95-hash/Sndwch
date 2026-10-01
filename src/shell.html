@@ -486,6 +486,48 @@ body.kb-open #app{padding-bottom:0}
 .eh.alerta{box-shadow:inset 4px 0 0 #B23A1E,0 2px 10px rgba(0,0,0,.12)}
 /* Un vacío sobre el celeste de las pantallas de WICHO (.mw): tinta, no dorado ni gris de fondo oscuro. */
 .mw .vacio-t{color:#0E2430!important}.mw .vacio-p{color:#2E4A58!important}
+/* «Y ADEMÁS» (maqueta aprobada 2026-10-01, docs/maquetas/aprobadas/y-ademas.png). */
+.mtarot .k.y{background:#2A1D0E;color:#F2E4CA;align-items:center;justify-content:center;gap:8px;text-align:center}
+.mtarot .k.y u{background:transparent;color:#C9A85C}
+.mtarot .k.y .ya-ic{font:700 28px/1 'Bodoni Moda',serif;color:#C9A85C}
+.mtarot .k.y b{padding:0 8px;color:#F2E4CA}
+.mtarot .k.y s{color:#D9C6A3}
+.m15 .plato.yademas{justify-content:flex-start;padding-top:64px;overflow-y:auto}
+.m15 .plato.yademas .ficha{flex:0 0 auto}
+.ya-t{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.ya-k{all:unset;box-sizing:border-box;cursor:pointer;display:flex;gap:10px;align-items:flex-start;background:#FBF4E6;border-radius:12px;padding:12px;min-height:96px;color:#33230F}
+.ya-k.grande{grid-column:1 / 3;background:#33230F;color:#FBF4E6;align-items:center;min-height:88px}
+.ya-k.grande img{height:76px;width:auto;margin:-6px 0 -12px;flex:none}
+.ya-k b{display:block;font:800 15px/1.2 Archivo,sans-serif}
+.ya-k s{display:block;text-decoration:none;font:500 13px/1.35 Archivo,sans-serif;color:#5C4426;margin-top:6px}
+.ya-k.grande s{color:#E7D3AE}
+.ya-k .beb{display:flex;gap:4px;margin-top:6px;font-style:normal}
+.ya-k .beb img{width:28px;height:38px;object-fit:cover;border-radius:4px}
+.ya-legal{margin-top:16px;padding:12px 0 6px;border-top:1px solid rgba(51,35,15,.25);display:flex;flex-direction:column;gap:4px;font:500 13px/1.6 Archivo,sans-serif;color:#33230F}
+.ya-legal div{display:flex;flex-wrap:wrap;gap:4px 14px}
+.ya-legal button,.ya-legal a{all:unset;cursor:pointer;color:inherit;text-decoration:underline;text-underline-offset:3px;padding:4px 0}
+.ya-legal .lib{font-weight:800}
+.mw-arriba .ya-pill{all:unset;cursor:pointer;background:#0E2430;color:#BFE0F4;border-radius:999px;padding:8px 12px;font:800 11px/1 Archivo,sans-serif;letter-spacing:.06em;white-space:nowrap;margin-left:auto;margin-right:8px}
+.ya-fondo{position:fixed;inset:0;background:rgba(14,36,48,.45);z-index:80}
+.ya-hoja{position:fixed;left:0;right:0;bottom:0;max-height:82dvh;overflow-y:auto;z-index:81;background:#F3FAFE;border-radius:20px 20px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(14,36,48,.25);color:#0E2430}
+@media (min-width:700px){.ya-hoja{left:50%;right:auto;width:520px;transform:translateX(-50%)}}
+.ya-cab{display:flex;align-items:center;gap:8px}
+.ya-cab h2{font:900 28px/1 Archivo,sans-serif;margin:0}
+.ya-cab img{height:56px;width:auto;margin-left:auto}
+.ya-x{all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.ya-lista{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.ya-r{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #CFE6F4;border-radius:12px;padding:12px 14px;min-height:56px}
+.ya-r b{display:block;font:800 15px/1.2 Archivo,sans-serif}
+.ya-r s{display:block;text-decoration:none;font:500 13px/1.35 Archivo,sans-serif;color:#41606F;margin-top:3px}
+.ya-r i{margin-left:auto;font:800 18px Archivo;font-style:normal}
+.ya-r.grande{background:#0E2430;border-color:#0E2430;color:#fff}.ya-r.grande s{color:#BFE0F4}.ya-r.grande i{color:#8CC8EC}
+.ya-hoja .ya-legal{color:#0E2430;border-top-color:rgba(14,36,48,.2)}
+/* Tus favoritos */
+.mfav .fav-lista{display:flex;flex-direction:column;gap:8px;padding:8px 0 24px}
+.mfav .fav{display:flex;align-items:center;gap:12px;background:#FFFFFF;border:1px solid #CFE6F4;border-radius:12px;padding:12px 14px}
+.mfav .fav b{display:block;font:800 15px/1.2 Archivo,sans-serif;color:#0E2430}
+.mfav .fav s{display:block;text-decoration:none;font:500 13px/1.35 Archivo,sans-serif;color:#41606F;margin-top:3px}
+.mfav .fav button{all:unset;cursor:pointer;margin-left:auto;background:#0E2430;color:#FFFFFF;border-radius:10px;padding:10px 12px;font:800 13px/1 Archivo,sans-serif;white-space:nowrap}
 .en .doble{font:700 15px/1.3 Archivo,sans-serif;color:#33230F;margin:0 0 18px}
 .en .primera{font:500 13px/1.5 Archivo,sans-serif;color:#4A3218;margin:-8px 0 22px}
 .en .nota{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6B4E28;line-height:1.9;text-transform:uppercase}

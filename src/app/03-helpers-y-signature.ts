@@ -1584,10 +1584,73 @@ function romano(n:number):string{
 function M15_PASAR(total:number,i:number,esSecreto:boolean,hayVault:boolean){
   var marcas='';
   for(var k=0;k<total;k++){
-    var ultimoVault=hayVault&&k===total-1;
+    // El secreto es el PENÚLTIMO: el último plato es «Y además» (2026-10-01).
+    var ultimoVault=hayVault&&k===total-2;
     marcas+='<i class="'+(k===i?'on':(ultimoVault?'vlt':''))+'"></i>';
   }
   return'<div class="pasar" aria-hidden="true">'+marcas+'<em>'+(i===total-1?'Último':'Baja ↓')+'</em></div>';
+}
+// ── «Y ADEMÁS» (maqueta aprobada 2026-10-01, docs/maquetas/aprobadas/y-ademas.png) ───────
+// Lo que el Mundo SANDO viejo tenía al pie y se perdió con el tarot: el grupo, las bebidas,
+// los favoritos, los puntos, los pedidos y la línea legal. El MISMO contenido en los dos
+// mundos (dueño: «lo compartido va en los dos»): SANDO lo recibe como última carta del mazo;
+// WICHO, como hoja desde una píldora en el armador. Una sola lista: no se pueden desalinear.
+var yAdemasAbierta=false;
+function conCuenta(accion:string):string{
+  // Puntos, pedidos y favoritos son de una cuenta: sin sesión se ofrece entrar, como la puerta.
+  return cust?accion:"yAdemasAbierta=false;swTab('points')";
+}
+function yAdemasEntradas(desde:string){
+  var bebidas=bebidasDisponibles().slice(0,3).map(function(d:any){return{p:d.p,img:DRINK_IMG[d.id]||''};});
+  var desdeBeb=bebidas.length?Math.min.apply(null,bebidas.map(function(d:any){return Number(d.p)||0;})):0;
+  return[
+    {id:'grupo',t:'Pedido en grupo',s:'Cada uno elige lo suyo desde el enlace. '+textoGrupoGratis().replace(/^c/,'C')+'.',fn:"yAdemasAbierta=false;empezarGrupo()",grande:true},
+    {id:'bebidas',t:'Bebidas',s:(bebidas.length?'Desde '+SOLES_TXT+pz(desdeBeb)+' · sueltas o en combo':'Sueltas o en combo'),fn:"yAdemasAbierta=false;irABebidas('"+desde+"')",fotos:bebidas},
+    {id:'favoritos',t:'Tus favoritos',s:'Lo que guardaste, a un toque de pedirlo otra vez.',fn:conCuenta("yAdemasAbierta=false;go('p_favs')")},
+    {id:'puntos',t:'Tus puntos',s:cust?'Tienes '+(cust.points||0)+'. Mira qué te falta para el siguiente.':'Cuánto tienes y qué te falta para el siguiente.',fn:conCuenta("yAdemasAbierta=false;go('p_rewards')")},
+    {id:'pedidos',t:'Tus pedidos',s:'Pedir lo mismo, y en qué va el de hoy.',fn:conCuenta("yAdemasAbierta=false;loadMyOrders()")},
+  ];
+}
+function lineaLegalYAdemas(desde:string){
+  var ir=function(t:string,pantalla:string,extra?:string){
+    return'<button type="button" onclick="yAdemasAbierta=false;bkTo=\''+desde+'\';sndScreen=\''+pantalla+'\';'+(extra||'')+'render()">'+t+'</button>';
+  };
+  return'<div class="ya-legal">'
+    +'<button type="button" class="lib" data-accion="libro-de-reclamaciones" onclick="yAdemasAbierta=false;bkTo=\''+desde+'\';sndScreen=\'p_complaints\';cmplStep=\'form\';render()">Libro de Reclamaciones</button>'
+    +'<div>'+ir('Términos y privacidad','p_lo_legal')+ir('Cambios y devoluciones','p_returns')+'</div>'
+    +'<div><a href="https://wa.me/'+WA+'" target="_blank" rel="noopener">WhatsApp</a><a href="mailto:'+BIZ_EMAIL+'">Correo</a><a href="'+BIZ_IG+'" target="_blank" rel="noopener">Instagram</a></div>'
+    +'</div>';
+}
+// SANDO: el último plato del mazo, en kraft como los demás.
+function platoYAdemas(total:number,i:number,hayVault:boolean):string{
+  var es=yAdemasEntradas('o_home');
+  return'<section class="plato kraft yademas" aria-label="Y además"><div class="forro"></div>'
+    +'<div class="ficha"><div class="num">Última · Y además</div><h1>Y además</h1>'
+    +'<div class="ya-t">'+es.map(function(x:any){
+      return'<button type="button" class="ya-k'+(x.grande?' grande':'')+'" data-accion="y-ademas-'+x.id+'" onclick="'+x.fn+'">'
+        +(x.grande?'<img src="'+broPose('sando','alegre')+'" alt="" aria-hidden="true">':'')
+        +'<span><b>'+esc(x.t)+'</b>'
+        +(x.fotos&&x.fotos.length?'<i class="beb">'+x.fotos.map(function(d:any){return d.img?'<img src="'+d.img+'" alt="">':'';}).join('')+'</i>':'')
+        +'<s>'+esc(x.s)+'</s></span></button>';
+    }).join('')+'</div></div>'
+    +lineaLegalYAdemas('o_home')
+    +M15_PASAR(total,i,false,hayVault)
+    +'</section>';
+}
+// WICHO: la misma lista como hoja, encima del armador (no pierde el paso).
+function hojaYAdemas():string{
+  if(!yAdemasAbierta)return'';
+  var es=yAdemasEntradas('o_build');
+  return'<div class="ya-fondo" onclick="yAdemasAbierta=false;render()"></div>'
+    +'<div class="ya-hoja" role="dialog" aria-label="Y además">'
+    +'<div class="ya-cab"><h2>Y además</h2><img src="'+broPose('wicho','alegre')+'" alt="" aria-hidden="true">'
+    +'<button type="button" class="ya-x" onclick="yAdemasAbierta=false;render()" aria-label="Cerrar">&#10005;</button></div>'
+    +'<div class="ya-lista">'+es.map(function(x:any){
+      return'<button type="button" class="ya-r'+(x.grande?' grande':'')+'" data-accion="y-ademas-'+x.id+'" onclick="'+x.fn+'">'
+        +'<span><b>'+esc(x.t)+'</b><s>'+esc(x.s)+'</s></span><i aria-hidden="true">→</i></button>';
+    }).join('')+'</div>'
+    +lineaLegalYAdemas('o_build')
+    +'</div>';
 }
 // EL PLATO DEL PEDIDO EN GRUPO (dueño 2026-09-30: «los pedidos grupales son de los que más
 // suman»; «en la 2 mejor pon solo el logo en grande»). Va segundo, justo después de la estrella:
@@ -1706,6 +1769,13 @@ function sCartaTarot(visibles:any[],secreto:any){
       +'<span class="d">No está en la carta y cambia cada mes. No se dice qué lleva: se revela cuando lo pides.</span>'
       +'<span class="p">'+(abierto?'Ya es tuyo · '+SOLES_TXT+pz(secreto.p15):'Se da vuelta en tu pedido número '+secreto.minOrders+(cust?' · te '+(falta===1?'falta 1':'faltan '+falta):''))+'</span></span><span class="ir" aria-hidden="true">→</span></button>';
   }
+  // «Y además» (maqueta aprobada 2026-10-01): la última carta, después del secreto. Su plato es
+  // el último de la pila (grupo y secreto incluidos).
+  var pYa=visibles.length+1+(secreto?1:0);
+  cartas+='<button class="k y" onclick="tocarCarta(this)" aria-pressed="false" data-plato="'+pYa+'" data-accion="carta-y-ademas" aria-label="Última carta: y además">'
+    +'<u>+</u><span class="ya-ic" aria-hidden="true">&#8230;</span><b>Y además</b><s>Grupo · bebidas · tus cosas</s></button>';
+  filas+='<button class="fila" data-plato="'+pYa+'" onclick="abrirPlato('+pYa+')">'
+    +'<u>+</u><span class="t"><b>Y además</b><span class="d">Pedido en grupo, bebidas, tus favoritos, tus puntos y tus pedidos.</span></span><span class="ir" aria-hidden="true">→</span></button>';
   var cuantas=NUM_PALABRA[visibles.length]||String(visibles.length);
   return'<div class="mtarot fi">'
     +'<div class="riel"><button class="x" onclick="volverALaPuerta()" aria-label="Cambiar de lado">&#10005;</button>'
@@ -1723,7 +1793,7 @@ function sMundoSando(){
   var secreto=SIGS.find(function(s){return s.secret;});
   if(!sandoEnPlatos)return sCartaTarot(visibles,secreto);
   // +1: el plato del pedido en grupo, que va segundo (ver platoGrupo).
-  var total=visibles.length+1+(secreto?1:0);
+  var total=visibles.length+1+(secreto?1:0)+1;
   var sirve=broPose('sando','cuerpo');
   var platos=visibles.map(function(s,i){
     var av=sigInStock(s);
@@ -1764,7 +1834,7 @@ function sMundoSando(){
         ?'<div class="p">'+SOLES_TXT+pz(secreto.p15)+'<s>el mes que corre</s></div><button class="b" onclick="go(\'o_secreto\')">Abrirlo</button>'
         :'<div class="p">Te faltan '+falta+' '+(falta===1?'pedido':'pedidos')+'<s>y se abre solo</s></div>')
       +'</div></div>'
-      +M15_PASAR(total,total-1,true,true)
+      +M15_PASAR(total,total-2,true,true)
       +'</section>';
   }
   var n=cart.reduce(function(a,it){return a+(it.qty||1);},0);
@@ -1773,7 +1843,7 @@ function sMundoSando(){
     +'<span class="wm">SND<span class="wm-mark" aria-hidden="true"><i></i><i></i></span>WCH</span>'
     +(n?'<button class="c" onclick="go(\'o_cart\')" aria-label="Tu pedido, '+n+(n===1?' cosa':' cosas')+'"><span>'+n+'</span></button>':'<span class="vacio"></span>')
     +'</div>'
-    +'<div class="pistas">'+platos+platoSecreto+'</div>'
+    +'<div class="pistas">'+platos+platoSecreto+platoYAdemas(total,total-1,!!secreto)+'</div>'
     +'</div>';
 }
 

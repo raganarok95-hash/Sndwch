@@ -939,3 +939,23 @@ function sAlgoSalioMal(){
     +(probError?'<div class="err">'+esc(probError)+'</div>':'')
     +'<button class="ir sw-barra"'+(probEnviando?' disabled':'')+' onclick="enviarProblema()">'+(probEnviando?'Enviando…':'Enviar el reclamo')+'</button></div>';
 }
+
+// ── TUS FAVORITOS (2026-10-01) ───────────────────────────────────────────────────────────
+// Se guardaban desde el armador y se cargaban al entrar, pero ninguna pantalla los mostraba:
+// «Y además» los promete («lo que guardaste, a un toque de pedirlo otra vez») y esto los cumple.
+// Pedirlo reconstruye el armado (loadBuild) y lleva a confirmarlo: el precio es el de hoy.
+function sFavoritos(){
+  var bk="sndScreen=cust?'p_home':'o_home';render()";
+  var favs=myFavorites||[];
+  return'<div class="mw mpt mph mfav fi"><button class="sal" onclick="'+bk+'" aria-label="Volver">←</button>'
+    +'<div class="dice"><em>Tus favoritos</em><h1>'+(favs.length?'Lo que guardaste':'Todavía nada guardado')+'</h1></div>'
+    +(favs.length?'<div class="fav-lista">'+favs.map(function(f:any,i:number){
+        var b=f.build||{};
+        var sig=b.mode==='sig'?SIGS.find(function(x:any){return x.id===b.sigId;}):null;
+        var que=sig?sig.n:(b.mode==='byo'?'Armado por ti':'');
+        return'<div class="fav"><span><b>'+esc(f.name||'')+'</b><s>'+esc(que)+(b.size?' · '+esc(String(b.size))+'CM':'')+'</s></span>'
+          +'<button type="button" data-accion="pedir-favorito" onclick="loadBuild(myFavorites['+i+'].build)">Pedirlo →</button></div>';
+      }).join('')+'</div>'
+      :VACIO('Sin favoritos','Cuando armes uno que te guste, guárdalo al confirmarlo y aparece acá.','<button class="ir" onclick="volverALaPuerta()">Ir a pedir</button>','piensa'))
+    +'</div>';
+}

@@ -120,9 +120,12 @@ function BYO_CABEZA(){
     +'<div class="cab">'
     +'<button type="button" class="fl" onclick="byoStepBack()" aria-label="Volver">&#8592;</button>'
     +'<div class="t">'+esc(BYO_STEP_LABELS[byoStep])+'<s>'+(byoStep+1)+'/'+BYO_STEP_LABELS.length+'</s></div>'
+    +'<button type="button" class="ya-pill" data-accion="abrir-y-ademas" onclick="yAdemasAbierta=true;render()">Y además ↓</button>'
     +(n?'<button type="button" class="carro" onclick="go(\'o_cart\')" aria-label="Ver carrito ('+n+')">'+n+'</button>'
        :'<div class="vacio"></div>')
-    +'</div></div>';
+    +'</div></div>'
+    // La hoja de «Y además» (maqueta aprobada 2026-10-01) va encima del armador: no pierde el paso.
+    +hojaYAdemas();
 }
 
 // ── LA PREGUNTA ────────────────────────────────────────────────────────────────────────
