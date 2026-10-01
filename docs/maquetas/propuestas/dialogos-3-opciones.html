@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Diálogos · 3 opciones</title>
+<style>
+*{box-sizing:border-box;margin:0}
+body{background:#e8e6e1;font-family:Archivo,system-ui,sans-serif;padding:24px}
+.fila{display:flex;gap:26px;flex-wrap:wrap}
+.col{width:340px}
+.tit{font-weight:800;font-size:17px;color:#1b1b18;margin-bottom:4px}
+.sub{font-size:13px;color:#45463f;line-height:1.4;min-height:56px;margin-bottom:10px}
+.tel{width:340px;height:620px;border-radius:22px;overflow:hidden;border:6px solid #111;position:relative;display:flex;flex-direction:column;justify-content:flex-end}
+.atras{position:absolute;inset:0;padding:30px 22px;font-weight:800;font-size:28px;line-height:1}
+.velo{position:absolute;inset:0}
+.hoja{position:relative}
+.hoja p{padding:24px 22px 20px;font-weight:700;font-size:18px;line-height:1.35}
+.barra{display:flex;height:64px}
+.barra b{flex:1;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;letter-spacing:.2em;text-transform:uppercase}
+.toast{position:absolute;left:14px;right:14px;top:120px;padding:13px 14px;font-size:15px;line-height:1.4;display:flex;gap:10px}
+.toast i{font-style:normal;margin-left:auto;opacity:.6}
+.nota{margin-top:10px;font-size:12.5px;color:#2b2c27;line-height:1.45}
+/* A · neutro: tinta sobre blanco, el color solo en la barra */
+.a .atras{background:#C9A878;color:#3A2710}.a .velo{background:rgba(20,16,10,.5)}
+.a .hoja{background:#FFFFFF;color:#1A1714}.a .no{background:#F1EFEA;color:#1A1714}.a .si{background:#1A1714;color:#fff}
+.a .toast{background:#fff;color:#1A1714;border-left:4px solid #1A1714;box-shadow:0 6px 18px rgba(0,0,0,.25)}
+/* B · oscuro neutro: el fondo base nuevo, la barra partida de la marca */
+.b .atras{background:#C9A878;color:#3A2710}.b .velo{background:rgba(10,8,6,.55)}
+.b .hoja{background:#17130E;color:#F3EEE6}.b .no{background:#8CC8EC;color:#0E2430}.b .si{background:#CBA258;color:#2A1D0E}
+.b .toast{background:#17130E;color:#F3EEE6;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+/* C · toma el color del lado en que estás */
+.c .atras{background:#0B1724;color:#8CC8EC}.c .velo{background:rgba(5,10,16,.55)}
+.c .hoja{background:#12222F;color:#EAF4FA;border-top:3px solid #8CC8EC}.c .no{background:#0B1724;color:#8CC8EC}.c .si{background:#8CC8EC;color:#0E2430}
+.c .toast{background:#12222F;color:#EAF4FA;border:1px solid #8CC8EC}
+</style></head><body><div class="fila">
+
+<div class="col a"><div class="tit">A · Neutro (blanco y tinta)</div>
+<div class="sub">No compite con la pantalla de atrás: sirve igual sobre kraft, sobre el lado WICHO o en el panel. El negro marca la acción.</div>
+<div class="tel"><div class="atras">Tus direcciones</div><div class="velo"></div>
+<div class="toast">Dirección guardada.<i>✕</i></div>
+<div class="hoja"><p>¿Eliminar esta dirección?</p><div class="barra"><b class="no">Cancelar</b><b class="si">Eliminar</b></div></div></div>
+<div class="nota"><b>Fuerte:</b> el más legible y el que nunca choca. <b>Débil:</b> el menos «de marca».</div></div>
+
+<div class="col b"><div class="tit">B · Oscuro neutro con la barra de la marca</div>
+<div class="sub">El fondo base nuevo (sin verde) y abajo la misma barra partida dorado/celeste de los botones de pagar.</div>
+<div class="tel"><div class="atras">Tus direcciones</div><div class="velo"></div>
+<div class="toast">Dirección guardada.<i>✕</i></div>
+<div class="hoja"><p>¿Eliminar esta dirección?</p><div class="barra"><b class="no">Cancelar</b><b class="si">Eliminar</b></div></div></div>
+<div class="nota"><b>Fuerte:</b> se reconoce como SND//WCH sin usar kraft. <b>Débil:</b> pesado sobre las pantallas claras.</div></div>
+
+<div class="col c"><div class="tit">C · Del color del lado</div>
+<div class="sub">Si estás del lado WICHO, el diálogo es azul noche y celeste; del lado SANDO, oscuro y dorado. Ejemplo: lado WICHO.</div>
+<div class="tel"><div class="atras">Arma el tuyo</div><div class="velo"></div>
+<div class="toast">Agregado al pedido.<i>✕</i></div>
+<div class="hoja"><p>¿Quitar este sándwich?</p><div class="barra"><b class="no">Cancelar</b><b class="si">Quitar</b></div></div></div>
+<div class="nota"><b>Fuerte:</b> sigue a los hermanos. <b>Débil:</b> dos versiones que mantener; en la cuenta y el panel hay que elegir una.</div></div>
+
+</div></body></html>
