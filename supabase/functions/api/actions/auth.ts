@@ -23,14 +23,20 @@ import type { Entrada, Salida } from "../../_shared/contrato.ts";
 // más simple y no menos seguro que reimplementar la verificación de firma acá. El `aud`
 // debe coincidir con GOOGLE_CLIENT_ID para asegurar que el token fue emitido para ESTA
 // app y no para otra que también use Sign in with Google.
-async function verifyGoogleIdToken(idToken: string): Promise<{ sub: string; email: string | null; name: string | null } | null> {
+async function verifyGoogleIdToken(idToken: string): Promise<{ sub: string; email: string | null; name: string | null; emailVerified: boolean } | null> {
   if (!GOOGLE_CLIENT_ID || !idToken) return null;
   try {
     const r = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`);
     if (!r.ok) return null;
     const data = await r.json();
     if (data.aud !== GOOGLE_CLIENT_ID || !data.sub) return null;
-    return { sub: String(data.sub), email: data.email ? String(data.email) : null, name: data.name ? String(data.name) : null };
+    return {
+      sub: String(data.sub),
+      email: data.email ? String(data.email) : null,
+      name: data.name ? String(data.name) : null,
+      // tokeninfo lo devuelve como texto ("true"/"false").
+      emailVerified: data.email_verified === true || data.email_verified === "true",
+    };
   } catch {
     return null;
   }
@@ -61,6 +67,24 @@ export async function actGoogleAuth(b: any) {
     const isAdmin = await fetchIsAdmin(row.phone);
     const token = await signToken({ phone: row.phone, isAdmin, exp: Date.now() / 1000 + TOKEN_TTL_SECONDS, v: row.session_version || 1 });
     return { customer: safeCustomer(row), isAdmin, token };
+  }
+  // Una cuenta que ya existe con ESE correo (entró por correo y código, o se lo puso el dueño)
+  // se vincula a Google la primera vez, en vez de mandarla a «completa tu cuenta»: ahí el
+  // teléfono ya está tomado y la persona se quedaba afuera (dueño, 2026-10-01: «no veo que se
+  // ingrese en automático con el proceso de Google»). Solo con el correo VERIFICADO por Google
+  // y solo si esa cuenta no tiene otra cuenta de Google ya vinculada.
+  if (info.email && info.emailVerified) {
+    const porCorreo = await sbGet("customers", `email=eq.${encodeURIComponent(normalizarCorreo(info.email))}&google_id=is.null`);
+    if (porCorreo.length === 1) {
+      const row = porCorreo[0];
+      await sbUpdate("customers", `phone=eq.${encodeURIComponent(row.phone)}&google_id=is.null`, { google_id: info.sub });
+      const isAdmin = await fetchIsAdmin(row.phone);
+      if (isAdmin) {
+        sbUpdate("admin_accounts", `phone=eq.${encodeURIComponent(row.phone)}`, { last_login_at: new Date().toISOString() }).catch(() => {});
+      }
+      const token = await signToken({ phone: row.phone, isAdmin, exp: Date.now() / 1000 + TOKEN_TTL_SECONDS, v: row.session_version || 1 });
+      return { customer: safeCustomer(row), isAdmin, token };
+    }
   }
   return { needsRegistration: true, prefill: { name: info.name || "", email: info.email || "" } };
 }
