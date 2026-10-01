@@ -624,7 +624,12 @@ function renderScreen(){
   // Nunca mientras hay una operación en vuelo (un pago, por ejemplo): recargar en medio
   // de un cobro es exactamente lo que no queremos ofrecerle al cliente.
   var updateBanner=(updateReady&&!busy)?'<button type="button" onclick="applyAppUpdate()" style="width:100%;border:0;background:var(--sw-gold,#C9A227);color:#1a1200;text-align:center;padding:8px 6px;min-height:44px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;letter-spacing:.08em;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">'+icon('refresh',13,'#1a1200')+'<span>NUEVA VERSIÓN DISPONIBLE — TOCA PARA ACTUALIZAR</span></button>':'';
-  (document.getElementById('app') as HTMLInputElement | null).innerHTML='<div class="'+(adminScope?(adminLight?'admin-light':'admin-dark'):'')+'" style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#12150F)">'+offlineBanner+updateBanner+h+'</div>';
+  // ⚠ 100dvh, no solo 100vh: en Chrome Android 100vh es el alto CON la barra de URL escondida,
+  // ~56px más que lo visible mientras se ve. Las pantallas de alto fijo (la puerta, M15, B3)
+  // miden 100dvh, así que el contenedor quedaba más alto que ellas y la puerta se podía subir
+  // dejando ver una franja verde abajo (dueño, 2026-10-01, captura del celular). 100vh queda
+  // solo como respaldo para navegadores sin dvh. Lo vigila tests/puerta-sin-scroll.spec.ts.
+  (document.getElementById('app') as HTMLInputElement | null).innerHTML='<div class="'+(adminScope?(adminLight?'admin-light':'admin-dark'):'')+'" style="min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;background:var(--sw-bg,#12150F)">'+offlineBanner+updateBanner+h+'</div>';
   if(nueva)nueva.pintar(document.getElementById('pantalla-nueva') as HTMLElement);
   window.scrollTo(0,sameScreen?scrollY:0);
   _lastRenderedSc=sndScreen;
