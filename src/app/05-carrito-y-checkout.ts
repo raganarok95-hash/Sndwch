@@ -413,7 +413,7 @@ function checkoutExtrasHTML(){
     +'</div></details>'
     +'<details open style="margin-top:16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;cursor:pointer;list-style:none">Entrega y horario //</summary><div style="margin-top:10px">'
     +deliveryZonePickerHTML()
-    +'<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Cuándo? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='now'?'var(--sw-card2,#122019)':'var(--sw-card,#16241D)')+';border:1px solid '+(scheduleMode==='now'?GOLD:'var(--sw-border,#25382D)')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">Ahora</div><div onclick="scheduleMode=\'later\';initSchedDefault();confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='later'?'var(--sw-card2,#122019)':'var(--sw-card,#16241D)')+';border:1px solid '+(scheduleMode==='later'?GOLD:'var(--sw-border,#25382D)')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">Programar</div></div>'
+    +'<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">¿Cuándo? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='now'?'var(--sw-card2,#122019)':'var(--sw-card,#221B14)')+';border:1px solid '+(scheduleMode==='now'?GOLD:'var(--sw-border,#25382D)')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">Ahora</div><div onclick="scheduleMode=\'later\';initSchedDefault();confirmRerender()" style="flex:1;text-align:center;background:'+(scheduleMode==='later'?'var(--sw-card2,#122019)':'var(--sw-card,#221B14)')+';border:1px solid '+(scheduleMode==='later'?GOLD:'var(--sw-border,#25382D)')+';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">Programar</div></div>'
     // Antes el aviso de "estamos cerrados" solo aparecía como error al tocar pagar, al
     // final de todo el checkout — un cliente podía llenar nombre/dirección/método de
     // pago completos antes de enterarse. Ahora aparece apenas elige "Ahora" con la
@@ -2000,7 +2000,13 @@ async function revGeoGoogle(lat,lon){
   await loadGoogleMaps();
   var Geo=gClase('geocoding','Geocoder');
   if(!Geo)throw new Error('Google cargó sin el geocodificador');
-  var res=await new Geo().geocode({location:{lat:lat,lng:lon},language:'es'});
+  var res:any;
+  try{res=await new Geo().geocode({location:{lat:lat,lng:lon},language:'es'});}
+  catch(e){
+    // Google a veces responde «server error, may succeed if you try again» (pasó el 2026-10-01).
+    await new Promise(function(r){setTimeout(r,800);});
+    res=await new Geo().geocode({location:{lat:lat,lng:lon},language:'es'});
+  }
   var r=(res&&res.results&&res.results[0]);
   // Sin resultados no es una falla (un descampado): no hay referencia, y se dice.
   if(!r){window._mDistrict='';pintarReferenciaMapa('');return;}
@@ -2034,6 +2040,21 @@ function gClase(lib,nombre){
 }
 // La key llega en get-store-hours. Si el cliente abre el mapa antes de que esa respuesta
 // llegue, se la espera una vez en vez de dar el mapa por perdido.
+// Espera a que `google.maps.importLibrary` exista. Con `loading=async` aparece un poco después
+// del onload, y el script de «Continuar con Google» (gsi) también escribe en `window.google`:
+// según quién termine primero, mirar `google.maps` una sola vez daba «cargó sin el mapa»
+// (tres veces en el teléfono del dueño, 2026-10-01).
+async function esperarImportLibrary(ms){
+  var t0=Date.now();
+  while(Date.now()-t0<ms){
+    var g=(window as any).google;
+    // Se captura `g.maps` en este instante: si otro script reemplaza `window.google` después,
+    // las librerías se siguen pidiendo al objeto correcto.
+    if(g&&g.maps&&typeof g.maps.importLibrary==='function'){var gm=g.maps;return function(n){return gm.importLibrary(n);};}
+    await new Promise(function(r){setTimeout(r,100);});
+  }
+  return null;
+}
 async function keyDeGoogle(){
   if(!googleMapsKey){try{await loadStoreHoursBackground();}catch(e){}}
   if(!googleMapsKey)throw new Error('sin key de Google Maps');
@@ -2044,7 +2065,8 @@ function loadGoogleMaps(){
   _gmapsPromise=(async function(){
     var key=await keyDeGoogle();
     var g=(window as any).google;
-    if(!(g&&g.maps&&g.maps.importLibrary)){
+    var yaPuesto=!!document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
+    if(!(g&&g.maps&&g.maps.importLibrary)&&!yaPuesto){
       // Google llama a esta función si rechaza la key (API apagada, dominio no permitido,
       // facturación). Sin ella, ese rechazo solo se ve en la consola de un teléfono ajeno.
       (window as any).gm_authFailure=function(){
@@ -2061,20 +2083,21 @@ function loadGoogleMaps(){
         sc.onerror=function(){reject(new Error('el script de Google Maps no cargó'));};
         document.head.appendChild(sc);
       });
-      g=(window as any).google;
     }
+    var importar=await esperarImportLibrary(10000);
     // Con `loading=async` las librerías NO están al terminar el script: se piden. Este era el
     // defecto que mandaba todo al motor anterior.
     // Se guarda lo que DEVUELVE importLibrary, no se lo busca después en `google.maps.places`:
     // el 2026-10-01 un teléfono real reportó «cargó sin Places» con el namespace aún vacío,
     // y ese chequeo tumbaba también el mapa, que no necesita Places.
-    if(g&&g.maps&&g.maps.importLibrary){
-      var libs=await Promise.all([g.maps.importLibrary('maps'),g.maps.importLibrary('places'),g.maps.importLibrary('geocoding')]);
+    if(importar){
+      var libs=await Promise.all([importar('maps'),importar('places'),importar('geocoding')]);
       _gLibs={maps:libs[0],places:libs[1],geocoding:libs[2]};
     }else{
-      _gLibs={maps:g&&g.maps,places:g&&g.maps&&g.maps.places,geocoding:g&&g.maps};
+      var g2=(window as any).google;
+      _gLibs={maps:g2&&g2.maps,places:g2&&g2.maps&&g2.maps.places,geocoding:g2&&g2.maps};
     }
-    if(!_gLibs.maps||!_gLibs.maps.Map)throw new Error('Google Maps cargó sin el mapa');
+    if(!_gLibs.maps||!_gLibs.maps.Map)throw new Error('Google Maps cargó sin el mapa (importLibrary '+(importar?'sí':'no')+')');
   })();
   _gmapsPromise.catch(function(){_gmapsPromise=null;});
   return _gmapsPromise;
@@ -2185,7 +2208,18 @@ async function addrPick(i){
   else{openMap(lat,lon,false);}
 }
 
-function closeMap(){(document.getElementById('mmap') as HTMLInputElement | null).style.display='none';}
+// Pantalla a la que vuelve el mapa al confirmar ('' = el checkout de siempre) y, si el mapa se
+// abrió para ubicar una dirección GUARDADA que no tenía pin, cuál.
+var mapaVuelveA:string|null=null,mapaDirId:any=null;
+function abrirMapaPara(vuelve:string,dirId:any,textoInicial:string){
+  mapaVuelveA=vuelve;mapaDirId=dirId;
+  abrirUbicacion();
+  if(textoInicial){
+    var i=(document.getElementById('maddr-input') as HTMLInputElement|null);
+    if(i){i.value=textoInicial;setTimeout(addrSearchNow,400);}
+  }
+}
+function closeMap(){mapaVuelveA=null;mapaDirId=null;(document.getElementById('mmap') as HTMLInputElement | null).style.display='none';}
 function confirmMap(){
   var inp=(document.getElementById('maddr-input') as HTMLInputElement | null);
   var a=inp?inp.value.trim():'';
@@ -2195,7 +2229,8 @@ function confirmMap(){
     return;
   }
   if(_lmap){var c=_lmap.getCenter();window._mLat=c.lat();window._mLon=c.lng();}
-  closeMap();
+  // Solo se esconde: closeMap() además olvida a qué pantalla volver (es la ✕ del mapa).
+  (document.getElementById('mmap') as HTMLElement).style.display='none';
   // Antes esto escribía la dirección directo en el input y no repintaba, para no perder
   // lo que el cliente tuviera a medio escribir en los otros campos. Ahora sí repinta,
   // porque la tarifa de envío se calcula desde el pin (ver deliveryFeeBase) y sin un render
@@ -2213,6 +2248,9 @@ function confirmMap(){
   // adivinarlo de lo escrito, que es lo único que había antes.
   var inferred=window._mDistrict||districtFromAddress(a);
   if(inferred){deliveryDistrict=inferred;deliveryDistrictFromPin=!!window._mDistrict;}
+  // El mapa también lo usan «Tus direcciones» y el cierre del pedido en grupo: vuelve a la
+  // pantalla que lo abrió con el texto y el pin (despuesDelMapa, 07-*).
+  if(mapaVuelveA){var vuelve=mapaVuelveA;mapaVuelveA=null;despuesDelMapa(vuelve,a);return;}
   // Desde «Otra dirección» de la 34: la dirección queda elegida y se vuelve al recibo.
   if(volverDelMapa){volverDelMapa=false;pickedAddrId=null;go('o_cart');return;}
   render();

@@ -871,7 +871,7 @@ function RIEL(o?){
     :'<div style="flex:1"></div>';
   var der=o.derecha||'<div style="width:44px"></div>';
   return'<div style="position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:6px;height:52px;padding:0 8px;'
-    +'background:var(--sw-bg,#0F1A14);border-bottom:1px solid var(--sw-border-soft,#16241C)">'+izq+centro+der+'</div>';
+    +'background:var(--sw-bg,#17130E);border-bottom:1px solid var(--sw-border-soft,#16241C)">'+izq+centro+der+'</div>';
 }
 
 
@@ -879,7 +879,7 @@ function RIEL(o?){
 // sangre y es BLOQUE/SECCION quien mete el texto en la caja. Asi "a sangre" es el estado
 // natural de una foto y no algo que haya que pelear con margenes negativos.
 function PANTALLA(riel,cuerpo,accion?){
-  return'<div style="min-height:100dvh;display:flex;flex-direction:column;background:var(--sw-bg,#0F1A14)">'
+  return'<div style="min-height:100dvh;display:flex;flex-direction:column;background:var(--sw-bg,#17130E)">'
     +(riel||'')
     +'<div style="flex:1;min-width:0" class="fi">'+cuerpo+'</div>'
     +(accion||'')+'</div>';
@@ -1231,19 +1231,25 @@ async function doCreateGroupOrder(){
   loadGroupOrder();
   startGroupPoll();
 }
-var _grpDirPedidas=false;
+var _grpDirPedidas=false,_grpCargando=false,grupoError='';
 async function loadGroupOrder(){
   if(!groupCode)return;
+  _grpCargando=true;
   try{
     var res=await api('get-group-order',{token:token,code:groupCode});
-    groupData=res;
+    groupData=res;grupoError='';
     // El envío estimado del organizador sale de su dirección con pin (envioEstimadoGrupo).
     if(res&&res.isOrganizer&&token&&!myAddresses.length&&!_grpDirPedidas){
       _grpDirPedidas=true;
       try{myAddresses=(await api('addresses-list',{token:token})).addresses||[];}catch(e){}
     }
     render();
-  }catch(e){stopGroupPoll();showToast(e.message);sndScreen='o_home';render();}
+  }catch(e:any){
+    // Antes esto echaba al inicio con un aviso fugaz, y si la pantalla ya estaba pintada sin
+    // datos quedaba «QUIÉNES COMEN» en blanco (dueño, 2026-10-01). Ahora el error se queda a la
+    // vista, con reintentar.
+    stopGroupPoll();grupoError=e.message||'No se pudo cargar el grupo.';render();
+  }finally{_grpCargando=false;}
 }
 function startGroupPoll(){
   stopGroupPoll();
@@ -1336,9 +1342,17 @@ function sGroupOrder(){
   var g=groupData;
   var bk="stopGroupPoll();sndScreen='o_home';render()";
   if(!g){
+    // Sin datos: se piden (una sola vez a la vez) y se dice qué pasa. Nunca una pantalla vacía.
+    if(groupCode&&!_grpCargando&&!grupoError)setTimeout(loadGroupOrder,0);
+    var estado=grupoError
+      ?'<div class="aviso"><b>No pudimos cargar el grupo</b><s>'+esc(grupoError)+'</s></div>'
+        +'<button class="link" onclick="grupoError=\'\';loadGroupOrder();render()"><s>Vuelve a intentarlo</s><u>Reintentar</u></button>'
+      :'<div class="aviso"><s>'+(groupCode?'Cargando el grupo…':'No hay un grupo abierto.')+'</s></div>';
     return'<div class="mgr fi"><button class="sal" onclick="'+bk+'" aria-label="Volver">←</button>'+wmClaro()
-      +'<div class="tit"><em>Pedido grupal</em><b>QUIÉNES<br>COMEN</b></div></div>';
+      +'<div class="tit"><em>Pedido grupal</em><b>QUIÉNES<br>COMEN</b></div>'+estado+'</div>';
   }
+  // Al volver a esta pantalla desde otra, el refresco automático tiene que seguir.
+  if(g.status==='open'&&!_groupPollTimer)startGroupPoll();
   var abierto=g.status==='open';
   var repartido=g.status==='splitting'||(g.status==='paid'&&g.partes&&g.partes.length);
   var puedeCerrar=g.isOrganizer&&(abierto||g.canPay);
@@ -1424,7 +1438,9 @@ async function abrirRepartoGrupo(){
     try{myAddresses=(await api('addresses-list',{token:token})).addresses||[];}catch(e){}
   }
   var conPin=myAddresses.filter(function(a:any){return typeof a.lat==='number'&&typeof a.lon==='number';});
-  repartoAddrId=conPin.length?conPin[0].id:null;
+  // La dirección que ya está marcada en este pedido (la del checkout) también sirve.
+  var hayPinDelPedido=!!addrText&&typeof window._mLat==='number'&&typeof window._mLon==='number';
+  repartoAddrId=conPin.length?conPin[0].id:(hayPinDelPedido?'__mapa':null);
   repartoPhone=cust&&cust.phone?String(cust.phone):'';
   sndScreen='group_split';render();
 }
@@ -1433,21 +1449,35 @@ function sGroupSplit(){
   var h='<div class="mgr fi"><button class="sal" onclick="sndScreen=\'group_order\';render()" aria-label="Volver">←</button>'+wmClaro()
     +'<div class="tit"><em>Cerrar y pagar · #'+esc(groupCode||'')+'</em><b>¿DÓNDE LO<br>DEJAMOS?</b></div>'
     +'<div class="aviso"><s>El envío sale de esta dirección y se parte entre todos. A cada uno le llega su parte para pagarla con Yape; tienen '+GROUP_SPLIT_MINUTES_CLIENT+' minutos. Lo que no se pague se cancela y el resto sale igual.</s></div>';
-  if(!conPin.length){
-    return h+'<div class="aviso"><b>Primero guarda la dirección marcándola en el mapa.</b></div>'
-      +'<div class="go sw-barra"><button class="oro solo" onclick="loadAddresses()">Ir a mis direcciones</button></div></div>';
+  // Todas las direcciones guardadas, no solo las que tienen pin (dueño, 2026-10-01: «no carga en
+  // automático la misma ni deja seleccionar, ni permite el google maps»). Una sin pin se ubica en
+  // el mapa con un toque y queda guardada con su pin.
+  var hayPinDelPedido=!!addrText&&typeof window._mLat==='number'&&typeof window._mLon==='number';
+  h+='<div class="gente" role="radiogroup" aria-label="Dirección">';
+  if(hayPinDelPedido){
+    var onM=repartoAddrId==='__mapa';
+    h+='<button class="dir'+(onM?' on':'')+'" role="radio" aria-checked="'+onM+'" onclick="repartoAddrId=\'__mapa\';render()"><b>La de este pedido</b><s>'+esc(addrText)+'</s></button>';
   }
-  h+='<div class="gente" role="radiogroup" aria-label="Dirección">'+conPin.map(function(a:any){
-    var on=mismoId(repartoAddrId,a.id);
-    return'<button class="dir'+(on?' on':'')+'" role="radio" aria-checked="'+on+'" onclick="repartoAddrId=\''+a.id+'\';render()"><b>'+esc(a.label)+'</b><s>'+esc(a.address)+(a.reference?' · '+esc(a.reference):'')+'</s></button>';
-  }).join('')+'</div>';
+  h+=myAddresses.map(function(a:any){
+    var pin=typeof a.lat==='number'&&typeof a.lon==='number';
+    var on=pin&&mismoId(repartoAddrId,a.id);
+    return pin
+      ?'<button class="dir'+(on?' on':'')+'" role="radio" aria-checked="'+on+'" onclick="repartoAddrId=\''+a.id+'\';render()"><b>'+esc(a.label)+'</b><s>'+esc(a.address)+(a.reference?' · '+esc(a.reference):'')+'</s></button>'
+      :'<button class="dir sinpin" onclick="abrirMapaPara(\'group_split\',\''+a.id+'\','+esc(JSON.stringify(a.address||''))+')"><b>'+esc(a.label)+'</b><s>'+esc(a.address)+' · tócala para ubicarla en el mapa</s></button>';
+  }).join('');
+  h+='<button class="dir otra" onclick="abrirMapaPara(\'group_split\',null,\'\')"><b>Otra dirección</b><s>Búscala o márcala en el mapa</s></button></div>';
+  if(!repartoAddrId){
+    return h+'<div class="go sw-barra"><button class="oro solo" onclick="abrirMapaPara(\'group_split\',null,\'\')">Elegir en el mapa</button></div></div>';
+  }
   h+='<div class="sumar" style="margin-top:26px"><em>Teléfono para el repartidor</em><input id="grp-phone" type="tel" inputmode="tel" autocomplete="tel" aria-label="Teléfono para el repartidor" value="'+esc(repartoPhone)+'"></div>';
   return h+'<div class="go sw-barra"><button class="oro solo" onclick="doSplitGroupOrder()">Repartir y cobrar a cada uno</button></div></div>';
 }
 var GROUP_SPLIT_MINUTES_CLIENT=20;
 async function doSplitGroupOrder(){
-  var a=myAddresses.find(function(x:any){return mismoId(x.id,repartoAddrId);});
-  if(!a){showToast('Elige la dirección.');return;}
+  var a:any=repartoAddrId==='__mapa'
+    ?{address:addrText,reference:'',lat:window._mLat,lon:window._mLon}
+    :myAddresses.find(function(x:any){return mismoId(x.id,repartoAddrId);});
+  if(!a||typeof a.lat!=='number'){showToast('Elige la dirección.');return;}
   var tel=gv('grp-phone').trim()||repartoPhone;
   busy=true;busyMsg='Repartiendo...';render();
   try{

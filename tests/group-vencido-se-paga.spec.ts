@@ -47,7 +47,7 @@ test('un grupo vencido todavía se puede pagar, y dice por qué no hubo gratis',
   await pagar.click();
   // Cerrar y pagar siempre pasa por una confirmación — no se cobra un grupo de varias
   // personas por un toque accidental.
-  await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
+  await page.locator('.ov-barra .si').click();
 
   await expect.poll(() => calls.some((c) => c.action === 'close-group-order'), { timeout: 10000 }).toBe(true);
   expect(calls.find((c) => c.action === 'close-group-order')!.body.code).toBe('ABC123');

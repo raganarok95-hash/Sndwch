@@ -113,8 +113,8 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   await expect(page.locator('text=¡Un sándwich va gratis!')).toBeVisible();
 
   await page.getByRole('button', { name: /yo invito/i }).click();
-  await expect(page.getByRole('button', { name: 'CONFIRMAR //' })).toBeVisible();
-  await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
+  await expect(page.locator('.ov-barra .si')).toBeVisible();
+  await page.locator('.ov-barra .si').click();
 
   await expect(page.locator('.m30')).toBeVisible();
   // Cuatro del más caro y uno del más barato: el más barato va gratis.
