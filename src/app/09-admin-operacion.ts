@@ -313,125 +313,62 @@ async function copyFromField(id){
     showToast('Selecciónalo y copia con el teclado.');
   }
 }
+// ── LOS CINCO CAJONES DE «ADMINISTRAR» (2026-10-01, docs/PANEL_NUEVO.md) ──────────────
+// Ninguna pantalla se borró: se ordenaron por la pregunta que responden. Lo de operar con
+// pedidos entrando (cola, pagos, agotar, pausar) vive en «Cocina abierta», no acá.
+// La misma lista alimenta el cajón lateral de las pantallas secundarias.
 function adminToolsSections(){
   return[
-    ['Clientes y ventas //',[
-      ['clientes','Clientes','sndScreen=\'admin_customer\';custDetail=null;custDetailPhone=\'\';custDetailErr=\'\';render()'],
+    ['Hoy',[
+      ['warning','Qué pide atención','loadHealth()'],
+      ['reportes','Panel de negocio','loadDashboard()'],
       ['buscar','Buscar pedidos','sndScreen=\'admin_search\';searchResults=null;render()'],
       ['reportes','Reportes','sndScreen=\'admin_report\';reportData=null;render()'],
+      ['caja','Cierre de caja','loadCashClose()'],
+      ['inventario','Inventario','loadInventory()'],
+      ['prep','Preparación','loadPrepList()'],
+      ['inventario','Plan de tanda','loadBatchPlan()'],
+    ]],
+    ['Carta',[
+      ['precios','Signatures','loadCatalogItemsAdmin()'],
+      ['lock','Menú secreto','loadSecretSignatureAdmin()'],
+      ['precios','Precios','loadAdminCatalog()'],
+      ['recipe','Recetas','loadRecipes()'],
+      ['caja','Compras y costos','loadPurchases()'],
+    ]],
+    ['Clientes',[
+      ['clientes','Buscar cliente','sndScreen=\'admin_customer\';custDetail=null;custDetailPhone=\'\';custDetailErr=\'\';render()'],
       ['estrella','Calificaciones','loadRatingsList()'],
       ['reclamo','Reclamaciones','loadAdminComplaints()'],
       ['reclamo','Algo salió mal','loadOrderProblems()'],
+      ['direccion','Direcciones con problemas','loadProblemAddresses()'],
       ['direccion','Zonas que esperan','loadZoneWaitlist()'],
+      ['clientes','Lista de espera','loadWaitlist()'],
+      ['puntos','Puntos manuales','sndScreen=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';acPhone=\'\';acDelta=\'\';acMsg=\'\';render()'],
     ]],
-    ['Marketing //',[
-      // ⚠ "Avísale a tu gente" va PRIMERO de todo Marketing. La simulación del 2026-09-13
-      // midió que avisarle a la red personal es la ÚNICA palanca que mueve el mes 3 —de 1.2%
-      // a 44.7% de probabilidad de llegar a S/3,000 netos— y estaba escondida detrás de un
-      // rótulo que decía "Contenido semanal": el dueño no tenía por qué entrar ahí durante la
-      // semana de apertura, que es justo cuando sirve.
+    ['Marketing',[
+      // «Avísale a tu gente» va primero: la simulación del 2026-09-13 midió que avisarle a la
+      // red personal es la palanca que más mueve el mes 3.
       ['megaphone','Avísale a tu gente','loadMarketingContent()'],
+      ['megaphone','Anuncios de Meta','loadMetaAds()'],
       ['calendar','Calendario de contenido','loadCalendar()'],
       ['camera','Guion de video','loadVideoScript()'],
       ['precios','Códigos promo','loadPromoCodes()'],
       ['estrella','Rendimiento campañas','loadCampaignPerformance()'],
-      // Las tres palancas del modelo financiero, medidas contra lo que el modelo asume.
-      // Va en Marketing y no en "Salud del sistema" porque las tres se mueven con
-      // decisiones de marketing y producto, no con infraestructura.
       ['reportes','Las tres palancas','loadPalancas()'],
-      // El freno de CAC va JUNTO a las palancas y no en otra sección: es la cuarta
-      // cifra de la misma conversación — cuánto cuesta traer a un cliente contra
-      // cuánto deja. La pantalla de palancas termina diciendo que el CAC es "lo que
-      // NO está acá y decide igual de fuerte"; esto es ese hueco.
       ['estrella','Freno de CAC','loadCacBrake()'],
-      ['clientes','Lista de espera','loadWaitlist()'],
     ]],
-    ['Catálogo //',[
-      ['inventario','Inventario','loadInventory()'],
-      ['precios','Precios','loadAdminCatalog()'],
-      ['horario','Horario','loadStoreHoursForm()'],
-      ['lock','Menú secreto','loadSecretSignatureAdmin()'],
-      ['precios','Signatures','loadCatalogItemsAdmin()'],
-    ]],
-    ['Cuenta //',[
-      ['puntos','Puntos manuales','sndScreen=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';acPhone=\'\';acDelta=\'\';acMsg=\'\';render()'],
+    ['Sistema',[
+      ['horario','Horario y pausa','loadStoreHoursForm()'],
       ['admins','Administradores','loadAdminMgr()'],
       ['auditoria','Auditoría','loadAuditLog()'],
-    ]],
-    ['Cocina y operación //',[
-      ['warning','Salud del negocio','loadHealth()'],
-      ['prep','Preparación','loadPrepList()'],
-      ['recipe','Recetas','loadRecipes()'],
-      ['inventario','Plan de tanda','loadBatchPlan()'],
-      ['caja','Cierre de caja','loadCashClose()'],
-      ['caja','Compras y costos','loadPurchases()'],
-      ['caja','Tarjeta / Culqi','loadCulqiReport()'],
-      ['franjas','Franjas horarias','loadTimeWindowReport()'],
-      ['direccion','Direcciones','loadProblemAddresses()'],
-    ]],
-    ['Salud del sistema //',[
       ['warning','Salud técnica','loadTechHealth()'],
       ['reclamo','Cumplimiento','loadCompliance()'],
+      ['caja','Tarjeta / Culqi','loadCulqiReport()'],
+      ['franjas','Franjas horarias','loadTimeWindowReport()'],
     ]],
   ];
 }
-// Grid de 2 columnas agrupado por sección — mismo HTML que ya usaba admin_home, ahora
-// también reusado por el drawer de navegación lateral.
-// Los cuatro accesos de servicio. Solo se pintan con la tienda ABIERTA — con la tienda
-// cerrada el home completo es lo correcto y este bloque estorbaría.
-//
-// Por qué estos cuatro y no otros: son las únicas decisiones que se toman CON pedidos
-// entrando. Cocina (armar), Pagos (confirmar un Yape antes de preparar), Inventario (marcar
-// algo agotado en el momento en que se acaba) y Salud (qué hay que atender hoy). Recetas,
-// marketing, calendario, cohortes y modelo son trabajo de escritorio.
-//
-// El contador de pagos por confirmar va EN el botón y no en una pantalla aparte: es el
-// número que decide si vale la pena tocarlo, y ponerlo detrás de un toque hace que nadie
-// lo mire mientras cocina. Cuando es cero, el botón no grita — se pinta como los demás.
-function servicioRapidoHTML(){
-  if(!storeStatus().open)return '';
-  var ao=sortedActiveOrders();
-  var porConfirmar=ao.filter(function(o){
-    return (o.payment_method==='yape'||o.payment_method==='plin')&&o.payment_status!=='paid';
-  }).length;
-  var tile=function(titulo,sub,accion,destacado,badge){
-    return'<button onclick="'+accion+'" style="all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;justify-content:center;gap:4px;min-height:88px;padding:14px;border-radius:12px;'
-      +'background:'+(destacado?GOLD:'var(--sw-card,#1B1F18)')+';border:1px solid '+(destacado?GOLD:'var(--sw-border,#2C3228)')+';'
-      +'color:'+(destacado?'var(--sw-on-gold,#241a08)':'var(--sw-text,#FFFFFF)')+'">'
-      +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;line-height:1.1">'+titulo
-      +(badge?'<span style="font-family:\'EB Garamond\',serif;font-size:15px;font-weight:600"> · '+badge+'</span>':'')+'</span>'
-      +'<span style="font-family:\'EB Garamond\',serif;font-size:11px;opacity:.75;line-height:1.3">'+sub+'</span>'
-      +'</button>';
-  };
-  return'<div style="margin-bottom:18px">'
-    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">En servicio //</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-    // Cocina va destacado y primero: es el único que se usa con las manos ocupadas.
-    +tile('Cocina','armar, uno a uno','enterFocusMode()',true,ao.length||'')
-    +tile('Pagos','confirmar Yape/Plin','sndScreen=\'admin_home\';render();scrollToPagos()',false,porConfirmar||'')
-    +tile('Inventario','marcar agotado','loadInventory()',false,'')
-    +tile('Salud','qué atender hoy','loadHealth()',false,'')
-    +'</div></div>';
-}
-// El botón de Pagos no abre otra pantalla: baja a la cola que ya está en este mismo home.
-// Abrir una pantalla nueva para ver los mismos pedidos sería una segunda lista del mismo
-// dato, que es como se terminan contradiciendo.
-function scrollToPagos(){
-  setTimeout(function(){
-    var el=document.querySelector('[data-pago-pendiente="1"]');
-    if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
-  },60);
-}
-function adminToolsGridHTML(){
-  return adminToolsSections().map(function(section: any){
-    return'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 10px">'+section[0]+'</div>'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-      +section[1].map(function(x){return'<div onclick="'+x[2]+'" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 12px;cursor:pointer;text-align:center"><div style="width:36px;height:36px;border-radius:50%;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);display:flex;align-items:center;justify-content:center;margin:0 auto 8px">'+icon(x[0])+'</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+GOLD+';letter-spacing:.03em">'+x[1]+'</div></div>';}).join('')
-      +'</div>';
-  }).join('');
-}
-function sAdminHome(){
-  var ao=sortedActiveOrders();
 // Banner de las tres señales de dirección de la cola (#22 duplicada, #21 ambigua,
 // #17 agrupable). Devuelve '' cuando no hay nada que decir — una franja permanente que casi
 // siempre dice "todo bien" se deja de leer, y entonces no se lee el día que dice otra cosa.
@@ -481,152 +418,35 @@ function addressFlagsBanner(){
   });
   return filas.join('');
 }
-  var badge=ao.length;
-  return'<div style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#12150F)">'
-    +'<div style="padding:20px 20px 16px;border-bottom:1px solid var(--sw-border,#2C3228);display:flex;justify-content:space-between;align-items:center">'
-    +'<div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF);text-wrap:balance">Panel<span class="cut-sep" style="color:'+GOLD+'"> // </span>Operador</div>'
-    +(badge>0?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+STATUSES.RECIBIDO.c+';letter-spacing:.1em;margin-top:3px" class="pulse">● '+badge+' Acción requerida</div>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:3px">todo en orden //</div>')
-    +'</div><button onclick="loadAdmin()" title="Actualizar ahora" aria-label="Actualizar ahora" style="all:unset;cursor:pointer;font-size:15px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">'+icon('refresh',16)+'</button>'
-    +'<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" style="all:unset;cursor:pointer;font-size:15px;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">'+icon(adminLightMode?'moon':'sun',16)+'</button>'
-    +'<button onclick="stopPoll();sndScreen=\'o_home\';sndTab=\'order\';render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:13px;color:'+GOLD+'">← salir</button></div>'
-    +(adminOrdersTruncated?'<div style="background:rgba(255,165,0,.12);border-bottom:1px solid rgba(255,165,0,.3);padding:8px 20px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';display:flex;align-items:center;gap:5px">'+icon('warning',12,GOLD)+'<span>Hay más pedidos activos de los que se muestran aquí (solo los '+ao.length+' más recientes).</span></div>':'')
-    // Antes un poll fallido quedaba en silencio total — el operador podía estar viendo
-    // un estado desactualizado sin ninguna señal de que la actualización automática dejó
-    // de funcionar.
-    +(pollFailing?'<div style="background:rgba(255,85,85,.12);border-bottom:1px solid rgba(255,85,85,.3);padding:8px 20px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-danger,#ff8888);display:flex;align-items:center;gap:5px">'+icon('warning',12,'var(--sw-danger,#ff8888)')+'<span>No se pudo actualizar la cola de pedidos — reintentando…</span></div>':'')
-    // #22 / #21 / #17 — Tres cosas que la cola ya sabía y no decía. Van ARRIBA de la lista
-    // porque las tres son decisiones que se toman ANTES de despachar: juntar dos pedidos,
-    // llamar para pedir la referencia que falta, o mandar dos en un viaje. Descubrirlas
-    // después es un viaje pagado de más o un motorizado dando vueltas.
-    +addressFlagsBanner()
-    +'<div style="flex:1;padding:20px;overflow-y:auto" class="fi">'
-
-    // ── MIENTRAS LA TIENDA ESTÁ ABIERTA, LO PRIMERO SON CUATRO BOTONES ───────────────
-    // Medido a 360×640: este home mide 4 600 px (7,2 pantallas de scroll) y tiene 53
-    // controles tocables. Para administrar con la tienda cerrada está bien; para operar
-    // con las manos en la comida es todo ruido — en servicio hacen falta cuatro cosas y
-    // las otras treinta pantallas son trabajo de escritorio.
-    //
-    // No hay interruptor nuevo: `storeStatus()` ya sabe si está abierto, y el bloque
-    // desaparece solo al cerrar. Un modo que hay que acordarse de prender y de apagar se
-    // queda prendido — mismo criterio que la reapertura automática de capacidad, que no
-    // se construyó porque el reloj ya la resuelve.
-    +servicioRapidoHTML()
-
-    +'<div onclick="loadDashboard()" style="background:var(--sw-card2,#171A14);border:1px solid '+GOLD+';border-radius:12px;padding:18px;margin-bottom:18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-shadow:'+SHADOW_SM+'">'
-    +'<div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:var(--sw-text,#FFFFFF);text-wrap:balance">Panel<span class="cut-sep" style="color:'+GOLD+'"> // </span>de negocio</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em;margin-top:2px">ventas · productos top · clientes · puntos</div></div>'
-    +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">Ver →</span></div>'
-    +'<div style="height:1px;background:var(--sw-bg,#12150F);margin:16px 0"></div>'
-
-    // Grid de accesos rápidos movido ARRIBA de "Pedidos activos" — antes quedaba
-    // debajo de toda la cola, obligando a scrollear pasado cada pedido activo para
-    // llegar a cualquier herramienta (hallazgo de auditoría UX, confirmado por el
-    // dueño). Ahora reusa adminToolsGridHTML() (ver arriba), la misma función que
-    // alimenta el drawer de navegación lateral desde las 14 pantallas secundarias.
-    +adminToolsGridHTML()
-
-    // Modo foco — un solo pedido a pantalla completa con la acción principal anclada al
-    // fondo del viewport (zona real del pulgar, ver comentario en la tarjeta de abajo).
-    // Solo tiene sentido con al menos un pedido activo.
-    +(ao.length?'<div onclick="enterFocusMode()" style="display:flex;justify-content:space-between;align-items:center;background:var(--sw-card2,#171A14);border:1px solid '+GOLD+';border-radius:10px;padding:12px 16px;margin-bottom:18px;cursor:pointer"><span style="display:inline-flex;align-items:center;gap:8px;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+GOLD+'">'+icon('compass',15,GOLD)+'Modo foco — un pedido a la vez</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">Entrar →</span></div>':'')
-
-    // Active orders
-    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:12px">Pedidos activos // '+(ao.length||'ninguno')+'</div>'
-    +(ao.length?ao.map(function(o){
-      var s=STATUSES[o.status]||STATUSES['RECIBIDO'];
-      var manualPending=(o.payment_method==='yape'||o.payment_method==='plin')&&o.payment_status!=='paid';
-      // El checkout ya no obliga al cliente a declarar Yape vs Plin por separado (ambos
-      // muestran el mismo número) — la etiqueta aquí es genérica a propósito, incluso
-      // para pedidos viejos que sí guardaron 'plin' literal antes de este cambio.
-      var manualLabel='Yape/Plin';
-      var checked=!!bulkSelected[o.id];
-      // "Hace X min" + borde rojo pulsante pasados 10 min sin arrancar — antes la única
-      // pista de cuánto llevaba esperando un pedido era leer la hora absoluta y restarla
-      // mentalmente (hallazgo de la auditoría del panel admin: fácil pasar por alto el
-      // más viejo durante una hora pico). El aviso de atascado usa minsDue (minutos desde
-      // que el pedido DEBÍA empezar, es decir desde scheduled_for si lo tiene) para que un
-      // pedido programado para más tarde no se marque "atascado" mientras aún falta para
-      // su hora — "hace X min" en la tarjeta sigue mostrando el tiempo desde que se creó,
-      // que es la info que le interesa al operador.
-      var mins=minutesAgo(o.created_at);
-      var minsDue=minutesAgo(orderDueTime(o));
-      var isScheduledAhead=o.delivery_time&&new Date(o.delivery_time).getTime()>Date.now();
-      var isStale=(o.status==='RECIBIDO'||manualPending)&&!isScheduledAhead&&minsDue!==null&&minsDue>=10;
-      // Antes toda la tarjeta pulsaba (class="pulse" en el contenedor completo), lo que
-      // atenúa TODO al 35% de opacidad en cada ciclo — incluido el botón de acción, que
-      // se veía deshabilitado justo cuando más urge tocarlo (hallazgo de auditoría de
-      // diseño admin, ALTO). Ahora el pulso vive solo en un punto de acento junto al
-      // "hace X min" — la tarjeta y su botón quedan siempre legibles.
-      // data-pago-pendiente: el botón "Pagos" del bloque de servicio baja hasta la PRIMERA
-      // tarjeta con este atributo, en vez de abrir otra pantalla con los mismos pedidos.
-      // Dos listas del mismo dato terminan contradiciéndose.
-      return'<div '+(manualPending?'data-pago-pendiente="1" ':'')+'style="background:var(--sw-card,#1B1F18);border:1px solid '+(isStale?STATUSES.RECIBIDO.c:(o.status==='RECIBIDO'?STATUSES.RECIBIDO.c:'var(--sw-border-soft,#1c1c1c)'))+';border-radius:10px;padding:16px;margin-bottom:12px">'
-        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
-        +'<div style="display:flex;gap:10px;flex:1">'
-        +'<input type="checkbox" onchange="toggleBulkSelect(\''+o.id+'\')" '+(checked?'checked':'')+' style="margin-top:3px;width:18px;height:18px;flex-shrink:0;accent-color:'+GOLD+'">'
-        +'<div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(o.customer_name)+'</div>'
-        +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(o.customer_address)+'</div>'
-        +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+(isStale?STATUSES.RECIBIDO.c:'var(--sw-text-muted,#9DA096)')+';margin-top:4px;display:flex;align-items:center;gap:5px">'+(isStale?'<span class="pulse" style="width:6px;height:6px;border-radius:50%;background:'+STATUSES.RECIBIDO.c+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+' · '+SOLES+pz(o.total)+' · '+esc(o.date)+(mins!==null?' · hace '+mins+' min':'')+'</span></div>'
-        +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';margin-top:2px;display:flex;align-items:center;gap:5px">'+icon('horario',12,GOLD)+'<span>programado para '+esc(new Date(o.delivery_time).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
-        // Antes la ETA que el operador ingresaba al marcar "EN CAMINO" quedaba guardada
-        // (eta_minutes) pero nunca se mostraba de vuelta en su propia cola — solo el
-        // cliente la ve (ver el mensaje de WhatsApp) (hallazgo de la re-auditoría del
-        // panel admin: el operador no tenía forma de recordar qué ETA le prometió a cada
-        // cliente sin abrir el detalle del pedido).
-        +(o.status==='EN CAMINO'&&o.eta_minutes?'<div onclick="event.stopPropagation();editEta(\''+o.id+'\','+o.eta_minutes+')" style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:#3A86FF;margin-top:2px;display:flex;align-items:center;gap:5px;cursor:pointer">'+icon('moto',12,'#3A86FF')+'<span>ETA ~'+o.eta_minutes+' min · editar</span></div>':'')+'</div></div>'
-        +stBadge(o.status)+'</div>'
-        +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:12px">'+esc(o.summary)+'</div>'
-        // Receta expandida: sin esto un BUILD YOUR OWN solo mostraba el nombre de la
-        // proteína y era imposible prepararlo (ver itemRecipeLines).
-        +orderRecipeHTML(o.items)
-        +(o.redeemed_reward?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-ok,#25D366);margin-bottom:10px;display:flex;align-items:center;gap:5px">'+icon('gift',12,'var(--sw-ok,#25D366)')+'<span>'+esc(o.redeemed_reward)+'</span></div>':'')
-        +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-warn,#ffa500);margin-bottom:10px;display:flex;align-items:center;gap:5px">'+icon('cash',12,'var(--sw-warn,#ffa500)')+'<span>Cobrar '+SOLES+pz(o.total)+' al entregar</span></div>':'')
-        +(manualPending?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-warn,#ffa500);margin-bottom:8px;display:flex;align-items:center;gap:5px">'+icon('warning',12,'var(--sw-warn,#ffa500)')+'<span>Pago '+manualLabel+' sin confirmar — revisa tu app antes de continuar</span></div>':'')
-        +(o.payment_status==='paid'&&PAYMENT_METHOD_BADGE[o.payment_method]?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted2,#868A7E);margin-bottom:10px">'+PAYMENT_METHOD_BADGE[o.payment_method]+'</div>':'')
-        // El comprobante NUNCA reemplaza el botón de confirmar pago de abajo — es solo un
-        // apoyo visual opcional que el cliente pudo subir (ver actAdminReceiptUrl).
-        +(o.receipt_path?'<button onclick="viewReceipt(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;background:rgba(168,200,176,.12);border:1px solid rgba(168,200,176,.4);color:var(--sw-text-muted,#9DA096);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:15px 4px;border-radius:8px;margin-bottom:8px">'+iconTxt('clip','Ver comprobante','#9DA096')+'</button>':'')
-        // #28 — Lo que se leyó del comprobante. Va PEGADO al botón, que es donde el dueño
-        // está mirando cuando decide si confirma el pago.
-        +(o.receipt_path?receiptOcrHTML(o):'')
-        // Imprimir/WhatsApp son acciones secundarias (se usan, pero no en cada pedido) —
-        // antes ocupaban una fila completa cada una, alargando la tarjeta innecesariamente.
-        // Una fila de 2 columnas compactas deja la acción principal (avanzar estado) como
-        // lo único que realmente domina visualmente la tarjeta.
-        +'<div style="display:flex;gap:8px;margin-bottom:8px">'
-        +'<button onclick="printTicket(\''+o.id+'\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(139,175,154,.12);border:1px solid rgba(139,175,154,.4);color:var(--sw-text-muted,#9DA096);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:15px 4px;border-radius:8px">'+iconTxt('printer','Ticket','#9DA096')+'</button>'
-        +((o.contact_phone||o.customer_phone)?'<button onclick="waAdmin(\''+o.id+'\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;letter-spacing:.04em;padding:15px 4px;border-radius:8px">'+iconTxt('chat','WhatsApp',GOLD)+'</button>':'')
-        +'</div>'
-        // Botón principal agrandado (padding/tamaño de fuente) — "zona del pulgar" real
-        // (position:fixed sobre todo el viewport) exigiría antes resolver "modo foco" de
-        // un solo pedido a pantalla completa (con varias tarjetas en la cola, un botón
-        // fijo de viewport no tiene un pedido único al que apuntar); mientras tanto, un
-        // tap target mucho más grande es la mejora de ergonomía que sí se puede aplicar
-        // ya, tarjeta por tarjeta, sin ese rediseño más grande.
-        +(manualPending
-          ?'<button onclick="confirmAndAdvance(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:700;letter-spacing:.04em;padding:18px 0;border-radius:10px;text-align:center;margin-bottom:6px">'+iconTxt('check','Confirmar pago y preparar','#000')+'</button>'
-            +'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;color:var(--sw-text-muted2,#868A7E);font-family:\'EB Garamond\',serif;font-size:11px;padding:6px 0;margin-bottom:8px">solo confirmar el pago, sin avanzar todavía</button>'
-          :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:700;letter-spacing:.04em;padding:18px 0;border-radius:10px;text-align:center">'+(STATUSES[s.next].icon&&ICONS[STATUSES[s.next].icon]?icon(STATUSES[s.next].icon,15,'#000')+' ':'')+'Marcar como '+STATUSES[s.next].label.toLowerCase()+' →</button>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);text-align:center;padding:8px">'+iconTxt('check','Completado','var(--sw-ok,#25D366)')+'</div>'))
-        // Antes este botón solo aparecía para pagos manuales sin confirmar — un pedido ya
-        // pagado con tarjeta/crédito no tenía NINGUNA forma de cancelarse en la app
-        // (hallazgo de la auditoría de flujo de pedidos: sin esto, si se acaba un
-        // ingrediente a media preparación, el operador queda sin opciones).
-        +'<button onclick="cancelOrder(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid rgba(255,85,85,.4);color:var(--sw-danger,#ff8888);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:9px 0;border-radius:8px;text-align:center">'+iconTxt('close','Cancelar pedido'+(manualPending?' (nunca pagó)':''),'var(--sw-danger,#ff8888)')+'</button>'
-        +'</div>';
-    }).join(''):'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-card,#1B1F18);border-radius:10px;padding:24px 20px;text-align:center;margin-bottom:8px">'+icon('check',28,'var(--sw-ok,#25D366)')+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:8px">Sin pedidos activos //</div></div>')
-
-    +(!cust||!('serviceWorker' in navigator)||!('PushManager' in window)?'':'<div onclick="togglePushNotifications()" style="margin-top:18px;background:var(--sw-card,#1B1F18);border:1px solid '+(pushSubscribed?GOLD:'#1c1c1c')+';border-radius:10px;padding:12px 16px;cursor:pointer"><div style="display:flex;justify-content:space-between;align-items:center"><span style="display:inline-flex;align-items:center;gap:8px;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+icon('notif')+'Alertas de pedidos y stock</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:'+(pushSubscribed?GOLD:'#9DA096')+'">'+(pushSubscribed?'✓ Activo':'○ Activar')+'</span></div>'+(pushMsg?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';margin-top:6px">'+esc(pushMsg)+'</div>':'')+'</div>')
-    +'<div style="margin-top:18px;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span style="display:inline-flex;align-items:center;gap:8px;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096)">'+icon('sonido')+'Sonido de nuevo pedido</span>'
-    +'<select onchange="setNotifSound(this.value)" style="background:var(--sw-bg,#12150F);color:var(--sw-text,#FFFFFF);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:6px 8px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px">'
+// ── «ADMINISTRAR» (2026-10-01) ────────────────────────────────────────────────────────
+// Antes este home medía 4 600 px con la cola de pedidos, las herramientas y los ajustes
+// mezclados. Ahora es lo que el dueño decide con calma: un botón grande a «Cocina abierta»
+// (con lo que espera adentro) y los cinco cajones. La cola vive SOLO en la cocina: dos
+// listas del mismo dato terminan contradiciéndose.
+function sAdminHome(){
+  var ao=sortedActiveOrders();
+  var pagos=ao.filter(esPagoPorConfirmar).length;
+  var abierta=storeStatus().open;
+  return'<div class="adm">'
+    +'<div class="adm-top"><b>Administrar</b>'
+    +'<button class="adm-x" data-accion="salir-del-panel" onclick="stopPoll();sndScreen=\'o_home\';sndTab=\'order\';render()">Salir</button></div>'
+    +(pollFailing?'<div class="adm-alerta">No se pudo actualizar la cola. Revisa tu conexión.</div>':'')
+    +'<button class="adm-cocina" data-accion="abrir-cocina" onclick="abrirCocina()">'
+    +'<span class="t">'+(abierta?'Cocina abierta':'Abrir cocina')+' →</span>'
+    +'<span class="s">'+(ao.length?ao.length+' pedido'+(ao.length===1?'':'s')+' en curso'+(pagos?' · '+pagos+' pago'+(pagos===1?'':'s')+' por confirmar':''):'Sin pedidos en curso')
+    +(abierta?'':' · la tienda está cerrada')+'</span></button>'
+    +adminToolsSections().map(function(sec: any){
+      return'<div class="adm-cajon"><h3>'+sec[0]+'</h3><div class="adm-grid">'
+        +sec[1].map(function(x){return'<button onclick="'+x[2]+'">'+icon(x[0],18)+'<span>'+x[1]+'</span></button>';}).join('')
+        +'</div></div>';
+    }).join('')
+    +'<div class="adm-cajon"><h3>Avisos de este celular</h3>'
+    +(!cust||!('serviceWorker' in navigator)||!('PushManager' in window)?'':'<button class="adm-fila" onclick="togglePushNotifications()">'+(pushSubscribed?'Notificaciones activadas · tocar para apagar':'Activar notificaciones de pedido nuevo')+'</button>')
+    +'<label class="adm-fila">Sonido de pedido nuevo <select onchange="setNotifSound(this.value)">'
     +['campana','timbre','grave'].map(function(p){return'<option value="'+p+'" '+(notifSoundPreset===p?'selected':'')+'>'+p+'</option>';}).join('')
-    +'</select></div>'
-    // Antes #222 fijo — pensado para fundirse casi invisible con el fondo oscuro original,
-    // pero en modo claro se volvía el texto de MAYOR contraste de toda la pantalla (un
-    // footnote menor terminaba dominando visualmente) — hallazgo de auditoría visual,
-    // MEDIO. Con la variable de tema se mantiene sutil en ambos modos.
-    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted3,#3A4A44);text-align:center;margin-top:6px">Auto-actualiza cada 25 seg · Sonido al recibir pedido</div>'
+    +'</select></label>'
+    +'<button class="adm-fila" onclick="toggleAdminLight()">Modo '+(adminLightMode?'oscuro':'claro')+'</button>'
     +'</div>'
-    +bulkBar()
     +'</div>';
 }
 
@@ -668,7 +488,7 @@ function releaseScreenAwake(){
 if(typeof document!=='undefined'&&!(window as any)._wakeLockBound){
   (window as any)._wakeLockBound=true;
   document.addEventListener('visibilitychange',function(){
-    if(document.visibilityState==='visible'&&sndScreen==='admin_focus')keepScreenAwake();
+    if(document.visibilityState==='visible'&&(sndScreen==='admin_focus'||sndScreen==='admin_cocina'))keepScreenAwake();
   });
 }
 function enterFocusMode(){
@@ -678,7 +498,8 @@ function enterFocusMode(){
   sndScreen='admin_focus';render();
   keepScreenAwake();
 }
-function exitFocusMode(){releaseScreenAwake();sndScreen='admin_home';render();}
+// Salir de la receta vuelve a la lista de la cocina, que es de donde se entró.
+function exitFocusMode(){sndScreen='admin_cocina';render();}
 // Devuelve la posición ACTUAL del pedido anclado. Si desapareció (se entregó, se canceló,
 // lo atendió otra pantalla), cae al que ocupa su lugar en vez de saltar al primero: quien
 // cocina venía avanzando en orden y mandarlo al principio le hace repetir la vista.
@@ -837,3 +658,126 @@ function sAdminFocus(){
   // donde no hay contador de pedidos que mostrar.
   return'<div style="min-height:100vh;display:flex;flex-direction:column;background:'+barBg+'">'+nav+body+fixedBar+'</div>';
 }
+
+// ══ COCINA ABIERTA (2026-10-01, docs/PANEL_NUEVO.md · opción A con la receta de C) ═══════
+// Una sola lista con todo lo que está en curso, el que vence primero arriba (el mismo orden
+// de `sortedActiveOrders`). Cada pedido tiene UN botón: su siguiente paso. Tocar el pedido
+// abre su receta a pantalla completa (el modo foco de siempre, que ahora vuelve acá).
+//
+// Sin estado «Listo»: el reparto lo hace un tercero (50+ motorizados) avisado en un grupo de
+// WhatsApp. Por eso un pedido que se está armando ofrece «Pedir motorizado», que arma el
+// mensaje para el grupo con lo que el motorizado necesita, y «Salió →» lo pasa a EN CAMINO.
+var cocinaFiltro='todos';
+function esProgramadoParaLuego(o){
+  // Aparece en la cola recién cuando toca empezarlo: 30 min antes de la hora pedida.
+  return !!o.delivery_time&&new Date(o.delivery_time).getTime()-Date.now()>30*60000;
+}
+function etapaCocina(o){
+  if(esPagoPorConfirmar(o))return'pago';
+  if(o.status==='EN CAMINO')return'camino';
+  if(o.status==='PREPARANDO')return'armando';
+  if(esProgramadoParaLuego(o))return'luego';
+  return'cola';
+}
+var ETAPAS_COCINA=[['todos','Todos'],['pago','Pago'],['cola','Cola'],['armando','Armando'],['camino','En camino'],['luego','Programados']];
+function abrirCocina(){
+  panelModo='cocina';
+  sndScreen='admin_cocina';
+  if(!pollTimer)startPoll();
+  keepScreenAwake();
+  render();
+}
+function irAAdministrar(){
+  panelModo='admin';
+  releaseScreenAwake();
+  sndScreen='admin_home';
+  render();
+}
+function abrirPedidoEnCocina(id){
+  var ao=sortedActiveOrders();
+  var i=ao.findIndex(function(o){return mismoId(o.id,id);});
+  if(i<0)return;
+  focusIdx=i;focusRef=ao[i].id;
+  sndScreen='admin_focus';render();
+}
+function soles(n){return'S/'+(Number(n)||0).toFixed(2);}
+// Lo que el motorizado necesita y nada más: dónde, cómo llegar, a quién y cuánto cobrar.
+// El cobro sale del pedido (contra entrega sin pagar → se cobra; si no, «ya pagado»): un
+// motorizado que cobra un pedido ya pagado es la queja que más cuesta deshacer.
+function mensajeParaElGrupo(o){
+  var cobrar=(o.payment_method==='cod'&&o.payment_status!=='paid')?'COBRAR '+soles(o.total):'Ya pagado · no cobrar';
+  var mapa=(typeof o.lat==='number'&&typeof o.lon==='number')?'\nMapa: https://maps.google.com/?q='+o.lat+','+o.lon:'';
+  var tel=o.contact_phone||o.customer_phone;
+  return 'SND//WCH · pedido '+o.ref
+    +'\n'+(o.customer_address||'')
+    +(o.notes?'\nReferencia: '+o.notes:'')
+    +mapa
+    +'\nRecibe: '+(o.customer_name||'')+(tel?' · '+tel:'')
+    +'\n'+cobrar;
+}
+function pedirMotorizado(id){
+  var o=(adminOrders||[]).find(function(x){return mismoId(x.id,id);});
+  if(!o)return;
+  // Sin número: wa.me sin destinatario abre el selector y ahí se elige el grupo.
+  window.open('https://wa.me/?text='+encodeURIComponent(mensajeParaElGrupo(o)),'_blank');
+}
+function botonDeCocina(o){
+  var et=etapaCocina(o);
+  if(et==='pago')return'<button class="coc-b pago" data-accion="confirmar-pago" onclick="event.stopPropagation();confirmAndAdvance(\''+o.id+'\')">Pago recibido · empezar →</button>'
+    +(o.receipt_path?'<button class="coc-b gh" onclick="event.stopPropagation();viewReceipt(\''+o.id+'\')">Ver la captura</button>':'');
+  if(et==='cola'||et==='luego')return'<button class="coc-b cola" data-accion="empezar" onclick="event.stopPropagation();updateStatus(\''+o.id+'\',\'PREPARANDO\')">Empezar a armar →</button>';
+  if(et==='armando')return'<div class="coc-par">'
+    +'<button class="coc-b gh" data-accion="pedir-motorizado" onclick="event.stopPropagation();pedirMotorizado(\''+o.id+'\')">Pedir motorizado</button>'
+    +'<button class="coc-b arm" data-accion="salio" onclick="event.stopPropagation();updateStatus(\''+o.id+'\',\'EN CAMINO\')">Salió →</button></div>';
+  return'<div class="coc-par">'
+    +(o.delivery_token?'<button class="coc-b gh" data-accion="link-entrega" onclick="event.stopPropagation();waDeliveryLink(\''+o.id+'\')">Link al motorizado</button>':'')
+    +'<button class="coc-b cam" data-accion="entregado" onclick="event.stopPropagation();updateStatus(\''+o.id+'\',\'ENTREGADO\')">Entregado ✓</button></div>';
+}
+function tarjetaDeCocina(o){
+  var et=etapaCocina(o);
+  var mins=minutesAgo(orderDueTime(o));
+  var luego=esProgramadoParaLuego(o)||(o.delivery_time&&new Date(o.delivery_time).getTime()>Date.now());
+  var tarde=(et==='cola'||et==='pago')&&!luego&&mins!==null&&mins>=10;
+  var reloj=luego?'para las '+horaLima(new Date(o.delivery_time).getTime()):(mins===null?'':'hace '+mins+' min');
+  var etiqueta={pago:'PAGO POR CONFIRMAR',cola:'EN COLA',armando:'ARMANDO',camino:'EN CAMINO',luego:'PROGRAMADO'}[et];
+  return'<div class="coc-p '+et+(tarde?' tarde':'')+'" data-pedido="'+o.id+'" onclick="abrirPedidoEnCocina(\''+o.id+'\')">'
+    +'<div class="h"><b>'+esc(o.ref||'')+'</b><span class="tag">'+etiqueta+'</span><span class="min">'+reloj+'</span></div>'
+    +'<div class="it">'+esc(o.summary||'')+'</div>'
+    +(et==='pago'?'<div class="q">'+(o.payment_method==='plin'?'Plin':'Yape')+' · '+soles(o.total)+'</div>':'')
+    +(et==='armando'||et==='camino'?'<div class="q">'+esc(o.customer_address||'')+(o.notes?' · '+esc(o.notes):'')+'</div>':'')
+    +botonDeCocina(o)
+    +'</div>';
+}
+function sAdminCocina(){
+  var ao=sortedActiveOrders();
+  var cuenta={todos:ao.length,pago:0,cola:0,armando:0,camino:0,luego:0};
+  ao.forEach(function(o){cuenta[etapaCocina(o)]++;});
+  var lista=cocinaFiltro==='todos'?ao:ao.filter(function(o){return etapaCocina(o)===cocinaFiltro;});
+  var st=storeStatus();
+  var pausa=storePausedUntil&&new Date(storePausedUntil).getTime()>Date.now();
+  return'<div class="coc">'
+    +'<div class="coc-top"><span class="pill '+(pausa?'pausa':st.open?'on':'off')+'">'+(pausa?'EN PAUSA':st.open?'ABIERTO':'CERRADO')+'</span>'
+    +'<b>Cocina</b><span class="hora">'+horaLima(Date.now())+'</span>'
+    +(pausa
+      ?'<button class="coc-pausa" data-accion="reanudar" onclick="pauseStore(0)">Reanudar</button>'
+      :'<button class="coc-pausa" data-accion="pausar" onclick="cocinaPausaAbierta=!cocinaPausaAbierta;render()">Pausar</button>')
+    +'</div>'
+    +(cocinaPausaAbierta&&!pausa?'<div class="coc-pausas">'+[[30,'30 min'],[60,'1 hora'],[180,'3 horas'],[600,'Resto del día']].map(function(x){
+        return'<button data-accion="pausar-'+x[0]+'" onclick="cocinaPausaAbierta=false;pauseStore('+x[0]+')">'+x[1]+'</button>';}).join('')+'</div>':'')
+    +(pollFailing?'<div class="coc-alerta">No se pudo actualizar. Lo que ves puede estar atrasado.</div>':'')
+    +addressFlagsBanner()
+    +'<div class="coc-cont">'+ETAPAS_COCINA.filter(function(e){return e[0]==='todos'||cuenta[e[0]];}).map(function(e){
+        return'<button class="'+e[0]+(cocinaFiltro===e[0]?' sel':'')+'" data-filtro="'+e[0]+'" onclick="cocinaFiltro=\''+e[0]+'\';render()"><b>'+cuenta[e[0]]+'</b><span>'+e[1]+'</span></button>';
+      }).join('')+'</div>'
+    +'<div class="coc-lista">'
+    +(lista.length?lista.map(tarjetaDeCocina).join('')
+      :'<div class="coc-vacio">'+(ao.length?'Nada en esta etapa.':'Sin pedidos en curso. Cuando entre uno, suena y vibra.')+'</div>')
+    +'</div>'
+    +'<div class="coc-tabs sw-barra">'
+    +'<button class="sel">Pedidos</button>'
+    +'<button data-accion="agotar" onclick="loadInventory()">Agotar</button>'
+    +'<button data-accion="ir-a-administrar" onclick="irAAdministrar()">Administrar</button>'
+    +'</div>'
+    +'</div>';
+}
+var cocinaPausaAbierta=false;

@@ -13,11 +13,12 @@
 // ese procesamiento, solo publica lo que ya llega listo. El cron auto-publish-calendar
 // (cron.job en Supabase, cada 15 min) publica solas las entradas 'scheduled' cuya fecha
 // ya llegó, sin que nadie toque "Publicar ahora" a mano.
-import { sbGet, sbUpdate, sbInsert, storageUpload } from "../db.ts";
+import { sbGet, sbUpdate, sbInsert, storageUpload, leer } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
-import { SB_URL, META_PAGE_ACCESS_TOKEN, META_PAGE_ID, META_IG_USER_ID, META_GRAPH_VERSION } from "../env.ts";
+import { SB_URL, META_PAGE_ACCESS_TOKEN, META_PAGE_ID, META_IG_USER_ID, META_GRAPH_VERSION, META_AD_ACCOUNT_ID, META_ADS_TOKEN } from "../env.ts";
+import type { Entrada, Salida } from "../../_shared/contrato.ts";
 
 const IMAGE_MAX_BYTES = 4 * 1024 * 1024;
 const IMAGE_MIME_EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
@@ -268,4 +269,50 @@ export async function actAdminListRawUploads(b: any) {
   await requireAdmin(b.token);
   const rows = await sbGet("content_uploads", "status=eq.pending&order=uploaded_at.desc&select=*&limit=500");
   return { uploads: rows };
+}
+
+// ── EL BOTÓN DE LOS ANUNCIOS (2026-10-01) ──────────────────────────────────────────────────
+// Apagar pausa TODAS las campañas activas de la cuenta y anota cuáles pausó. Prender reactiva
+// SOLO esas: una campaña que el dueño había pausado a mano en Meta no se prende por accidente.
+// Lo anotado vive en app_settings (no en el log de auditoría, que traga sus errores): si no se
+// pudiera guardar, «Prender» no sabría qué reactivar y fallaría en silencio.
+async function campanasDeLaCuenta(): Promise<{ id: string; nombre: string; estado: string; activa: boolean }[]> {
+  const data = await metaGraphGet(`act_${META_AD_ACCOUNT_ID}/campaigns`, {
+    access_token: META_ADS_TOKEN!, fields: "id,name,status,effective_status", limit: "100",
+  });
+  return (data?.data || []).map((c: any) => ({
+    id: String(c.id), nombre: String(c.name || ""), estado: String(c.effective_status || c.status || ""),
+    activa: c.status === "ACTIVE",
+  }));
+}
+// La decisión, sin red: qué campañas cambian y qué queda anotado. Separada para poder probar
+// la promesa que importa (Prender NUNCA toca una campaña que el botón no apagó).
+export function planDeAnuncios(
+  que: "apagar" | "prender",
+  campanas: { id: string; activa: boolean }[],
+  pausadasAntes: string[],
+): { cambiar: { id: string; status: "PAUSED" | "ACTIVE" }[]; pausadasDespues: string[] } {
+  if (que === "apagar") {
+    const activas = campanas.filter((c) => c.activa).map((c) => c.id);
+    // Se suman a las ya anotadas: dos «Apagar» seguidos no pueden olvidar las primeras.
+    return { cambiar: activas.map((id) => ({ id, status: "PAUSED" })), pausadasDespues: Array.from(new Set([...pausadasAntes, ...activas])) };
+  }
+  return { cambiar: pausadasAntes.map((id) => ({ id, status: "ACTIVE" })), pausadasDespues: [] };
+}
+export async function actAdminMetaAds(b: Entrada<"admin-meta-ads">): Promise<Salida<"admin-meta-ads">> {
+  const admin = await requireAdmin(b.token);
+  if (!META_ADS_TOKEN) throw new ApiError("Falta el token de Meta en el servidor (META_ADS_TOKEN o META_PAGE_ACCESS_TOKEN).", 503);
+  if (!["ver", "apagar", "prender"].includes(b.que)) throw new ApiError("No sé qué hacer con los anuncios.", 400);
+  const [ajustes] = await leer("app_settings", ["meta_ads_pausadas", "meta_ads_pausadas_at"], "id=eq.true");
+  let pausadas: string[] = ajustes?.meta_ads_pausadas || [];
+  let pausadasAt: string | null = ajustes?.meta_ads_pausadas_at || null;
+  if (b.que === "apagar" || b.que === "prender") {
+    const plan = planDeAnuncios(b.que, b.que === "apagar" ? await campanasDeLaCuenta() : [], pausadas);
+    for (const c of plan.cambiar) await metaGraphPost(c.id, { access_token: META_ADS_TOKEN, status: c.status });
+    pausadas = plan.pausadasDespues;
+    pausadasAt = pausadas.length ? new Date().toISOString() : null;
+    await sbUpdate("app_settings", "id=eq.true", { meta_ads_pausadas: pausadas, meta_ads_pausadas_at: pausadasAt, updated_at: new Date().toISOString() });
+    await logAdminAction(admin?.phone || "?", "meta-ads-" + b.que, undefined, { campanas: plan.cambiar.map((c) => c.id) });
+  }
+  return { cuenta: META_AD_ACCOUNT_ID, campanas: await campanasDeLaCuenta(), pausadasPorBoton: pausadas, pausadasAt };
 }

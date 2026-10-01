@@ -182,6 +182,12 @@ export const META_PAGE_ACCESS_TOKEN = Deno.env.get("META_PAGE_ACCESS_TOKEN");
 export const META_PAGE_ID = Deno.env.get("META_PAGE_ID");
 export const META_IG_USER_ID = Deno.env.get("META_IG_USER_ID");
 export const META_GRAPH_VERSION = "v21.0";
+// Anuncios (Marketing API) para el botón de apagar/prender del panel. La cuenta publicitaria no
+// es un secreto (es el número que se ve en el Administrador de anuncios); el token sí. Si
+// META_ADS_TOKEN no está, se usa el de la página: si a ese le falta el permiso de anuncios,
+// Meta lo dice y el panel muestra su mensaje tal cual, no un «no se pudo» mudo.
+export const META_AD_ACCOUNT_ID = Deno.env.get("META_AD_ACCOUNT_ID") || "221839797";
+export const META_ADS_TOKEN = Deno.env.get("META_ADS_TOKEN") || META_PAGE_ACCESS_TOKEN;
 // Píxel de Meta + Conversions API (medición de campañas). Opcionales e independientes de
 // la publicación en redes de arriba: mientras no existan, la app no carga ningún píxel y
 // el servidor no manda ningún evento — no hay medición, pero nada se rompe.

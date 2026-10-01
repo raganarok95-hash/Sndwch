@@ -156,10 +156,14 @@ async function doDeleteAccount(){
 }
 
 async function loadAdmin(){
-  sndScreen='admin_home';busy=true;busyMsg='Cargando...';render();
+  // Dos modos (2026-10-01): con la tienda abierta el panel entra a «Cocina abierta»; cerrada,
+  // a «Administrar». Después manda el último modo elegido en esta visita: el «←» de una
+  // pantalla secundaria vuelve a donde estaba, no a donde diga el reloj.
+  if(!panelModo)panelModo=storeStatus().open?'cocina':'admin';
+  sndScreen=panelModo==='cocina'?'admin_cocina':'admin_home';busy=true;busyMsg='Cargando...';render();
   var done=false;
   var timer=setTimeout(function(){if(!done){done=true;busy=false;render();}},8000);
-  try{var r=await api('admin-orders',{token:token});adminOrders=r.orders;adminOrdersTruncated=!!r.truncated;adminAddressFlags=r.addressFlags||null;lastPollCount=adminOrders.length;}
+  try{var r=await api('admin-orders',{token:token});adminOrders=r.orders;adminOrdersTruncated=!!r.truncated;adminAddressFlags=r.addressFlags||null;lastPollCount=adminOrders.length;avisarSiHayNovedad(adminOrders);}
   catch(e){adminOrders=[];}
   // ⚠ ACÁ HUBO UN AUTO-SALTO A MODO COCINA Y SE RETIRÓ EL MISMO DÍA (2026-09-12).
   // La idea era ahorrar el paso de atravesar el home (4 600 px, 53 controles) con pedidos

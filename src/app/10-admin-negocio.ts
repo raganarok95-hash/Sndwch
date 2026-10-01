@@ -2678,6 +2678,8 @@ Object.assign(ADMIN_SCREENS, {
   admin_calendar: sAdminCalendar,
   admin_waitlist: sAdminWaitlist,
   admin_focus: sAdminFocus,
+  admin_cocina: sAdminCocina,
+  admin_meta_ads: sAdminMetaAds,
 });
 
 // ── FRENO POR TECHO DE CAC ────────────────────────────────────────────────────────────
@@ -2900,4 +2902,36 @@ function sAdminCacBrake(){
     }).join('');
   }
   return h+'</div>';
+}
+
+// ── ANUNCIOS DE META: UN BOTÓN (2026-10-01) ──────────────────────────────────────────────
+// Dueño: «que yo pueda desactivar manualmente con un botón los anuncios de meta». Apagar pausa
+// todas las campañas activas; Prender reactiva SOLO las que pausó este botón (el servidor las
+// anota). Si Meta rechaza algo (token sin permiso de anuncios, cuenta sin pago), se muestra su
+// mensaje tal cual: un «no se pudo» mudo es justo lo que este botón no puede hacer.
+var metaAds=null,metaAdsErr='';
+async function loadMetaAds(que?){
+  if(que==='apagar'&&!(await showConfirm('¿Apagar TODOS los anuncios activos de Meta ahora?\nDejan de gastar en minutos. Los vuelves a prender con el mismo botón.')))return;
+  sndScreen='admin_meta_ads';busy=true;busyMsg=que==='apagar'?'Apagando anuncios...':que==='prender'?'Prendiendo anuncios...':'Consultando a Meta...';metaAdsErr='';render();
+  try{metaAds=await api('admin-meta-ads',{token:token,que:que||'ver'});}
+  catch(e){metaAdsErr=e.message||'Meta no respondió.';}
+  busy=false;render();
+  if(que&&!metaAdsErr)showToast(que==='apagar'?'Anuncios apagados.':'Anuncios prendidos.');
+}
+function sAdminMetaAds(){
+  var d=metaAds;
+  var activas=d?d.campanas.filter(function(c){return c.activa;}):[];
+  var porBoton=d?d.pausadasPorBoton.length:0;
+  return'<div class="adm">'
+    +'<div class="adm-top"><button class="adm-x" onclick="loadAdmin()">←</button><b>Anuncios de Meta</b></div>'
+    +(metaAdsErr?'<div class="adm-alerta">'+esc(metaAdsErr)+'</div>':'')
+    +(d?'<div class="adm-fila" style="cursor:default">'+(activas.length?activas.length+' campaña'+(activas.length===1?'':'s')+' gastando ahora':'Ningún anuncio está gastando')+'</div>':'')
+    +(activas.length?'<button class="adm-cocina" data-accion="apagar-anuncios" style="background:var(--sw-danger,#ff8888)" onclick="loadMetaAds(\'apagar\')"><span class="t">Apagar todos los anuncios</span><span class="s">Pausa las '+activas.length+' campañas activas</span></button>':'')
+    +(porBoton?'<button class="adm-cocina" data-accion="prender-anuncios" style="background:var(--sw-ok,#25D366)" onclick="loadMetaAds(\'prender\')"><span class="t">Prender de nuevo</span><span class="s">Reactiva las '+porBoton+' que apagó este botón'+(d.pausadasAt?' ('+new Date(d.pausadasAt).toLocaleString('es-PE',{timeZone:'America/Lima',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+')':'')+'</span></button>':'')
+    +(d&&d.campanas.length?'<div class="adm-cajon"><h3>Campañas de la cuenta '+esc(d.cuenta)+'</h3>'
+      +d.campanas.map(function(c){return'<div class="adm-fila" style="cursor:default"><span>'+esc(c.nombre)+'</span><span>'+esc(c.estado)+'</span></div>';}).join('')+'</div>'
+      :(d?'<div class="adm-fila" style="cursor:default">La cuenta '+esc(d.cuenta)+' no tiene campañas creadas.</div>':''))
+    +'<div class="adm-cajon"><h3>Publicaciones de Instagram</h3><div class="adm-fila" style="cursor:default;display:block">Las que dejas como <b>programadas</b> en el Calendario de contenido se publican solas el día que les toca (se revisa cada 15 minutos). No hace falta tocar nada más.</div>'
+    +'<button class="adm-fila" onclick="loadCalendar()">Abrir el calendario →</button></div>'
+    +'</div>';
 }
