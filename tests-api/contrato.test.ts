@@ -110,3 +110,11 @@ Deno.test("textoOpcional y numero: ausente es '' y null, nunca 0 ni error", () =
   assertThrows(() => e.numero({ min: 0 }).leer(-1, "n"), "n no es válido");
   assertThrows(() => e.numero().leer("4a", "n"), "n no es válido");
 });
+
+// Las acciones del panel que mueven dinero tienen tipos reales (2026-10-01): un monto que no es
+// número o un pedido que no es un uuid se rechaza en la frontera, antes de tocar la base.
+Deno.test("el panel: crédito con monto inválido y pedido mal formado se rechazan con 400", () => {
+  assertThrows(() => validarEntrada("admin-manual-credit", { token: "t", phone: "9", delta: "diez" }, "x"), "no es válido");
+  assertThrows(() => validarEntrada("admin-confirm-payment", { token: "t", orderId: "123" }, "x"), "Falta el pedido");
+  assertEquals(validarEntrada("admin-manual-credit", { token: "t", phone: "9", delta: "5.5" }, "x").delta, 5.5);
+});
