@@ -1,6 +1,7 @@
 // SND//WCH — api / actions/admin
 // Puntos manuales, gestión de cuentas admin, inventario, exportación CSV y las métricas
 // del panel de negocio.
+import type { Entrada } from "../../_shared/contrato.ts";
 import { sbGet, sbInsert, sbUpdate, sbDelete, sbUpsert, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
@@ -392,7 +393,7 @@ export async function actAdminInventoryRestock(b: any) {
 }
 
 const EXPORT_LIMIT = 5000;
-export async function actAdminExportOrders(b: any) {
+export async function actAdminExportOrders(b: Entrada<"export-orders"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const rows = await sbGet(
     "orders",

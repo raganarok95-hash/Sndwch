@@ -91,3 +91,16 @@ Deno.test("los esquemas: texto recorta, entero acepta '4' pero no '4a', bandera 
   assertEquals(e.lista(e.entero()).leer(["1", 2]), [1, 2]);
   assertThrows(() => e.lista(e.entero()).leer([1, "x"], "l"), "l[1] no es válido");
 });
+
+// Los dos validadores nuevos (2026-10-01). Lo que importa es lo que NO hacen: un dato ausente no
+// se convierte en 0 —el 0 es un monto y una coordenada válidos— ni un texto ausente en error.
+Deno.test("textoOpcional y numero: ausente es '' y null, nunca 0 ni error", () => {
+  assertEquals(e.textoOpcional().leer(undefined), "");
+  assertEquals(e.textoOpcional(3).leer("  abcdef "), "abc");
+  assertEquals(e.numero({ opcional: true }).leer(undefined), null);
+  assertEquals(e.numero({ opcional: true }).leer(""), null);
+  assertEquals(e.numero().leer("4.5"), 4.5);
+  assertThrows(() => e.numero().leer(undefined, "n"), "n no es válido");
+  assertThrows(() => e.numero({ min: 0 }).leer(-1, "n"), "n no es válido");
+  assertThrows(() => e.numero().leer("4a", "n"), "n no es válido");
+});

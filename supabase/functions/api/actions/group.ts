@@ -26,7 +26,7 @@ function genGroupCode(): string {
   return code;
 }
 
-export async function actCreateGroupOrder(b: any) {
+export async function actCreateGroupOrder(b: Entrada<"create-group-order"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(s.phone)}&select=name`);
   const organizerName = rows[0]?.name || "Alguien";
@@ -54,7 +54,7 @@ async function fetchGroupOrder(code: string) {
   return g;
 }
 
-export async function actGetGroupOrder(b: any) {
+export async function actGetGroupOrder(b: Entrada<"get-group-order"> & { _ip?: string }) {
   const code = String(b.code || "").trim().toUpperCase();
   if (!code) throw new ApiError("Falta el código.");
   const g = await fetchGroupOrder(code);
@@ -102,7 +102,7 @@ export async function actGetGroupOrder(b: any) {
   };
 }
 
-export async function actAddGroupItem(b: any) {
+export async function actAddGroupItem(b: Entrada<"add-group-item"> & { _ip?: string }) {
   const code = String(b.code || "").trim().toUpperCase();
   const contributorName = String(b.contributorName || "").trim().slice(0, 40);
   if (!code) throw new ApiError("Falta el código.");
@@ -173,7 +173,7 @@ export async function actRemoveGroupItem(b: Entrada<"remove-group-item">): Promi
 
 }
 
-export async function actCancelGroupOrder(b: any) {
+export async function actCancelGroupOrder(b: Entrada<"cancel-group-order"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const code = String(b.code || "").trim().toUpperCase();
   const g = await fetchGroupOrder(code);
@@ -219,7 +219,7 @@ export async function organizerFreeSandwichApplies(code: string, phone: string |
   }
 }
 
-export async function actCloseGroupOrder(b: any) {
+export async function actCloseGroupOrder(b: Entrada<"close-group-order"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const code = String(b.code || "").trim().toUpperCase();
   const g = await fetchGroupOrder(code);
@@ -351,7 +351,7 @@ function refDeParte(code: string, i: number): string {
   return `ORD-G${code}-${i + 1}${r}`;
 }
 
-export async function actSplitGroupOrder(b: any) {
+export async function actSplitGroupOrder(b: Entrada<"split-group-order"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const code = String(b.code || "").trim().toUpperCase();
   const g = await fetchGroupOrder(code);

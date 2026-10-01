@@ -2,6 +2,7 @@
 // Colocar pedido, historial de pedidos (cliente + invitado), y todo el flujo admin de
 // cola de pedidos: avanzar estado, confirmar pago manual (Yape/Plin/COD), cancelar, y
 // la expiración automática de pagos manuales nunca confirmados.
+import type { Entrada } from "../../_shared/contrato.ts";
 import {
   CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS, STALE_MANUAL_PAYMENT_HOURS,
   isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES, DELIVERY_ZONE_FEES,
@@ -1418,7 +1419,7 @@ export async function actPlaceOrder(b: any) {
 // monto que ya pagó y la distancia que ya recorrió su propio pedido.
 const GUEST_ORDER_FIELDS =
   "id,ref,customer_name,customer_address,summary,total,delivery_fee,delivery_km,status,payment_status,payment_method,eta_minutes,promised_from,promised_to,delivered_at,redeemed_reward,created_at,date";
-export async function actMyOrders(b: any) {
+export async function actMyOrders(b: Entrada<"my-orders"> & { _ip?: string }) {
   if (b.token) {
     const s = await requireSession(b.token);
     return { orders: await sbGet("orders", `customer_phone=eq.${encodeURIComponent(s.phone)}&order=created_at.desc&limit=20`) };
@@ -2517,7 +2518,7 @@ export async function actAdminCancelOrder(b: any) {
 // legal. Cliente con sesión: valida dueño por customer_phone. Invitado: el `ref` (con
 // componente aleatorio, ver oref() en el cliente) es la misma prueba de acceso que ya usan
 // actMyOrders/actSubmitRating.
-export async function actCancelMyOrder(b: any) {
+export async function actCancelMyOrder(b: Entrada<"cancel-my-order"> & { _ip?: string }) {
   const orderId = b.orderId ? String(b.orderId) : null;
   const ref = b.ref ? String(b.ref).trim().slice(0, 40) : null;
   if (!orderId && !ref) throw new ApiError("Falta el pedido.");
