@@ -257,7 +257,7 @@
       "nombre": "The Bloom",
       "sabor": "Hibiscus",
       "precio": 6,
-      "desc": "Flor de jamaica en infusión con un toque de canela, servida helada. Ácida, floral y sin una gota de jugo.",
+      "desc": "Flor de jamaica en infusión con un toque de canela, bien helada. Ácida y floral: limpia el paladar entre bocado y bocado, así el último sabe como el primero. La pareja de los sándwiches calientes.",
       "icono": "flor",
       "foto": "img/drink_d06.jpg"
     },
@@ -266,7 +266,7 @@
       "nombre": "The Midnight",
       "sabor": "Brew",
       "precio": 5,
-      "desc": "Té negro reposado en frío toda la noche. Suave, sin amargor, con el punch justo de cafeína.",
+      "desc": "Té negro reposado en frío toda la noche: suave, sin nada de amargor y con el punch justo de cafeína. Para el almuerzo que no puede terminar en siesta.",
       "icono": "moon",
       "foto": "img/drink_d07.jpg"
     },
@@ -275,7 +275,7 @@
       "nombre": "The Cool",
       "sabor": "Mint",
       "precio": 6,
-      "desc": "Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.",
+      "desc": "Hierba luisa y menta fresca en infusión helada. Ligera y aromática: refresca sin empalagar y deja la boca lista para el siguiente bocado. La que más pide un día de calor.",
       "icono": "hoja",
       "foto": "img/drink_d08.jpg"
     }

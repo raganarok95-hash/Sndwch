@@ -1022,11 +1022,21 @@ function bebidaDeslizada(el:HTMLElement){
   if(!lista[i]||lista[i].id===bebidaSel)return;
   bebidaSel=lista[i].id;
   var pie=document.getElementById('bebida-precio');
-  if(pie)pie.textContent=SOLES_TXT+pz(precioBebidaAhora(lista[i]));
+  if(pie)pie.innerHTML=pieBebidaHTML(lista[i]);
+  var nom=document.getElementById('bebida-nombre');
+  if(nom)nom.textContent='Agregar '+lista[i].l;
 }
-function precioBebidaAhora(d:any){
-  var conSandwich=cart.some(function(it){return it.type!=='side';});
-  return conSandwich?precioEnCombo(d):d.p;
+function hayComboAhora(){return cart.some(function(it){return it.type!=='side';});}
+function precioBebidaAhora(d:any){return hayComboAhora()?precioEnCombo(d):d.p;}
+// El precio de una bebida, dicho como se cobra (dueño, 2026-10-01: «cuando es en combo debe verse
+// tachado el precio anterior y se vea el que se cobra en combo»). Sin sándwich en el pedido, el
+// precio de carta y, abajo, cuánto baja si se suma uno.
+function precioBebidaHTML(d:any){
+  if(hayComboAhora())return'<n><del>'+SOLES_TXT+pz(d.p)+'</del> '+SOLES_TXT+pz(precioEnCombo(d))+'</n><s>Precio en combo</s>';
+  return'<n>'+SOLES_TXT+pz(d.p)+'</n><s>Con sándwich '+SOLES_TXT+pz(precioEnCombo(d))+'</s>';
+}
+function pieBebidaHTML(d:any){
+  return(hayComboAhora()?'<del>'+SOLES_TXT+pz(d.p)+'</del> ':'')+SOLES_TXT+pz(precioBebidaAhora(d));
 }
 function agregarBebidaElegida(){
   var d=bebidaElegida();
@@ -1043,17 +1053,21 @@ function sMundoBebidas(){
   var lista=bebidasDisponibles();
   var d=bebidaElegida();
   if(!d){return'<div class="bw">'+VACIO('Sin bebidas hoy','Se acabaron por hoy. Mañana vuelven.',null)+'</div>';}
-  var pie='<div class="bebida-go sw-barra"><button class="oro" onclick="agregarBebidaElegida()">Agregar</button>'
-    +'<button class="cel" onclick="agregarBebidaElegida()" id="bebida-precio">'+SOLES_TXT+pz(precioBebidaAhora(d))+'</button></div>';
+  // La barra dice QUÉ se agrega: antes decía solo «Agregar» y no había forma de saber cuál de las
+  // tres estaba elegida (dueño: «no deja seleccionarlas bien»).
+  var pie='<div class="bebida-go sw-barra"><button class="oro" onclick="agregarBebidaElegida()" id="bebida-nombre">Agregar '+esc(d.l)+'</button>'
+    +'<button class="cel" onclick="agregarBebidaElegida()" id="bebida-precio">'+pieBebidaHTML(d)+'</button></div>';
   var sin=ofrecerBebida?'Sigo sin bebida →':'';
   if(ladoActual()==='wicho'){
     return'<div class="bw fi"><button class="sal" onclick="salirDeBebidas()" aria-label="Volver">←</button>'
       +'<div class="cab"><em>Algo para tomar</em><u>'+lista.length+(lista.length===1?', bien helada':', bien heladas')+'</u></div>'
       +lista.map(function(x){
-        return'<button class="bd" aria-pressed="'+(x.id===d.id)+'" onclick="bebidaSel=\''+x.id+'\';render()">'
+        var on=x.id===d.id;
+        return'<button class="bd'+(on?' on':'')+'" aria-pressed="'+on+'" onclick="bebidaSel=\''+x.id+'\';render()">'
           +(DRINK_IMG[x.id]?'<img src="'+DRINK_IMG[x.id]+'" alt="" loading="lazy">':'')+'<div class="v"></div>'
-          +'<div class="tx"><b>'+esc(x.l)+'</b><s>'+esc(x.s)+'</s></div>'
-          +'<div class="pz"><n>'+SOLES_TXT+pz(x.p)+'</n><s>En combo '+SOLES_TXT+pz(precioEnCombo(x))+'</s></div></button>';
+          +(on?'<i class="ok">✓ Elegida</i>':'')
+          +'<div class="tx"><b>'+esc(x.l)+'</b><s>'+esc(x.s)+' · 500 ml</s><p>'+esc(x.d||'')+'</p></div>'
+          +'<div class="pz">'+precioBebidaHTML(x)+'</div></button>';
       }).join('')
       +'<div class="pie">Con cualquier sándwich, la bebida baja '+SOLES_TXT+pz(COMBO_DISCOUNT_PER_PAIR)+'.<br>Se aplica sola en el carrito.'
       +(sin?'<br><button onclick="salirDeBebidas()">'+sin+'</button>':'')+'</div>'
@@ -1064,8 +1078,8 @@ function sMundoBebidas(){
     +lista.map(function(x,i){
       return'<section class="vaso" aria-label="'+esc(x.l)+'"><div class="fo">'+(DRINK_IMG[x.id]?'<img src="'+DRINK_IMG[x.id]+'" alt="" '+(i?'loading="lazy"':'')+'>':'')+'<div class="v"></div></div>'
         +'<div class="arr"><em>Algo para tomar</em><u>'+(lista.length>1?'Desliza →':'')+'</u></div>'
-        +'<div class="nom"><b>'+esc(x.l)+'</b><s>'+esc(x.s+' · '+primeraFrase(x.d||''))+'</s></div>'
-        +'<div class="pz"><n>'+SOLES_TXT+pz(x.p)+'</n><s>Con sándwich '+SOLES_TXT+pz(precioEnCombo(x))+'</s></div>'
+        +'<div class="nom"><b>'+esc(x.l)+'</b><s>'+esc(x.s)+' · 500 ml</s><p>'+esc(x.d||'')+'</p></div>'
+        +'<div class="pz">'+precioBebidaHTML(x)+'</div>'
         +'<div class="cn" aria-hidden="true">'+lista.map(function(_y,k){return'<i class="'+(k===i?'on':'')+'"></i>';}).join('')+'</div>'
         +'</section>';
     }).join('')

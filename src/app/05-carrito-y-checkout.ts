@@ -773,13 +773,20 @@ function sOCart(){
   var d=cartDesglose();
   var envio=deliveryFeeAmount();
   var dirOk=direccionLista(),recOk=recibeListo();
+  // El combo se ve EN la bebida: precio de carta tachado y al lado lo que se cobra (dueño,
+  // 2026-10-01). Los pares se reparten entre las bebidas en orden; la suma es exactamente d.combo,
+  // que es lo que cobra el servidor, así que el total no cambia.
+  var paresCombo=COMBO_DISCOUNT_PER_PAIR>0?Math.round(d.combo/COMBO_DISCOUNT_PER_PAIR):0;
   var lineas=cart.map(function(it,i){
+    var total=itemLineTotal(it),desc=0;
+    if(it.type==='side'&&paresCombo>0){var u=Math.min(it.qty||1,paresCombo);paresCombo-=u;desc=u*COMBO_DISCOUNT_PER_PAIR;}
+    var det=lineaDetalle(it);
+    if(desc>0)det=(det?det+' · ':'')+'en combo';
     return'<button class="li" onclick="hojaLinea='+i+';hoja30=\'linea\';render()"><i>'+String(i+1).padStart(2,'0')+'</i>'
-      +'<span class="q"><b>'+esc(lineaNombre(it))+'</b>'+(lineaDetalle(it)?'<s>'+esc(lineaDetalle(it))+'</s>':'')+'</span>'
-      +'<p>'+pz(itemLineTotal(it))+'</p></button>';
+      +'<span class="q"><b>'+esc(lineaNombre(it))+'</b>'+(det?'<s>'+esc(det)+'</s>':'')+'</span>'
+      +'<p>'+(desc>0?'<del>'+pz(total)+'</del> '+pz(total-desc):pz(total))+'</p></button>';
   }).join('');
   var ex='';
-  if(d.combo>0)ex+='<div class="ex"><span>Combo sándwich + bebida</span><span>−'+pz(d.combo)+'</span></div>';
   if(d.organizador.monto>0)ex+='<div class="ex"><span>Sándwich del organizador</span><span>−'+pz(d.organizador.monto)+'</span></div>';
   if(appliedReward){var rw=RWDS.find(function(x){return x.id===appliedReward;});var ra=rewardWaiverAmount(appliedReward,findRewardTargetIndex(appliedReward));if(ra>0)ex+='<div class="ex"><span>'+esc(rw?rw.n:'Recompensa')+'</span><span>−'+pz(ra)+'</span></div>';}
   if(appliedPromo)ex+='<div class="ex"><span>Código '+esc(appliedPromo.code)+'</span><span>−'+pz(appliedPromo.discount)+'</span></div>';
