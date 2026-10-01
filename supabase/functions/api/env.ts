@@ -199,9 +199,8 @@ export const META_PIXEL_ID = Deno.env.get("META_PIXEL_ID");
 // puede usarla y el consumo lo paga el dueño.
 //
 // Mandarla desde el servidor y no escribirla en el cliente permite además prenderla y
-// apagarla sin redesplegar el cliente. **Si no está, el mapa cae solo a OpenStreetMap** —
-// que es gratis, menos preciso y sigue funcionando. Un checkout roto por una clave vencida
-// sería mucho peor que un geocodificador mediocre.
+// apagarla sin redesplegar el cliente. Es el ÚNICO motor de ubicación (dueño, 2026-10-01):
+// si falta o Google la rechaza, el mapa lo dice y el error llega al resumen diario.
 export const GOOGLE_MAPS_KEY = Deno.env.get("GOOGLE_MAPS_KEY");
 export const META_CAPI_TOKEN = Deno.env.get("META_CAPI_TOKEN");
 

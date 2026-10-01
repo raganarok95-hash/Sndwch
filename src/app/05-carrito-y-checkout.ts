@@ -1840,15 +1840,15 @@ function mountGoogleButton(){
 
 // ── LA UBICACIÓN ES SOLO GOOGLE (dueño, 2026-10-01: «No debería derivar nunca al motor
 // anterior. Ese motor es muy impreciso») ──────────────────────────────────────────────────
-// Se fue Nominatim/OpenStreetMap ENTERO: el buscador, la dirección que se lee bajo el pin y
-// los mosaicos del mapa. Antes, cualquier tropiezo con Google caía en silencio a ese motor, y
+// El motor anterior se fue ENTERO: el buscador, la dirección que se lee bajo el pin y los
+// mosaicos del mapa. Antes, cualquier tropiezo con Google caía en silencio a ese motor, y
 // el cliente terminaba con un pin a dos cuadras sin que nadie lo supiera. Ahora, si Google
 // falla, el cliente lo lee en el mapa y el dueño lo recibe (reportarError → resumen diario).
 //
 // La causa de que «siguiera el motor viejo» con las keys bien puestas: el script se carga con
 // `loading=async`, y en ese modo `google.maps.places` NO existe al terminar de cargar — hay
 // que pedir cada librería con `importLibrary`. El código preguntaba «¿está Places?», la
-// respuesta era no, y caía a Nominatim callado.
+// respuesta era no, y caía callado al motor anterior.
 //
 // Y el GPS ya no manda: el mapa abre con el BUSCADOR arriba. El GPS de una laptop (por IP) o
 // de un celular bajo techo puede errar por cientos de metros; se ofrece como botón y, si su
@@ -2007,7 +2007,7 @@ function loadGoogleMaps(){
       g=(window as any).google;
     }
     // Con `loading=async` las librerías NO están al terminar el script: se piden. Este era el
-    // defecto que mandaba todo a Nominatim.
+    // defecto que mandaba todo al motor anterior.
     if(g&&g.maps&&g.maps.importLibrary){
       await Promise.all([g.maps.importLibrary('maps'),g.maps.importLibrary('places'),g.maps.importLibrary('geocoding')]);
     }

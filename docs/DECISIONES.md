@@ -303,37 +303,36 @@ cobra, la pantalla se ve igual — solo hace que la app haga lo contrario de lo 
 texto legal. Por eso `tests-api/oposicion-a-la-medicion.test.ts` (5) y
 `tests/oposicion-a-la-medicion.spec.ts` (4), las dos verificadas inyectando el defecto.
 
-## La dirección se busca con Google; el mapa sigue en OpenStreetMap (2026-09-10)
+## La ubicación es solo Google: buscador, pin y mapa (2026-10-01)
 
-*"La geolocalización es una porquería, no ubica mi dirección"* tenía una causa concreta:
-**Nominatim tiene la avenida pero casi nunca el NÚMERO en Trujillo**, y el número es lo que el
-motorizado necesita. Google Places sí lo tiene.
+Dueño: *«No debería derivar nunca al motor anterior. Ese motor es muy impreciso»*. El motor
+anterior (Nominatim/OpenStreetMap/Leaflet) se borró entero, sin respaldo.
 
-**Solo cambió el BUSCADOR.** Los tiles siguen siendo los de OSM: arrastrar el pin ya funcionaba
-bien y pasar a "Dynamic Maps" de Google cobraría por cada apertura del mapa sin resolver ningún
-problema que exista. Hay una prueba que lo fija, porque es la clase de cosa que alguien
-"unifica" después.
+**Por qué seguía apareciendo con las keys puestas**: el script de Maps se carga con
+`loading=async`, y en ese modo `google.maps.places` no existe al terminar de cargar; hay que
+pedir cada librería con `importLibrary`. El código preguntaba «¿está Places?», recibía «no» y
+caía callado al respaldo. Un respaldo silencioso a un motor peor es exactamente el modo de fallo
+que importa en este repo.
 
-**El costo entero cuelga del token de sesión.** Autocomplete se cobra **por sesión y no por
-tecla**, y una sesión cerrada con un Place Details sale **gratis** en cualquier volumen. Por eso
-`_gSessionToken` se crea al empezar a escribir y **se descarta al elegir**: reusarlo invalida la
-sesión y Google pasa a cobrar tecla por tecla. Ese fallo **no da ningún error — llega como una
-factura**, y por eso tiene prueba propia. El Place Details además trae las coordenadas que el
-cobro por distancia necesita: no es una llamada extra, es la que vuelve gratis la sesión.
+**Si Google falla, se dice**: el cliente lee el aviso en el mapa y el error llega al resumen
+diario (`reportarError('ubicacion-google:*')`, incluido `gm_authFailure` cuando Google rechaza
+la key). Prueba: `tests/direccion-con-google.spec.ts`.
 
-El reverse geocoding también pasa a Google (acierta el distrito mucho más seguido, y de ese
-distrito depende si el pedido se puede entregar). Corre con **`google.maps.Geocoder` en el
-navegador a propósito**: la API REST de Geocoding **rechaza una key restringida por referrer**
-(probado, `REQUEST_DENIED`), y quitarle la restricción la dejaría usable por cualquiera que la
-copie del HTML.
+**El mapa abre con el buscador, no con el GPS**: el GPS de una laptop o bajo techo erra por
+cientos de metros. Es un botón, y si su precisión pasa de 60 m se le dice al cliente.
 
-**Sin key, TODO cae a Nominatim** — secret sin configurar, o un shell viejo servido por un
-service worker desactualizado. El peor caso es el comportamiento anterior, nunca un checkout
-roto. También con prueba: sin ese respaldo el cliente se queda sin buscador y nada avisa.
+**El costo cuelga del token de sesión.** Autocomplete se cobra por sesión y no por tecla, y una
+sesión cerrada con un Place Details sale gratis. `_gSessionToken` se crea al escribir y se
+descarta al elegir; reusarlo hace que Google cobre tecla por tecla, sin ningún error. El mapa
+dinámico entra en el tramo gratis de Google al volumen de este negocio.
 
-⚠ **Requiere `Places API (New)` habilitada en Google Cloud**, no la legacy:
-`AutocompleteSuggestion` no existe en la vieja. Una sola key sirve para todas las APIs
-habilitadas del proyecto — no hace falta una por API.
+**El reverse geocoding corre con `google.maps.Geocoder` en el navegador** a propósito: la API REST
+rechaza una key restringida por referrer (`REQUEST_DENIED`), y quitarle la restricción la
+dejaría usable por cualquiera.
+
+⚠ **Requiere en Google Cloud**: `Maps JavaScript API`, `Places API (New)` (no la legacy:
+`AutocompleteSuggestion` no existe en la vieja) y `Geocoding API`, con la key restringida a
+`https://sndwch.app/*`.
 
 ## Lo que sí hace que la app parezca "un agregado a la web antigua" (2026-09-10)
 

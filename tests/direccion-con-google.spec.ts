@@ -1,15 +1,12 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers';
 
-// BUSCAR UNA DIRECCIÓN CON GOOGLE, Y SEGUIR FUNCIONANDO SIN ÉL
-//
-// El dueño lo reportó como "la geolocalización es una porquería, no ubica mi dirección".
-// La causa concreta: Nominatim (OpenStreetMap) tiene la avenida pero casi nunca el NÚMERO
-// en Trujillo — y el número es justo lo que el motorizado necesita.
+// LA UBICACIÓN ES SOLO GOOGLE (dueño, 2026-10-01: «No debería derivar nunca al motor
+// anterior. Ese motor es muy impreciso»).
 //
 // ⚠ MODO DE FALLO: SILENCIO, en las dos direcciones.
-//  · Si el respaldo se rompe, un cliente sin key (shell viejo, secret no configurado) se
-//    queda sin buscador y nada avisa: el checkout "funciona", solo que no encuentra nada.
+//  · Si Google falla y la app cae callada a otro motor, el pin queda a dos cuadras y nadie
+//    lo sabe. Por eso no hay respaldo: se dice y se reporta.
 //  · Si el token de sesión se reusa, Google deja de cobrar por sesión y pasa a cobrar tecla
 //    por tecla. Eso no rompe nada tampoco — llega como una factura.
 
