@@ -206,6 +206,12 @@ function sOrdDetail(){
   }).join('');
   var desc=conPrecio?money(lista-consumo):0;
   var medio=MEDIO_DE_PAGO[o.payment_method]||'';
+  // El momento tenso del pedido, con un hermano: en camino (cuándo llega) o cancelado.
+  var momento=o.status==='EN CAMINO'
+    ?HERMANO_DICE('alegre','Va en camino',ventanaDelPedido(o)?'Llega '+String(ventanaDelPedido(o)).replace(/\.?$/,'.'):'Ya salió de la cocina.')
+    :o.status==='CANCELADO'
+      ?HERMANO_DICE('serio','Este pedido se canceló','Si ya habías pagado, te lo devolvemos: lo ves en tu cuenta o te escribimos.','alerta')
+      :'';
   var caja=''
     +(fu?'<div class="c"><em>Lo pediste</em><b>'+esc(horaLima(Date.parse(o.created_at)))+'</b></div>':'')
     +(ventanaDelPedido(o)?'<div class="c"><em>Prometimos</em><b>'+esc(ventanaDelPedido(o))+'</b></div>':'')
@@ -220,6 +226,7 @@ function sOrdDetail(){
     +'<button class="sal" onclick="sndScreen=\'p_orders\';render()" aria-label="Volver">←</button>'
     +'<span class="marca-der" aria-hidden="true"><img src="img/logo-avatar-96.png" alt="">SND<span class="wm-mark"><i></i><i></i></span>WCH</span>'
     +'<div class="cab"><em>Pedido '+esc(String(o.ref||''))+(fu?' · '+fu.getUTCDate()+' '+MESES_CORTOS[fu.getUTCMonth()]:'')+'</em><h1>'+esc(titularDelPedido(o))+'</h1></div>'
+    +momento
     +(caja?'<div class="caja">'+caja+'</div>':'')
     +'<div class="lns">'+lineas+'</div>'
     +(desc>0.004?'<div class="x"><span>'+(o.redeemed_reward?'Recompensa y combo':'Combo y descuentos')+'</span><span>−'+montoFmt(desc)+'</span></div>':'')

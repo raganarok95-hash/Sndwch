@@ -796,6 +796,18 @@ function broPose(quien,estado){
   return 'img/'+(fila[quien]||POSES.cuerpo[quien])+'.png';
 }
 
+// ── LOS MOMENTOS TENSOS, CON UN HERMANO (2026-10-01, #24) ───────────────────────────────
+// Tienda cerrada, dirección fuera de cobertura, pedido en camino, pedido cancelado o pago
+// rechazado. Antes eran una línea de texto rojo: el momento en que más importa que la app
+// tenga cara era el único sin nadie. Una franja, no una pantalla nueva: el resto de cada
+// pantalla es una maqueta aprobada y no se toca. La pose sale de POSES (piensa/mira/serio de
+// WICHO todavía caen a su cuerpo: se piden con docs/PROMPTS_PERSONAJES.md §4.3).
+function HERMANO_DICE(estado,titulo,texto,tono?){
+  var quien=ladoActual();
+  return'<div class="eh '+(tono||'')+'" data-estado="'+esc(estado)+'">'
+    +'<img src="'+broPose(quien,estado)+'" alt="" aria-hidden="true" loading="lazy">'
+    +'<div><b>'+esc(titulo)+'</b>'+(texto?'<p>'+esc(texto)+'</p>':'')+'</div></div>';
+}
 function VACIO(titulo,texto,cta?,estado?){
   var quien=ladoActual();
   return'<div style="text-align:center;padding:34px 10px 10px">'
