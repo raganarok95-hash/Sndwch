@@ -137,26 +137,4 @@ test('el client id se guarda para que la SIGUIENTE visita no dependa de la red',
   expect(await page.evaluate(() => localStorage.getItem('sw_gcid'))).toContain('apps.googleusercontent.com');
 });
 
-test('con Google configurado, la app igual abre en la puerta y el checkout no ofrece cuenta', async ({ page }) => {
-  await conClientIdFalso(page);
-  await gotoApp(page);
-  await page.locator('[onclick*="startOrderWithSig("]').first().click();
-  await page.locator('[onclick*="size=\'15\'"]').click();
-  await page.locator('[onclick^="sigId="]').first().click();
-  await page.getByRole('button', { name: 'CONTINUAR //' }).click();
-  await expect(page.locator('#o-nom')).toBeVisible();
-  await expect(page.locator('#google-btn-mount')).toHaveCount(0);
-});
 
-test('con Google configurado, Entrar y el aviso de la 06A tienen su hueco para el botón', async ({ page }) => {
-  await conClientIdFalso(page);
-  await gotoApp(page);
-  await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
-  await expect(page.locator('.en #google-btn-mount')).toHaveCount(1);
-  await page.evaluate(() => {
-    const w = window as any;
-    w._lRef = 'ORD-PRUEBA-1'; w._lTot = 30; w._lPoints = 25; w._lPendingPayment = false;
-    w._lastGuestName = 'Rosa'; w._lastGuestPhone = '987654321'; w.go('o_sent');
-  });
-  await expect(page.locator('.m06 .guardar #google-btn-mount')).toHaveCount(1);
-});

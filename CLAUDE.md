@@ -96,6 +96,8 @@ relatos están en `docs/MANUAL_DETALLADO.md`** (copia íntegra del archivo anter
 - **Una prueba no nombra un producto: lo pide a la carta** (`tests/carta.ts`; inventados, serie 9x).
 - **Una prueba que no se vio fallar no prueba nada**: inyectar el defecto antes de darla por buena.
 - **El modo de fallo que importa es el SILENCIO.**
+- **El dueño NO reparte**: lo hace un tercero (50+ motorizados) avisado en un grupo de WhatsApp
+  (`docs/NEGOCIO.md`). No se le pregunta otra vez: se lee antes de diseñar entrega o cocina.
 
 ## Checklist antes de dar por terminado un cambio
 

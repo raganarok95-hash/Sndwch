@@ -98,42 +98,78 @@ test('elegir un resultado cierra la sesión y suelta el token', async ({ page })
   expect(det.fields).toContain('location');
 });
 
-// Si la key falta —secret sin configurar, o un shell viejo servido por un service worker
-// desactualizado— el cliente NO se puede quedar sin buscador. El peor caso tiene que ser el
-// comportamiento anterior, nunca un checkout roto.
-test('sin key cae a Nominatim en vez de quedarse sin buscador', async ({ page }) => {
-  await conKey(page, null);
-  const usoNominatim = await page.evaluate(async () => {
+// El dueño (2026-10-01): «No debería derivar nunca al motor anterior. Ese motor es muy
+// impreciso». Si Google falla, el buscador NO sale a Nominatim: lo dice, y el error se reporta.
+test('si Google falla, no se usa otro motor: se dice y se reporta', async ({ page }) => {
+  const reportes: any[] = [];
+  await gotoApp(page, {
+    'get-store-hours': { hours: [], googleMapsKey: 'KEY-DE-PRUEBA' },
+    'report-client-error': (b: any) => { reportes.push(b); return { success: true }; },
+  });
+  const r = await page.evaluate(async () => {
     const w = window as any;
-    w.googleMapsKey = '';
-    let pedido = '';
+    w.googleMapsKey = 'KEY-DE-PRUEBA';
+    w._gmapsPromise = Promise.reject(new Error('Google rechazó la key'));
+    w._gmapsPromise.catch(() => {});
+    const pedidos: string[] = [];
     const origFetch = window.fetch;
-    (window as any).fetch = (u: any) => {
-      pedido = String(u);
-      return Promise.resolve({ json: () => Promise.resolve([]) } as any);
-    };
-    // La app ya trae estos dos elementos (el mapa vive en el DOM desde el arranque). Crear
-    // otros con el mismo id dejaría a getElementById devolviendo el original vacío — y la
-    // prueba pasaría o fallaría por una razón que no es la que persigue.
-    const box = document.getElementById('maddr-results') || Object.assign(document.createElement('div'), { id: 'maddr-results' });
-    if (!box.parentNode) document.body.appendChild(box);
-    const inp = (document.getElementById('maddr-input') || Object.assign(document.createElement('input'), { id: 'maddr-input' })) as HTMLInputElement;
-    if (!inp.parentNode) document.body.appendChild(inp);
+    (window as any).fetch = (u: any, o: any) => { pedidos.push(String(u)); return origFetch(u, o); };
+    const inp = document.getElementById('maddr-input') as HTMLInputElement;
     inp.value = 'Av España 1234';
     w.addrSearchNow();
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((res) => setTimeout(res, 400));
     (window as any).fetch = origFetch;
-    return pedido;
+    return { pedidos, caja: (document.getElementById('maddr-results') as HTMLElement).textContent };
   });
-  expect(usoNominatim, 'sin key el buscador se quedó mudo').toContain('nominatim.openstreetmap.org');
+  expect(r.pedidos.join(' '), 'el buscador salió a otro motor').not.toMatch(/nominatim|openstreetmap/);
+  expect(r.caja).toContain('No pudimos buscar');
+  await expect.poll(() => reportes.length, { message: 'la falla de Google no llegó al dueño' }).toBeGreaterThan(0);
+  expect(String(reportes[0].donde)).toContain('ubicacion-google');
 });
 
-// Los tiles del mapa siguen en OpenStreetMap a propósito: son gratis, arrastrar el pin ya
-// funcionaba bien, y pasar a "Dynamic Maps" de Google cobraría por cada apertura del mapa
-// sin resolver ningún problema que exista.
-test('el mapa sigue usando tiles gratis de OSM, no los de Google', async ({ page }) => {
+// Ni el mapa ni el pin usan OpenStreetMap: el motor viejo no existe en la app.
+test('el motor viejo no está en ninguna parte de la app', async ({ page }) => {
   await gotoApp(page, {});
-  const src = await page.evaluate(() => String((window as any).openMap));
-  expect(src).toContain('tile.openstreetmap.org');
-  expect(src).not.toContain('maps.googleapis.com');
+  const html = await page.content();
+  const fuentes = await page.evaluate(() => [
+    String((window as any).openMap), String((window as any).revGeo), String((window as any).addrSearchNow),
+  ].join('\n'));
+  expect(html + fuentes).not.toMatch(/nominatim\.openstreetmap|tile\.openstreetmap|unpkg\.com\/leaflet/);
+  expect(String(await page.evaluate(() => String((window as any).loadGoogleMaps)))).toContain('importLibrary');
+});
+
+// El mapa abre con el BUSCADOR (no con el GPS), dibujado por Google, y la dirección bajo el
+// pin la da Google. El GPS queda como botón dentro del mapa.
+test('el mapa abre con Google y el buscador listo; el GPS es un botón', async ({ page }) => {
+  await gotoApp(page, { 'get-store-hours': { hours: [], googleMapsKey: 'KEY-DE-PRUEBA' } });
+  const r = await page.evaluate(async () => {
+    const w = window as any;
+    w.googleMapsKey = 'KEY-DE-PRUEBA';
+    let gpsPedido = false;
+    (navigator as any).geolocation.getCurrentPosition = () => { gpsPedido = true; };
+    let creado: any = null;
+    w.google = { maps: {
+      Map: function (el: any, o: any) { creado = o; this.c = o.center; this.addListener = () => {}; this.getCenter = () => ({ lat: () => this.c.lat, lng: () => this.c.lng }); this.setCenter = (c: any) => { this.c = c; }; this.setZoom = () => {}; },
+      Geocoder: function () { this.geocode = () => Promise.resolve({ results: [{ address_components: [
+        { types: ['route'], long_name: 'Av. España' }, { types: ['street_number'], long_name: '1234' }, { types: ['locality'], long_name: 'Trujillo' },
+      ] }] }); },
+      places: { AutocompleteSuggestion: {} },
+    } };
+    w._gmapsPromise = Promise.resolve();
+    w.abrirUbicacion();
+    await new Promise((res) => setTimeout(res, 500));
+    return {
+      visible: getComputedStyle(document.getElementById('mmap')!).display !== 'none',
+      creado, gpsPedido,
+      foco: document.activeElement && document.activeElement.id,
+      hint: (document.getElementById('maddr-hint') as HTMLElement | null)?.textContent || '',
+      hayBotonGps: !!document.getElementById('gps-btn'),
+    };
+  });
+  expect(r.visible).toBe(true);
+  expect(r.creado, 'el mapa no lo dibujó Google').toBeTruthy();
+  expect(r.gpsPedido, 'abrir el mapa no debe disparar el GPS').toBe(false);
+  expect(r.foco).toBe('maddr-input');
+  expect(r.hint).toContain('Av. España 1234');
+  expect(r.hayBotonGps).toBe(true);
 });

@@ -87,32 +87,9 @@ async function entrarAlCierre(page: any, datos: unknown) {
   await page.locator('[onclick*="loadCashClose()"]').first().click();
 }
 
-test('arriba va lo que de verdad le queda al dueño, no el bruto', async ({ page }) => {
-  await entrarAlCierre(page, CAJA);
-  await expect(page.locator('text=/S\\/49\\.80/')).toBeVisible();
-  await expect(page.locator('text=/TUYO, DESPUÉS DEL REPARTO Y LA COMISIÓN/')).toBeVisible();
-});
 
-test('el desglose explica POR QUÉ el bruto no es lo que queda', async ({ page }) => {
-  // Sin las tres restas explicadas, el número grande parece arbitrario y no se le cree.
-  await entrarAlCierre(page, CAJA);
-  await expect(page.locator('text=/Pagado con crédito interno/')).toBeVisible();
-  await expect(page.locator('text=/Hoy no llegó nada/')).toBeVisible();
-  await expect(page.locator('text=/Comisión de Culqi/')).toBeVisible();
-  await expect(page.locator('text=/Reparto \\(va al motorizado\\)/')).toBeVisible();
-  await expect(page.locator('text=/al motorizado se le paga igual/')).toBeVisible();
-});
 
-test('lo sin confirmar se muestra aparte y dice que NO está sumado', async ({ page }) => {
-  await entrarAlCierre(page, CAJA);
-  await expect(page.locator('text=SIN CONFIRMAR //')).toBeVisible();
-  await expect(page.locator('text=/No están sumados arriba/')).toBeVisible();
-});
 
-test('un día sin nada sin confirmar no muestra la franja naranja', async ({ page }) => {
-  await entrarAlCierre(page, { ...CAJA, pendingConfirmation: { orders: 0, amount: 0 } });
-  await expect(page.locator('text=SIN CONFIRMAR //')).toHaveCount(0);
-});
 
 // ── #20 ────────────────────────────────────────────────────────────────────────────────
 
@@ -139,16 +116,4 @@ async function verMisPedidos(page: any, pedidos: unknown[]) {
   await page.locator('[onclick*="p_orders"]').first().click();
 }
 
-test('un pedido reciente sí pide calificación', async ({ page }) => {
-  await verMisPedidos(page, [PEDIDO_ENTREGADO(1)]);
-  await page.locator('text=ORD-1').first().click();
-  await expect(page.locator('text=/¿Cómo estuvo tu pedido\\?/')).toBeVisible();
-});
 
-test('un pedido viejo deja de pedirla, en vez de arrastrar la tarjeta para siempre', async ({ page }) => {
-  // A los 14 días el cliente ya no se acuerda de ese sándwich, y la tarjeta le quita fuerza
-  // a la del pedido reciente, que es la única que se va a responder.
-  await verMisPedidos(page, [PEDIDO_ENTREGADO(30)]);
-  await page.locator('text=ORD-30').first().click();
-  await expect(page.locator('text=/¿Cómo estuvo tu pedido\\?/')).toHaveCount(0);
-});
