@@ -1416,6 +1416,18 @@ body.kb-open #app{padding-bottom:0}
 .mdir .guardar{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin:8px 0 12px;padding:16px 0;text-align:center;background:#2A1D0E;color:#F2E4CA;font:700 13px/1 Archivo,sans-serif;letter-spacing:.14em;text-transform:uppercase}
 .mdir .cancelar{all:unset;cursor:pointer;display:block;margin:0 auto 12px;padding:8px;font:500 11px/1 'IBM Plex Mono',monospace;color:#5E4526;text-decoration:underline}
 .mdir button:focus-visible{outline:2px solid #9C5F14;outline-offset:2px}
+/* LO LEGAL, EN CRIOLLO (maqueta aprobada lo-legal.png): el índice de los textos legales. */
+.mll{position:relative;min-height:100dvh;box-sizing:border-box;padding:18px max(26px,calc(50% - 300px)) 40px;background:#F2EEE6;color:#22201C}
+.mll .sal{all:unset;cursor:pointer;font-size:18px;color:#22201C;padding:6px 8px 6px 0}
+.mll .cab{margin:44px 0 26px}
+.mll .cab em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#6E6A61;text-transform:uppercase;font-style:normal}
+.mll .cab h1{margin:8px 0 0;font-family:Anton,sans-serif;font-weight:400;font-size:40px;line-height:.92;color:#22201C;text-transform:uppercase;text-wrap:balance}
+.mll .doc{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;padding:24px 0 26px;border-top:1px solid rgba(34,32,28,.2)}
+.mll .doc b{display:block;font:700 18px/1.2 Archivo,sans-serif;color:#22201C}
+.mll .doc s{display:block;margin-top:12px;max-width:290px;text-decoration:none;font:500 11px/1.6 'IBM Plex Mono',monospace;color:#4E4A42;text-transform:uppercase}
+.mll .doc i{display:block;margin-top:14px;text-align:right;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#8A4A10;text-transform:uppercase;font-style:normal}
+.mll .doc:focus-visible{outline:2px solid #8A4A10;outline-offset:2px}
+.mll .biz{margin:30px 0 0;padding-top:20px;border-top:1px solid rgba(34,32,28,.2);font:500 9px/1.8 'IBM Plex Mono',monospace;color:#5E5A52;text-transform:uppercase}
 /* ── LA APP EN PC Y LAPTOP (2026-09-30) ─────────────────────────────────────────────────
    El dueño: «para pc y laptop básicamente el app visualmente no sirve, sale recortada como si
    fuera en cel» — y pidió que NO sea otra maqueta: «debe ser pantalla adaptable». Hasta acá
@@ -3961,7 +3973,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '7267044247';
+var APP_BUILD = '3f4143cd3f';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -11465,7 +11477,7 @@ function sPHome() {
         + fila('Tus datos', 'Nombre, teléfono, DNI', "sndScreen='p_datos';render()")
         + fila('Cómo pagas', metodoPreferido() === 'culqi' ? 'Tarjeta por defecto' : 'Yape por defecto', "sndScreen='p_pago';render()")
         + fila('Avisos', 'Cuando sale y cuando llega', "sndScreen='p_avisos';render()")
-        + fila('Términos y privacidad', 'Lo legal, en criollo', "sndScreen='p_legal';render()")
+        + fila('Lo legal', 'Términos, privacidad, cambios y el Libro de Reclamaciones', "sndScreen='p_lo_legal';render()")
         + '</div>'
         + '<button class="salir" onclick="doLogout()"><b>Cerrar sesión</b><s>En este aparato</s></button>'
         + '<button class="salir borrar" onclick="doDeleteAccount()"><b>Borrar mi cuenta</b><s>No se puede deshacer</s></button>'
@@ -12535,6 +12547,24 @@ function doLogout() {
     focusRef = '';
     sndScreen = 'p_auth';
     render();
+}
+// LO LEGAL, EN CRIOLLO (maqueta aprobada `lo-legal.png`, «me agradan, aprobadas»). Es el
+// ÍNDICE: cada fila abre su texto, que no se toca aquí (CLAUDE.md: el texto legal solo cambia
+// a pedido explícito). Va también el Libro de Reclamaciones: la ley pide que esté a la vista y
+// desde el camino nuevo no se llegaba. La maqueta deja «[fecha real]»: no hay una fecha por
+// documento, así que no se inventa. Razón social y RUC salen de BIZ_NAME/BIZ_RUC.
+function sPLoLegal() {
+    var fila = function (t, s, pantalla, extra, ir) {
+        return '<button class="doc" onclick="bkTo=\'p_lo_legal\';sndScreen=\'' + pantalla + '\';' + (extra || '') + 'render()"><b>' + t + '</b><s>' + s + '</s><i>' + (ir || 'Leer completo') + '</i></button>';
+    };
+    return '<div class="mll fi"><button class="sal" onclick="sndScreen=cust?\'p_home\':\'o_home\';render()" aria-label="Volver">←</button>'
+        + '<div class="cab"><em>Las reglas del juego</em><h1>Lo legal, en criollo</h1></div>'
+        + fila('Términos y condiciones', 'De qué nos hacemos cargo y de qué no cuando pides, pagas y recibes.', 'p_legal')
+        + fila('Política de privacidad', 'Qué datos tuyos guardamos, para qué, y cómo pedir que los borremos.', 'p_legal')
+        + fila('Cambios y devoluciones', 'Qué pasa si el pedido llega mal, tarde o no llega. Incluye cancelaciones.', 'p_returns')
+        + fila('Libro de Reclamaciones', 'Si algo no estuvo bien, déjalo por escrito. Te damos un código de reclamo.', 'p_complaints', "cmplStep='form';", 'Abrir el libro')
+        + '<p class="biz">' + esc(BIZ_NAME) + ' · RUC ' + esc(BIZ_RUC) + '<br>' + esc(BIZ_CITY) + ' · ' + esc(BIZ_EMAIL) + '</p>'
+        + '</div>';
 }
 // TÉRMINOS Y PRIVACIDAD — borrador inicial en texto simple, accesible desde el registro
 // y el perfil. ⚠️ EDITA este texto con tu política real (revisada por un abogado) antes
@@ -14397,6 +14427,9 @@ function renderScreen() {
                 break;
             case 'p_legal':
                 h = sPLegal();
+                break;
+            case 'p_lo_legal':
+                h = sPLoLegal();
                 break;
             case 'p_returns':
                 h = sPReturns();

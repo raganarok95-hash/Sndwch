@@ -71,7 +71,7 @@ function sPHome(){
     +fila('Tus datos','Nombre, teléfono, DNI',"sndScreen='p_datos';render()")
     +fila('Cómo pagas',metodoPreferido()==='culqi'?'Tarjeta por defecto':'Yape por defecto',"sndScreen='p_pago';render()")
     +fila('Avisos','Cuando sale y cuando llega',"sndScreen='p_avisos';render()")
-    +fila('Términos y privacidad','Lo legal, en criollo',"sndScreen='p_legal';render()")
+    +fila('Lo legal','Términos, privacidad, cambios y el Libro de Reclamaciones',"sndScreen='p_lo_legal';render()")
     +'</div>'
     +'<button class="salir" onclick="doLogout()"><b>Cerrar sesión</b><s>En este aparato</s></button>'
     +'<button class="salir borrar" onclick="doDeleteAccount()"><b>Borrar mi cuenta</b><s>No se puede deshacer</s></button>'
@@ -927,6 +927,24 @@ function doLogout(){
   sndScreen='p_auth';render();
 }
 
+// LO LEGAL, EN CRIOLLO (maqueta aprobada `lo-legal.png`, «me agradan, aprobadas»). Es el
+// ÍNDICE: cada fila abre su texto, que no se toca aquí (CLAUDE.md: el texto legal solo cambia
+// a pedido explícito). Va también el Libro de Reclamaciones: la ley pide que esté a la vista y
+// desde el camino nuevo no se llegaba. La maqueta deja «[fecha real]»: no hay una fecha por
+// documento, así que no se inventa. Razón social y RUC salen de BIZ_NAME/BIZ_RUC.
+function sPLoLegal(){
+  var fila=function(t:string,s:string,pantalla:string,extra?:string,ir?:string){
+    return'<button class="doc" onclick="bkTo=\'p_lo_legal\';sndScreen=\''+pantalla+'\';'+(extra||'')+'render()"><b>'+t+'</b><s>'+s+'</s><i>'+(ir||'Leer completo')+'</i></button>';
+  };
+  return'<div class="mll fi"><button class="sal" onclick="sndScreen=cust?\'p_home\':\'o_home\';render()" aria-label="Volver">←</button>'
+    +'<div class="cab"><em>Las reglas del juego</em><h1>Lo legal, en criollo</h1></div>'
+    +fila('Términos y condiciones','De qué nos hacemos cargo y de qué no cuando pides, pagas y recibes.','p_legal')
+    +fila('Política de privacidad','Qué datos tuyos guardamos, para qué, y cómo pedir que los borremos.','p_legal')
+    +fila('Cambios y devoluciones','Qué pasa si el pedido llega mal, tarde o no llega. Incluye cancelaciones.','p_returns')
+    +fila('Libro de Reclamaciones','Si algo no estuvo bien, déjalo por escrito. Te damos un código de reclamo.','p_complaints',"cmplStep='form';",'Abrir el libro')
+    +'<p class="biz">'+esc(BIZ_NAME)+' · RUC '+esc(BIZ_RUC)+'<br>'+esc(BIZ_CITY)+' · '+esc(BIZ_EMAIL)+'</p>'
+    +'</div>';
+}
 // TÉRMINOS Y PRIVACIDAD — borrador inicial en texto simple, accesible desde el registro
 // y el perfil. ⚠️ EDITA este texto con tu política real (revisada por un abogado) antes
 // de operar de cara al público — esto es un punto de partida razonable, no asesoría legal.
