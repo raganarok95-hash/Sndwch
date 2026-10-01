@@ -556,6 +556,7 @@ function renderScreen(){
     case'p_rewards':   h=sPRewards();break;
     case'p_history':   h=sPHistory();break;
     case'p_orders':    h=sPOrders();break;
+    case'p_favs':      h=sFavoritos();break;
     case'p_ord_detail':h=sOrdDetail();break;
     case'p_problema':  h=sAlgoSalioMal();break;
     case'o_secreto':   h=sMenuSecreto();break;

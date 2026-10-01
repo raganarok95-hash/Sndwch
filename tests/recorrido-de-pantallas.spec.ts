@@ -10,7 +10,7 @@
 // Mide el color calculado de cada elemento: no busca textos ni clases.
 import { test, expect } from '@playwright/test';
 import { gotoApp, pedirUnSignature } from './helpers';
-const PANTALLAS = ['o_home','o_sig','o_build','o_cart','o_dir','o_pagar','o_sides','o_sent','p_auth','p_welcome','p_legal','p_lo_legal','p_returns','p_complaints','p_home','p_datos','p_rewards','p_history','p_orders','p_ord_detail','p_problema','o_secreto','p_pago','p_avisos','group_order','group_split','p_addresses'];
+const PANTALLAS = ['o_home','o_sig','o_build','o_cart','o_dir','o_pagar','o_sides','o_sent','p_auth','p_welcome','p_legal','p_lo_legal','p_returns','p_complaints','p_home','p_datos','p_rewards','p_history','p_orders','p_ord_detail','p_problema','o_secreto','p_pago','p_avisos','group_order','group_split','p_addresses','p_favs'];
 test('ninguna pantalla del cliente tiene verde viejo, contraste bajo ni «undefined»', async ({ page }) => {
   test.setTimeout(240000);
   await page.setViewportSize({ width: 390, height: 844 });

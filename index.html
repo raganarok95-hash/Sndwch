@@ -486,6 +486,48 @@ body.kb-open #app{padding-bottom:0}
 .eh.alerta{box-shadow:inset 4px 0 0 #B23A1E,0 2px 10px rgba(0,0,0,.12)}
 /* Un vacío sobre el celeste de las pantallas de WICHO (.mw): tinta, no dorado ni gris de fondo oscuro. */
 .mw .vacio-t{color:#0E2430!important}.mw .vacio-p{color:#2E4A58!important}
+/* «Y ADEMÁS» (maqueta aprobada 2026-10-01, docs/maquetas/aprobadas/y-ademas.png). */
+.mtarot .k.y{background:#2A1D0E;color:#F2E4CA;align-items:center;justify-content:center;gap:8px;text-align:center}
+.mtarot .k.y u{background:transparent;color:#C9A85C}
+.mtarot .k.y .ya-ic{font:700 28px/1 'Bodoni Moda',serif;color:#C9A85C}
+.mtarot .k.y b{padding:0 8px;color:#F2E4CA}
+.mtarot .k.y s{color:#D9C6A3}
+.m15 .plato.yademas{justify-content:flex-start;padding-top:64px;overflow-y:auto}
+.m15 .plato.yademas .ficha{flex:0 0 auto}
+.ya-t{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.ya-k{all:unset;box-sizing:border-box;cursor:pointer;display:flex;gap:10px;align-items:flex-start;background:#FBF4E6;border-radius:12px;padding:12px;min-height:96px;color:#33230F}
+.ya-k.grande{grid-column:1 / 3;background:#33230F;color:#FBF4E6;align-items:center;min-height:88px}
+.ya-k.grande img{height:76px;width:auto;margin:-6px 0 -12px;flex:none}
+.ya-k b{display:block;font:800 15px/1.2 Archivo,sans-serif}
+.ya-k s{display:block;text-decoration:none;font:500 13px/1.35 Archivo,sans-serif;color:#5C4426;margin-top:6px}
+.ya-k.grande s{color:#E7D3AE}
+.ya-k .beb{display:flex;gap:4px;margin-top:6px;font-style:normal}
+.ya-k .beb img{width:28px;height:38px;object-fit:cover;border-radius:4px}
+.ya-legal{margin-top:16px;padding:12px 0 6px;border-top:1px solid rgba(51,35,15,.25);display:flex;flex-direction:column;gap:4px;font:500 13px/1.6 Archivo,sans-serif;color:#33230F}
+.ya-legal div{display:flex;flex-wrap:wrap;gap:4px 14px}
+.ya-legal button,.ya-legal a{all:unset;cursor:pointer;color:inherit;text-decoration:underline;text-underline-offset:3px;padding:4px 0}
+.ya-legal .lib{font-weight:800}
+.mw-arriba .ya-pill{all:unset;cursor:pointer;background:#0E2430;color:#BFE0F4;border-radius:999px;padding:8px 12px;font:800 11px/1 Archivo,sans-serif;letter-spacing:.06em;white-space:nowrap;margin-left:auto;margin-right:8px}
+.ya-fondo{position:fixed;inset:0;background:rgba(14,36,48,.45);z-index:80}
+.ya-hoja{position:fixed;left:0;right:0;bottom:0;max-height:82dvh;overflow-y:auto;z-index:81;background:#F3FAFE;border-radius:20px 20px 0 0;padding:18px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -8px 30px rgba(14,36,48,.25);color:#0E2430}
+@media (min-width:700px){.ya-hoja{left:50%;right:auto;width:520px;transform:translateX(-50%)}}
+.ya-cab{display:flex;align-items:center;gap:8px}
+.ya-cab h2{font:900 28px/1 Archivo,sans-serif;margin:0}
+.ya-cab img{height:56px;width:auto;margin-left:auto}
+.ya-x{all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.ya-lista{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.ya-r{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #CFE6F4;border-radius:12px;padding:12px 14px;min-height:56px}
+.ya-r b{display:block;font:800 15px/1.2 Archivo,sans-serif}
+.ya-r s{display:block;text-decoration:none;font:500 13px/1.35 Archivo,sans-serif;color:#41606F;margin-top:3px}
+.ya-r i{margin-left:auto;font:800 18px Archivo;font-style:normal}
+.ya-r.grande{background:#0E2430;border-color:#0E2430;color:#fff}.ya-r.grande s{color:#BFE0F4}.ya-r.grande i{color:#8CC8EC}
+.ya-hoja .ya-legal{color:#0E2430;border-top-color:rgba(14,36,48,.2)}
+/* Tus favoritos */
+.mfav .fav-lista{display:flex;flex-direction:column;gap:8px;padding:8px 0 24px}
+.mfav .fav{display:flex;align-items:center;gap:12px;background:#FFFFFF;border:1px solid #CFE6F4;border-radius:12px;padding:12px 14px}
+.mfav .fav b{display:block;font:800 15px/1.2 Archivo,sans-serif;color:#0E2430}
+.mfav .fav s{display:block;text-decoration:none;font:500 13px/1.35 Archivo,sans-serif;color:#41606F;margin-top:3px}
+.mfav .fav button{all:unset;cursor:pointer;margin-left:auto;background:#0E2430;color:#FFFFFF;border-radius:10px;padding:10px 12px;font:800 13px/1 Archivo,sans-serif;white-space:nowrap}
 .en .doble{font:700 15px/1.3 Archivo,sans-serif;color:#33230F;margin:0 0 18px}
 .en .primera{font:500 13px/1.5 Archivo,sans-serif;color:#4A3218;margin:-8px 0 22px}
 .en .nota{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6B4E28;line-height:1.9;text-transform:uppercase}
@@ -4159,7 +4201,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '8e32f2f87e';
+var APP_BUILD = '4d9f4d433b';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -7230,10 +7272,74 @@ function romano(n) {
 function M15_PASAR(total, i, esSecreto, hayVault) {
     var marcas = '';
     for (var k = 0; k < total; k++) {
-        var ultimoVault = hayVault && k === total - 1;
+        // El secreto es el PENÚLTIMO: el último plato es «Y además» (2026-10-01).
+        var ultimoVault = hayVault && k === total - 2;
         marcas += '<i class="' + (k === i ? 'on' : (ultimoVault ? 'vlt' : '')) + '"></i>';
     }
     return '<div class="pasar" aria-hidden="true">' + marcas + '<em>' + (i === total - 1 ? 'Último' : 'Baja ↓') + '</em></div>';
+}
+// ── «Y ADEMÁS» (maqueta aprobada 2026-10-01, docs/maquetas/aprobadas/y-ademas.png) ───────
+// Lo que el Mundo SANDO viejo tenía al pie y se perdió con el tarot: el grupo, las bebidas,
+// los favoritos, los puntos, los pedidos y la línea legal. El MISMO contenido en los dos
+// mundos (dueño: «lo compartido va en los dos»): SANDO lo recibe como última carta del mazo;
+// WICHO, como hoja desde una píldora en el armador. Una sola lista: no se pueden desalinear.
+var yAdemasAbierta = false;
+function conCuenta(accion) {
+    // Puntos, pedidos y favoritos son de una cuenta: sin sesión se ofrece entrar, como la puerta.
+    return cust ? accion : "yAdemasAbierta=false;swTab('points')";
+}
+function yAdemasEntradas(desde) {
+    var bebidas = bebidasDisponibles().slice(0, 3).map(function (d) { return { p: d.p, img: DRINK_IMG[d.id] || '' }; });
+    var desdeBeb = bebidas.length ? Math.min.apply(null, bebidas.map(function (d) { return Number(d.p) || 0; })) : 0;
+    return [
+        { id: 'grupo', t: 'Pedido en grupo', s: 'Cada uno elige lo suyo desde el enlace. ' + textoGrupoGratis().replace(/^c/, 'C') + '.', fn: "yAdemasAbierta=false;empezarGrupo()", grande: true },
+        { id: 'bebidas', t: 'Bebidas', s: (bebidas.length ? 'Desde ' + SOLES_TXT + pz(desdeBeb) + ' · sueltas o en combo' : 'Sueltas o en combo'), fn: "yAdemasAbierta=false;irABebidas('" + desde + "')", fotos: bebidas },
+        { id: 'favoritos', t: 'Tus favoritos', s: 'Lo que guardaste, a un toque de pedirlo otra vez.', fn: conCuenta("yAdemasAbierta=false;go('p_favs')") },
+        { id: 'puntos', t: 'Tus puntos', s: cust ? 'Tienes ' + (cust.points || 0) + '. Mira qué te falta para el siguiente.' : 'Cuánto tienes y qué te falta para el siguiente.', fn: conCuenta("yAdemasAbierta=false;go('p_rewards')") },
+        { id: 'pedidos', t: 'Tus pedidos', s: 'Pedir lo mismo, y en qué va el de hoy.', fn: conCuenta("yAdemasAbierta=false;loadMyOrders()") },
+    ];
+}
+function lineaLegalYAdemas(desde) {
+    var ir = function (t, pantalla, extra) {
+        return '<button type="button" onclick="yAdemasAbierta=false;bkTo=\'' + desde + '\';sndScreen=\'' + pantalla + '\';' + (extra || '') + 'render()">' + t + '</button>';
+    };
+    return '<div class="ya-legal">'
+        + '<button type="button" class="lib" data-accion="libro-de-reclamaciones" onclick="yAdemasAbierta=false;bkTo=\'' + desde + '\';sndScreen=\'p_complaints\';cmplStep=\'form\';render()">Libro de Reclamaciones</button>'
+        + '<div>' + ir('Términos y privacidad', 'p_lo_legal') + ir('Cambios y devoluciones', 'p_returns') + '</div>'
+        + '<div><a href="https://wa.me/' + WA + '" target="_blank" rel="noopener">WhatsApp</a><a href="mailto:' + BIZ_EMAIL + '">Correo</a><a href="' + BIZ_IG + '" target="_blank" rel="noopener">Instagram</a></div>'
+        + '</div>';
+}
+// SANDO: el último plato del mazo, en kraft como los demás.
+function platoYAdemas(total, i, hayVault) {
+    var es = yAdemasEntradas('o_home');
+    return '<section class="plato kraft yademas" aria-label="Y además"><div class="forro"></div>'
+        + '<div class="ficha"><div class="num">Última · Y además</div><h1>Y además</h1>'
+        + '<div class="ya-t">' + es.map(function (x) {
+        return '<button type="button" class="ya-k' + (x.grande ? ' grande' : '') + '" data-accion="y-ademas-' + x.id + '" onclick="' + x.fn + '">'
+            + (x.grande ? '<img src="' + broPose('sando', 'alegre') + '" alt="" aria-hidden="true">' : '')
+            + '<span><b>' + esc(x.t) + '</b>'
+            + (x.fotos && x.fotos.length ? '<i class="beb">' + x.fotos.map(function (d) { return d.img ? '<img src="' + d.img + '" alt="">' : ''; }).join('') + '</i>' : '')
+            + '<s>' + esc(x.s) + '</s></span></button>';
+    }).join('') + '</div></div>'
+        + lineaLegalYAdemas('o_home')
+        + M15_PASAR(total, i, false, hayVault)
+        + '</section>';
+}
+// WICHO: la misma lista como hoja, encima del armador (no pierde el paso).
+function hojaYAdemas() {
+    if (!yAdemasAbierta)
+        return '';
+    var es = yAdemasEntradas('o_build');
+    return '<div class="ya-fondo" onclick="yAdemasAbierta=false;render()"></div>'
+        + '<div class="ya-hoja" role="dialog" aria-label="Y además">'
+        + '<div class="ya-cab"><h2>Y además</h2><img src="' + broPose('wicho', 'alegre') + '" alt="" aria-hidden="true">'
+        + '<button type="button" class="ya-x" onclick="yAdemasAbierta=false;render()" aria-label="Cerrar">&#10005;</button></div>'
+        + '<div class="ya-lista">' + es.map(function (x) {
+        return '<button type="button" class="ya-r' + (x.grande ? ' grande' : '') + '" data-accion="y-ademas-' + x.id + '" onclick="' + x.fn + '">'
+            + '<span><b>' + esc(x.t) + '</b><s>' + esc(x.s) + '</s></span><i aria-hidden="true">→</i></button>';
+    }).join('') + '</div>'
+        + lineaLegalYAdemas('o_build')
+        + '</div>';
 }
 // EL PLATO DEL PEDIDO EN GRUPO (dueño 2026-09-30: «los pedidos grupales son de los que más
 // suman»; «en la 2 mejor pon solo el logo en grande»). Va segundo, justo después de la estrella:
@@ -7368,6 +7474,13 @@ function sCartaTarot(visibles, secreto) {
             + '<span class="d">No está en la carta y cambia cada mes. No se dice qué lleva: se revela cuando lo pides.</span>'
             + '<span class="p">' + (abierto ? 'Ya es tuyo · ' + SOLES_TXT + pz(secreto.p15) : 'Se da vuelta en tu pedido número ' + secreto.minOrders + (cust ? ' · te ' + (falta === 1 ? 'falta 1' : 'faltan ' + falta) : '')) + '</span></span><span class="ir" aria-hidden="true">→</span></button>';
     }
+    // «Y además» (maqueta aprobada 2026-10-01): la última carta, después del secreto. Su plato es
+    // el último de la pila (grupo y secreto incluidos).
+    var pYa = visibles.length + 1 + (secreto ? 1 : 0);
+    cartas += '<button class="k y" onclick="tocarCarta(this)" aria-pressed="false" data-plato="' + pYa + '" data-accion="carta-y-ademas" aria-label="Última carta: y además">'
+        + '<u>+</u><span class="ya-ic" aria-hidden="true">&#8230;</span><b>Y además</b><s>Grupo · bebidas · tus cosas</s></button>';
+    filas += '<button class="fila" data-plato="' + pYa + '" onclick="abrirPlato(' + pYa + ')">'
+        + '<u>+</u><span class="t"><b>Y además</b><span class="d">Pedido en grupo, bebidas, tus favoritos, tus puntos y tus pedidos.</span></span><span class="ir" aria-hidden="true">→</span></button>';
     var cuantas = NUM_PALABRA[visibles.length] || String(visibles.length);
     return '<div class="mtarot fi">'
         + '<div class="riel"><button class="x" onclick="volverALaPuerta()" aria-label="Cambiar de lado">&#10005;</button>'
@@ -7386,7 +7499,7 @@ function sMundoSando() {
     if (!sandoEnPlatos)
         return sCartaTarot(visibles, secreto);
     // +1: el plato del pedido en grupo, que va segundo (ver platoGrupo).
-    var total = visibles.length + 1 + (secreto ? 1 : 0);
+    var total = visibles.length + 1 + (secreto ? 1 : 0) + 1;
     var sirve = broPose('sando', 'cuerpo');
     var platos = visibles.map(function (s, i) {
         var av = sigInStock(s);
@@ -7427,7 +7540,7 @@ function sMundoSando() {
                 ? '<div class="p">' + SOLES_TXT + pz(secreto.p15) + '<s>el mes que corre</s></div><button class="b" onclick="go(\'o_secreto\')">Abrirlo</button>'
                 : '<div class="p">Te faltan ' + falta + ' ' + (falta === 1 ? 'pedido' : 'pedidos') + '<s>y se abre solo</s></div>')
             + '</div></div>'
-            + M15_PASAR(total, total - 1, true, true)
+            + M15_PASAR(total, total - 2, true, true)
             + '</section>';
     }
     var n = cart.reduce(function (a, it) { return a + (it.qty || 1); }, 0);
@@ -7436,7 +7549,7 @@ function sMundoSando() {
         + '<span class="wm">SND<span class="wm-mark" aria-hidden="true"><i></i><i></i></span>WCH</span>'
         + (n ? '<button class="c" onclick="go(\'o_cart\')" aria-label="Tu pedido, ' + n + (n === 1 ? ' cosa' : ' cosas') + '"><span>' + n + '</span></button>' : '<span class="vacio"></span>')
         + '</div>'
-        + '<div class="pistas">' + platos + platoSecreto + '</div>'
+        + '<div class="pistas">' + platos + platoSecreto + platoYAdemas(total, total - 1, !!secreto) + '</div>'
         + '</div>';
 }
 // ── 01 · FICHA DE UN SIGNATURE (aprobada) + la fila de doble proteína ─────────────────────
@@ -7787,9 +7900,12 @@ function BYO_CABEZA() {
         + '<div class="cab">'
         + '<button type="button" class="fl" onclick="byoStepBack()" aria-label="Volver">&#8592;</button>'
         + '<div class="t">' + esc(BYO_STEP_LABELS[byoStep]) + '<s>' + (byoStep + 1) + '/' + BYO_STEP_LABELS.length + '</s></div>'
+        + '<button type="button" class="ya-pill" data-accion="abrir-y-ademas" onclick="yAdemasAbierta=true;render()">Y además ↓</button>'
         + (n ? '<button type="button" class="carro" onclick="go(\'o_cart\')" aria-label="Ver carrito (' + n + ')">' + n + '</button>'
             : '<div class="vacio"></div>')
-        + '</div></div>';
+        + '</div></div>'
+        // La hoja de «Y además» (maqueta aprobada 2026-10-01) va encima del armador: no pierde el paso.
+        + hojaYAdemas();
 }
 // ── LA PREGUNTA ────────────────────────────────────────────────────────────────────────
 // Va en pregunta y no en sustantivo: el cliente está respondiendo, no leyendo un índice.
@@ -12357,6 +12473,25 @@ function sAlgoSalioMal() {
         + (probError ? '<div class="err">' + esc(probError) + '</div>' : '')
         + '<button class="ir sw-barra"' + (probEnviando ? ' disabled' : '') + ' onclick="enviarProblema()">' + (probEnviando ? 'Enviando…' : 'Enviar el reclamo') + '</button></div>';
 }
+// ── TUS FAVORITOS (2026-10-01) ───────────────────────────────────────────────────────────
+// Se guardaban desde el armador y se cargaban al entrar, pero ninguna pantalla los mostraba:
+// «Y además» los promete («lo que guardaste, a un toque de pedirlo otra vez») y esto los cumple.
+// Pedirlo reconstruye el armado (loadBuild) y lleva a confirmarlo: el precio es el de hoy.
+function sFavoritos() {
+    var bk = "sndScreen=cust?'p_home':'o_home';render()";
+    var favs = myFavorites || [];
+    return '<div class="mw mpt mph mfav fi"><button class="sal" onclick="' + bk + '" aria-label="Volver">←</button>'
+        + '<div class="dice"><em>Tus favoritos</em><h1>' + (favs.length ? 'Lo que guardaste' : 'Todavía nada guardado') + '</h1></div>'
+        + (favs.length ? '<div class="fav-lista">' + favs.map(function (f, i) {
+            var b = f.build || {};
+            var sig = b.mode === 'sig' ? SIGS.find(function (x) { return x.id === b.sigId; }) : null;
+            var que = sig ? sig.n : (b.mode === 'byo' ? 'Armado por ti' : '');
+            return '<div class="fav"><span><b>' + esc(f.name || '') + '</b><s>' + esc(que) + (b.size ? ' · ' + esc(String(b.size)) + 'CM' : '') + '</s></span>'
+                + '<button type="button" data-accion="pedir-favorito" onclick="loadBuild(myFavorites[' + i + '].build)">Pedirlo →</button></div>';
+        }).join('') + '</div>'
+            : VACIO('Sin favoritos', 'Cuando armes uno que te guste, guárdalo al confirmarlo y aparece acá.', '<button class="ir" onclick="volverALaPuerta()">Ir a pedir</button>', 'piensa'))
+        + '</div>';
+}
 // ── #60: pedido fijo (recurrente) ───────────────────────────────────────────────────────
 //
 // "El cliente lo deja armado todas las semanas." Ingreso predecible, que es justo lo que le
@@ -13713,6 +13848,9 @@ function renderScreen() {
                 break;
             case 'p_orders':
                 h = sPOrders();
+                break;
+            case 'p_favs':
+                h = sFavoritos();
                 break;
             case 'p_ord_detail':
                 h = sOrdDetail();
