@@ -21,6 +21,9 @@ on:
     paths:
       - 'index.html'
       - 'sw.js'
+      - 'img/**'
+      - '.vercelignore'
+      - 'scripts/sitio-real.mjs'
   workflow_dispatch: {}
 
 jobs:
@@ -35,3 +38,19 @@ jobs:
       # Instalar Playwright acá costaría minutos para no usarlo.
       - name: Comparar el shell de producción con el de este commit
         run: node scripts/shell-live.mjs
+
+  # Después de confirmar que la versión nueva está publicada, se abre el sitio REAL en un celular
+  # simulado (scripts/sitio-real.mjs): imágenes publicadas, keys de Google y Maps con la key real.
+  sitio-real:
+    needs: shell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Abrir sndwch.app como un cliente y revisar lo que ve
+        run: node scripts/sitio-real.mjs
