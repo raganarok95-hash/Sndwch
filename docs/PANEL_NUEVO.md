@@ -81,3 +81,16 @@ La portada de Administrar es un solo resumen: lo que pide atención hoy (lo que 
    priorizo A (celular) o B (pantalla ancha).
 4. **¿El reparto lo haces tú o un motorizado aparte?** Si eres tú, «Listo» y «En camino» casi
    se tocan, y quizá sobra el estado nuevo.
+
+## 5 · Lo que decidió el dueño (2026-10-01)
+
+- **Pantalla: A como base, con la receta de C** al tocar un pedido.
+- **Dos modos** (Cocina abierta / Administrar): aprobado.
+- **Sin estado «Listo»** («el proceso de listo puede sobrar»): el reparto lo hace un tercero
+  con 50+ motorizados avisado en un grupo de WhatsApp, así que Preparando pasa directo a En
+  camino al entregarle la bolsa al motorizado. Lo útil es un botón que arme el mensaje para el
+  grupo (dirección, referencia, monto a cobrar) y lo abra en WhatsApp.
+- **Equipo**: primero el celular; la laptop cuando no se pueda. A se diseña para 360 px y se
+  ensancha en la laptop.
+- **Pruebas**: no se arreglan las viejas una por una («arreglar cada prueba puede generar más
+  errores»): se rehacen para la app nueva.

@@ -64,33 +64,7 @@ test('las líneas del recibo suman exactamente el total', async ({ page }) => {
   ).toBeCloseTo(esperado, 2);
 });
 
-test('el envío aparece en el recibo con su monto, no como una promesa', async ({ page }) => {
-  await carritoConDosItems(page);
 
-  const envio = await page.evaluate(() => (window as any).deliveryFeeAmount());
-  const texto = await page.locator('text=/TU PEDIDO · NO ES BOLETA/').locator('..').innerText();
-
-  if (envio > 0) {
-    // Si ya se está cobrando, el recibo tiene que DECIR cuánto. Decir "se calcula después"
-    // mientras el total ya lo incluye es lo que descuadraba la cuenta.
-    expect(texto).toMatch(/Envío/);
-    expect(texto).not.toMatch(/se calcula con tu dirección/);
-  } else {
-    expect(texto).toMatch(/se calcula con tu dirección/);
-  }
-});
-
-test('cada descuento aplicado tiene su propia línea', async ({ page }) => {
-  await carritoConDosItems(page);
-  const combo = await page.evaluate(() => (window as any).cartComboDiscount());
-  test.skip(combo <= 0, 'sin combo aplicado en este carrito no hay línea que comprobar');
-
-  const texto = await page.locator('text=/TU PEDIDO · NO ES BOLETA/').locator('..').innerText();
-  // Antes los descuentos eran líneas diminutas en cursiva DEBAJO del total. Quien mirara
-  // rápido veía el total y no de dónde salía.
-  expect(texto).toMatch(/Combo/);
-  expect(texto).toMatch(/Subtotal/);
-});
 
 // EL BLOQUE DE ENVÍO Y EL RECIBO TIENEN QUE DECIR LO MISMO.
 //

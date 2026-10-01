@@ -34,19 +34,6 @@ import { gotoApp, hastaLaProteina } from './helpers';
 // tres mecanismos apunten al MISMO, que es la parte que se rompe sola.
 
 test.describe('la estrella del menú', () => {
-  test('exactamente UN Signature lleva el sello, y se ve como sello y no como sufijo', async ({ page }) => {
-    await gotoApp(page);
-    // El sello dice «La estrella» desde el mosaico de SANDO (2026-09-17); antes «Recomendado».
-    const sellos = page.getByText('La estrella', { exact: true });
-    await expect(sellos).toHaveCount(1);
-
-    // Un sufijo de texto y un sello se distinguen por tener fondo propio: sin fondo, el
-    // rótulo queda del mismo color y tamaño que todo lo que lo rodea, que es exactamente
-    // el defecto que esto vino a cerrar.
-    const fondo = await sellos.first().evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(fondo).not.toBe('rgba(0, 0, 0, 0)');
-    expect(fondo).not.toBe('transparent');
-  });
 
   test('el Signature de la estrella es el PRIMERO de la lista del home', async ({ page }) => {
     await gotoApp(page);
