@@ -168,7 +168,7 @@ export async function ponerRecibe(page: Page, nombre = 'Cliente Invitado', celul
   await page.locator('.m30-go .oro').click();
   await page.locator('.hoja').waitFor({ state: 'detached' });
 }
-// La dirección se elige en el mapa (Leaflet, que no carga sin red): se deja por estado, igual
+// La dirección se elige en el mapa (Google Maps, que no carga sin red): se deja por estado, igual
 // que el pin de PIN_TEST que gotoApp ya inyecta antes de cargar la app.
 export async function ponerDireccion(page: Page, direccion = 'Av. España 123, Trujillo', distrito = 'trujillo') {
   await page.evaluate(([a, d]) => {

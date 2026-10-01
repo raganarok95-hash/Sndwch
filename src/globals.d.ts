@@ -1,16 +1,15 @@
 // SND//WCH — ambientes globales
-// Scripts externos cargados por <script> tags (Culqi, Leaflet) y propiedades ad-hoc que
+// Scripts externos cargados por <script> tags (Culqi, Google Maps) y propiedades ad-hoc que
 // el propio app.ts cuelga de `window` para pasar datos entre pantallas sin una variable
 // de módulo (ver finalizeOrderSuccess, doGPS, actRegister/sPWelcome) — declararlas aquí
 // evita `any` disperso por todo el archivo sin cambiar ningún comportamiento en runtime.
 
 declare var Culqi: any;
-declare var L: any;
 declare var google: any;
 
 interface Window {
   webkitAudioContext?: typeof AudioContext;
-  // Resultados vivos del buscador de direcciones del mapa (Nominatim). Cuelgan de
+  // Resultados vivos del buscador de direcciones del mapa (Google Places). Cuelgan de
   // window porque el onclick de cada fila se arma como texto dentro del HTML.
   _addrHits?: any[];
   // Distrito que el reverse geocoding del pin reconoció, ya mapeado a un id de
