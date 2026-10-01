@@ -23,7 +23,7 @@ relatos están en `docs/MANUAL_DETALLADO.md`** (copia íntegra del archivo anter
 
 ## Ahorrar créditos (2026-09-30)
 
-- Probar lo que se tocó con `npx playwright test tests/<archivo>`; la suite completa (≈7 min) va
+- Probar lo que se tocó con `npx playwright test tests/<archivo>`; la suite completa (≈1–2 min) va
   UNA vez, al final, antes de mergear, con `npm run test:estado` redirigido a un archivo.
 - Leer rangos de archivos (`sed -n a,bp`, `grep -n`, `cut -c1-200`), nunca archivos enteros de
   miles de líneas; capturas de pantalla a la mitad de tamaño salvo que haga falta el detalle.
@@ -95,6 +95,9 @@ relatos están en `docs/MANUAL_DETALLADO.md`** (copia íntegra del archivo anter
 - **Una tabla la escribe UNO por operación** (`check:doble-escritura`).
 - **Una prueba no nombra un producto: lo pide a la carta** (`tests/carta.ts`; inventados, serie 9x).
 - **Una prueba que no se vio fallar no prueba nada**: inyectar el defecto antes de darla por buena.
+- **Solo se escribe una prueba si el error sería SILENCIOSO y costaría dinero, datos, lo legal o el
+  acceso** (dueño, 2026-10-01). Lo visual se revisa en el celular y en `scripts/sitio-real.mjs`
+  (corre en GitHub contra sndwch.app tras cada publicación); no se fija con una prueba por error.
 - **El modo de fallo que importa es el SILENCIO.**
 - **El dueño NO reparte**: lo hace un tercero (50+ motorizados) avisado en un grupo de WhatsApp
   (`docs/NEGOCIO.md`). No se le pregunta otra vez: se lee antes de diseñar entrega o cocina.

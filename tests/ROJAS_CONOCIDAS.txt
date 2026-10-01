@@ -13,4 +13,3 @@
 #
 # Tarea #69 — «Pedir lo mismo» arriba de Tus pedidos (pantalla 33). La lógica de repetir sí está
 # cubierta y en verde (loadCart); lo que falta es la entrada visible.
-repetir-pedido.spec.ts › el inicio ofrece «Pedir lo mismo» con el último pedido (se construye en la tarea #69)

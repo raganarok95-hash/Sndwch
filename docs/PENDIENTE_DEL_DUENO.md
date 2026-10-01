@@ -18,6 +18,12 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 > día es el mismo que ya usa la app (`img/yape-qr.png`, mismo contenido decodificado). Sigue
 > `businessLaunched: false`: se activa al abrir. P14 (rotar el secreto de cron) no se pudo verificar.
 
+> **Al día el 2026-10-01** (dueño): la **compra real de prueba ya se hizo**; los secrets de Meta
+> están puestos (no volver a listarlos como pendientes); el **provolone ya no se usa** (fuera de la
+> lista); **P14 se cierra como riesgo bajo**: el secreto de cron figura en 5 registros del historial
+> de migraciones y en 4 de los 42 crons, pero ese historial no lo expone la API: solo lo ve quien
+> ya tiene acceso total a la base. Rotarlo es higiene, no urgencia.
+
 ## 1. Antes de abrir — sin esto no se puede operar
 
 | # | Qué | Por qué importa |
@@ -88,7 +94,7 @@ lo tacho.
 
 | # | Qué | Por qué |
 |---|---|---|
-| P14 | **Rotar el secreto de cron** | El valor sigue en texto plano en el historial de migraciones dentro de Supabase. 4 archivos del repo lo llevan redactado a propósito, pero la base conserva el original. Automatización #87 |
+| ~~P14~~ | ~~**Rotar el secreto de cron**~~ — **cerrado 2026-10-01 como riesgo bajo** (ver arriba) | El valor sigue en texto plano en el historial de migraciones dentro de Supabase. 4 archivos del repo lo llevan redactado a propósito, pero la base conserva el original. Automatización #87 |
 
 ## 5. Marca — sin urgencia
 
