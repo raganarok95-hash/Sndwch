@@ -1187,7 +1187,6 @@ body.kb-open #app{padding-bottom:0}
   .sw-tapada{transition:none}
 }
 @media (prefers-reduced-motion:reduce){.sw-spiral{animation:none}}
-.leaflet-container{background:#1a1a2e}
 /* QUITAR y el precio con bebida en la ficha (dueño, 2026-09-30). */
 .f01 .quita{margin-top:14px}
 .f01 .quita em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.22em;color:#5A6A52;text-transform:uppercase}
@@ -4006,7 +4005,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'fefaf22dbc';
+var APP_BUILD = '8ff33ea3ca';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -4022,8 +4021,8 @@ var wlPhone = '', wlName = '', wlMsg = '', wlDone = localStorage.getItem('sw_wl_
 // desaparece sola, sin necesitar otro cambio de código (fix P1 de crítica impeccable
 // 2026-07-30: antes solo dependía de cust/wlDone, nunca de si el negocio ya abrió).
 var businessLaunched = false;
-// Key de Google Maps — llega en get-store-hours. Vacía = la app usa Nominatim/OSM, que es
-// como funcionó hasta el 2026-09-10 y sigue siendo el respaldo (ver buscarDireccion()).
+// Key de Google Maps — llega en get-store-hours. Es el ÚNICO motor de ubicación: sin ella el
+// mapa dice que no está disponible y el error llega al dueño (ver loadGoogleMaps()).
 var googleMapsKey = '';
 var pushSubscribed = false, pushMsg = '';
 // Derecho de oposición a la medición publicitaria (Ley 29733) — ver toggleAdTracking().
@@ -8303,7 +8302,7 @@ function deliveryZonePickerHTML() {
             + '<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#EFEDE4)">' + km.toFixed(1) + ' km hasta tu punto</div>'
             + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:' + GOLD + '">' + SOLES_TXT + pz(base) + '</div></div>'
             + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.45;margin-top:4px">Se cobra por distancia real, ' + SOLES_TXT + pz(DELIVERY_KM_RATE) + ' por kilómetro. El motorizado te lo entrega en la puerta.</div>'
-            + '<button onclick="doGPS()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;border:1px solid ' + GOLD + ';color:' + GOLD + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.05em;padding:9px;border-radius:8px;text-align:center">Cambiar mi ubicación //</button>'
+            + '<button onclick="abrirUbicacion()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;border:1px solid ' + GOLD + ';color:' + GOLD + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.05em;padding:9px;border-radius:8px;text-align:center">Cambiar mi ubicación //</button>'
             + '</div></div>';
     }
     // SIN PIN: no hay distancia medida. No se ofrece el desplegable de zonas de vuelta a
@@ -8336,7 +8335,7 @@ function deliveryZonePickerHTML() {
             : 'Confirma tu ubicación en el mapa y calculamos el envío al instante. Se cobra por distancia real, ' + SOLES_TXT + pz(DELIVERY_KM_RATE) + ' por kilómetro.')
         + '</div>'
         + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:4px">Solo la primera vez por dirección: después queda guardada.</div>'
-        + '<button onclick="doGPS()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;background:' + GOLD + ';color:#12150F;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.05em;padding:10px;border-radius:8px;text-align:center">Confirmar mi ubicación //</button>'
+        + '<button onclick="abrirUbicacion()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;background:' + GOLD + ';color:#12150F;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.05em;padding:10px;border-radius:8px;text-align:center">Confirmar mi ubicación //</button>'
         + '</div></div>';
 }
 function checkoutExtrasHTML() {
@@ -8377,7 +8376,7 @@ function checkoutExtrasHTML() {
         + (!cust || !myAddresses.length ? '' : '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' + myAddresses.map(function (a) { var sel = mismoId(pickedAddrId, a.id); return '<div onclick="pickAddr(\'' + a.id + '\')" style="background:' + (sel ? 'var(--sw-card2,#171A14)' : 'var(--sw-card,#1B1F18)') + ';border:1px solid ' + (sel ? GOLD : '#2C3228') + ';border-radius:20px;padding:8px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + (sel ? '#fff' : '#9DA096') + '">' + esc(a.label) + '</div>'; }).join('') + '</div>')
         // Antes de pagar no se ofrece ninguna cuenta (dueño, 2026-09-25): la cuenta se ofrece UNA
         // vez, después de pagar, en la losa de la 06A (ver avisoDePuntos).
-        + '<div style="display:flex;flex-direction:column;gap:10px">' + INP('o-nom', 'Nombre // Tu nombre', 'text', confNom, 'clientes', 'name', 'nombre') + INP('o-phone', 'Teléfono // 9XXXXXXXX', 'tel', confPhone, 'phone', 'tel', 'tel') + INP('o-email', 'Correo // Opcional, para tu comprobante', 'email', confEmail, 'mail', 'email') + '<div style="position:relative">' + INP('o-addr', 'Dirección // Calle o usa GPS', 'text', addrText, 'direccion', 'street-address', 'direccion') + '<button id="gps-btn" onclick="doGPS()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#9DA096)">' + icon('gps', 16, '#9DA096') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + districtPickerHTML() + INP('o-notes', 'Referencia // portón, piso, cerca de... (opcional)', 'text', confNotes) + '</div>'
+        + '<div style="display:flex;flex-direction:column;gap:10px">' + INP('o-nom', 'Nombre // Tu nombre', 'text', confNom, 'clientes', 'name', 'nombre') + INP('o-phone', 'Teléfono // 9XXXXXXXX', 'tel', confPhone, 'phone', 'tel', 'tel') + INP('o-email', 'Correo // Opcional, para tu comprobante', 'email', confEmail, 'mail', 'email') + '<div style="position:relative">' + INP('o-addr', 'Dirección // Calle o usa GPS', 'text', addrText, 'direccion', 'street-address', 'direccion') + '<button id="gps-btn" onclick="abrirUbicacion()" aria-label="Usar mi ubicación actual" style="all:unset;cursor:pointer;position:absolute;right:0;top:0;bottom:0;width:44px;display:flex;align-items:center;justify-content:center;color:var(--sw-text-muted,#9DA096)">' + icon('gps', 16, '#9DA096') + '</button></div>' + '<div id="gps-hint" style="min-height:12px;margin-top:3px"></div>' + districtPickerHTML() + INP('o-notes', 'Referencia // portón, piso, cerca de... (opcional)', 'text', confNotes) + '</div>'
         + (scheduleMode === 'now' ? '<div style="margin-top:16px;background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:10px;padding:12px 14px"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.4;display:flex;align-items:flex-start;gap:8px">' + icon('horario', 13, '#9DA096') + '<span>Llega <b style="color:var(--sw-text,#FFFFFF)">' + esc(ventanaEstimadaTexto(null)) + '</b> si lo confirmas ahora.' + (queueAhead > 0 ? ' Ahora mismo hay ' + queueAhead + ' pedido' + (queueAhead === 1 ? '' : 's') + ' por delante.' : '') + '</span></div></div>' : '')
         + '</div></details>'
         + '<details open style="margin-top:16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">Entrega y horario //</summary><div style="margin-top:10px">'
@@ -9049,10 +9048,7 @@ function usarDireccion() {
 var volverDelMapa = false;
 function otraDireccion() {
     volverDelMapa = true;
-    if (typeof window._mLat === 'number' && typeof window._mLon === 'number')
-        openMap(window._mLat, window._mLon, false);
-    else
-        doGPS();
+    abrirUbicacion();
 }
 // ── 31 · PAGAR CON YAPE (e1.html #Q) · CON TARJETA (y1.html #P) — aprobadas ──────────────
 // Yape es el medio por defecto (no suma comisión). La diferencia con tarjeta sale de
@@ -10294,101 +10290,130 @@ function mountGoogleButton() {
 //
 // No cambia una sola línea de comportamiento: son scripts globales concatenados, las
 // funciones se hoistean igual y el estado de arriba solo se inicializa.
+// ── LA UBICACIÓN ES SOLO GOOGLE (dueño, 2026-10-01: «No debería derivar nunca al motor
+// anterior. Ese motor es muy impreciso») ──────────────────────────────────────────────────
+// Se fue Nominatim/OpenStreetMap ENTERO: el buscador, la dirección que se lee bajo el pin y
+// los mosaicos del mapa. Antes, cualquier tropiezo con Google caía en silencio a ese motor, y
+// el cliente terminaba con un pin a dos cuadras sin que nadie lo supiera. Ahora, si Google
+// falla, el cliente lo lee en el mapa y el dueño lo recibe (reportarError → resumen diario).
+//
+// La causa de que «siguiera el motor viejo» con las keys bien puestas: el script se carga con
+// `loading=async`, y en ese modo `google.maps.places` NO existe al terminar de cargar — hay
+// que pedir cada librería con `importLibrary`. El código preguntaba «¿está Places?», la
+// respuesta era no, y caía a Nominatim callado.
+//
+// Y el GPS ya no manda: el mapa abre con el BUSCADOR arriba. El GPS de una laptop (por IP) o
+// de un celular bajo techo puede errar por cientos de metros; se ofrece como botón y, si su
+// precisión es mala, se dice.
+var GPS_PRECISO_M = 60;
 function setGpsHint(msg, color) { var h = document.getElementById('gps-hint'); if (h)
     h.innerHTML = '<span style="color:' + (color || 'var(--sw-warn,#ffa500)') + '">' + msg + '</span>'; }
+// El aviso amarillo del mapa: '' lo esconde.
+function avisoMapa(msg) {
+    var b = document.getElementById('mmap-accuracy-banner');
+    if (!b)
+        return;
+    b.textContent = msg || '';
+    b.style.display = msg ? 'block' : 'none';
+}
+function falloGoogle(donde, e) { reportarError('ubicacion-google:' + donde, e); }
+// Punto de entrada: abre el mapa donde quedó el último pin (o en la tienda) con el buscador
+// listo para escribir.
+function abrirUbicacion() {
+    var lat = typeof window._mLat === 'number' ? window._mLat : STORE_LAT;
+    var lon = typeof window._mLon === 'number' ? window._mLon : STORE_LON;
+    openMap(lat, lon, false);
+    setTimeout(function () { var i = document.getElementById('maddr-input'); if (i)
+        i.focus(); }, 350);
+}
 function doGPS() {
     var btn = document.getElementById('gps-btn');
+    var txt = btn ? btn.innerHTML : '';
     function done() { if (btn) {
-        btn.innerHTML = '&#128205;';
+        btn.innerHTML = txt;
         btn.disabled = false;
     } }
     function fail(err) {
         done();
-        var msg = 'No pudimos obtener tu ubicación exacta. Arrastra el mapa hasta tu dirección.';
+        var msg = 'No pudimos obtener tu ubicación. Escribe tu dirección arriba o arrastra el mapa hasta tu puerta.';
         if (err && err.code === 1)
-            msg = 'Bloqueaste el permiso de ubicación, o estás dentro de una app como WhatsApp que no deja usar el GPS. Toca los tres puntos → "Abrir en el navegador", o arrastra el mapa manualmente.';
-        else if (err && err.code === 2)
-            msg = 'Tu dispositivo no pudo determinar tu ubicación. Arrastra el mapa hasta tu dirección.';
-        else if (err && err.code === 3)
-            msg = 'La búsqueda de ubicación tardó demasiado. Arrastra el mapa hasta tu dirección.';
-        setGpsHint(msg);
-        openMap(-8.1120, -79.0290, true);
+            msg = 'El permiso de ubicación está bloqueado (o estás dentro de WhatsApp o Instagram, que no lo dejan usar). Escribe tu dirección arriba.';
+        avisoMapa(msg);
     }
     if (!navigator.geolocation) {
         fail();
         return;
     }
     if (btn) {
-        btn.innerHTML = '<span class="sp">&#8635;</span>';
+        btn.innerHTML = 'Buscando tu ubicación…';
         btn.disabled = true;
     }
-    setGpsHint('Buscando tu ubicación...', '#9DA096');
-    navigator.geolocation.getCurrentPosition(function (pos) { done(); setGpsHint('', '#9DA096'); openMap(pos.coords.latitude, pos.coords.longitude, false); }, function (err) {
-        // Un GPS "frío" (primer intento) puede tardar más de lo que da un timeout agresivo.
-        // Antes de rendirnos, reintentamos una vez con precisión más baja (mucho más rápida).
+    var ok = function (pos) {
+        done();
+        var prec = Math.round(pos.coords.accuracy || 9999);
+        openMap(pos.coords.latitude, pos.coords.longitude, false);
+        avisoMapa(prec > GPS_PRECISO_M
+            ? 'Tu ubicación es aproximada (±' + prec + ' m). Escribe tu dirección arriba o arrastra el mapa hasta tu puerta.'
+            : '');
+    };
+    navigator.geolocation.getCurrentPosition(ok, function (err) {
+        // Un GPS "frío" puede tardar más que el primer intento: se reintenta una vez con
+        // precisión baja, y la precisión real se le dice al cliente.
         if (err && err.code === 3) {
-            navigator.geolocation.getCurrentPosition(function (pos) { done(); setGpsHint('', '#9DA096'); openMap(pos.coords.latitude, pos.coords.longitude, false); }, function (err2) { fail(err2); }, { timeout: 8000, enableHighAccuracy: false, maximumAge: 120000 });
+            navigator.geolocation.getCurrentPosition(ok, function (e2) { fail(e2); }, { timeout: 8000, enableHighAccuracy: false, maximumAge: 120000 });
             return;
         }
         fail(err);
     }, { timeout: 15000, enableHighAccuracy: true, maximumAge: 60000 });
 }
 var _lmap = null, _mTimer = null;
-function loadLeaflet(cb) {
-    if (window.L) {
-        cb();
-        return;
-    }
-    // Load CSS
-    var lnk = document.createElement('link');
-    lnk.rel = 'stylesheet';
-    lnk.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    document.head.appendChild(lnk);
-    // Load JS
-    var s = document.createElement('script');
-    s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    s.onload = cb;
-    s.onerror = function () { showToast('No se pudo cargar el mapa. Verifica tu conexión.'); };
-    document.head.appendChild(s);
-}
 function openMap(lat, lon, approx) {
     var m = document.getElementById('mmap');
     if (!m)
         return;
     m.style.display = 'flex';
-    var banner = document.getElementById('mmap-accuracy-banner');
-    if (banner)
-        banner.style.display = approx ? 'block' : 'none';
-    loadLeaflet(function () {
-        setTimeout(function () {
-            if (!_lmap) {
-                _lmap = L.map('lmap', { zoomControl: true, attributionControl: false });
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(_lmap);
-                // Escribía en `maddr`, un elemento que el mapa rehecho del 2026-09-17 ya no tiene: el
-                // «Buscando…» nunca aparecía y la referencia vieja quedaba debajo de un pin ya movido.
-                _lmap.on('move', function () { var h = document.getElementById('maddr-hint'); if (h)
-                    h.textContent = 'Buscando…'; if (_mTimer)
-                    clearTimeout(_mTimer); });
-                _lmap.on('moveend', function () { var c = _lmap.getCenter(); if (_mTimer)
-                    clearTimeout(_mTimer); _mTimer = setTimeout(function () { revGeo(c.lat, c.lng); }, 700); });
-            }
-            _lmap.setView([lat, lon], 17);
-            _lmap.invalidateSize();
-            revGeo(lat, lon);
-        }, 150);
-    }); // end loadLeaflet
+    avisoMapa(approx ? 'Este pin es aproximado. Arrástralo hasta tu puerta antes de confirmar.' : '');
+    loadGoogleMaps().then(function () {
+        var g = window.google;
+        if (!_lmap) {
+            _lmap = new g.maps.Map(document.getElementById('lmap'), {
+                center: { lat: lat, lng: lon }, zoom: 17,
+                disableDefaultUI: true, zoomControl: true, clickableIcons: false,
+                // 'greedy': un dedo arrastra el mapa. Con el valor por defecto, en el celular pide dos
+                // dedos y el cliente cree que el pin no se mueve.
+                gestureHandling: 'greedy',
+            });
+            _lmap.addListener('dragstart', function () { var h = document.getElementById('maddr-hint'); if (h)
+                h.textContent = 'Buscando…'; });
+            _lmap.addListener('idle', function () {
+                if (_mTimer)
+                    clearTimeout(_mTimer);
+                _mTimer = setTimeout(function () { var c = _lmap.getCenter(); revGeo(c.lat(), c.lng()); }, 500);
+            });
+        }
+        else {
+            _lmap.setCenter({ lat: lat, lng: lon });
+            _lmap.setZoom(17);
+        }
+        revGeo(lat, lon);
+    }).catch(function (e) {
+        falloGoogle('mapa', e);
+        avisoMapa('No pudimos cargar el mapa. Revisa tu conexión y vuelve a intentarlo; si sigue, escríbenos por WhatsApp.');
+    });
 }
+var _revUlt = '';
 function revGeo(lat, lon) {
     window._mLat = lat;
     window._mLon = lon;
-    // El pin ya sabe en qué distrito cayó, y de ese distrito depende si el pedido se puede
-    // entregar. Google acierta el distrito en Trujillo mucho más seguido que Nominatim, así
-    // que va primero; si no hay key o falla, cae al de siempre.
-    if (googleMapsKey) {
-        revGeoGoogle(lat, lon).catch(function () { revGeoNominatim(lat, lon); });
+    var k = Number(lat).toFixed(6) + ',' + Number(lon).toFixed(6);
+    if (k === _revUlt)
         return;
-    }
-    revGeoNominatim(lat, lon);
+    _revUlt = k;
+    revGeoGoogle(lat, lon).catch(function (e) {
+        window._mDistrict = '';
+        pintarReferenciaMapa('');
+        falloGoogle('direccion-del-pin', e);
+    });
 }
 // `google.maps.Geocoder` corre EN EL NAVEGADOR a propósito: la API REST de Geocoding rechaza
 // una key restringida por referrer (probado — devuelve REQUEST_DENIED), y quitarle esa
@@ -10396,20 +10421,21 @@ function revGeo(lat, lon) {
 async function revGeoGoogle(lat, lon) {
     await loadGoogleMaps();
     var g = window.google;
-    if (!g || !g.maps || !g.maps.Geocoder)
-        throw new Error('geocoder no disponible');
     var res = await new g.maps.Geocoder().geocode({ location: { lat: lat, lng: lon }, language: 'es' });
     var r = (res && res.results && res.results[0]);
-    if (!r)
-        throw new Error('sin resultados');
+    // Sin resultados no es una falla (un descampado): no hay referencia, y se dice.
+    if (!r) {
+        window._mDistrict = '';
+        pintarReferenciaMapa('');
+        return;
+    }
     var comp = r.address_components || [];
     var buscar = function (tipo) {
         var c = comp.find(function (x) { return (x.types || []).indexOf(tipo) >= 0; });
         return c ? c.long_name : '';
     };
     // En Perú el distrito es `locality`; `administrative_area_level_2` es la provincia. Se
-    // prueban varios porque Google no es consistente en toda la ciudad — mismo criterio que
-    // ya se usaba con Nominatim.
+    // prueban varios porque Google no es consistente en toda la ciudad.
     window._mDistrict = districtFromAddress([buscar('locality'), buscar('sublocality'), buscar('administrative_area_level_2'), buscar('administrative_area_level_3')].filter(Boolean).join(', ')) || '';
     var calle = buscar('route'), num = buscar('street_number');
     var hint = [calle && num ? calle + ' ' + num : calle, buscar('sublocality')].filter(Boolean).join(', ');
@@ -10418,85 +10444,60 @@ async function revGeoGoogle(lat, lon) {
     if (inp && !inp.value && hint)
         inp.value = hint;
 }
-function revGeoNominatim(lat, lon) {
-    // Nominatim for approximate reference only
-    var url = 'https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lon + '&accept-language=es&zoom=18';
-    fetch(url)
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-        var a = d.address || {};
-        var parts = [];
-        var road = a.road || a.pedestrian || a.residential || a.suburb || '';
-        var nb = a.neighbourhood || a.quarter || a.city_district || '';
-        // El pin ya sabe en qué distrito cayó: no tiene sentido que el checkout se lo
-        // pregunte al cliente aparte. `city_district`/`town`/`village` son los campos donde
-        // Nominatim pone el distrito en Perú; se prueban todos porque cambia según la zona.
-        window._mDistrict = districtFromAddress([a.city_district, a.town, a.village, a.suburb, a.county, a.city].filter(Boolean).join(', ')) || '';
-        if (road)
-            parts.push(road);
-        if (nb && nb !== road)
-            parts.push(nb);
-        var hint = parts.length ? parts.join(', ') : '';
-        pintarReferenciaMapa(hint);
-        // Pre-fill input if empty
-        var inp = document.getElementById('maddr-input');
-        if (inp && !inp.value && hint)
-            inp.value = hint;
-    })
-        .catch(function () { });
-}
-// ── BUSCADOR DE DIRECCIÓN ─────────────────────────────────────────────────────────────
-//
-// El campo "escribe tu dirección" existía desde siempre y NO BUSCABA NADA: solo capturaba
-// el texto que después se le manda al motorizado. La única forma real de poner el pin era
-// el GPS o arrastrar el mapa a mano desde un punto fijo de Trujillo. El dueño lo reportó
-// como "la geolocalización es una porquería, no ubica mi dirección" — y era literal: no
-// ubicaba nada porque no lo intentaba.
-//
-// Nominatim (OpenStreetMap) es lo que hay hoy y es gratis, pero su cobertura de
-// numeración en Trujillo es pobre: encuentra la avenida, muchas veces no el número. Por
-// eso el resultado se presenta como PUNTO DE PARTIDA y el pin sigue siendo arrastrable —
-// prometer precisión que el geocodificador no tiene sería peor que no buscar.
-//
-// ⚠ Nominatim exige un máximo de 1 petición por segundo. De ahí el debounce de 900 ms, el
-// mínimo de 4 caracteres y el guardia de petición en vuelo: sin eso, escribir rápido
-// dispara una petición por tecla y OSM bloquea a TODOS los clientes de la app a la vez.
-var _addrTimer = null, _addrBusy = false, _addrLast = '';
-// ── GOOGLE PLACES: EL BUSCADOR QUE SÍ CONOCE LOS NÚMEROS DE TRUJILLO (2026-09-10) ─────
-// El dueño lo reportó como "la geolocalización es una porquería, no ubica mi dirección" y
-// tenía razón por una causa concreta: Nominatim (OpenStreetMap) tiene la avenida pero casi
-// nunca el NÚMERO en Trujillo. Y el número es justo lo que el motorizado necesita.
-//
-// ⚠ SOLO SE CAMBIA EL BUSCADOR. Los tiles del mapa siguen siendo los de OpenStreetMap, que
-// son gratis: arrastrar el pin ya funcionaba bien y cambiar a "Dynamic Maps" de Google
-// costaría plata por cada apertura del mapa sin resolver ningún problema que exista.
-//
+// ── BUSCADOR DE DIRECCIÓN: GOOGLE PLACES ────────────────────────────────────────────────
 // COSTO: Autocomplete con `sessionToken` se cobra POR SESIÓN y no por tecla, y una sesión
 // cerrada con un Place Details sale gratis en cualquier volumen. Por eso el token se crea al
 // empezar a escribir y se DESCARTA al elegir un resultado: reusarlo invalida la sesión y
-// Google pasa a cobrar tecla por tecla. Al volumen de este negocio (cientos de pedidos al
-// mes contra 5 000 llamadas gratis) esto no llega ni cerca del tramo pago.
-//
-// Y si la key no llegó —secret sin configurar, o un shell viejo servido por un service
-// worker desactualizado— TODO cae solo a Nominatim, que es exactamente como funcionaba
-// hasta hoy. El peor caso es el comportamiento anterior, nunca un checkout roto.
+// Google pasa a cobrar tecla por tecla.
+var _addrTimer = null, _addrBusy = false, _addrLast = '';
 var _gmapsPromise = null, _gSessionToken = null;
+// La key llega en get-store-hours. Si el cliente abre el mapa antes de que esa respuesta
+// llegue, se la espera una vez en vez de dar el mapa por perdido.
+async function keyDeGoogle() {
+    if (!googleMapsKey) {
+        try {
+            await loadStoreHoursBackground();
+        }
+        catch (e) { }
+    }
+    if (!googleMapsKey)
+        throw new Error('sin key de Google Maps');
+    return googleMapsKey;
+}
 function loadGoogleMaps() {
     if (_gmapsPromise)
         return _gmapsPromise;
-    if (!googleMapsKey)
-        return Promise.reject(new Error('sin key'));
-    _gmapsPromise = new Promise(function (resolve, reject) {
-        var sc = document.createElement('script');
-        // `language=es&region=PE` no es cosmético: sin region, "Av. España" prioriza resultados
-        // de España — el mismo defecto que el `viewbox` resolvía a mano en Nominatim.
-        sc.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(googleMapsKey)
-            + '&libraries=places&language=es&region=PE&loading=async';
-        sc.async = true;
-        sc.onload = function () { resolve(); };
-        sc.onerror = function () { _gmapsPromise = null; reject(new Error('no cargó')); };
-        document.head.appendChild(sc);
-    });
+    _gmapsPromise = (async function () {
+        var key = await keyDeGoogle();
+        var g = window.google;
+        if (!(g && g.maps && g.maps.importLibrary)) {
+            // Google llama a esta función si rechaza la key (API apagada, dominio no permitido,
+            // facturación). Sin ella, ese rechazo solo se ve en la consola de un teléfono ajeno.
+            window.gm_authFailure = function () {
+                falloGoogle('key-rechazada', new Error('Google rechazó la key (gm_authFailure): revisa APIs activadas y dominios permitidos'));
+                avisoMapa('El mapa no está disponible ahora. Escríbenos por WhatsApp y te tomamos la dirección.');
+            };
+            await new Promise(function (resolve, reject) {
+                var sc = document.createElement('script');
+                // `language=es&region=PE` no es cosmético: sin region, "Av. España" prioriza España.
+                sc.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(key)
+                    + '&language=es&region=PE&loading=async&v=weekly';
+                sc.async = true;
+                sc.onload = function () { resolve(); };
+                sc.onerror = function () { reject(new Error('el script de Google Maps no cargó')); };
+                document.head.appendChild(sc);
+            });
+            g = window.google;
+        }
+        // Con `loading=async` las librerías NO están al terminar el script: se piden. Este era el
+        // defecto que mandaba todo a Nominatim.
+        if (g && g.maps && g.maps.importLibrary) {
+            await Promise.all([g.maps.importLibrary('maps'), g.maps.importLibrary('places'), g.maps.importLibrary('geocoding')]);
+        }
+        if (!googleListo())
+            throw new Error('Google Maps cargó sin Places');
+    })();
+    _gmapsPromise.catch(function () { _gmapsPromise = null; });
     return _gmapsPromise;
 }
 function googleListo() {
@@ -10512,15 +10513,12 @@ function gSessionToken() {
 }
 async function buscarConGoogle(q) {
     await loadGoogleMaps();
-    if (!googleListo())
-        throw new Error('places no disponible');
     var g = window.google;
     var r = await g.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
         input: q,
         sessionToken: gSessionToken(),
-        // Acotado a Perú y sesgado a Trujillo: el círculo NO excluye (por si alguien escribe una
-        // referencia conocida de otro lado), solo ordena — excluir daría "no encontramos nada"
-        // en los bordes de la ciudad, que es donde más falta hace acertar.
+        // Acotado a Perú y sesgado a Trujillo: el círculo NO excluye, solo ordena — excluir daría
+        // "no encontramos nada" en los bordes de la ciudad, que es donde más falta hace acertar.
         includedRegionCodes: ['pe'],
         locationBias: { center: { lat: STORE_LAT, lng: STORE_LON }, radius: 20000 },
         language: 'es',
@@ -10552,7 +10550,7 @@ function addrResultsEl() { return document.getElementById('maddr-results'); }
 function addrSearchTyped() {
     if (_addrTimer)
         clearTimeout(_addrTimer);
-    _addrTimer = setTimeout(addrSearchNow, 900);
+    _addrTimer = setTimeout(addrSearchNow, 400);
 }
 function addrSearchNow() {
     if (_addrTimer) {
@@ -10564,7 +10562,7 @@ function addrSearchNow() {
     var box = addrResultsEl();
     if (!box)
         return;
-    if (q.length < 4) {
+    if (q.length < 3) {
         box.style.display = 'none';
         box.innerHTML = '';
         return;
@@ -10575,68 +10573,32 @@ function addrSearchNow() {
     _addrLast = q;
     box.style.display = 'block';
     box.innerHTML = '<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#9DA096">Buscando...</div>';
-    // Google primero, porque es el único que tiene la numeración de Trujillo. Si no hay key,
-    // si el script no carga, o si Google no devuelve nada, sigue Nominatim abajo — el cliente
-    // nunca se queda sin buscador por un problema de configuración que no es suyo.
-    if (googleMapsKey) {
-        buscarConGoogle(q).then(function (hits) {
-            _addrBusy = false;
-            if (!hits.length) {
-                pintarSinResultados(box);
-                return;
-            }
-            window._addrHits = hits;
-            box.innerHTML = hits.map(function (h, i) {
-                return '<div onclick="addrPick(' + i + ')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #1B1F18;'
-                    + 'font-family:\'EB Garamond\',serif;font-size:13px;color:#EFEDE4;line-height:1.4">' + esc(h.texto) + '</div>';
-            }).join('');
-        }).catch(function () {
-            // Cae a Nominatim sin decir nada: para el cliente esto es un detalle de plomería.
-            _addrBusy = false;
-            buscarConNominatim(q, box);
-        });
-        return;
-    }
-    buscarConNominatim(q, box);
-}
-function pintarSinResultados(box) {
-    box.innerHTML = '<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#9DA096">'
-        + 'No encontramos esa dirección. Arrastra el mapa hasta tu punto — igual funciona.</div>';
-}
-// El buscador de siempre, ahora como RESPALDO. No se borra: es lo que sostiene la app si la
-// key falta o Google no responde, y su cobertura de calles (no de números) es real.
-function buscarConNominatim(q, box) {
-    _addrBusy = true;
-    // `bounded=1` + `viewbox` alrededor de Trujillo: sin eso, "Av. España" devuelve España.
-    var vb = '-79.20,-8.28,-78.88,-7.98';
-    var url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&countrycodes=pe&accept-language=es'
-        + '&bounded=1&viewbox=' + vb + '&q=' + encodeURIComponent(q);
-    fetch(url).then(function (r) { return r.json(); }).then(function (list) {
+    buscarConGoogle(q).then(function (hits) {
         _addrBusy = false;
-        if (!Array.isArray(list) || !list.length) {
+        if (!hits.length) {
             pintarSinResultados(box);
             return;
         }
-        // Se normaliza a la MISMA forma que devuelve Google ({texto, lat, lon}) para que
-        // `addrPick` no tenga que saber de qué buscador vino el resultado. Dos formas distintas
-        // en la misma lista es como se cuela el bug de "el pin quedó en el resultado anterior".
-        var hits = list.map(function (r) {
-            return { texto: String(r.display_name || '').split(',').slice(0, 4).join(','), lat: parseFloat(r.lat), lon: parseFloat(r.lon) };
-        });
         window._addrHits = hits;
         box.innerHTML = hits.map(function (h, i) {
             return '<div onclick="addrPick(' + i + ')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #1B1F18;'
                 + 'font-family:\'EB Garamond\',serif;font-size:13px;color:#EFEDE4;line-height:1.4">' + esc(h.texto) + '</div>';
         }).join('');
-    }).catch(function () {
+    }).catch(function (e) {
+        // Nunca cae a otro motor: se dice, y al dueño le llega.
         _addrBusy = false;
+        _addrLast = '';
+        falloGoogle('buscador', e);
         box.innerHTML = '<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-warn,#ffa500)">'
-            + 'No pudimos buscar ahora. Arrastra el mapa hasta tu punto.</div>';
+            + 'No pudimos buscar ahora. Intenta de nuevo en un momento, o arrastra el mapa hasta tu puerta.</div>';
     });
 }
-// Elegir un resultado mueve el pin, pero NO cierra el mapa ni confirma: el número exacto
-// casi nunca lo tiene OSM, así que lo que sigue es que la persona ajuste el pin. Cerrar
-// acá daría por buena una precisión que no tenemos.
+function pintarSinResultados(box) {
+    box.innerHTML = '<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#9DA096">'
+        + 'No encontramos esa dirección. Prueba con la calle y el número, o arrastra el mapa hasta tu puerta.</div>';
+}
+// Elegir un resultado mueve el pin, pero NO cierra el mapa ni confirma: la persona mira que
+// el pin quedó en su puerta y recién confirma.
 async function addrPick(i) {
     var list = window._addrHits || [];
     var r = list[i];
@@ -10647,10 +10609,8 @@ async function addrPick(i) {
         box.style.display = 'none';
         box.innerHTML = '';
     }
-    var banner = document.getElementById('mmap-accuracy-banner');
-    if (banner)
-        banner.style.display = 'block';
-    var lat = r.lat, lon = r.lon;
+    avisoMapa('');
+    var lat = NaN, lon = NaN;
     // Un resultado de Google todavía no trae coordenadas: hay que pedir el Place Details. Esa
     // llamada es la que CIERRA la sesión de autocompletado y la vuelve gratis, así que no es
     // un costo extra — es lo que evita que se cobre tecla por tecla.
@@ -10669,7 +10629,9 @@ async function addrPick(i) {
             if (inp && place.formattedAddress && (!inp.value || inp.value === r.texto))
                 inp.value = place.formattedAddress;
         }
-        catch (e) { }
+        catch (e) {
+            falloGoogle('detalle-del-lugar', e);
+        }
         // El token se suelta acá, pase lo que pase. Reusarlo invalida la sesión y Google cobra
         // cada tecla como una llamada suelta.
         _gSessionToken = null;
@@ -10677,10 +10639,12 @@ async function addrPick(i) {
     if (!isFinite(lat) || !isFinite(lon))
         return;
     if (_lmap) {
-        _lmap.setView([lat, lon], 18);
+        _lmap.setCenter({ lat: lat, lng: lon });
+        _lmap.setZoom(18);
+        revGeo(lat, lon);
     }
     else {
-        openMap(lat, lon, true);
+        openMap(lat, lon, false);
     }
 }
 function closeMap() { document.getElementById('mmap').style.display = 'none'; }
@@ -10696,8 +10660,8 @@ function confirmMap() {
     }
     if (_lmap) {
         var c = _lmap.getCenter();
-        window._mLat = c.lat;
-        window._mLon = c.lng;
+        window._mLat = c.lat();
+        window._mLon = c.lng();
     }
     closeMap();
     // Antes esto escribía la dirección directo en el input y no repintaba, para no perder
@@ -13251,6 +13215,6 @@ function renderScreen() {
      Ahora el mapa ocupa todo y lo demás flota encima, que es como funciona cualquier app
      de mapas que el cliente ya sabe usar. El buscador arriba, el pin al centro, y abajo
      una sola hoja con lo que se va a confirmar. -->
-<div id="mmap"><div id="mmap-lienzo"><div id="lmap"></div><div id="mpin">&#128205;</div><div id="mmap-top"><div style="display:flex;gap:8px;align-items:center"><button onclick="closeMap()" aria-label="Cerrar el mapa" style="all:unset;cursor:pointer;flex:0 0 auto;width:40px;height:40px;border-radius:999px;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);display:flex;align-items:center;justify-content:center;color:var(--sw-text,#FFFFFF);font-size:18px;box-shadow:0 4px 14px rgba(0,0,0,.45)">&#10005;</button><div style="flex:1;min-width:0;position:relative"><input id="maddr-input" type="text" autocomplete="off" placeholder="Busca tu calle y número" oninput="addrSearchTyped()" onkeydown="if(event.key==='Enter'){event.preventDefault();addrSearchNow();}" style="width:100%;box-sizing:border-box;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:999px;padding:12px 18px;color:var(--sw-text,#FFFFFF);font-size:16px;font-family:'EB Garamond',serif;box-shadow:0 4px 14px rgba(0,0,0,.45)"><div id="maddr-results" style="display:none;max-height:190px;overflow-y:auto;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;margin-top:6px;box-shadow:0 10px 28px rgba(0,0,0,.55)"></div></div></div><div id="mmap-accuracy-banner" style="display:none;margin-top:8px;background:rgba(255,165,0,.14);border:1px solid rgba(255,165,0,.34);border-radius:10px;padding:9px 13px;font-family:'EB Garamond',serif;font-style:italic;font-size:11px;color:var(--sw-warn,#ffa500)">No detectamos tu ubicación real — este pin es aproximado. Arrástralo hasta tu puerta antes de confirmar.</div></div><div id="mmap-hoja"><div style="font-family:'EB Garamond',serif;font-weight:600;font-size:9px;letter-spacing:.2em;color:var(--sw-text-muted2,#868A7E);margin-bottom:6px">EL PIN MARCA TU PUERTA //</div><div id="maddr-hint" style="font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);line-height:1.3;min-height:20px">Arrastra el mapa hasta el punto exacto</div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;margin-top:14px;background:var(--sw-forest,#2F6B54);color:var(--sw-text,#FFFFFF);font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:600;font-size:15px;letter-spacing:.04em;padding:15px;border-radius:12px;text-align:center">Es acá //</button></div></div></div>
+<div id="mmap"><div id="mmap-lienzo"><div id="lmap"></div><div id="mpin">&#128205;</div><div id="mmap-top"><div style="display:flex;gap:8px;align-items:center"><button onclick="closeMap()" aria-label="Cerrar el mapa" style="all:unset;cursor:pointer;flex:0 0 auto;width:40px;height:40px;border-radius:999px;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);display:flex;align-items:center;justify-content:center;color:var(--sw-text,#FFFFFF);font-size:18px;box-shadow:0 4px 14px rgba(0,0,0,.45)">&#10005;</button><div style="flex:1;min-width:0;position:relative"><input id="maddr-input" type="text" autocomplete="off" placeholder="Busca tu calle y número" oninput="addrSearchTyped()" onkeydown="if(event.key==='Enter'){event.preventDefault();addrSearchNow();}" style="width:100%;box-sizing:border-box;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:999px;padding:12px 18px;color:var(--sw-text,#FFFFFF);font-size:16px;font-family:'EB Garamond',serif;box-shadow:0 4px 14px rgba(0,0,0,.45)"><div id="maddr-results" style="display:none;max-height:190px;overflow-y:auto;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;margin-top:6px;box-shadow:0 10px 28px rgba(0,0,0,.55)"></div></div></div><button id="gps-btn" onclick="doGPS()" style="all:unset;cursor:pointer;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;margin-top:8px;min-height:40px;padding:8px 14px;border-radius:999px;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);color:var(--sw-text,#FFFFFF);font-family:'EB Garamond',serif;font-size:13px;box-shadow:0 4px 14px rgba(0,0,0,.45)">&#128205; Usar mi ubicación</button><div id="mmap-accuracy-banner" style="display:none;margin-top:8px;background:rgba(255,165,0,.14);border:1px solid rgba(255,165,0,.34);border-radius:10px;padding:9px 13px;font-family:'EB Garamond',serif;font-style:italic;font-size:11px;color:var(--sw-warn,#ffa500)">No detectamos tu ubicación real — este pin es aproximado. Arrástralo hasta tu puerta antes de confirmar.</div></div><div id="mmap-hoja"><div style="font-family:'EB Garamond',serif;font-weight:600;font-size:9px;letter-spacing:.2em;color:var(--sw-text-muted2,#868A7E);margin-bottom:6px">EL PIN MARCA TU PUERTA //</div><div id="maddr-hint" style="font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);line-height:1.3;min-height:20px">Arrastra el mapa hasta el punto exacto</div><button onclick="confirmMap()" style="all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;margin-top:14px;background:var(--sw-forest,#2F6B54);color:var(--sw-text,#FFFFFF);font-family:'Bodoni Moda',serif;font-optical-sizing:auto;font-weight:600;font-size:15px;letter-spacing:.04em;padding:15px;border-radius:12px;text-align:center">Es acá //</button></div></div></div>
 </body>
 </html>
