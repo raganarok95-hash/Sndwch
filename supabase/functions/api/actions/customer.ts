@@ -802,7 +802,7 @@ const DISCOVERY_BONUS_POINTS = R.DISCOVERY_BONUS_POINTS;
 // objetivo para seguir barriendo.
 const CREDIT_LOOKUP_RATE_LIMIT = 20;
 const CREDIT_LOOKUP_RATE_WINDOW_MINUTES = 60;
-export async function actCreditLookup(b: any) {
+export async function actCreditLookup(b: Entrada<"credit-lookup"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const toPhone = String(b.toPhone || "").trim();
   if (!toPhone) throw new ApiError("Ingresa un teléfono.");
@@ -818,7 +818,7 @@ export async function actCreditLookup(b: any) {
   return { name: rows[0].name };
 }
 
-export async function actCreditGift(b: any) {
+export async function actCreditGift(b: Entrada<"credit-gift"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const toPhone = String(b.toPhone || "").trim();
   const amount = Number(b.amount || 0);

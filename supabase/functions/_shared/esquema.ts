@@ -120,3 +120,21 @@ export function objeto<F extends Forma>(forma: F): Esquema<DeForma<F>> & { forma
     },
   };
 }
+
+/** Texto que puede no venir: sin dato es '' (no un error). Recorta y corta en `max`. */
+export function textoOpcional(max = 10_000): Esquema<string> {
+  return { leer: (v) => (typeof v === 'string' ? v.trim().slice(0, max) : typeof v === 'number' ? String(v) : '') };
+}
+
+/** Número (acepta '4.5' como 4.5). `opcional`: sin dato es null en vez de error. */
+export function numero(opts: { min?: number; max?: number; mensaje?: string; opcional?: boolean } = {}): Esquema<number | null> {
+  const { min = -Infinity, max = Infinity, mensaje, opcional = false } = opts;
+  return {
+    leer(v, ruta = '') {
+      if ((v === undefined || v === null || v === '') && opcional) return null;
+      const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
+      if (!Number.isFinite(n) || n < min || n > max) return falla(ruta, mensaje || `${ruta || 'El número'} no es válido.`);
+      return n;
+    },
+  };
+}

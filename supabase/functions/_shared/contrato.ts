@@ -100,6 +100,34 @@ export const CONTRATO = {
     e.objeto({ token, pin: { leer: (v: unknown) => (typeof v === 'string' ? v.trim().slice(0, 12) : '') } as e.Esquema<string> }),
   ),
 
+  // ── DINERO, las simples (2026-10-01). Cada acción sigue validando adentro lo que ya validaba;
+  // el contrato asegura la FORMA y que no entre nada que no se declaró. lat/lon pasan sin tocar:
+  // como número opcional, un dato ausente llegaría como null y Number(null) es 0 —una coordenada
+  // válida en el mar—, cuando hoy llega NaN y la acción lo rechaza.
+  'my-orders': accion<Record<string, unknown>>()(e.objeto({ token, ref: e.textoOpcional(40) })),
+  'credit-gift': accion<Record<string, unknown>>()(
+    e.objeto({ token, toPhone: e.textoOpcional(20), amount: e.numero({ min: 0, max: 10_000, opcional: true, mensaje: 'El monto no es válido.' }) }),
+  ),
+  'credit-lookup': accion<Record<string, unknown>>()(e.objeto({ token, toPhone: e.textoOpcional(20) })),
+  'cancel-my-order': accion<Record<string, unknown>>()(
+    e.objeto({ token, orderId: e.textoOpcional(64), ref: e.textoOpcional(40) }),
+  ),
+  'report-order-problem': accion<Record<string, unknown>>()(
+    e.objeto({ token, ref: e.textoOpcional(40), motivo: e.textoOpcional(60), detalle: e.textoOpcional(1000) }),
+  ),
+  'my-order-problems': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'create-group-order': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'get-group-order': accion<Record<string, unknown>>()(e.objeto({ token, code: e.textoOpcional(12) })),
+  'add-group-item': accion<Record<string, unknown>>()(
+    e.objeto({ token, code: e.textoOpcional(12), contributorName: e.textoOpcional(40), item: e.sinRevisar() }),
+  ),
+  'cancel-group-order': accion<Record<string, unknown>>()(e.objeto({ token, code: e.textoOpcional(12) })),
+  'close-group-order': accion<Record<string, unknown>>()(e.objeto({ token, code: e.textoOpcional(12) })),
+  'split-group-order': accion<Record<string, unknown>>()(
+    e.objeto({ token, code: e.textoOpcional(12), address: e.textoOpcional(300), contactPhone: e.textoOpcional(20), lat: e.sinRevisar(), lon: e.sinRevisar() }),
+  ),
+  'export-orders': accion<Record<string, unknown>>()(e.objeto({ token })),
+
   'recurring-skip': accion<{ success: true; skipOn: string | null }>()(
     e.objeto({ token, id: e.uuid('Falta el pedido fijo.'), deshacer: e.bandera() }),
   ),

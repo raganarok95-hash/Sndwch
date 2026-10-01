@@ -11,6 +11,7 @@
 // de `respondeAntesDe()`, se guarda con el reporte, y `actAlertOrderProblems` avisa al dueño
 // cuando se está por pasar sin respuesta. Una promesa de plazo que nada vigila es la clase de
 // defecto que este repo ya pagó con los reclamos.
+import type { Entrada } from "../../_shared/contrato.ts";
 import { sbGet, sbInsert, sbUpdate, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireSession, requireAdmin, verifyCronSecret } from "../session.ts";
@@ -60,7 +61,7 @@ export function respondeAntesDe(ahoraMs: number): string {
   return new Date(limite - LIMA).toISOString();
 }
 
-export async function actReportOrderProblem(b: any) {
+export async function actReportOrderProblem(b: Entrada<"report-order-problem"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const ref = String(b.ref || "").trim();
   const motivo = String(b.motivo || "").trim();
@@ -175,7 +176,7 @@ export async function actAlertOrderProblems(b: any) {
 }
 
 // Lo que el cliente ve de sus reportes (para pintar «ya lo reportaste» y la respuesta).
-export async function actMyOrderProblems(b: any) {
+export async function actMyOrderProblems(b: Entrada<"my-order-problems"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   return {
     problems: await sbGet(
