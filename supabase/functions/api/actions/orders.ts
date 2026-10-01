@@ -731,7 +731,7 @@ async function releasePromoBestEffort(promoCodeId: string | null, phone: string,
 // (hallazgo de auditoría de seguridad, BAJO).
 const PROMO_VALIDATE_RATE_LIMIT = 20;
 const PROMO_VALIDATE_RATE_WINDOW_MINUTES = 10;
-export async function actValidatePromoCode(b: any) {
+export async function actValidatePromoCode(b: Entrada<"validate-promo-code"> & { _ip?: string }) {
   const code = String(b.code || "").trim();
   const phone = String(b.phone || "").trim();
   if (!code || !phone) throw new ApiError("Faltan datos.", 400);
@@ -751,7 +751,7 @@ export async function actValidatePromoCode(b: any) {
   // Mismo cálculo que el cobro real, incluido el sándwich gratis del organizador — si el
   // preview lo ignorara, alguien con un pedido grupal vería un descuento distinto acá que
   // el que termina pagando.
-  const { expectedTotal: foodTotal } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b));
+  const { expectedTotal: foodTotal } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b) /* contrato-campos: b pasa entero a organizerWaiverFor, que lee groupCode, token */);
   const result = await computePromoDiscount(code, phone, foodTotal);
   return { valid: true, code: result.code, discount: result.discount };
 }
@@ -844,7 +844,7 @@ export function resolveDeliveryFeeCard(lat: unknown, lon: unknown, zone: string)
 // la reserva y crea el pedido (ver actConfirmCulqiOrder). Crédito/Yape-Plin/recompensa-
 // gratis no tienen este problema (no hay ningún cobro externo antes de crear el pedido),
 // así que siguen su camino directo de siempre, sin pasar por una reserva previa.
-export async function actPrepareOrder(b: any) {
+export async function actPrepareOrder(b: Entrada<"prepare-order"> & { _ip?: string }) {
   const ref = String(b.ref || "").trim();
   const name = String(b.name || "").trim();
   const contactPhone = String(b.phone || "").trim();
@@ -889,7 +889,7 @@ export async function actPrepareOrder(b: any) {
   await assertHourCapacity(scheduledFor ? new Date(scheduledFor) : new Date(), recurringId);
 
   await loadCatalogPrices();
-  const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b));
+  const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b) /* contrato-campos: b pasa entero a organizerWaiverFor, readCoords y readMetaAttribution, que lee groupCode, token, lat, lon, fbp, fbc, ua */);
   assertTraeSandwich(sanitizedItems);
 
   // Sesión (si hay token) se resuelve ANTES del código promocional — el teléfono de la
@@ -1192,7 +1192,7 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string, opts: { recup
   }
 }
 
-export async function actPlaceOrder(b: any) {
+export async function actPlaceOrder(b: Entrada<"place-order"> & { _ip?: string }) {
   const chargeId = b.chargeId ? String(b.chargeId).trim() : "";
   if (chargeId) return actConfirmCulqiOrder(chargeId, String(b.ref || "").trim());
 
@@ -1278,7 +1278,7 @@ export async function actPlaceOrder(b: any) {
   // Precios vigentes (pueden haber cambiado desde el panel admin sin redeploy) —
   // ver loadCatalogPrices/catalog_prices.
   await loadCatalogPrices();
-  const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b));
+  const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b) /* contrato-campos: b pasa entero a organizerWaiverFor, readCoords y readMetaAttribution, que lee groupCode, token, lat, lon, fbp, fbc, ua */);
   assertTraeSandwich(sanitizedItems);
 
   // Sesión (si hay token) se resuelve ANTES del código promocional — mismo criterio y
