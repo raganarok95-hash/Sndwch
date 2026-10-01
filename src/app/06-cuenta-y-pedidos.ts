@@ -67,6 +67,9 @@ function sPHome(){
     +'<div><em>Crédito</em><b>'+SOLES_TXT+pz(c.credit_balance||0)+'</b></div>'
     +'</div></div>'
     +'<div class="lis">'
+    // El rediseño de la cuenta perdió la única entrada al panel (dueño, 2026-10-01: «no tengo
+    // como entrar a admin»). Va primero: para quien administra es lo que más se usa.
+    +(isAdmin?fila('Panel de admin','Pedidos, cocina, carta y números',"loadAdmin()"):'')
     +fila('Tus direcciones',nDir?(nDir===1?'Una guardada':nDir+' guardadas'):'Ninguna guardada todavía',"loadAddresses()")
     +fila('Tus datos','Nombre, teléfono, DNI',"sndScreen='p_datos';render()")
     +fila('Cómo pagas',metodoPreferido()==='culqi'?'Tarjeta por defecto':'Yape por defecto',"sndScreen='p_pago';render()")

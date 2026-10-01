@@ -70,7 +70,10 @@ test('«Cerrar y pagar» reparte desde la dirección con pin y cada parte se pag
   expect(await page.evaluate(() => (window as any)._lTot)).toBe(24.4);
 });
 
-test('sin una dirección con pin no se reparte: se pide guardarla', async ({ page }) => {
+// Dueño, 2026-10-01: «manda a guardar dirección, no carga en automático la misma ni deja
+// seleccionar, ni permite el google maps». Una dirección sin pin ya no es un callejón: se ofrece
+// ubicarla en el mapa ahí mismo. Lo que NO cambia: sin pin no se reparte (el envío sale del pin).
+test('sin una dirección con pin no se reparte: se ofrece ubicarla en el mapa ahí mismo', async ({ page }) => {
   const calls = await gotoApp(page, {
     login: { customer: ANA, isAdmin: false, token: 'tok-ana' },
     'addresses-list': { addresses: [{ ...DIRECCION, lat: null, lon: null }] },
@@ -79,7 +82,22 @@ test('sin una dirección con pin no se reparte: se pide guardarla', async ({ pag
   await page.goto(APP_FILE + '?group=ABC123');
   await page.waitForSelector('text=PEDIDO GRUPAL');
   await page.getByRole('button', { name: /cerrar y pagar/i }).first().click();
-  await expect(page.getByText('Primero guarda la dirección marcándola en el mapa.')).toBeVisible();
+  await expect(page.getByText(/tócala para ubicarla en el mapa/)).toBeVisible();
+  await expect(page.getByRole('button', { name: /Elegir en el mapa/i })).toBeVisible();
   await expect(page.getByRole('button', { name: /repartir y cobrar/i })).toHaveCount(0);
   expect(calls.some((c) => c.action === 'split-group-order')).toBe(false);
+});
+
+// «QUIÉNES COMEN» salía en blanco cuando el grupo no cargaba (dueño, 2026-10-01). Silencioso: la
+// pantalla no dice nada y el grupo, que es venta, se pierde. Ahora el error se ve, con reintentar.
+test('si el grupo no carga, la pantalla lo dice y deja reintentar (nunca en blanco)', async ({ page }) => {
+  let caido = true;
+  await gotoApp(page, {
+    'get-group-order': () => { if (caido) throw new Error('Se cortó la conexión.'); return ABIERTO; },
+  });
+  await page.goto(APP_FILE + '?group=ABC123');
+  await expect(page.getByText('No pudimos cargar el grupo')).toBeVisible();
+  caido = false;
+  await page.getByRole('button', { name: /Reintentar/ }).click();
+  await expect(page.getByRole('button', { name: /cerrar y pagar/i }).first()).toBeVisible();
 });

@@ -50,38 +50,26 @@ function renderOverlays(){
   var el=(document.getElementById('ui-overlays') as HTMLInputElement | null);
   if(!el)return;
   var html='';
+  // Avisos y diálogos en el papel kraft de la app nueva (dueño, 2026-10-01: el «¿Eliminar esta
+  // dirección?» salía en el verde y la Garamond de la app anterior). Estilos en .ov-* (shell).
   if(toastMsg){
     var isErr=toastType==='error';
-    // bottom:92px, no 20px: deja despejada la barra de acción fija (AB(), z-index:100,
-    // ~70-80px de alto con el total) que vive en la misma zona — antes el toast de
-    // "agregado al carrito" la tapaba 3.2s justo en el momento en que el usuario busca
-    // pagar (hallazgo P0 de crítica impeccable 2026-07-30).
-    // role/aria-live: sin esto el aviso aparece y desaparece sin que un lector de pantalla
-    // diga nada — "agregado al carrito" o el error de un pago quedaban mudos. `alert` para
-    // los errores (interrumpe), `status` para el resto (espera a que termine la frase).
-    html+='<div role="'+(isErr?'alert':'status')+'" aria-live="'+(isErr?'assertive':'polite')+'" style="position:fixed;left:16px;right:16px;bottom:92px;z-index:400;display:flex;justify-content:center" class="fi">'
-      +'<div style="max-width:420px;width:100%;background:'+(isErr?'#3a1414':'#171A14')+';border:1px solid '+(isErr?'rgba(255,85,85,.5)':'rgba(203,162,88,.4)')+';border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.4)">'
-      +'<div style="flex:1;font-family:\'EB Garamond\',serif;font-size:13px;color:'+(isErr?'#ffb3b3':'#EFEDE4')+';line-height:1.4">'+esc(toastMsg)+'</div>'
-      +'<button onclick="dismissToast()" aria-label="Cerrar aviso" style="all:unset;cursor:pointer;color:'+(isErr?'#ffb3b3':'#9DA096')+';font-size:15px;line-height:1;padding:0 2px">&#10005;</button>'
-      +'</div></div>';
+    // role/aria-live: `alert` para los errores (interrumpe), `status` para el resto.
+    html+='<div role="'+(isErr?'alert':'status')+'" aria-live="'+(isErr?'assertive':'polite')+'" class="ov-toast fi">'
+      +'<div class="c'+(isErr?' err':'')+'"><p>'+esc(toastMsg)+'</p>'
+      +'<button onclick="dismissToast()" aria-label="Cerrar aviso">&#10005;</button></div></div>';
   }
   if(confirmState){
-    // role/aria-modal: sin esto un lector de pantalla sigue leyendo la pantalla de atrás
-    // como si el diálogo no existiera, y el usuario confirma a ciegas.
-    html+='<div style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:410;display:flex;align-items:flex-end;justify-content:center" class="fi">'
-      +'<div role="dialog" aria-modal="true" aria-label="Confirmación" style="background:var(--sw-bg,#12150F);border-radius:12px 14px 0 0;width:100%;max-width:420px;padding:24px 20px 20px;box-sizing:border-box">'
-      +'<p style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text-body,#EFEDE4);line-height:1.5;margin-bottom:20px;white-space:pre-line">'+esc(confirmState.msg)+'</p>'
-      +'<button onclick="resolveConfirm(true)" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px;box-sizing:border-box">Confirmar //</button>'
-      +'<button onclick="resolveConfirm(false)" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid var(--sw-border,#2C3228);color:var(--sw-text-muted,#9DA096);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:12px;border-radius:10px;text-align:center;box-sizing:border-box">Cancelar</button>'
+    html+='<div class="ov-fondo fi"><div role="dialog" aria-modal="true" aria-label="Confirmación" class="ov-hoja">'
+      +'<p>'+esc(confirmState.msg)+'</p>'
+      +'<div class="ov-barra"><button class="no" onclick="resolveConfirm(false)">Cancelar</button><button class="si" onclick="resolveConfirm(true)">Confirmar</button></div>'
       +'</div></div>';
   }
   if(promptState){
-    html+='<div style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:420;display:flex;align-items:flex-end;justify-content:center" class="fi">'
-      +'<div role="dialog" aria-modal="true" aria-label="Ingresa un dato" style="background:var(--sw-bg,#12150F);border-radius:12px 14px 0 0;width:100%;max-width:420px;padding:24px 20px 20px;box-sizing:border-box">'
-      +'<p style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text-body,#EFEDE4);line-height:1.5;margin-bottom:14px;white-space:pre-line">'+esc(promptState.msg)+'</p>'
-      +'<input id="ui-prompt-input" type="'+promptState.inputType+'" value="'+esc(promptState.defVal)+'" autofocus onkeydown="if(event.key===\'Enter\')submitPrompt();" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;box-sizing:border-box;margin-bottom:16px">'
-      +'<button onclick="submitPrompt()" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px;box-sizing:border-box">Aceptar //</button>'
-      +'<button onclick="resolvePrompt(null)" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid var(--sw-border,#2C3228);color:var(--sw-text-muted,#9DA096);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:12px;border-radius:10px;text-align:center;box-sizing:border-box">Cancelar</button>'
+    html+='<div class="ov-fondo fi"><div role="dialog" aria-modal="true" aria-label="Ingresa un dato" class="ov-hoja">'
+      +'<p>'+esc(promptState.msg)+'</p>'
+      +'<input id="ui-prompt-input" type="'+promptState.inputType+'" value="'+esc(promptState.defVal)+'" autofocus onkeydown="if(event.key===\'Enter\')submitPrompt();">'
+      +'<div class="ov-barra"><button class="no" onclick="resolvePrompt(null)">Cancelar</button><button class="si" onclick="submitPrompt()">Listo</button></div>'
       +'</div></div>';
   }
   // Drawer de navegación lateral entre herramientas admin — ver toolsNav en H() y

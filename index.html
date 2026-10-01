@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&family=Anton&family=Archivo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0F1A14">
+<meta name="theme-color" content="#17130E">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -69,9 +69,11 @@
      NO se vuelve al verde de la app anterior (#1E3932): aquel era un verde medio que era EL
      fondo de todo; este es casi negro con verde dentro, y sigue dejando que la foto de
      comida sea lo más claro de la pantalla. */
-  --sw-bg:#0F1A14;
-  --sw-card:#16241D;
-  --sw-card2:#122019;
+  /* 2026-10-01 (dueño: «en ciertas pantallas se ve de fondo el verde de la app antigua»): el
+     fondo base deja de llevar verde. Es el que asoma bajo una pantalla corta y en el panel. */
+  --sw-bg:#17130E;
+  --sw-card:#221B14;
+  --sw-card2:#1C1711;
   --sw-card-danger:#1E1614;
   --sw-border:#25382D;
   --sw-border-soft:#16241C;
@@ -1081,6 +1083,21 @@ body.kb-open #app{padding-bottom:0}
 /* ═══ EL MAPA DE LA DIRECCIÓN — en el lenguaje de la 34 (aprobada): kraft, etiqueta con cinta,
    barra partida dorado/celeste. Dueño, 2026-10-01: «la pantalla de la dirección es la antigua…
    ya nada debe usar esa versión antigua». ═══ */
+.ov-toast{position:fixed;left:16px;right:16px;bottom:96px;z-index:400;display:flex;justify-content:center}
+.ov-toast .c{max-width:420px;width:100%;display:flex;align-items:flex-start;gap:10px;background:#FBF6E8;border:2px solid #33230F;padding:13px 14px;box-shadow:0 8px 22px rgba(40,26,10,.35)}
+.ov-toast .c.err{border-color:#8E2A18;background:#FBEDE6}
+.ov-toast p{flex:1;margin:0;font:500 15px/1.4 Archivo,sans-serif;color:#2A1D0E}
+.ov-toast .c.err p{color:#6E1E10}
+.ov-toast button{all:unset;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#33230F}
+.ov-fondo{position:fixed;inset:0;z-index:410;background:rgba(30,20,8,.55);display:flex;align-items:flex-end;justify-content:center}
+.ov-hoja{width:100%;max-width:480px;box-sizing:border-box;background:#D8BC8E;background-image:repeating-linear-gradient(0deg,rgba(90,60,20,.035) 0 1px,transparent 1px 3px);padding:24px 0 env(safe-area-inset-bottom,0px);box-shadow:0 -10px 30px rgba(30,20,8,.4)}
+.ov-hoja p{margin:0 24px 20px;font:700 18px/1.35 Archivo,sans-serif;color:#2A1D0E;white-space:pre-line}
+.ov-hoja input{all:unset;box-sizing:border-box;display:block;width:calc(100% - 48px);margin:0 24px 20px;border-bottom:2px solid #33230F;padding:8px 0;font:600 18px/1.3 Archivo,sans-serif;color:#2A1D0E}
+.ov-barra{display:flex;height:68px}
+.ov-barra button{all:unset;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;font:800 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.ov-barra .si{background:#CBA258;color:#2A1D0E}
+.ov-barra .no{background:#FBF6E8;color:#33230F}
+.ov-barra button:focus-visible{outline:3px solid #2A1D0E;outline-offset:-6px}
 #mmap{display:none;position:fixed;inset:0;background:#C9A878;z-index:9999}
 #mmap.open{display:block}
 #mmap-lienzo{position:absolute;inset:0}
@@ -1450,6 +1467,10 @@ body.kb-open #app{padding-bottom:0}
 .mdir .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:15px;color:#33230F !important;caret-color:#9C5F14}
 .mdir .campo input::placeholder{color:#7A5B33 !important}
 .mdir .campo:focus-within{border-bottom-color:#9C5F14}
+.mdir .ubicar{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin:-6px 0 18px;padding:12px 14px;border:2px solid #33230F;font:700 13px/1 Archivo,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#33230F;text-align:center}
+.mdir .ubicar.ok{border-style:dashed;color:#3A5A20;border-color:#3A5A20}
+.mdir .ubicar:focus-visible{outline:2px solid #9C5F14;outline-offset:2px}
+.mdir .r .sinpin{color:#8E2A18}
 .mdir .err{min-height:15px;font:500 11px/1.3 'IBM Plex Mono',monospace;color:#7A2E2E}
 .mdir .guardar{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin:8px 0 12px;padding:16px 0;text-align:center;background:#2A1D0E;color:#F2E4CA;font:700 13px/1 Archivo,sans-serif;letter-spacing:.14em;text-transform:uppercase}
 .mdir .cancelar{all:unset;cursor:pointer;display:block;margin:0 auto 12px;padding:8px;font:500 11px/1 'IBM Plex Mono',monospace;color:#5E4526;text-decoration:underline}
@@ -4044,7 +4065,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '64fe410006';
+var APP_BUILD = 'eb89774e85';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -4328,38 +4349,26 @@ function renderOverlays() {
     if (!el)
         return;
     var html = '';
+    // Avisos y diálogos en el papel kraft de la app nueva (dueño, 2026-10-01: el «¿Eliminar esta
+    // dirección?» salía en el verde y la Garamond de la app anterior). Estilos en .ov-* (shell).
     if (toastMsg) {
         var isErr = toastType === 'error';
-        // bottom:92px, no 20px: deja despejada la barra de acción fija (AB(), z-index:100,
-        // ~70-80px de alto con el total) que vive en la misma zona — antes el toast de
-        // "agregado al carrito" la tapaba 3.2s justo en el momento en que el usuario busca
-        // pagar (hallazgo P0 de crítica impeccable 2026-07-30).
-        // role/aria-live: sin esto el aviso aparece y desaparece sin que un lector de pantalla
-        // diga nada — "agregado al carrito" o el error de un pago quedaban mudos. `alert` para
-        // los errores (interrumpe), `status` para el resto (espera a que termine la frase).
-        html += '<div role="' + (isErr ? 'alert' : 'status') + '" aria-live="' + (isErr ? 'assertive' : 'polite') + '" style="position:fixed;left:16px;right:16px;bottom:92px;z-index:400;display:flex;justify-content:center" class="fi">'
-            + '<div style="max-width:420px;width:100%;background:' + (isErr ? '#3a1414' : '#171A14') + ';border:1px solid ' + (isErr ? 'rgba(255,85,85,.5)' : 'rgba(203,162,88,.4)') + ';border-radius:12px;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.4)">'
-            + '<div style="flex:1;font-family:\'EB Garamond\',serif;font-size:13px;color:' + (isErr ? '#ffb3b3' : '#EFEDE4') + ';line-height:1.4">' + esc(toastMsg) + '</div>'
-            + '<button onclick="dismissToast()" aria-label="Cerrar aviso" style="all:unset;cursor:pointer;color:' + (isErr ? '#ffb3b3' : '#9DA096') + ';font-size:15px;line-height:1;padding:0 2px">&#10005;</button>'
-            + '</div></div>';
+        // role/aria-live: `alert` para los errores (interrumpe), `status` para el resto.
+        html += '<div role="' + (isErr ? 'alert' : 'status') + '" aria-live="' + (isErr ? 'assertive' : 'polite') + '" class="ov-toast fi">'
+            + '<div class="c' + (isErr ? ' err' : '') + '"><p>' + esc(toastMsg) + '</p>'
+            + '<button onclick="dismissToast()" aria-label="Cerrar aviso">&#10005;</button></div></div>';
     }
     if (confirmState) {
-        // role/aria-modal: sin esto un lector de pantalla sigue leyendo la pantalla de atrás
-        // como si el diálogo no existiera, y el usuario confirma a ciegas.
-        html += '<div style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:410;display:flex;align-items:flex-end;justify-content:center" class="fi">'
-            + '<div role="dialog" aria-modal="true" aria-label="Confirmación" style="background:var(--sw-bg,#12150F);border-radius:12px 14px 0 0;width:100%;max-width:420px;padding:24px 20px 20px;box-sizing:border-box">'
-            + '<p style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text-body,#EFEDE4);line-height:1.5;margin-bottom:20px;white-space:pre-line">' + esc(confirmState.msg) + '</p>'
-            + '<button onclick="resolveConfirm(true)" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px;box-sizing:border-box">Confirmar //</button>'
-            + '<button onclick="resolveConfirm(false)" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid var(--sw-border,#2C3228);color:var(--sw-text-muted,#9DA096);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:12px;border-radius:10px;text-align:center;box-sizing:border-box">Cancelar</button>'
+        html += '<div class="ov-fondo fi"><div role="dialog" aria-modal="true" aria-label="Confirmación" class="ov-hoja">'
+            + '<p>' + esc(confirmState.msg) + '</p>'
+            + '<div class="ov-barra"><button class="no" onclick="resolveConfirm(false)">Cancelar</button><button class="si" onclick="resolveConfirm(true)">Confirmar</button></div>'
             + '</div></div>';
     }
     if (promptState) {
-        html += '<div style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:420;display:flex;align-items:flex-end;justify-content:center" class="fi">'
-            + '<div role="dialog" aria-modal="true" aria-label="Ingresa un dato" style="background:var(--sw-bg,#12150F);border-radius:12px 14px 0 0;width:100%;max-width:420px;padding:24px 20px 20px;box-sizing:border-box">'
-            + '<p style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text-body,#EFEDE4);line-height:1.5;margin-bottom:14px;white-space:pre-line">' + esc(promptState.msg) + '</p>'
-            + '<input id="ui-prompt-input" type="' + promptState.inputType + '" value="' + esc(promptState.defVal) + '" autofocus onkeydown="if(event.key===\'Enter\')submitPrompt();" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;box-sizing:border-box;margin-bottom:16px">'
-            + '<button onclick="submitPrompt()" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px;box-sizing:border-box">Aceptar //</button>'
-            + '<button onclick="resolvePrompt(null)" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid var(--sw-border,#2C3228);color:var(--sw-text-muted,#9DA096);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.06em;padding:12px;border-radius:10px;text-align:center;box-sizing:border-box">Cancelar</button>'
+        html += '<div class="ov-fondo fi"><div role="dialog" aria-modal="true" aria-label="Ingresa un dato" class="ov-hoja">'
+            + '<p>' + esc(promptState.msg) + '</p>'
+            + '<input id="ui-prompt-input" type="' + promptState.inputType + '" value="' + esc(promptState.defVal) + '" autofocus onkeydown="if(event.key===\'Enter\')submitPrompt();">'
+            + '<div class="ov-barra"><button class="no" onclick="resolvePrompt(null)">Cancelar</button><button class="si" onclick="submitPrompt()">Listo</button></div>'
             + '</div></div>';
     }
     // Drawer de navegación lateral entre herramientas admin — ver toolsNav en H() y
@@ -6235,13 +6244,13 @@ function RIEL(o) {
         : '<div style="flex:1"></div>';
     var der = o.derecha || '<div style="width:44px"></div>';
     return '<div style="position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:6px;height:52px;padding:0 8px;'
-        + 'background:var(--sw-bg,#0F1A14);border-bottom:1px solid var(--sw-border-soft,#16241C)">' + izq + centro + der + '</div>';
+        + 'background:var(--sw-bg,#17130E);border-bottom:1px solid var(--sw-border-soft,#16241C)">' + izq + centro + der + '</div>';
 }
 // La PANTALLA - el contenedor. El cuerpo NO trae margen lateral a proposito: la imagen va a
 // sangre y es BLOQUE/SECCION quien mete el texto en la caja. Asi "a sangre" es el estado
 // natural de una foto y no algo que haya que pelear con margenes negativos.
 function PANTALLA(riel, cuerpo, accion) {
-    return '<div style="min-height:100dvh;display:flex;flex-direction:column;background:var(--sw-bg,#0F1A14)">'
+    return '<div style="min-height:100dvh;display:flex;flex-direction:column;background:var(--sw-bg,#17130E)">'
         + (riel || '')
         + '<div style="flex:1;min-width:0" class="fi">' + cuerpo + '</div>'
         + (accion || '') + '</div>';
@@ -6632,13 +6641,15 @@ async function doCreateGroupOrder() {
     loadGroupOrder();
     startGroupPoll();
 }
-var _grpDirPedidas = false;
+var _grpDirPedidas = false, _grpCargando = false, grupoError = '';
 async function loadGroupOrder() {
     if (!groupCode)
         return;
+    _grpCargando = true;
     try {
         var res = await api('get-group-order', { token: token, code: groupCode });
         groupData = res;
+        grupoError = '';
         // El envío estimado del organizador sale de su dirección con pin (envioEstimadoGrupo).
         if (res && res.isOrganizer && token && !myAddresses.length && !_grpDirPedidas) {
             _grpDirPedidas = true;
@@ -6650,10 +6661,15 @@ async function loadGroupOrder() {
         render();
     }
     catch (e) {
+        // Antes esto echaba al inicio con un aviso fugaz, y si la pantalla ya estaba pintada sin
+        // datos quedaba «QUIÉNES COMEN» en blanco (dueño, 2026-10-01). Ahora el error se queda a la
+        // vista, con reintentar.
         stopGroupPoll();
-        showToast(e.message);
-        sndScreen = 'o_home';
+        grupoError = e.message || 'No se pudo cargar el grupo.';
         render();
+    }
+    finally {
+        _grpCargando = false;
     }
 }
 function startGroupPoll() {
@@ -6790,9 +6806,19 @@ function sGroupOrder() {
     var g = groupData;
     var bk = "stopGroupPoll();sndScreen='o_home';render()";
     if (!g) {
+        // Sin datos: se piden (una sola vez a la vez) y se dice qué pasa. Nunca una pantalla vacía.
+        if (groupCode && !_grpCargando && !grupoError)
+            setTimeout(loadGroupOrder, 0);
+        var estado = grupoError
+            ? '<div class="aviso"><b>No pudimos cargar el grupo</b><s>' + esc(grupoError) + '</s></div>'
+                + '<button class="link" onclick="grupoError=\'\';loadGroupOrder();render()"><s>Vuelve a intentarlo</s><u>Reintentar</u></button>'
+            : '<div class="aviso"><s>' + (groupCode ? 'Cargando el grupo…' : 'No hay un grupo abierto.') + '</s></div>';
         return '<div class="mgr fi"><button class="sal" onclick="' + bk + '" aria-label="Volver">←</button>' + wmClaro()
-            + '<div class="tit"><em>Pedido grupal</em><b>QUIÉNES<br>COMEN</b></div></div>';
+            + '<div class="tit"><em>Pedido grupal</em><b>QUIÉNES<br>COMEN</b></div>' + estado + '</div>';
     }
+    // Al volver a esta pantalla desde otra, el refresco automático tiene que seguir.
+    if (g.status === 'open' && !_groupPollTimer)
+        startGroupPoll();
     var abierto = g.status === 'open';
     var repartido = g.status === 'splitting' || (g.status === 'paid' && g.partes && g.partes.length);
     var puedeCerrar = g.isOrganizer && (abierto || g.canPay);
@@ -6885,7 +6911,9 @@ async function abrirRepartoGrupo() {
         catch (e) { }
     }
     var conPin = myAddresses.filter(function (a) { return typeof a.lat === 'number' && typeof a.lon === 'number'; });
-    repartoAddrId = conPin.length ? conPin[0].id : null;
+    // La dirección que ya está marcada en este pedido (la del checkout) también sirve.
+    var hayPinDelPedido = !!addrText && typeof window._mLat === 'number' && typeof window._mLon === 'number';
+    repartoAddrId = conPin.length ? conPin[0].id : (hayPinDelPedido ? '__mapa' : null);
     repartoPhone = cust && cust.phone ? String(cust.phone) : '';
     sndScreen = 'group_split';
     render();
@@ -6895,21 +6923,35 @@ function sGroupSplit() {
     var h = '<div class="mgr fi"><button class="sal" onclick="sndScreen=\'group_order\';render()" aria-label="Volver">←</button>' + wmClaro()
         + '<div class="tit"><em>Cerrar y pagar · #' + esc(groupCode || '') + '</em><b>¿DÓNDE LO<br>DEJAMOS?</b></div>'
         + '<div class="aviso"><s>El envío sale de esta dirección y se parte entre todos. A cada uno le llega su parte para pagarla con Yape; tienen ' + GROUP_SPLIT_MINUTES_CLIENT + ' minutos. Lo que no se pague se cancela y el resto sale igual.</s></div>';
-    if (!conPin.length) {
-        return h + '<div class="aviso"><b>Primero guarda la dirección marcándola en el mapa.</b></div>'
-            + '<div class="go sw-barra"><button class="oro solo" onclick="loadAddresses()">Ir a mis direcciones</button></div></div>';
+    // Todas las direcciones guardadas, no solo las que tienen pin (dueño, 2026-10-01: «no carga en
+    // automático la misma ni deja seleccionar, ni permite el google maps»). Una sin pin se ubica en
+    // el mapa con un toque y queda guardada con su pin.
+    var hayPinDelPedido = !!addrText && typeof window._mLat === 'number' && typeof window._mLon === 'number';
+    h += '<div class="gente" role="radiogroup" aria-label="Dirección">';
+    if (hayPinDelPedido) {
+        var onM = repartoAddrId === '__mapa';
+        h += '<button class="dir' + (onM ? ' on' : '') + '" role="radio" aria-checked="' + onM + '" onclick="repartoAddrId=\'__mapa\';render()"><b>La de este pedido</b><s>' + esc(addrText) + '</s></button>';
     }
-    h += '<div class="gente" role="radiogroup" aria-label="Dirección">' + conPin.map(function (a) {
-        var on = mismoId(repartoAddrId, a.id);
-        return '<button class="dir' + (on ? ' on' : '') + '" role="radio" aria-checked="' + on + '" onclick="repartoAddrId=\'' + a.id + '\';render()"><b>' + esc(a.label) + '</b><s>' + esc(a.address) + (a.reference ? ' · ' + esc(a.reference) : '') + '</s></button>';
-    }).join('') + '</div>';
+    h += myAddresses.map(function (a) {
+        var pin = typeof a.lat === 'number' && typeof a.lon === 'number';
+        var on = pin && mismoId(repartoAddrId, a.id);
+        return pin
+            ? '<button class="dir' + (on ? ' on' : '') + '" role="radio" aria-checked="' + on + '" onclick="repartoAddrId=\'' + a.id + '\';render()"><b>' + esc(a.label) + '</b><s>' + esc(a.address) + (a.reference ? ' · ' + esc(a.reference) : '') + '</s></button>'
+            : '<button class="dir sinpin" onclick="abrirMapaPara(\'group_split\',\'' + a.id + '\',' + esc(JSON.stringify(a.address || '')) + ')"><b>' + esc(a.label) + '</b><s>' + esc(a.address) + ' · tócala para ubicarla en el mapa</s></button>';
+    }).join('');
+    h += '<button class="dir otra" onclick="abrirMapaPara(\'group_split\',null,\'\')"><b>Otra dirección</b><s>Búscala o márcala en el mapa</s></button></div>';
+    if (!repartoAddrId) {
+        return h + '<div class="go sw-barra"><button class="oro solo" onclick="abrirMapaPara(\'group_split\',null,\'\')">Elegir en el mapa</button></div></div>';
+    }
     h += '<div class="sumar" style="margin-top:26px"><em>Teléfono para el repartidor</em><input id="grp-phone" type="tel" inputmode="tel" autocomplete="tel" aria-label="Teléfono para el repartidor" value="' + esc(repartoPhone) + '"></div>';
     return h + '<div class="go sw-barra"><button class="oro solo" onclick="doSplitGroupOrder()">Repartir y cobrar a cada uno</button></div></div>';
 }
 var GROUP_SPLIT_MINUTES_CLIENT = 20;
 async function doSplitGroupOrder() {
-    var a = myAddresses.find(function (x) { return mismoId(x.id, repartoAddrId); });
-    if (!a) {
+    var a = repartoAddrId === '__mapa'
+        ? { address: addrText, reference: '', lat: window._mLat, lon: window._mLon }
+        : myAddresses.find(function (x) { return mismoId(x.id, repartoAddrId); });
+    if (!a || typeof a.lat !== 'number') {
         showToast('Elige la dirección.');
         return;
     }
@@ -7953,7 +7995,7 @@ function sOItemConfirm() {
         + (sizeUpsellDelta > 0 ? '<div onclick="size=\'30\';' + (quickPayEligible ? 'cart[0]=currentBuiltItem();confirmRerender()' : 'render()') + '" style="background:' + 'var(--sw-card2,#171A14)' + ';border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px;cursor:pointer;box-shadow:' + SHADOW_SM + '"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿Con más hambre? //</div><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Sube a 30CM</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096)">El doble de sándwich por un poco más</div></div><span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:15px;color:' + GOLD + '">+' + SOLES + pz(sizeUpsellDelta) + '</span></div></div>' : '')
         + (recU ? '<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.3);border-radius:10px;padding:14px 16px;margin-bottom:12px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">¿Algo más? //</div>' + uBtn(recU.k, recU.e, recU.l, recU.d, recU.p, uSel(recU.k)) + '</div>' : '')
         + '<details style="margin-bottom:12px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none;padding:8px 0">Todos los extras // ▾</summary><div style="margin-top:8px">' + (dbl ? uBtn('doubleProt', icon('dumbbell', 18, GOLD), 'Doble proteína', 'El doble de tu proteína elegida' + dblStockWarn(dbl.id), dblFee(dbl, size), doubleProt) : '') + (sauceExtraAllowed ? uBtn('sauce', icon('chili', 18, GOLD), 'Salsa extra', 'Salsa adicional a tu elección', EXTRA_SAUCE_PRICE, extraSauce) : '') + (cheeseSigAllowed ? uBtn('cheese', icon('queso', 18, GOLD), 'Queso', 'Cheddar derretido, opcional y gratis', 0, !!cheese) : '') + '</div></details>'
-        + (cust ? '<div style="margin-top:16px;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:8px;display:flex;align-items:center;gap:5px">' + icon('estrella', 11, GOLD) + '<span>Guardar como favorito //</span></div><div style="display:flex;gap:8px"><input id="o-favname" type="text" maxlength="40" placeholder="Nombre // opcional" style="flex:1;background:var(--sw-card,#16241D);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:10px 16px;border-radius:8px">Guardar</button></div><div id="fav-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:6px">' + favMsg + '</div></div>' : '')
+        + (cust ? '<div style="margin-top:16px;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:8px;display:flex;align-items:center;gap:5px">' + icon('estrella', 11, GOLD) + '<span>Guardar como favorito //</span></div><div style="display:flex;gap:8px"><input id="o-favname" type="text" maxlength="40" placeholder="Nombre // opcional" style="flex:1;background:var(--sw-card,#221B14);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-size:13px"><button onclick="doSaveFavorite()" style="all:unset;cursor:pointer;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:10px 16px;border-radius:8px">Guardar</button></div><div id="fav-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:6px">' + favMsg + '</div></div>' : '')
         + (quickPayEligible
             ? checkoutExtrasHTML() + '<div onclick="goToCartFromConfirm()" style="margin-top:16px;text-align:center;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:12px;cursor:pointer"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text,#FFFFFF)">+ Carrito</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">por si deseas pedir más de un SND//WCH</div></div>'
             : '<div id="o-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);margin-top:8px;min-height:16px"></div>')
@@ -8438,7 +8480,7 @@ function checkoutExtrasHTML() {
         + '</div></details>'
         + '<details open style="margin-top:16px"><summary style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;cursor:pointer;list-style:none">Entrega y horario //</summary><div style="margin-top:10px">'
         + deliveryZonePickerHTML()
-        + '<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿Cuándo? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'now' ? 'var(--sw-card2,#122019)' : 'var(--sw-card,#16241D)') + ';border:1px solid ' + (scheduleMode === 'now' ? GOLD : 'var(--sw-border,#25382D)') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">Ahora</div><div onclick="scheduleMode=\'later\';initSchedDefault();confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'later' ? 'var(--sw-card2,#122019)' : 'var(--sw-card,#16241D)') + ';border:1px solid ' + (scheduleMode === 'later' ? GOLD : 'var(--sw-border,#25382D)') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">Programar</div></div>'
+        + '<div style="margin-top:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">¿Cuándo? //</div><div style="display:flex;gap:8px;margin-bottom:8px"><div onclick="scheduleMode=\'now\';confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'now' ? 'var(--sw-card2,#122019)' : 'var(--sw-card,#221B14)') + ';border:1px solid ' + (scheduleMode === 'now' ? GOLD : 'var(--sw-border,#25382D)') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">Ahora</div><div onclick="scheduleMode=\'later\';initSchedDefault();confirmRerender()" style="flex:1;text-align:center;background:' + (scheduleMode === 'later' ? 'var(--sw-card2,#122019)' : 'var(--sw-card,#221B14)') + ';border:1px solid ' + (scheduleMode === 'later' ? GOLD : 'var(--sw-border,#25382D)') + ';border-radius:8px;padding:10px;cursor:pointer;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">Programar</div></div>'
         // Antes el aviso de "estamos cerrados" solo aparecía como error al tocar pagar, al
         // final de todo el checkout — un cliente podía llenar nombre/dirección/método de
         // pago completos antes de enterarse. Ahora aparece apenas elige "Ahora" con la
@@ -10552,7 +10594,15 @@ async function revGeoGoogle(lat, lon) {
     var Geo = gClase('geocoding', 'Geocoder');
     if (!Geo)
         throw new Error('Google cargó sin el geocodificador');
-    var res = await new Geo().geocode({ location: { lat: lat, lng: lon }, language: 'es' });
+    var res;
+    try {
+        res = await new Geo().geocode({ location: { lat: lat, lng: lon }, language: 'es' });
+    }
+    catch (e) {
+        // Google a veces responde «server error, may succeed if you try again» (pasó el 2026-10-01).
+        await new Promise(function (r) { setTimeout(r, 800); });
+        res = await new Geo().geocode({ location: { lat: lat, lng: lon }, language: 'es' });
+    }
     var r = (res && res.results && res.results[0]);
     // Sin resultados no es una falla (un descampado): no hay referencia, y se dice.
     if (!r) {
@@ -10590,6 +10640,24 @@ function gClase(lib, nombre) {
 }
 // La key llega en get-store-hours. Si el cliente abre el mapa antes de que esa respuesta
 // llegue, se la espera una vez en vez de dar el mapa por perdido.
+// Espera a que `google.maps.importLibrary` exista. Con `loading=async` aparece un poco después
+// del onload, y el script de «Continuar con Google» (gsi) también escribe en `window.google`:
+// según quién termine primero, mirar `google.maps` una sola vez daba «cargó sin el mapa»
+// (tres veces en el teléfono del dueño, 2026-10-01).
+async function esperarImportLibrary(ms) {
+    var t0 = Date.now();
+    while (Date.now() - t0 < ms) {
+        var g = window.google;
+        // Se captura `g.maps` en este instante: si otro script reemplaza `window.google` después,
+        // las librerías se siguen pidiendo al objeto correcto.
+        if (g && g.maps && typeof g.maps.importLibrary === 'function') {
+            var gm = g.maps;
+            return function (n) { return gm.importLibrary(n); };
+        }
+        await new Promise(function (r) { setTimeout(r, 100); });
+    }
+    return null;
+}
 async function keyDeGoogle() {
     if (!googleMapsKey) {
         try {
@@ -10607,7 +10675,8 @@ function loadGoogleMaps() {
     _gmapsPromise = (async function () {
         var key = await keyDeGoogle();
         var g = window.google;
-        if (!(g && g.maps && g.maps.importLibrary)) {
+        var yaPuesto = !!document.querySelector('script[src*="maps.googleapis.com/maps/api/js"]');
+        if (!(g && g.maps && g.maps.importLibrary) && !yaPuesto) {
             // Google llama a esta función si rechaza la key (API apagada, dominio no permitido,
             // facturación). Sin ella, ese rechazo solo se ve en la consola de un teléfono ajeno.
             window.gm_authFailure = function () {
@@ -10624,22 +10693,23 @@ function loadGoogleMaps() {
                 sc.onerror = function () { reject(new Error('el script de Google Maps no cargó')); };
                 document.head.appendChild(sc);
             });
-            g = window.google;
         }
+        var importar = await esperarImportLibrary(10000);
         // Con `loading=async` las librerías NO están al terminar el script: se piden. Este era el
         // defecto que mandaba todo al motor anterior.
         // Se guarda lo que DEVUELVE importLibrary, no se lo busca después en `google.maps.places`:
         // el 2026-10-01 un teléfono real reportó «cargó sin Places» con el namespace aún vacío,
         // y ese chequeo tumbaba también el mapa, que no necesita Places.
-        if (g && g.maps && g.maps.importLibrary) {
-            var libs = await Promise.all([g.maps.importLibrary('maps'), g.maps.importLibrary('places'), g.maps.importLibrary('geocoding')]);
+        if (importar) {
+            var libs = await Promise.all([importar('maps'), importar('places'), importar('geocoding')]);
             _gLibs = { maps: libs[0], places: libs[1], geocoding: libs[2] };
         }
         else {
-            _gLibs = { maps: g && g.maps, places: g && g.maps && g.maps.places, geocoding: g && g.maps };
+            var g2 = window.google;
+            _gLibs = { maps: g2 && g2.maps, places: g2 && g2.maps && g2.maps.places, geocoding: g2 && g2.maps };
         }
         if (!_gLibs.maps || !_gLibs.maps.Map)
-            throw new Error('Google Maps cargó sin el mapa');
+            throw new Error('Google Maps cargó sin el mapa (importLibrary ' + (importar ? 'sí' : 'no') + ')');
     })();
     _gmapsPromise.catch(function () { _gmapsPromise = null; });
     return _gmapsPromise;
@@ -10785,7 +10855,22 @@ async function addrPick(i) {
         openMap(lat, lon, false);
     }
 }
-function closeMap() { document.getElementById('mmap').style.display = 'none'; }
+// Pantalla a la que vuelve el mapa al confirmar ('' = el checkout de siempre) y, si el mapa se
+// abrió para ubicar una dirección GUARDADA que no tenía pin, cuál.
+var mapaVuelveA = null, mapaDirId = null;
+function abrirMapaPara(vuelve, dirId, textoInicial) {
+    mapaVuelveA = vuelve;
+    mapaDirId = dirId;
+    abrirUbicacion();
+    if (textoInicial) {
+        var i = document.getElementById('maddr-input');
+        if (i) {
+            i.value = textoInicial;
+            setTimeout(addrSearchNow, 400);
+        }
+    }
+}
+function closeMap() { mapaVuelveA = null; mapaDirId = null; document.getElementById('mmap').style.display = 'none'; }
 function confirmMap() {
     var inp = document.getElementById('maddr-input');
     var a = inp ? inp.value.trim() : '';
@@ -10801,7 +10886,8 @@ function confirmMap() {
         window._mLat = c.lat();
         window._mLon = c.lng();
     }
-    closeMap();
+    // Solo se esconde: closeMap() además olvida a qué pantalla volver (es la ✕ del mapa).
+    document.getElementById('mmap').style.display = 'none';
     // Antes esto escribía la dirección directo en el input y no repintaba, para no perder
     // lo que el cliente tuviera a medio escribir en los otros campos. Ahora sí repinta,
     // porque la tarifa de envío se calcula desde el pin (ver deliveryFeeBase) y sin un render
@@ -10821,6 +10907,14 @@ function confirmMap() {
     if (inferred) {
         deliveryDistrict = inferred;
         deliveryDistrictFromPin = !!window._mDistrict;
+    }
+    // El mapa también lo usan «Tus direcciones» y el cierre del pedido en grupo: vuelve a la
+    // pantalla que lo abrió con el texto y el pin (despuesDelMapa, 07-*).
+    if (mapaVuelveA) {
+        var vuelve = mapaVuelveA;
+        mapaVuelveA = null;
+        despuesDelMapa(vuelve, a);
+        return;
     }
     // Desde «Otra dirección» de la 34: la dirección queda elegida y se vuelve al recibo.
     if (volverDelMapa) {
@@ -10926,6 +11020,9 @@ function sPHome() {
         + '<div><em>Crédito</em><b>' + SOLES_TXT + pz(c.credit_balance || 0) + '</b></div>'
         + '</div></div>'
         + '<div class="lis">'
+        // El rediseño de la cuenta perdió la única entrada al panel (dueño, 2026-10-01: «no tengo
+        // como entrar a admin»). Va primero: para quien administra es lo que más se usa.
+        + (isAdmin ? fila('Panel de admin', 'Pedidos, cocina, carta y números', "loadAdmin()") : '')
         + fila('Tus direcciones', nDir ? (nDir === 1 ? 'Una guardada' : nDir + ' guardadas') : 'Ninguna guardada todavía', "loadAddresses()")
         + fila('Tus datos', 'Nombre, teléfono, DNI', "sndScreen='p_datos';render()")
         + fila('Cómo pagas', metodoPreferido() === 'culqi' ? 'Tarjeta por defecto' : 'Yape por defecto', "sndScreen='p_pago';render()")
@@ -12028,18 +12125,65 @@ async function loadAddresses() {
 // una nueva — antes solo se podía agregar/eliminar, un typo obligaba a borrar y rehacer
 // (hallazgo de auditoría UX, BAJO).
 var editingAddrId = null;
+// Lo que el formulario tenía escrito mientras se fue al mapa, y el pin que trajo de vuelta.
+// Sin pin una dirección guardada no sirve para cobrar el envío por distancia ni para cerrar un
+// pedido en grupo (dueño, 2026-10-01: «manda a guardar dirección… ni permite el google maps»).
+var dirBorrador = { label: '', addr: '', ref: '' }, dirPin = null;
+function ubicarDireccionEnMapa() {
+    dirBorrador = { label: gv('na-label').trim(), addr: gv('na-addr').trim(), ref: gv('na-ref').trim() };
+    abrirMapaPara('p_addresses', null, dirBorrador.addr);
+}
+// Vuelta del mapa a la pantalla que lo abrió (ver confirmMap).
+async function despuesDelMapa(vuelve, texto) {
+    var lat = window._mLat, lon = window._mLon;
+    if (vuelve === 'p_addresses') {
+        dirBorrador.addr = texto;
+        dirPin = { lat: lat, lon: lon };
+        sndScreen = 'p_addresses';
+        render();
+        return;
+    }
+    if (vuelve === 'group_split') {
+        var id = mapaDirId;
+        mapaDirId = null;
+        var a = id ? myAddresses.find(function (x) { return mismoId(x.id, id); }) : null;
+        if (a) {
+            // La dirección guardada queda con su pin para siempre: no hay que volver a ubicarla.
+            try {
+                await api('addresses-update', { token: token, id: a.id, label: a.label, address: a.address, reference: a.reference || '', lat: lat, lon: lon });
+                a.lat = lat;
+                a.lon = lon;
+            }
+            catch (e) {
+                showToast('No se pudo guardar el pin de «' + (a.label || 'tu dirección') + '»: ' + e.message, 'error');
+            }
+            repartoAddrId = a.id;
+        }
+        else
+            repartoAddrId = '__mapa';
+        sndScreen = 'group_split';
+        render();
+        return;
+    }
+    sndScreen = vuelve;
+    render();
+}
 // TUS DIRECCIONES (2026-10-01): en el papel kraft de «Tu cuenta», con los campos de la hoja del
 // carrito (30G). Hace lo mismo que la anterior: agregar, corregir y borrar, sin la barra vieja.
 function sPAddresses() {
     var editing = editingAddrId ? myAddresses.find(function (a) { return mismoId(a.id, editingAddrId); }) : null;
+    var bLabel = dirBorrador.label || (editing ? editing.label : ''), bAddr = dirBorrador.addr || (editing ? editing.address : ''), bRef = dirBorrador.ref || (editing ? (editing.reference || '') : '');
+    var tienePin = !!dirPin || !!(editing && typeof editing.lat === 'number');
     var campo = function (id, et, ph, val, ac) {
         return '<label class="campo"><s>' + et + '</s><input id="' + id + '" type="text" placeholder="' + ph + '" value="' + esc(val || '') + '"' + (ac ? ' autocomplete="' + ac + '"' : '') + '></label>';
     };
     var lista = myAddresses.length
         ? '<div class="lis">' + myAddresses.map(function (a) {
             var on = mismoId(editingAddrId, a.id);
-            return '<div class="r dir' + (on ? ' on' : '') + '"><span><b>' + esc(a.label || 'Sin nombre') + '</b><s>' + esc(a.address || '') + (a.reference ? ' · ' + esc(a.reference) : '') + '</s></span>'
-                + '<span class="acc"><button onclick="editingAddrId=\'' + esc(String(a.id)) + '\';newAddrMsg=\'\';render()">Corregir</button>'
+            var sinPin = typeof a.lat !== 'number';
+            return '<div class="r dir' + (on ? ' on' : '') + '"><span><b>' + esc(a.label || 'Sin nombre') + '</b><s>' + esc(a.address || '') + (a.reference ? ' · ' + esc(a.reference) : '') + '</s>'
+                + (sinPin ? '<s class="sinpin">Sin ubicar en el mapa: corrígela para poder usarla</s>' : '') + '</span>'
+                + '<span class="acc"><button onclick="editingAddrId=\'' + esc(String(a.id)) + '\';dirBorrador={label:\'\',addr:\'\',ref:\'\'};dirPin=null;newAddrMsg=\'\';render()">Corregir</button>'
                 + '<button onclick="doDeleteAddress(\'' + esc(String(a.id)) + '\')">Borrar</button></span></div>';
         }).join('') + '</div>'
         : '<p class="nada">Todavía no guardas ninguna. La que pongas aquí aparece al pedir, de un toque.</p>';
@@ -12047,12 +12191,13 @@ function sPAddresses() {
         + '<div class="cab"><em>Tu cuenta</em><h1>Tus direcciones</h1></div>'
         + lista
         + '<div class="form"><em>' + (editing ? 'Corriges «' + esc(editing.label || '') + '»' : 'Agrega una') + '</em>'
-        + campo('na-label', 'Nombre', 'Casa, trabajo…', editing ? editing.label : '', '')
-        + campo('na-addr', 'Dirección', 'Calle, número, urbanización', editing ? editing.address : '', 'street-address')
-        + campo('na-ref', 'Referencia (opcional)', 'Portón, piso, timbre', editing ? (editing.reference || '') : '', '')
+        + campo('na-label', 'Nombre', 'Casa, trabajo…', bLabel, '')
+        + campo('na-addr', 'Dirección', 'Calle, número, urbanización', bAddr, 'street-address')
+        + '<button class="ubicar' + (tienePin ? ' ok' : '') + '" onclick="ubicarDireccionEnMapa()">' + (tienePin ? '✓ Ubicada en el mapa · cambiar' : 'Ubicar en el mapa →') + '</button>'
+        + campo('na-ref', 'Referencia (opcional)', 'Portón, piso, timbre', bRef, '')
         + '<div id="na-msg" class="err" role="alert">' + esc(newAddrMsg || '') + '</div>'
         + '<button class="guardar" onclick="doSaveAddress()">' + (editing ? 'Guardar los cambios' : 'Guardar la dirección') + '</button>'
-        + (editing ? '<button class="cancelar" onclick="editingAddrId=null;newAddrMsg=\'\';render()">No corregir</button>' : '')
+        + (editing ? '<button class="cancelar" onclick="editingAddrId=null;dirBorrador={label:\'\',addr:\'\',ref:\'\'};dirPin=null;newAddrMsg=\'\';render()">No corregir</button>' : '')
         + '</div></div>';
 }
 async function doSaveAddress() {
@@ -12064,15 +12209,25 @@ async function doSaveAddress() {
         render();
         return;
     }
+    var editing = editingAddrId ? myAddresses.find(function (a) { return mismoId(a.id, editingAddrId); }) : null;
+    if (!dirPin && !(editing && typeof editing.lat === 'number')) {
+        dirBorrador = { label: label, addr: addr, ref: ref };
+        newAddrMsg = 'Ubícala en el mapa: sin el punto exacto no podemos calcular el envío.';
+        render();
+        return;
+    }
+    var pin = dirPin ? { lat: dirPin.lat, lon: dirPin.lon } : {};
     try {
         if (editingAddrId) {
-            await api('addresses-update', { token: token, id: editingAddrId, label: label, address: addr, reference: ref });
+            await api('addresses-update', Object.assign({ token: token, id: editingAddrId, label: label, address: addr, reference: ref }, pin));
             editingAddrId = null;
         }
         else {
-            await api('addresses-add', { token: token, label: label, address: addr, reference: ref });
+            await api('addresses-add', Object.assign({ token: token, label: label, address: addr, reference: ref }, pin));
         }
         newAddrMsg = '';
+        dirBorrador = { label: '', addr: '', ref: '' };
+        dirPin = null;
         await loadAddresses();
     }
     catch (e) {

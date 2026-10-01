@@ -18,6 +18,8 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 > día es el mismo que ya usa la app (`img/yape-qr.png`, mismo contenido decodificado). Sigue
 > `businessLaunched: false`: se activa al abrir. P14 (rotar el secreto de cron) no se pudo verificar.
 
+> **ABIERTO el 2026-10-01 a las 6:20 (Lima)**: `businessLaunched` activo. ⚠ El jueves quedó abriendo a las 6:00 para la prueba: devolverlo a 11:00.
+>
 > **Al día el 2026-10-01** (dueño): la **compra real de prueba ya se hizo**; los secrets de Meta
 > están puestos (no volver a listarlos como pendientes); el **provolone ya no se usa** (fuera de la
 > lista); **P14 se cierra como riesgo bajo**: el secreto de cron figura en 5 registros del historial

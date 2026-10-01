@@ -28,18 +28,50 @@ async function loadAddresses(){
 // una nueva — antes solo se podía agregar/eliminar, un typo obligaba a borrar y rehacer
 // (hallazgo de auditoría UX, BAJO).
 var editingAddrId=null;
+// Lo que el formulario tenía escrito mientras se fue al mapa, y el pin que trajo de vuelta.
+// Sin pin una dirección guardada no sirve para cobrar el envío por distancia ni para cerrar un
+// pedido en grupo (dueño, 2026-10-01: «manda a guardar dirección… ni permite el google maps»).
+var dirBorrador:any={label:'',addr:'',ref:''},dirPin:{lat:number,lon:number}|null=null;
+function ubicarDireccionEnMapa(){
+  dirBorrador={label:gv('na-label').trim(),addr:gv('na-addr').trim(),ref:gv('na-ref').trim()};
+  abrirMapaPara('p_addresses',null,dirBorrador.addr);
+}
+// Vuelta del mapa a la pantalla que lo abrió (ver confirmMap).
+async function despuesDelMapa(vuelve:string,texto:string){
+  var lat=window._mLat,lon=window._mLon;
+  if(vuelve==='p_addresses'){
+    dirBorrador.addr=texto;dirPin={lat:lat,lon:lon};
+    sndScreen='p_addresses';render();return;
+  }
+  if(vuelve==='group_split'){
+    var id=mapaDirId;mapaDirId=null;
+    var a=id?myAddresses.find(function(x:any){return mismoId(x.id,id);}):null;
+    if(a){
+      // La dirección guardada queda con su pin para siempre: no hay que volver a ubicarla.
+      try{await api('addresses-update',{token:token,id:a.id,label:a.label,address:a.address,reference:a.reference||'',lat:lat,lon:lon});a.lat=lat;a.lon=lon;}
+      catch(e:any){showToast('No se pudo guardar el pin de «'+(a.label||'tu dirección')+'»: '+e.message,'error');}
+      repartoAddrId=a.id;
+    }else repartoAddrId='__mapa';
+    sndScreen='group_split';render();return;
+  }
+  sndScreen=vuelve;render();
+}
 // TUS DIRECCIONES (2026-10-01): en el papel kraft de «Tu cuenta», con los campos de la hoja del
 // carrito (30G). Hace lo mismo que la anterior: agregar, corregir y borrar, sin la barra vieja.
 function sPAddresses(){
   var editing=editingAddrId?myAddresses.find(function(a){return mismoId(a.id,editingAddrId);}):null;
+  var bLabel=dirBorrador.label||(editing?editing.label:''),bAddr=dirBorrador.addr||(editing?editing.address:''),bRef=dirBorrador.ref||(editing?(editing.reference||''):'');
+  var tienePin=!!dirPin||!!(editing&&typeof editing.lat==='number');
   var campo=function(id:string,et:string,ph:string,val:string,ac:string){
     return'<label class="campo"><s>'+et+'</s><input id="'+id+'" type="text" placeholder="'+ph+'" value="'+esc(val||'')+'"'+(ac?' autocomplete="'+ac+'"':'')+'></label>';
   };
   var lista=myAddresses.length
     ?'<div class="lis">'+myAddresses.map(function(a:any){
         var on=mismoId(editingAddrId,a.id);
-        return'<div class="r dir'+(on?' on':'')+'"><span><b>'+esc(a.label||'Sin nombre')+'</b><s>'+esc(a.address||'')+(a.reference?' · '+esc(a.reference):'')+'</s></span>'
-          +'<span class="acc"><button onclick="editingAddrId=\''+esc(String(a.id))+'\';newAddrMsg=\'\';render()">Corregir</button>'
+        var sinPin=typeof a.lat!=='number';
+        return'<div class="r dir'+(on?' on':'')+'"><span><b>'+esc(a.label||'Sin nombre')+'</b><s>'+esc(a.address||'')+(a.reference?' · '+esc(a.reference):'')+'</s>'
+          +(sinPin?'<s class="sinpin">Sin ubicar en el mapa: corrígela para poder usarla</s>':'')+'</span>'
+          +'<span class="acc"><button onclick="editingAddrId=\''+esc(String(a.id))+'\';dirBorrador={label:\'\',addr:\'\',ref:\'\'};dirPin=null;newAddrMsg=\'\';render()">Corregir</button>'
           +'<button onclick="doDeleteAddress(\''+esc(String(a.id))+'\')">Borrar</button></span></div>';
       }).join('')+'</div>'
     :'<p class="nada">Todavía no guardas ninguna. La que pongas aquí aparece al pedir, de un toque.</p>';
@@ -47,12 +79,13 @@ function sPAddresses(){
     +'<div class="cab"><em>Tu cuenta</em><h1>Tus direcciones</h1></div>'
     +lista
     +'<div class="form"><em>'+(editing?'Corriges «'+esc(editing.label||'')+'»':'Agrega una')+'</em>'
-    +campo('na-label','Nombre','Casa, trabajo…',editing?editing.label:'','')
-    +campo('na-addr','Dirección','Calle, número, urbanización',editing?editing.address:'','street-address')
-    +campo('na-ref','Referencia (opcional)','Portón, piso, timbre',editing?(editing.reference||''):'','')
+    +campo('na-label','Nombre','Casa, trabajo…',bLabel,'')
+    +campo('na-addr','Dirección','Calle, número, urbanización',bAddr,'street-address')
+    +'<button class="ubicar'+(tienePin?' ok':'')+'" onclick="ubicarDireccionEnMapa()">'+(tienePin?'✓ Ubicada en el mapa · cambiar':'Ubicar en el mapa →')+'</button>'
+    +campo('na-ref','Referencia (opcional)','Portón, piso, timbre',bRef,'')
     +'<div id="na-msg" class="err" role="alert">'+esc(newAddrMsg||'')+'</div>'
     +'<button class="guardar" onclick="doSaveAddress()">'+(editing?'Guardar los cambios':'Guardar la dirección')+'</button>'
-    +(editing?'<button class="cancelar" onclick="editingAddrId=null;newAddrMsg=\'\';render()">No corregir</button>':'')
+    +(editing?'<button class="cancelar" onclick="editingAddrId=null;dirBorrador={label:\'\',addr:\'\',ref:\'\'};dirPin=null;newAddrMsg=\'\';render()">No corregir</button>':'')
     +'</div></div>';
 }
 async function doSaveAddress(){
@@ -60,14 +93,20 @@ async function doSaveAddress(){
   var addr=gv('na-addr').trim();
   var ref=gv('na-ref').trim();
   if(!label||!addr){newAddrMsg='Completa nombre y dirección.';render();return;}
+  var editing=editingAddrId?myAddresses.find(function(a:any){return mismoId(a.id,editingAddrId);}):null;
+  if(!dirPin&&!(editing&&typeof editing.lat==='number')){
+    dirBorrador={label:label,addr:addr,ref:ref};
+    newAddrMsg='Ubícala en el mapa: sin el punto exacto no podemos calcular el envío.';render();return;
+  }
+  var pin=dirPin?{lat:dirPin.lat,lon:dirPin.lon}:{};
   try{
     if(editingAddrId){
-      await api('addresses-update',{token:token,id:editingAddrId,label:label,address:addr,reference:ref});
+      await api('addresses-update',Object.assign({token:token,id:editingAddrId,label:label,address:addr,reference:ref},pin));
       editingAddrId=null;
     }else{
-      await api('addresses-add',{token:token,label:label,address:addr,reference:ref});
+      await api('addresses-add',Object.assign({token:token,label:label,address:addr,reference:ref},pin));
     }
-    newAddrMsg='';
+    newAddrMsg='';dirBorrador={label:'',addr:'',ref:''};dirPin=null;
     await loadAddresses();
   }catch(e){newAddrMsg=e.message;render();}
 }

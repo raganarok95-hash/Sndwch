@@ -38,8 +38,8 @@ test('cliente cancela un pedido RECIBIDO pagado con crédito antes de que cocina
   await page.getByRole('button', { name: /Cancelar pedido/ }).click();
 
   // Modal de confirmación propio de la app (no window.confirm).
-  await expect(page.locator('text=CONFIRMAR //')).toBeVisible();
-  await page.getByRole('button', { name: 'CONFIRMAR //' }).click();
+  await expect(page.locator('.ov-barra .si')).toBeVisible();
+  await page.locator('.ov-barra .si').click();
 
   await expect(page.locator('text=Pedido cancelado.')).toBeVisible({ timeout: 10000 });
   expect(cancelCalled).toBe(true);

@@ -12,9 +12,9 @@
 // de SANDO), y `check:colores` compara valor por valor: si el token cambia allá y no acá, falla.
 // `oro` es la barra de SANDO del «//» (`.wm-mark i:first-child`), que no tiene token propio.
 export const PALETA = {
-  bg: "#0F1A14",
-  card: "#16241D",
-  card2: "#122019",
+  bg: "#17130E",
+  card: "#221B14",
+  card2: "#1C1711",
   border: "#25382D",
   text: "#FFFFFF",
   "text-body": "#EFEDE4",
