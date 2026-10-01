@@ -278,7 +278,7 @@ function districtPickerHTML(){
       +'<div id="o-district-hint" style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-family:\'EB Garamond\',serif;font-size:13px;color:'+(fuera?'var(--sw-danger,#ff8888)':'var(--sw-text-muted,#9DA096)')+'">'
       +'<span>'+(fuera?'Todavía no llegamos a '+esc(d.l)+'.':'Entregamos en '+esc(d.l)+'.')+'</span>'
       +'<button onclick="districtSelectOpen=true;syncConfirmFields();render()" style="all:unset;cursor:pointer;font-size:11px;color:'+GOLD+';letter-spacing:.1em">No es mi distrito</button></div>'
-      +(fuera?zonaEsperaHTML(d):'')
+      +(fuera?HERMANO_DICE('piensa','Todavía no llegamos a '+d.l,'Déjanos tu correo abajo y te avisamos el día que abramos tu zona.','alerta')+zonaEsperaHTML(d):'')
       +'</div>';
   }
   return'<div>'
@@ -418,7 +418,7 @@ function checkoutExtrasHTML(){
     // final de todo el checkout — un cliente podía llenar nombre/dirección/método de
     // pago completos antes de enterarse. Ahora aparece apenas elige "Ahora" con la
     // tienda cerrada (hallazgo de auditoría UX, BAJO).
-    +(scheduleMode==='now'&&!storeStatus().open?'<div style="background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-danger,#ff8888);display:flex;align-items:center;gap:7px">'+icon('horario',13,'var(--sw-danger,#ff8888)')+'<span>'+esc(storeStatus().label)+' — elige "Programar" para pedir dentro de nuestro horario.</span></div>':'')
+    +(scheduleMode==='now'&&!storeStatus().open?HERMANO_DICE('mira',storeStatus().label,'Elige «Programar» y lo dejamos listo para cuando abramos.','alerta'):'')
     +(scheduleMode==='later'?scheduleTimePickerHTML():'')+'</div>'
     +'</div></details>'
     +(!cust||(cust.credit_balance||0)<=0?'':(function(){var canCover=(cust.credit_balance||0)>=payT;var checked=useCredit&&canCover;return'<div onclick="'+(canCover?'toggleCredit()':'')+'" style="margin-top:16px;background:'+(checked?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(checked?GOLD:'#2C3228')+';border-radius:10px;padding:14px 16px;cursor:'+(canCover?'pointer':'not-allowed')+';opacity:'+(canCover?1:.5)+';box-shadow:'+(checked?SHADOW_GOLD:SHADOW_SM)+'"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Pagar con mi crédito</div><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-top:2px">Disponible: '+SOLES+pz(cust.credit_balance||0)+(canCover?'':' · no alcanza para este pedido')+'</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:'+(checked?GOLD:'#9DA096')+'">'+(checked?'✓':'○')+'</span></div></div>';})())
@@ -1238,7 +1238,8 @@ async function chargeAndFinalize(culqiToken){
       busy=false;_payingInProgress=false;render();
       var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
       var msg=data.error||'El pago fue rechazado. Intenta de nuevo o con otro método.';
-      if(errEl)errEl.textContent=msg;else showToast(msg);
+      // El rechazo con cara (#24): el hermano serio arriba del motivo, que viene del banco.
+      if(errEl)errEl.innerHTML=HERMANO_DICE('serio','No pasó el pago',msg,'alerta');else showToast(msg);
       return;
     }
     // Pago confirmado con Culqi — el servidor re-verifica el cargo contra la reserva que

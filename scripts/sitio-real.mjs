@@ -14,6 +14,11 @@ const navegador = await chromium.launch(process.env.CHROMIUM ? { executablePath:
 const pagina = await navegador.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 const errores = [];
 pagina.on('pageerror', (e) => errores.push(String(e.message || e)));
+// Culqi (dueño, 2026-10-01: «Pagar con culqi no funciona»): todo lo que su widget diga o pida mal.
+const culqiRuido = [];
+pagina.on('console', (m) => { if (m.type() === 'error' && /culqi/i.test(m.text() + (m.location()?.url || ''))) culqiRuido.push('consola: ' + m.text().slice(0, 300)); });
+pagina.on('response', (r) => { if (/culqi/i.test(r.url()) && r.status() >= 400) culqiRuido.push(`${r.status()} ${r.url().slice(0, 160)}`); });
+pagina.on('requestfailed', (r) => { if (/culqi/i.test(r.url())) culqiRuido.push(`falló ${r.url().slice(0, 160)}: ${r.failure()?.errorText || ''}`); });
 pagina.on('response', (r) => { if (r.url().startsWith(SITIO) && r.status() >= 400) problemas.push(`${r.status()} ${r.url()}`); });
 
 await pagina.goto(SITIO + '/', { waitUntil: 'networkidle', timeout: 60000 });
@@ -56,10 +61,34 @@ else {
 const publicado = await (await pagina.request.get(SITIO + '/')).text();
 if (/nominatim\.openstreetmap|tile\.openstreetmap|unpkg\.com\/leaflet/.test(publicado)) problemas.push('lo publicado todavía nombra el motor de ubicación anterior');
 
+// 5. Culqi abre su widget con la llave pública REAL desde el dominio REAL. Sin cobrar nada: solo
+//    abre y mira si aparece el formulario o si Culqi se queja (llave, dominio, monto).
+const culqi = await pagina.evaluate(async () => {
+  const w = window;
+  if (typeof w.Culqi === 'undefined') return { ok: false, error: 'el script de Culqi no cargó (window.Culqi no existe)' };
+  try {
+    w.Culqi.publicKey = w.CULQI_PUBLIC_KEY;
+    w.Culqi.settings({ title: 'SND//WCH', currency: 'PEN', amount: 1990, description: 'Revisión automática' });
+    w.Culqi.options({ lang: 'auto', installments: false, paymentMethods: { tarjeta: true, yape: true, billetera: false, bancaMovil: false, agente: false, cuotealo: false } });
+    w.Culqi.open();
+  } catch (e) { return { ok: false, error: 'Culqi.open lanzó: ' + String(e && e.message || e) }; }
+  await new Promise((r) => setTimeout(r, 8000));
+  const marcos = [...document.querySelectorAll('iframe')].map((f) => f.src).filter((s) => /culqi/i.test(s));
+  const visible = [...document.querySelectorAll('[id*="culqi" i],[class*="culqi" i]')].some((el) => { const r = el.getBoundingClientRect(); return r.width > 100 && r.height > 100; });
+  return { ok: true, marcos, visible, error: w.Culqi.error ? JSON.stringify(w.Culqi.error).slice(0, 300) : '' };
+});
+if (!culqi.ok) problemas.push('Culqi: ' + culqi.error);
+else {
+  if (culqi.error) problemas.push('Culqi devolvió error al abrir: ' + culqi.error);
+  if (!culqi.visible && !culqi.marcos.length) problemas.push('Culqi.open() no mostró el formulario de pago');
+}
+for (const r of culqiRuido) problemas.push('Culqi ' + r);
+await pagina.screenshot({ path: 'sitio-real-culqi.png' }).catch(() => {});
+
 for (const e of errores) problemas.push('error en la página: ' + e);
 await navegador.close();
 if (problemas.length) {
   console.error('✗ El sitio real tiene problemas:\n  ' + problemas.join('\n  '));
   process.exit(1);
 }
-console.log(`✓ Sitio real: ${rutas.size} imágenes publicadas, keys de Google recibidas, Maps carga con la key real, sin errores`);
+console.log(`✓ Sitio real: ${rutas.size} imágenes publicadas, keys de Google recibidas, Maps carga con la key real, Culqi abre su formulario, sin errores`);
