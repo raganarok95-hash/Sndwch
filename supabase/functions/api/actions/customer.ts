@@ -355,7 +355,7 @@ const VENTANA_DEL_CRON_MIN = 30;
 // atiende a esa hora, o el fijo se quitó.
 const SE_AVISA: EstadoDeFranja[] = ["apartada", "faltan-confirmaciones", "aun-no-toca", "soltada"];
 
-export async function actRemindRecurringOrders(b: any) {
+export async function actRemindRecurringOrders(b: Entrada<"remind-recurring-orders"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
   await Promise.all([loadCatalogPrices(), loadStoreHours()]);
@@ -438,7 +438,7 @@ export function nextRewardNudge(
   return mejor;
 }
 
-export async function actRemindPointsNudge(b: any) {
+export async function actRemindPointsNudge(b: Entrada<"remind-points-nudge"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
   await loadCatalogPrices();
@@ -527,7 +527,7 @@ export function resumenCedeHoy(diaLima: number, yaTocadoHoy: boolean): boolean {
 // sola vez, porque MAX_PUSH_PER_RUN corta en 200 por corrida y una corrida única dejaría al
 // cliente 201 sin su resumen hasta el mes siguiente, cuando la ventana ya se movió. La marca
 // `monthly_recap_ym` hace que cada corrida siga por donde quedó la anterior.
-export async function actRemindMonthlyRecap(b: any) {
+export async function actRemindMonthlyRecap(b: Entrada<"remind-monthly-recap"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
   await loadCatalogPrices();
@@ -893,7 +893,7 @@ export async function actPushUnsubscribe(b: Entrada<"push-unsubscribe"> & { _ip?
 // check_rate_limit (misma RPC que usa reconcile-culqi-charges para "avisar una sola vez")
 // evita reenviar el mismo recordatorio más de una vez por cliente en el mes, sin necesitar
 // una columna nueva en customers.
-export async function actRemindUnclaimedChallenge(b: any) {
+export async function actRemindUnclaimedChallenge(b: Entrada<"remind-unclaimed-challenge"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
   const touchedToday = await phonesTouchedToday();
@@ -956,7 +956,7 @@ const PEAK_HOUR_COPY: Record<"lunch" | "dinner", { title: string; body: string }
 // en cada disparo, así que la misma acción cubre ambos horarios con copy distinto. Reusa
 // check_rate_limit (clave con fecha+slot) para no duplicar el aviso si el cron se
 // reintenta, sin necesitar una columna nueva.
-export async function actRemindPeakHour(b: any) {
+export async function actRemindPeakHour(b: Entrada<"remind-peak-hour"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
   const touchedToday = await phonesTouchedToday();
@@ -1037,7 +1037,7 @@ export async function actSyncCart(b: Entrada<"sync-cart"> & { _ip?: string }) {
 // el producto es perecedero, a diferencia de e-commerce genérico donde 20-60 min es normal.
 const ABANDONED_CART_MIN_MINUTES = 10;
 const ABANDONED_CART_MAX_MINUTES = 180;
-export async function actRemindAbandonedCart(b: any) {
+export async function actRemindAbandonedCart(b: Entrada<"remind-abandoned-cart"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
   const touchedToday = await phonesTouchedToday();
@@ -1124,7 +1124,7 @@ export function regaloDeVuelta(): { puntos: number; aviso: string } {
 const BOUNCE_BACK_MIN_HOURS = 20;
 const BOUNCE_BACK_MAX_HOURS = 48;
 
-export async function actBounceBackFirstOrder(b: any) {
+export async function actBounceBackFirstOrder(b: Entrada<"bounce-back-first-order"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
   // Con los precios de la base cargados: la bebida puede haberse movido desde el panel.
@@ -1191,7 +1191,7 @@ export async function actBounceBackFirstOrder(b: any) {
   }
   return { success: true, sent };
 }
-export async function actRemindSecondOrder(b: any) {
+export async function actRemindSecondOrder(b: Entrada<"remind-second-order"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
   const touchedToday = await phonesTouchedToday();
@@ -1264,7 +1264,7 @@ const WINBACK_STAGES: { key: string; minDays: number; maxDays: number; title: st
   { key: "90d", minDays: 90, maxDays: 180, title: "Tus puntos siguen ahí 💛",
     body: "Tus puntos siguen ahí, intactos. Están esperando que vuelvas." },
 ];
-export async function actRemindLapsedCustomers(b: any) {
+export async function actRemindLapsedCustomers(b: Entrada<"remind-lapsed-customers"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
   const touchedToday = await phonesTouchedToday();
@@ -1316,7 +1316,7 @@ export async function actRemindLapsedCustomers(b: any) {
 }
 
 const HIGH_RANK_INACTIVE_DAYS = 15;
-export async function actRemindHighRankWinback(b: any) {
+export async function actRemindHighRankWinback(b: Entrada<"remind-high-rank-winback"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
   const touchedToday = await phonesTouchedToday();
@@ -1389,7 +1389,7 @@ const NEVER_ORDERED_STAGES = [
   // avisos para siempre.
   { key: "3", minDays: 10, maxDays: 11, title: "Tu cuenta SND//WCH sigue lista", body: "Arma tu primer Signature en menos de un minuto. Es el paso que falta.", tag: "sndwch-never-ordered-3" },
 ];
-export async function actRemindNeverOrdered(b: any) {
+export async function actRemindNeverOrdered(b: Entrada<"remind-never-ordered"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
   const touchedToday = await phonesTouchedToday();
@@ -1535,7 +1535,7 @@ const WEEKLY_PLAN_TTL_MINUTES = 15;
 
 
 // Igual que actExpirePendingCreditPurchases pero para la tabla del Plan Semanal.
-export async function actExpirePendingWeeklyPlans(b: any) {
+export async function actExpirePendingWeeklyPlans(b: Entrada<"expire-pending-weekly-plans"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const nowIso = new Date().toISOString();
   const stale = await sbGet(
@@ -1586,7 +1586,7 @@ const WAITLIST_RATE_WINDOW_MINUTES = 60;
 // que la fila ya guarda) y se le invita a rehacerlo.
 const ABANDONED_PAYMENT_MIN_MINUTES = 30;
 const ABANDONED_PAYMENT_MAX_MINUTES = 60 * 24;
-export async function actRemindAbandonedPayment(b: any) {
+export async function actRemindAbandonedPayment(b: Entrada<"remind-abandoned-payment"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
   const touchedToday = await phonesTouchedToday();
@@ -1690,7 +1690,7 @@ export async function actRemindAbandonedPayment(b: any) {
 // único como el nudge de segundo pedido; el saldo sigue ahí y sigue siendo cierto.
 const UNUSED_CREDIT_MIN_DAYS = 7;
 const UNUSED_CREDIT_REPEAT_DAYS = 21;
-export async function actRemindUnusedCredit(b: any) {
+export async function actRemindUnusedCredit(b: Entrada<"remind-unused-credit"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
   const touchedToday = await phonesTouchedToday();
@@ -1758,7 +1758,7 @@ export async function actRemindUnusedCredit(b: any) {
 // solo y disculparse de nuevo es recordarle algo malo sin motivo.
 const POST_CANCEL_MIN_HOURS = 24;
 const POST_CANCEL_MAX_HOURS = 24 * 7;
-export async function actRemindAfterCancel(b: any) {
+export async function actRemindAfterCancel(b: Entrada<"remind-after-cancel"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!(await customerRemindersEnabled())) return { success: true, skipped: "negocio aún no abierto" };
   const touchedToday = await phonesTouchedToday();

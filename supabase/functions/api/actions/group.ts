@@ -469,7 +469,7 @@ export async function partesDelGrupo(code: string) {
 
 // Cron: los grupos repartidos cuyo plazo venció. Lo que no se pagó se cancela (vuelve su
 // stock) y el grupo se cierra — 'paid' si alguien pagó, 'cancelled' si nadie.
-export async function actExpireGroupShares(b: any) {
+export async function actExpireGroupShares(b: Entrada<"expire-group-shares"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const now = new Date().toISOString();
   const grupos = await sbGet("group_orders", `status=eq.splitting&split_deadline=lt.${encodeURIComponent(now)}&select=id,code,organizer_phone&limit=100`);

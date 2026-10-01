@@ -52,6 +52,9 @@ const CAMPOS_DEL_PEDIDO = {
   ua: e.textoOpcional(400),
 };
 
+/** Lo único que manda pg_cron: el secreto que verifyCronSecret compara. */
+const CAMPOS_CRON = { token, cronSecret: e.textoOpcional(500) };
+
 function accion<S>() {
   return <E extends e.Esquema<unknown>>(entrada: E) => ({ entrada, salida: undefined as unknown as S });
 }
@@ -236,6 +239,42 @@ export const CONTRATO = {
   ),
   'anniversary-greeting': accion<Record<string, unknown>>()(e.objeto({ token, cronSecret: e.textoOpcional(500) })),
   'sync-cart': accion<Record<string, unknown>>()(e.objeto({ token, items: e.sinRevisar() })),
+
+  // ── LOS CRONS (2026-10-01): pg_cron los llama con el secreto; verifyCronSecret lo compara.
+  'remind-monthly-recap': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'remind-low-stock': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'alert-batch-expiry': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'alert-scheduled-shortfall': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'alert-card-declines': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'alert-system-health': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'alert-cook-now': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'alert-cac-brake': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'alert-admin-access': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'send-retention-report': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'remind-marketing-content': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'auto-publish-calendar': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'alert-complaint-deadlines': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'remind-unclaimed-challenge': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'remind-peak-hour': accion<Record<string, unknown>>()(e.objeto({ ...CAMPOS_CRON, slot: e.sinRevisar() })),
+  'remind-abandoned-cart': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'remind-after-cancel': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'remind-high-rank-winback': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'remind-lapsed-customers': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'expire-pending-weekly-plans': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'remind-recurring-orders': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'remind-points-nudge': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'expire-stale-manual-payments': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'alert-stuck-orders': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'expire-pending-charges': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'alert-scheduled-orders': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'reconcile-culqi-charges': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'alert-order-problems': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'remind-abandoned-payment': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'remind-unused-credit': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'remind-second-order': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'remind-never-ordered': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'bounce-back-first-order': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+  'expire-group-shares': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
 
   'recurring-skip': accion<{ success: true; skipOn: string | null }>()(
     e.objeto({ token, id: e.uuid('Falta el pedido fijo.'), deshacer: e.bandera() }),

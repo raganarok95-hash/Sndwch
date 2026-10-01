@@ -150,7 +150,7 @@ export async function actAdminResolveOrderProblem(b: any) {
 
 // Cron: los reportes a los que se les está por pasar la hora prometida sin respuesta. Una
 // sola vez por reporte (alerted), igual que los reclamos.
-export async function actAlertOrderProblems(b: any) {
+export async function actAlertOrderProblems(b: Entrada<"alert-order-problems"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const pronto = new Date(Date.now() + 30 * 60000).toISOString();
   const rows = await sbGet(
