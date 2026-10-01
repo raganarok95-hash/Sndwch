@@ -168,23 +168,6 @@ function sigBadge(s){return(s.newUntil&&Date.now()<new Date(s.newUntil+'T23:59:5
 // `availableUntil` es para variantes de temporada de verdad: el Signature entero deja de
 // listarse/pedirse al pasar la fecha. Espejo server-side: SIG_AVAILABILITY en catalog.ts.
 function sigAvailable(s){return!s.availableUntil||Date.now()<new Date(s.availableUntil+'T23:59:59').getTime();}
-// `thumb` (opcional, HTML de un <img> ya armado) muestra una miniatura a la izquierda —
-// mismo patrón que ya usaba la lista de Signature builds. Sin thumb, la tarjeta se ve
-// exactamente igual que antes (bases nunca tienen foto propia, solo proteínas).
-// Punto de anclaje del botón de "Continuar con Google". Google lo dibuja él mismo dentro
-// de este div (renderButton), así que acá solo va el hueco y la línea que lo explica.
-// Existe como helper y no copiado en cada pantalla porque el botón aparece en tres sitios
-// —PUNTOS sin sesión, el checkout de invitado y la primera apertura— y tres copias del
-// mismo markup se desincronizan a la primera.
-// mountGoogleButton() lo busca por id después de cada render y no hace nada si no está,
-// así que una pantalla que no lo incluya sigue funcionando igual.
-function googleCtaHTML(texto?){
-  if(!googleConfigured())return'';
-  return'<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin:14px 0">'
-    +'<div id="google-btn-mount"></div>'
-    +(texto?'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);text-align:center;max-width:280px;line-height:1.5">'+texto+'</div>':'')
-    +'</div>';
-}
 function ST(n,t,s?){return'<div style="margin-bottom:20px"><h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.15;text-wrap:balance">'+(n?n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>':'')+t+'</h2>'+(s?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:5px">'+s+'</p>':'')+'</div>';}
 // font-size:15px a propósito (no 14px) — iOS Safari hace zoom automático al enfocar
 // cualquier input con font-size menor a 16px, lo que rompe el layout del checkout en
@@ -401,16 +384,6 @@ function startOrderWithSig(id){
   mode='sig';
   sigId=id;
   go('o_sig');
-}
-// Igual que startOrder('byo') pero deja el pan ya preseleccionado en el paso 1 — antes las
-// filas de BASES en Home decían "Elegir →" pero llamaban a startOrder('byo') sin pasar
-// nada, así que abrían el asistente desde cero sin preseleccionar el pan que el cliente
-// acababa de tocar (hallazgo de auditoría UX, ALTO — texto y acción no coincidían).
-function startOrderWithBase(id){
-  resetBuilder();
-  mode='byo';
-  base=id;
-  go('o_build');
 }
 // editingItemQty: cuando se está editando una línea ya en el carrito (ver
 // editCartItem), guarda la cantidad original para que currentBuiltItem() la respete al
@@ -655,17 +628,7 @@ function cartComboDiscount(){return cartDesglose().combo;}
 function cartOffPeakDrinkDiscount(){return cartDesglose().valle;}
 // Cuánto costaría subir ESTE sándwich (ya en 15CM) a 30CM, pan incluido. Usado por R03.
 function itemSizeUpgradeDiff(it){var t=DINERO.tasar(it);return t?t.subir30/100:0;}
-// 15CM y no del menú secreto: la regla de R06 y del sándwich gratis del organizador.
-function isFreeSandwichEligible(it){var t=DINERO.tasar(it);return !!t&&t.elegible.sandwich;}
-// Cuántos sándwiches (no ítems: las bebidas no cuentan) hay en el carrito.
-function cartSandwichQty(){
-  var n=0;cart.forEach(function(it){if(it.type!=='side')n+=it.qty;});return n;
-}
-// Índice del 15CM que se regala al organizador (-1 si no corresponde) y cuánto vale.
-function organizerFreeIdx(){return cartDesglose().organizador.indice;}
 function organizerFreeAmount(){return cartDesglose().organizador.monto;}
-// Precio del sándwich (pan incluido) o de la bebida, sin extras.
-function itemBasePrice(it){var t=DINERO.tasar(it);return t?t.base/100:0;}
 // La primera línea del carrito a la que se le puede aplicar la recompensa, o -1.
 function findRewardTargetIndex(rewardId){return DINERO.lineaDeLaRecompensa(cart,rewardId);}
 // Cuánto perdona la recompensa sobre la línea `targetIdx`. Se pide el desglose con esa
@@ -675,8 +638,6 @@ function rewardWaiverAmount(rewardId,targetIdx){
   var d=DINERO.desglose(cart,{recompensa:rewardId,organizador:!!pendingGroupCode,cuandoMs:effectiveOrderDate().getTime()});
   return d.recompensa&&d.recompensa.indice===targetIdx?d.recompensa.monto:0;
 }
-// Combo y hora valle no se suman: se aplica el mayor.
-function cartStackedDiscount(){var d=cartDesglose();return Math.max(d.combo,d.valle);}
 function cartBaseTotal(){return cart.reduce(function(s,it){return s+itemLineTotal(it);},0);}
 // El código promocional lo valida y lo descuenta el servidor aparte; acá se resta el mismo
 // monto que él confirmó.
@@ -811,35 +772,6 @@ function addSideToCart(code){
   fbTrack('AddToCart',{currency:'PEN',value:d?d.p:0});
   showToast('¡'+(d?d.l:'Producto')+' agregado! //','success');
 }
-function sideQtyChange(code,delta){
-  var it=cart.find(function(x){return x.type==='side'&&x.code===code;});
-  if(!it)return;
-  it.qty+=delta;
-  if(it.qty<=0)cart=cart.filter(function(x){return x!==it;});
-  // Mismo guard que cartQtyChange/cartRemove/editCartItem — antes faltaba acá, así que
-  // quitar a 0 la bebida a la que se le aplicó R05 (bebida gratis) desde ESTE picker (a
-  // diferencia de "Quitar" en TU CARRITO) dejaba la recompensa pintada como seleccionada
-  // pero sin poder tocarla para soltarla (hallazgo de auditoría UX, MEDIO).
-  if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
-  saveCart();
-  render();
-}
-function cartQtyChange(idx,delta){
-  syncConfirmFields();
-  var it=cart[idx];if(!it)return;
-  it.qty+=delta;
-  if(it.qty<=0)cart.splice(idx,1);
-  if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
-  saveCart();
-  render();
-}
-function cartRemove(idx){
-  syncConfirmFields();
-  cart.splice(idx,1);
-  if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
-  saveCart();
-  render();
-}
 // pendingGroupCode se limpia acá y en doLogout() a propósito (2026-08-27). Antes solo se
 // limpiaba tras un pedido pagado con éxito, así que sobrevivía a un abandono: el
 // organizador cerraba un grupo de 5+, no pagaba, vaciaba el carrito, armaba un pedido
@@ -899,39 +831,6 @@ async function loadUserExtras(){
   if(results[2].status==='fulfilled')myOrders=results[2].value.orders||[];
   render();
 }
-// ORDER SIGNATURE
-// Lista de espera pre-lanzamiento — el negocio real aún no abre (ver CLAUDE.md), así que
-// esto le da a cualquier visitante sin cuenta una forma de decir "avísenme" sin la
-// fricción de un registro completo (DNI, PIN, etc.). Solo se muestra a invitados y
-// desaparece (localStorage) apenas se anota, para no insistir en cada visita.
-async function joinWaitlist(){
-  var phone=gv('wl-phone').trim();
-  var name=gv('wl-name').trim();
-  if(phone.replace(/\D/g,'').length<6){wlMsg='Ingresa un teléfono válido.';render();return;}
-  wlMsg='Enviando...';render();
-  try{
-    await api('waitlist-join',{phone:phone,name:name||null,source:'app_home'});
-    wlDone=true;localStorage.setItem('sw_wl_done','1');wlPhone='';wlName='';wlMsg='';
-    fbTrack('Lead',{content_name:'lista_de_espera'});
-    showToast('¡Listo! Te avisamos apenas abramos.','success');
-  }catch(e){wlMsg=e.message||'No se pudo registrar.';}
-  render();
-}
-function waitlistCardHTML(){
-  if(cust||wlDone||businessLaunched)return'';
-  // Copy reforzado (plan de conversión desde frío, MARKETING_PLAN.md §14.4.2) — antes era
-  // un mensaje puramente pasivo ("te avisamos"), sin ningún incentivo concreto visible en
-  // el primer segundo. Ahora menciona el código BIENVENIDA real (ya creado, -S/5, mínimo
-  // S/15) en vez de prometer un mecanismo de "primeros N inscritos" que no existe en el
-  // backend — nunca se promete algo que la app no cumple de verdad (Product Principle #2).
-  return'<div style="background:var(--sw-card,#1B1F18);border:1px solid '+GOLD+';border-radius:12px;padding:16px;margin-bottom:16px">'
-    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Sé de los primeros<span class="cut-sep" style="color:'+GOLD+'"> // </span>en probarlo</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin:4px 0 12px;line-height:1.5">Déjanos tu teléfono y te avisamos apenas empecemos a repartir de verdad — usa el código <b style="color:'+GOLD+'">BIENVENIDA</b> en tu primer pedido y llévate S/5 de descuento.</div>'
-    +'<div style="display:flex;flex-direction:column;gap:8px">'+INP('wl-phone','Teléfono','tel',wlPhone)+INP('wl-name','Nombre // opcional','text',wlName)+'</div>'
-    +(wlMsg?'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger,#ff8888);margin-top:8px">'+esc(wlMsg)+'</div>':'')
-    +'<div style="margin-top:10px">'+BTN('Avísame //','joinWaitlist()')+'</div>'
-    +'</div>';
-}
 
 // ── PANTALLA DE ELECCION (concepto 1) ─────────────────────────────────────────────
 // Las dos mitades del logo, a sangre, cada una como boton de su lado. Sin lista de
@@ -975,16 +874,6 @@ function RIEL(o?){
     +'background:var(--sw-bg,#0F1A14);border-bottom:1px solid var(--sw-border-soft,#16241C)">'+izq+centro+der+'</div>';
 }
 
-// El boton de volver a la puerta. Es el UNICO camino para cambiar de hermano, y es a
-// proposito que no sea un interruptor siempre visible: dos pestanas convertirian otra vez
-// los dos mundos en una sola pantalla con un filtro.
-function BOTON_PUERTA(){
-  return'<button onclick="volverALaPuerta()" aria-label="Cambiar de lado" style="all:unset;cursor:pointer;width:44px;height:44px;'
-    +'display:flex;align-items:center;justify-content:center;gap:3px">'
-    +'<span style="display:block;width:9px;height:9px;border-radius:999px;background:'+GOLD+'"></span>'
-    +'<span style="display:block;width:9px;height:9px;border-radius:999px;background:var(--sw-sky,#8CC8EC)"></span>'
-    +'</button>';
-}
 
 // La PANTALLA - el contenedor. El cuerpo NO trae margen lateral a proposito: la imagen va a
 // sangre y es BLOQUE/SECCION quien mete el texto en la caja. Asi "a sangre" es el estado
@@ -1092,86 +981,6 @@ function sMenuSecreto(){
     +'<div class="go sw-barra"><button class="oro" onclick="startOrderWithSig(\''+sig.id+'\')">Pedirlo a ciegas</button><button class="cel" onclick="startOrderWithSig(\''+sig.id+'\')">'+precio+'</button></div>'
     +'</div>';
 }
-function vaultSection(){
-  var secretSig=SIGS.find(function(s){return s.secret;});
-  if(!secretSig)return'';
-  // ── EL MENU SECRETO (rediseñado 2026-09-17, variantes A/B/D elegidas por el dueño) ──
-  //
-  // El ojo en espiral de WICHO es el simbolo: en esta paleta el morado tiene UN solo
-  // trabajo —lo que sorprende— asi que el secreto es justo para lo que existe. Y gira,
-  // porque un ojo hipnotico quieto es un dibujo; girando es una promesa.
-  //
-  // BLOQUEADO: la foto REAL detras, desenfocada al punto de que se ve que HAY algo pero
-  // no que es. Al presionar, el desenfoque BAJA sin llegar a cero: es una mirada, nunca
-  // la revelacion. Esa linea no es estetica — la composicion del secreto no se revela
-  // jamas antes de pedirlo, y una foto nitida la revelaria.
-  //
-  // ⚠ Y LA BARRA DE PROGRESO NO ES ADORNO. Antes la tarjeta solo decia "te faltan N
-  // pedidos": un umbral sin progreso visible es teatro (Ko & Song, Cornell 2025, sobre
-  // restaurantes). Se muestra lo AVANZADO, no solo lo que falta.
-  var vaultCard=secretSig?(function(){
-    var myTotal=cust?(cust.total_orders||0):0;
-    var missing=Math.max(0,secretSig.minOrders-myTotal);
-    var unlocked=!!cust&&missing===0;
-    var hechos=Math.min(myTotal,secretSig.minOrders);
-    var ojo='<img src="img/ojo-espiral.webp" alt="" aria-hidden="true" class="sw-ojo" ';
-    var rot='<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;'
-      +'letter-spacing:.24em;text-transform:uppercase;color:var(--sw-spiral,#C3A6D2);'
-      +'margin-bottom:10px">Menú secreto</div>';
-
-    if(unlocked){
-      // DESBLOQUEADO (variante D): la foto sin tapar, el sello y el precio. `sw-revelar`
-      // corre UNA vez al montarse, asi que el paso de tapado a revelado se ve.
-      return'<div style="margin:20px 0 16px">'+rot
-        +'<div onclick="sndScreen=\'o_secreto\';render()" class="sw-revelar" '
-        +'style="position:relative;border-radius:12px;overflow:hidden;height:300px;cursor:pointer">'
-        +(SIG_IMG[secretSig.id]?'<img src="'+SIG_IMG[secretSig.id]+'" alt="'+esc(secretSig.n)
-          +'" style="width:100%;height:100%;object-fit:cover">':'')
-        +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,15,28,.55) 0%,transparent 34%,rgba(10,12,9,.95) 100%)"></div>'
-        +'<span style="position:absolute;top:13px;left:13px;display:inline-flex;align-items:center;gap:7px;'
-        +'background:var(--sw-spiral,#C3A6D2);color:#1A1220;border-radius:999px;padding:5px 12px;font-size:9px;'
-        +'font-weight:600;letter-spacing:.14em;text-transform:uppercase">'
-        +ojo+'style="width:13px;height:13px"></span>Te lo ganaste</span>'
-        +'<div style="position:absolute;left:0;right:0;bottom:0;padding:18px">'
-        +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
-        +'font-weight:640;color:var(--sw-text,#fff);line-height:1.02">'+esc(secretSig.n)+'</div>'
-        +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
-        +'color:var(--sw-text-muted4,#C6C9BE);margin-top:6px">No preguntes qué lleva.</div>'
-        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px">'
-        +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;'
-        +'font-weight:640;color:var(--sw-spiral,#C3A6D2)">'+SOLES+pz(secretSig.p15)+'</span>'
-        +'<span style="background:var(--sw-spiral,#C3A6D2);color:#1A1220;border-radius:999px;'
-        +'padding:11px 22px;font-size:13px;font-weight:600">Pedirlo</span></div>'
-        +'</div></div></div>';
-    }
-
-    // BLOQUEADO (A + la mirada de B). `sw-espiar` baja el desenfoque mientras se
-    // mantiene presionado, y lo devuelve al soltar: el secreto no se queda abierto.
-    var seg='';
-    for(var i=0;i<secretSig.minOrders;i++){
-      seg+='<span style="flex:1;height:4px;border-radius:999px;background:'
-        +(i<hechos?'var(--sw-spiral,#C3A6D2)':'rgba(195,166,210,.2)')+'"></span>';
-    }
-    return'<div style="margin:20px 0 16px">'+rot
-      +'<div class="sw-espiar" style="position:relative;border-radius:12px;overflow:hidden;height:284px">'
-      +(SIG_IMG[secretSig.id]?'<img class="sw-tapada" src="'+SIG_IMG[secretSig.id]+'" alt="" aria-hidden="true" '
-        +'style="width:100%;height:100%;object-fit:cover">':'')
-      +'<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,rgba(74,61,98,.34),rgba(10,12,9,.94) 74%)"></div>'
-      +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;'
-      +'justify-content:center;padding:26px;text-align:center">'
-      +ojo+'style="width:56px;height:56px;margin-bottom:15px">'
-      +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
-      +'font-weight:640;color:var(--sw-text,#fff);line-height:1.05">'+esc(secretSig.n)+'</div>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
-      +'color:var(--sw-text-muted4,#C6C9BE);margin-top:9px;max-width:250px;line-height:1.5">'
-      +'No está en la carta. Cambia cada mes. Se revela cuando lo pides.</div>'
-      +'<div style="display:flex;gap:6px;width:170px;margin-top:22px">'+seg+'</div>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-spiral,#C3A6D2);'
-      +'margin-top:11px;letter-spacing:.06em">'+hechos+' de '+secretSig.minOrders+' pedidos</div>'
-      +'</div></div></div>';
-  })():'';
-  return vaultCard?BLOQUE(vaultCard):'';
-}
 
 // == LOS DOS MUNDOS (escritos de cero, 2026-09-17) ======================================
 //
@@ -1188,76 +997,9 @@ function vaultSection(){
 //             lado desde el que se entro. No es un tercer hermano: es el mismo producto
 //             visto desde cualquiera de los dos.
 
-// Una carta de la carta. La foto ES la tarjeta: es lo unico que de verdad vende un
-// sandwich, y en la app anterior competia con un parrafo por el mismo espacio.
-function TILE_SIGNATURE(sig,ancho){
-  var av=sigInStock(sig);
-  var img=SIG_IMG[sig.id];
-  var alto=ancho?232:196;
-  var foto=img
-    ?'<img src="'+img+'" alt="'+esc(sig.n)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block'+(av?'':';filter:grayscale(1)')+'">'
-    :'<div style="width:100%;height:100%;background:var(--sw-card2,#122019)"></div>';
-  // Un agotado NO se esconde: un hueco en la carta no se explica solo, y esconderlo manda
-  // al cliente a buscar a otro lado.
-  var sello=av
-    ?(sig.recommended
-      ?'<span style="position:absolute;top:11px;left:11px;background:'+GOLD+';color:var(--sw-on-gold,#241a08);'
-       +'font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;letter-spacing:.14em;'
-       +'text-transform:uppercase;border-radius:999px;padding:4px 10px">La estrella</span>'
-      :sigBadge(sig)?'<span style="position:absolute;top:11px;left:11px;background:rgba(0,0,0,.58);color:var(--sw-text,#fff);'
-       +'font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;border-radius:999px;padding:4px 10px">'+esc(sigBadge(sig))+'</span>':'')
-    :'<span style="position:absolute;top:11px;left:11px;background:rgba(0,0,0,.65);color:var(--sw-danger,#ff8888);'
-     +'font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;border-radius:999px;padding:4px 10px">Agotado</span>';
-  var cuerpo='<div style="position:absolute;left:0;right:0;bottom:0;padding:13px;'
-    +'background:linear-gradient(180deg,transparent 28%,rgba(0,0,0,.9) 100%)">'
-    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:'+(ancho?'22':'18')+'px;'
-    +'font-weight:640;color:var(--sw-text,#fff);line-height:1.02;text-shadow:0 1px 8px rgba(0,0,0,.8)">'+esc(sig.n)+'</div>'
-    +(av?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:'+GOLD+';margin-top:4px;'
-        +'text-shadow:0 1px 8px rgba(0,0,0,.8)">'+SOLES+pz(sig.p15)
-        +'<span style="color:rgba(255,255,255,.72);font-size:9px;margin-left:7px">30CM '+SOLES+pz(sig.p30)+'</span></div>':'')
-    +'</div>';
-  if(!av)return'<div style="grid-column:span '+(ancho?2:1)+';position:relative;height:'+alto+'px;overflow:hidden;'
-    +'border-radius:10px;background:var(--sw-card2,#122019);opacity:.5">'+foto+sello+cuerpo+'</div>';
-  return'<button type="button" onclick="startOrderWithSig(\''+sig.id+'\')" aria-label="'+esc(sig.n)+'" '
-    +'style="all:unset;box-sizing:border-box;cursor:pointer;display:block;grid-column:span '+(ancho?2:1)+';'
-    +'position:relative;width:100%;height:'+alto+'px;overflow:hidden;border-radius:10px;background:var(--sw-card2,#122019)">'
-    +foto+sello+cuerpo+'</button>';
-}
 
-// El estado del local, en UNA linea. En la app anterior eran tres renglones sueltos arriba
-// del todo; es informacion util pero no es la portada.
-function LINEA_ESTADO(){
-  var ss=storeStatus();
-  var abierto=businessLaunched&&ss.open;
-  var texto=!businessLaunched?'Aún no abrimos':ss.label;
-  var color=!businessLaunched?ACC():(abierto?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)');
-  return BLOQUE('<div style="display:flex;align-items:center;gap:8px;padding:12px 0 2px;flex-wrap:wrap">'
-    +'<span style="display:inline-block;width:6px;height:6px;border-radius:999px;background:'+color+'"></span>'
-    +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.2em;'
-    +'text-transform:uppercase;color:'+color+'">'+esc(texto)+'</span>'
-    +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096)">'
-    +'Delivery desde '+SOLES_TXT+pz(DELIVERY_MIN_FEE)+' según la distancia</span></div>');
-}
 
-// El carrito, como zona derecha del riel. Solo aparece cuando hay algo: un carrito vacio
-// dibujado en cada pantalla es ruido que nunca se toca.
-function RIEL_CARRITO(){
-  if(!cart.length)return'';
-  var n=unidadesEnCarrito();
-  return'<button type="button" onclick="go(\'o_cart\')" aria-label="Ver carrito ('+n+')" '
-    +'style="all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;'
-    +'font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:'+ACC_INK()+';background:'+ACC()+';'
-    +'border-radius:999px">'+n+'</button>';
-}
 
-// El mundo de SANDO: su carta cerrada.
-// La bebida mas barata, derivada. Un "desde S/5" escrito a mano se vuelve mentira el dia
-// que el dueno repricie una bebida desde el panel, sin tocar una linea de codigo.
-function precioBebidaMin(){
-  var ps=SIDES.filter(function(d){return isAvail(d.id);}).map(function(d){return d.p;});
-  if(!ps.length)ps=SIDES.map(function(d){return d.p;});
-  return ps.length?Math.min.apply(null,ps):0;
-}
 
 // ── BEBIDAS · lado SANDO: el vaso a sangre · lado WICHO: tres franjas (maquetas aprobadas) ──
 // docs/maquetas/aprobadas/bebidas-lado-sando.png, bebidas-lado-wicho.png y

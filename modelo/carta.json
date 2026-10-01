@@ -80,8 +80,8 @@
       "nombre": "Atún",
       "sabor": "House",
       "desc": "En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.",
-      "p15": 23.9,
-      "p30": 35.9,
+      "p15": 22.9,
+      "p30": 33.9,
       "dbl15": 10.9,
       "dbl30": 21.9,
       "foto": "img/prot_p04.webp"
@@ -103,8 +103,8 @@
       "nombre": "Albóndiga",
       "sabor": "Marinara",
       "desc": "Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.",
-      "p15": 23.9,
-      "p30": 35.9,
+      "p15": 21.9,
+      "p30": 32.9,
       "dbl15": 6.9,
       "dbl30": 13.9,
       "foto": "img/prot_p06.webp"
@@ -114,8 +114,8 @@
       "nombre": "Pavo",
       "sabor": "Horneado",
       "desc": "Lonjas de un milímetro puestas en pliegues, laminadas el mismo día.",
-      "p15": 24.9,
-      "p30": 36.9,
+      "p15": 23.9,
+      "p30": 34.9,
       "dbl15": 9,
       "dbl30": 17,
       "foto": "img/prot_p08.webp"
@@ -125,8 +125,8 @@
       "nombre": "Res",
       "sabor": "Laminada",
       "desc": "Laminada fina y salteada al momento.",
-      "p15": 23.9,
-      "p30": 35.9,
+      "p15": 22.9,
+      "p30": 33.9,
       "dbl15": 7,
       "dbl30": 13.9,
       "foto": "img/prot_p09.webp"
@@ -313,7 +313,7 @@
       ],
       "salsas": [],
       "p15": 22.9,
-      "p30": 32.9,
+      "p30": 33.9,
       "queso": "C02",
       "foto": "img/sig09.jpg",
       "fotoVertical": "img/sig09_v.webp",
@@ -334,7 +334,7 @@
         "S06"
       ],
       "p15": 21.9,
-      "p30": 28.9,
+      "p30": 32.9,
       "queso": "C01",
       "foto": "img/sig02.jpg",
       "fotoVertical": "img/sig02_v.webp",
@@ -372,7 +372,7 @@
       "vegetales": [],
       "salsas": [],
       "p15": 22.9,
-      "p30": 36.9,
+      "p30": 33.9,
       "queso": "C02",
       "foto": "img/sig12.jpg",
       "fotoVertical": "img/sig12_v.webp",
@@ -395,7 +395,7 @@
         "S06"
       ],
       "p15": 23.9,
-      "p30": 33.9,
+      "p30": 34.9,
       "queso": "C01",
       "foto": "img/sig11.jpg",
       "fotoVertical": "img/sig11_v.webp",
@@ -411,7 +411,7 @@
       "vegetales": [],
       "salsas": [],
       "p15": 20.9,
-      "p30": 34.9,
+      "p30": 31.9,
       "foto": "img/sig04.jpg",
       "fotoVertical": "img/sig04_v.webp",
       "pitch": "Para comer en el escritorio con una mano, sin que se desarme entre bocado y bocado: no lleva nada suelto adentro. Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Nada más."
@@ -436,7 +436,7 @@
         "S12"
       ],
       "p15": 24.9,
-      "p30": 30.9,
+      "p30": 35.9,
       "foto": "img/sig05.jpg",
       "fotoVertical": "img/sig05_v.webp",
       "pitch": "Solo para clientes iniciados. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo."

@@ -437,9 +437,6 @@ function FICHA(etiqueta,sel,fn){
   // `aria-pressed` porque son interruptores, no enlaces: dicen si están puestas o no.
   return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" onclick="'+fn+'" style="all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:5px;background:'+(sel?ACC():'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:999px;padding:10px 16px;cursor:pointer;transition:all .15s;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+(sel?'var(--sw-on-gold,#241a08)':'var(--sw-text,#fff)')+'">'+etiqueta+'</button>';
 }
-function FICHA_OFF(etiqueta){
-  return'<div style="display:inline-flex;align-items:center;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:999px;padding:10px 16px;opacity:.35;font-family:\'Bodoni Moda\',serif;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096);text-decoration:line-through">'+etiqueta+'</div>';
-}
 
 // ORDER CONFIRM + SMART UPSELL
 // PER-ITEM REVIEW — revisar un sándwich recién armado antes de agregarlo al carrito

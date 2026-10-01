@@ -1,16 +1,3 @@
-// CARRITO + CHECKOUT
-function cartItemsHTML(){
-  // El carrito vacío era la única pantalla sin dueño: un rótulo dorado suelto en medio de
-  // la nada, mientras "sin pedidos", "sin direcciones", "sin favoritos" y "sin pedidos
-  // fijos" ya recibían al cliente con el hermano del lado en el que está. Y es de las
-  // primeras que ve alguien que abre la app por curiosidad. Ahora usa el mismo `VACIO()`.
-  if(!cart.length)return VACIO('Carrito vacío','Elige un Signature o arma el tuyo — todo se junta acá antes de pagar.',null,'piensa');
-  return cart.map(function(it,idx){
-    var extras=itemExtrasLabel(it);
-    var canEdit=it.type!=='side';
-    return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(itemLabel(it))+'</div>'+(extras?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(extras)+'</div>':'')+'</div><div style="display:flex;gap:10px;flex-shrink:0">'+(canEdit?'<button onclick="editCartItem('+idx+')" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px">Editar</button>':'')+'<button onclick="cartRemove('+idx+')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px">Quitar</button></div></div>'+(canEdit?'<div onclick="editItemNote('+idx+')" style="cursor:pointer;margin-top:4px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096)">'+(it.note?icon('reclamo',11,'#9DA096')+'<span style="margin-left:5px">'+esc(it.note)+'</span>':'+ agregar nota (ej. sin cebolla)')+'</div>':'')+'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><div style="display:flex;align-items:center;gap:10px"><button onclick="cartQtyChange('+idx+',-1)" aria-label="Quitar una unidad" style="all:unset;cursor:pointer;width:44px;height:44px;line-height:44px;background:var(--sw-card2,#171A14);border-radius:8px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600">−</button><span class="bump" style="display:inline-block;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);min-width:16px;text-align:center">'+it.qty+'</span><button onclick="cartQtyChange('+idx+',1)" aria-label="Agregar una unidad" style="all:unset;cursor:pointer;width:44px;height:44px;line-height:44px;background:var(--sw-card2,#171A14);border-radius:8px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600">+</button></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(itemLineTotal(it))+'</span></div></div>';
-  }).join('');
-}
 // Edita un producto ya en el carrito: lo saca y precarga el builder con su
 // configuración exacta, para no tener que rearmarlo desde cero.
 function editCartItem(idx){
@@ -482,23 +469,12 @@ function qrPolyNew(num,shift){
   for(var j=num.length-offset;j<out.length;j++)out[j]=0;
   return out;
 }
-function qrPolyMultiply(a,b){
-  var num=new Array(a.length+b.length-1);
-  for(var i=0;i<num.length;i++)num[i]=0;
-  for(var i=0;i<a.length;i++)for(var j=0;j<b.length;j++)num[i+j]^=qrGexp(qrGlog(a[i])+qrGlog(b[j]));
-  return qrPolyNew(num,0);
-}
 function qrPolyMod(a,b){
   if(a.length-b.length<0)return a;
   var ratio=qrGlog(a[0])-qrGlog(b[0]);
   var num=a.slice();
   for(var i=0;i<b.length;i++)num[i]^=qrGexp(qrGlog(b[i])+ratio);
   return qrPolyMod(qrPolyNew(num,0),b);
-}
-function qrErrorCorrectPolynomial(len){
-  var a=[1];
-  for(var i=0;i<len;i++)a=qrPolyMultiply(a,[1,qrGexp(i)]);
-  return a;
 }
 // count,total,data por bloque — índice (typeNumber-1)*4+ecIdx con ecIdx L=0,M=1,Q=2,H=3.
 var qrRSBlockTable=[
@@ -508,269 +484,12 @@ var qrRSBlockTable=[
   [2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],
   [2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],
 ];
-function qrGetRSBlocks(typeNumber,ecIdx){
-  var row=qrRSBlockTable[(typeNumber-1)*4+ecIdx];
-  var list=[];
-  var len=row.length/3;
-  for(var i=0;i<len;i++){
-    var count=row[i*3],totalCount=row[i*3+1],dataCount=row[i*3+2];
-    for(var j=0;j<count;j++)list.push({totalCount:totalCount,dataCount:dataCount});
-  }
-  return list;
-}
-function qrBufNew(){return{buffer:[],length:0};}
-function qrBufPutBit(buf,bit){
-  var bufIndex=Math.floor(buf.length/8);
-  if(buf.buffer.length<=bufIndex)buf.buffer.push(0);
-  if(bit)buf.buffer[bufIndex]|=(0x80>>>(buf.length%8));
-  buf.length++;
-}
-function qrBufPut(buf,num,length){for(var i=0;i<length;i++)qrBufPutBit(buf,((num>>>(length-i-1))&1)===1);}
-function qrLengthBits(typeNumber){return typeNumber<10?8:16;}
-function qrStringToBytes(s){
-  var out=[];
-  var utf8=unescape(encodeURIComponent(s));
-  for(var i=0;i<utf8.length;i++)out.push(utf8.charCodeAt(i)&0xff);
-  return out;
-}
-function qrCreateBytes(buffer,rsBlocks){
-  var offset=0,maxDcCount=0,maxEcCount=0;
-  var dcdata=new Array(rsBlocks.length),ecdata=new Array(rsBlocks.length);
-  for(var r=0;r<rsBlocks.length;r++){
-    var dcCount=rsBlocks[r].dataCount,ecCount=rsBlocks[r].totalCount-dcCount;
-    maxDcCount=Math.max(maxDcCount,dcCount);maxEcCount=Math.max(maxEcCount,ecCount);
-    dcdata[r]=new Array(dcCount);
-    for(var i=0;i<dcdata[r].length;i++)dcdata[r][i]=0xff&buffer.buffer[i+offset];
-    offset+=dcCount;
-    var rsPoly=qrErrorCorrectPolynomial(ecCount);
-    var rawPoly=qrPolyNew(dcdata[r],rsPoly.length-1);
-    var modPoly=qrPolyMod(rawPoly,rsPoly);
-    ecdata[r]=new Array(rsPoly.length-1);
-    for(var i2=0;i2<ecdata[r].length;i2++){
-      var modIndex=i2+modPoly.length-ecdata[r].length;
-      ecdata[r][i2]=modIndex>=0?modPoly[modIndex]:0;
-    }
-  }
-  var totalCodeCount=0;
-  for(var b=0;b<rsBlocks.length;b++)totalCodeCount+=rsBlocks[b].totalCount;
-  var data=new Array(totalCodeCount);
-  var index=0;
-  for(var i3=0;i3<maxDcCount;i3++)for(var r3=0;r3<rsBlocks.length;r3++)if(i3<dcdata[r3].length)data[index++]=dcdata[r3][i3];
-  for(var i4=0;i4<maxEcCount;i4++)for(var r4=0;r4<rsBlocks.length;r4++)if(i4<ecdata[r4].length)data[index++]=ecdata[r4][i4];
-  return data;
-}
-function qrCreateData(typeNumber,ecIdx,text){
-  var rsBlocks=qrGetRSBlocks(typeNumber,ecIdx);
-  var buffer=qrBufNew();
-  var bytes=qrStringToBytes(text);
-  qrBufPut(buffer,4,4);
-  qrBufPut(buffer,bytes.length,qrLengthBits(typeNumber));
-  for(var i=0;i<bytes.length;i++)qrBufPut(buffer,bytes[i],8);
-  var totalDataCount=0;
-  for(var b=0;b<rsBlocks.length;b++)totalDataCount+=rsBlocks[b].dataCount;
-  if(buffer.length>totalDataCount*8)throw new Error('qr overflow');
-  if(buffer.length+4<=totalDataCount*8)qrBufPut(buffer,0,4);
-  while(buffer.length%8!==0)qrBufPutBit(buffer,false);
-  while(true){
-    if(buffer.length>=totalDataCount*8)break;
-    qrBufPut(buffer,0xEC,8);
-    if(buffer.length>=totalDataCount*8)break;
-    qrBufPut(buffer,0x11,8);
-  }
-  return qrCreateBytes(buffer,rsBlocks);
-}
 var qrPatternPositionTable=[
   [],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],
 ];
-function qrGetBCHDigit(data){var d=0;while(data!==0){d++;data>>>=1;}return d;}
 var QR_G15=(1<<10)|(1<<8)|(1<<5)|(1<<4)|(1<<2)|(1<<1)|1;
 var QR_G15_MASK=(1<<14)|(1<<12)|(1<<10)|(1<<4)|(1<<1);
 var QR_G18=(1<<12)|(1<<11)|(1<<10)|(1<<9)|(1<<8)|(1<<5)|(1<<2)|1;
-function qrGetBCHTypeInfo(data){
-  var d=data<<10;
-  while(qrGetBCHDigit(d)-qrGetBCHDigit(QR_G15)>=0)d^=(QR_G15<<(qrGetBCHDigit(d)-qrGetBCHDigit(QR_G15)));
-  return((data<<10)|d)^QR_G15_MASK;
-}
-// Solo entra en juego desde versión 7 (nuestro uso real — número/MECARD/URL corta
-// — nunca llega tan lejos, pero se implementa completo para no dejar un encoder
-// que silenciosamente produzca un QR inválido si algún día se codifica más texto).
-function qrGetBCHTypeNumber(data){
-  var d=data<<12;
-  while(qrGetBCHDigit(d)-qrGetBCHDigit(QR_G18)>=0)d^=(QR_G18<<(qrGetBCHDigit(d)-qrGetBCHDigit(QR_G18)));
-  return(data<<12)|d;
-}
-function qrSetupTypeNumber(m,test){
-  var bits=qrGetBCHTypeNumber(m.typeNumber);
-  for(var i=0;i<18;i++){
-    var mod=(!test&&((bits>>i)&1)===1);
-    m.modules[Math.floor(i/3)][i%3+m.moduleCount-8-3]=mod;
-  }
-  for(var i2=0;i2<18;i2++){
-    var mod2=(!test&&((bits>>i2)&1)===1);
-    m.modules[i2%3+m.moduleCount-8-3][Math.floor(i2/3)]=mod2;
-  }
-}
-function qrGetMask(pattern,i,j){
-  switch(pattern){
-    case 0:return(i+j)%2===0;
-    case 1:return i%2===0;
-    case 2:return j%3===0;
-    case 3:return(i+j)%3===0;
-    case 4:return(Math.floor(i/2)+Math.floor(j/3))%2===0;
-    case 5:return(i*j)%2+(i*j)%3===0;
-    case 6:return((i*j)%2+(i*j)%3)%2===0;
-    case 7:return((i*j)%3+(i+j)%2)%2===0;
-    default:return false;
-  }
-}
-// Nota: solo versiones 1-10 (suficiente para "MECARD:N:...;TEL:9XXXXXXXX;;", ~40
-// caracteres) — evita necesitar la tabla completa de posiciones de alineación
-// (hasta versión 40) que el estándar define para QRs mucho más grandes.
-function qrGetPatternPosition(typeNumber){return qrPatternPositionTable[typeNumber-1];}
-function qrEcLevelIdxToBCH(ecIdx){return[1,0,3,2][ecIdx];}
-function qrModelNew(typeNumber,ecIdx){return{typeNumber:typeNumber,ecIdx:ecIdx,modules:null,moduleCount:0,dataCache:null,text:''};}
-function qrIsDark(m,row,col){return m.modules[row][col];}
-function qrSetupPositionProbePattern(m,row,col){
-  for(var r=-1;r<=7;r++){
-    if(row+r<=-1||m.moduleCount<=row+r)continue;
-    for(var c=-1;c<=7;c++){
-      if(col+c<=-1||m.moduleCount<=col+c)continue;
-      var dark=(r>=0&&r<=6&&(c===0||c===6))||(c>=0&&c<=6&&(r===0||r===6))||(r>=2&&r<=4&&c>=2&&c<=4);
-      m.modules[row+r][col+c]=dark;
-    }
-  }
-}
-function qrSetupTimingPattern(m){
-  for(var r=8;r<m.moduleCount-8;r++){if(m.modules[r][6]!=null)continue;m.modules[r][6]=(r%2===0);}
-  for(var c=8;c<m.moduleCount-8;c++){if(m.modules[6][c]!=null)continue;m.modules[6][c]=(c%2===0);}
-}
-function qrSetupPositionAdjustPattern(m){
-  var pos=qrGetPatternPosition(m.typeNumber);
-  for(var i=0;i<pos.length;i++)for(var j=0;j<pos.length;j++){
-    var row=pos[i],col=pos[j];
-    if(m.modules[row][col]!=null)continue;
-    for(var r=-2;r<=2;r++)for(var c=-2;c<=2;c++){
-      var dark=(r===-2||r===2||c===-2||c===2||(r===0&&c===0));
-      m.modules[row+r][col+c]=dark;
-    }
-  }
-}
-function qrSetupTypeInfo(m,test,maskPattern){
-  var data=(qrEcLevelIdxToBCH(m.ecIdx)<<3)|maskPattern;
-  var bits=qrGetBCHTypeInfo(data);
-  for(var i=0;i<15;i++){
-    var mod=(!test&&((bits>>i)&1)===1);
-    if(i<6)m.modules[i][8]=mod;else if(i<8)m.modules[i+1][8]=mod;else m.modules[m.moduleCount-15+i][8]=mod;
-  }
-  for(var i2=0;i2<15;i2++){
-    var mod2=(!test&&((bits>>i2)&1)===1);
-    if(i2<8)m.modules[8][m.moduleCount-i2-1]=mod2;else if(i2<9)m.modules[8][15-i2-1+1]=mod2;else m.modules[8][15-i2-1]=mod2;
-  }
-  m.modules[m.moduleCount-8][8]=!test;
-}
-function qrMapData(m,data,maskPattern){
-  var inc=-1,row=m.moduleCount-1,bitIndex=7,byteIndex=0;
-  for(var col=m.moduleCount-1;col>0;col-=2){
-    if(col===6)col--;
-    while(true){
-      for(var c=0;c<2;c++){
-        if(m.modules[row][col-c]==null){
-          var dark=false;
-          if(byteIndex<data.length)dark=(((data[byteIndex]>>>bitIndex)&1)===1);
-          if(qrGetMask(maskPattern,row,col-c))dark=!dark;
-          m.modules[row][col-c]=dark;
-          bitIndex--;
-          if(bitIndex===-1){byteIndex++;bitIndex=7;}
-        }
-      }
-      row+=inc;
-      if(row<0||m.moduleCount<=row){row-=inc;inc=-inc;break;}
-    }
-  }
-}
-function qrGetLostPoint(m){
-  var moduleCount=m.moduleCount,lostPoint=0;
-  for(var row=0;row<moduleCount;row++)for(var col=0;col<moduleCount;col++){
-    var sameCount=0,dark=qrIsDark(m,row,col);
-    for(var r=-1;r<=1;r++){
-      if(row+r<0||moduleCount<=row+r)continue;
-      for(var c=-1;c<=1;c++){
-        if(col+c<0||moduleCount<=col+c)continue;
-        if(r===0&&c===0)continue;
-        if(dark===qrIsDark(m,row+r,col+c))sameCount++;
-      }
-    }
-    if(sameCount>5)lostPoint+=(3+sameCount-5);
-  }
-  for(var row2=0;row2<moduleCount-1;row2++)for(var col2=0;col2<moduleCount-1;col2++){
-    var cnt=0;
-    if(qrIsDark(m,row2,col2))cnt++;
-    if(qrIsDark(m,row2+1,col2))cnt++;
-    if(qrIsDark(m,row2,col2+1))cnt++;
-    if(qrIsDark(m,row2+1,col2+1))cnt++;
-    if(cnt===0||cnt===4)lostPoint+=3;
-  }
-  for(var row3=0;row3<moduleCount;row3++)for(var col3=0;col3<moduleCount-6;col3++){
-    if(qrIsDark(m,row3,col3)&&!qrIsDark(m,row3,col3+1)&&qrIsDark(m,row3,col3+2)&&qrIsDark(m,row3,col3+3)&&qrIsDark(m,row3,col3+4)&&!qrIsDark(m,row3,col3+5)&&qrIsDark(m,row3,col3+6))lostPoint+=40;
-  }
-  for(var col4=0;col4<moduleCount;col4++)for(var row4=0;row4<moduleCount-6;row4++){
-    if(qrIsDark(m,row4,col4)&&!qrIsDark(m,row4+1,col4)&&qrIsDark(m,row4+2,col4)&&qrIsDark(m,row4+3,col4)&&qrIsDark(m,row4+4,col4)&&!qrIsDark(m,row4+5,col4)&&qrIsDark(m,row4+6,col4))lostPoint+=40;
-  }
-  var darkCount=0;
-  for(var col5=0;col5<moduleCount;col5++)for(var row5=0;row5<moduleCount;row5++)if(qrIsDark(m,row5,col5))darkCount++;
-  var ratio=Math.abs(100*darkCount/moduleCount/moduleCount-50)/5;
-  lostPoint+=ratio*10;
-  return lostPoint;
-}
-function qrMakeImpl(m,test,maskPattern){
-  m.moduleCount=m.typeNumber*4+17;
-  m.modules=new Array(m.moduleCount);
-  for(var row=0;row<m.moduleCount;row++){m.modules[row]=new Array(m.moduleCount);for(var c=0;c<m.moduleCount;c++)m.modules[row][c]=null;}
-  qrSetupPositionProbePattern(m,0,0);
-  qrSetupPositionProbePattern(m,m.moduleCount-7,0);
-  qrSetupPositionProbePattern(m,0,m.moduleCount-7);
-  qrSetupPositionAdjustPattern(m);
-  qrSetupTimingPattern(m);
-  qrSetupTypeInfo(m,test,maskPattern);
-  if(m.typeNumber>=7)qrSetupTypeNumber(m,test);
-  if(m.dataCache==null)m.dataCache=qrCreateData(m.typeNumber,m.ecIdx,m.text);
-  qrMapData(m,m.dataCache,maskPattern);
-}
-function qrGetBestMaskPattern(m){
-  var minLostPoint=0,pattern=0;
-  for(var i=0;i<8;i++){
-    qrMakeImpl(m,true,i);
-    var lp=qrGetLostPoint(m);
-    if(i===0||minLostPoint>lp){minLostPoint=lp;pattern=i;}
-  }
-  return pattern;
-}
-// Punto de entrada: intenta versiones 1..10 hasta que el texto quepa (nivel M).
-// Si algún día se necesita codificar algo más largo que ~90 caracteres esto
-// lanza — no hay fallback silencioso a un QR roto.
-function qrMakeMatrix(text){
-  for(var typeNumber=1;typeNumber<=10;typeNumber++){
-    try{
-      var m=qrModelNew(typeNumber,1);
-      m.text=text;
-      qrMakeImpl(m,false,qrGetBestMaskPattern(m));
-      return{size:m.moduleCount,isDark:function(r,c){return qrIsDark(m,r,c);}};
-    }catch(e){
-      if(String((e&&e.message)||e).indexOf('overflow')<0)throw e;
-    }
-  }
-  throw new Error('texto demasiado largo para el QR');
-}
-// SVG compacto: un solo <path> con todos los módulos oscuros (evita cientos de
-// <rect> individuales) + quiet zone de 4 módulos (mínimo del estándar para que
-// cualquier lector lo reconozca).
-function qrSvgHTML(text,pxSize){
-  var qr=qrMakeMatrix(text);
-  var size=qr.size,quiet=4,total=size+quiet*2;
-  var d='';
-  for(var r=0;r<size;r++)for(var c=0;c<size;c++)if(qr.isDark(r,c))d+='M'+(c+quiet)+' '+(r+quiet)+'h1v1h-1z';
-  return'<svg viewBox="0 0 '+total+' '+total+'" width="'+pxSize+'" height="'+pxSize+'" style="background:#fff;border-radius:8px" shape-rendering="crispEdges"><path d="'+d+'" fill="var(--sw-on-gold,#241a08)"/></svg>';
-}
 function paymentMethodPickerHTML(t){
   var culqiConfigured=CULQI_PUBLIC_KEY&&CULQI_PUBLIC_KEY.indexOf('REEMPLAZA')<0;
   // Antes había un botón "YAPE" y otro "PLIN" por separado para el pago manual, pero
@@ -988,44 +707,6 @@ function payButtonLabel(t,fallback){
   if(useCredit&&cust&&(cust.credit_balance||0)>=t)return'Confirmar con crédito //';
   if(manualPayMethod)return'Ya realicé el pago //';
   return fallback;
-}
-// ── EL CARRITO ES UN RECIBO (2026-09-10) ──────────────────────────────────────────────
-//
-// Dirección visual elegida por el dueño sobre los mockups: ETIQUETA para todo lo que sea
-// comprobante. Un carrito YA es un recibo; lo que faltaba era que se viera como uno.
-//
-// Y no es solo estética. Antes el total era un número grande y los descuentos eran líneas
-// diminutas en cursiva DEBAJO, en verde, apiladas. Quien mirara rápido veía el total y no
-// de dónde salía. Acá cada descuento es una LÍNEA con su propio renglón y su monto, como
-// en cualquier boleta: se puede seguir la cuenta de arriba abajo.
-//
-// El papel es claro a propósito, en una app oscura: un comprobante se lee como papel. Por
-// eso los colores de acá no salen de los tokens del tema —que se invierten con el lado—
-// sino que son fijos: es papel, y el papel no cambia de color según con qué hermano estés.
-function reciboHTML(base,total,combo,valle,organizador,recompensa){
-  var h=PAPEL_ABRE('TU PEDIDO · NO ES BOLETA')
-    +reciboLinea('Subtotal',SOLES+pz(base));
-  if(combo>0)h+=reciboLinea('Combo · sándwich + bebida','-'+SOLES+pz(combo),'ahorro');
-  if(valle>0)h+=reciboLinea('Bebida gratis · hora valle','-'+SOLES+pz(valle),'ahorro');
-  if(organizador>0)h+=reciboLinea('Sándwich del organizador','-'+SOLES+pz(organizador),'ahorro');
-  if(recompensa>0)h+=reciboLinea('Recompensa canjeada','-'+SOLES+pz(recompensa),'ahorro');
-  // ⚠ EL ENVÍO SÍ ESTÁ EN EL TOTAL, y decir lo contrario rompía el recibo.
-  //
-  // La primera versión de esta línea decía "se calcula con tu dirección" dando por hecho
-  // que el envío venía después. No: `payableTotal()` es `cartFinalTotal() + deliveryFeeAmount()`,
-  // y sin pin `deliveryFeeAmount()` cae a la tarifa por zona. O sea que el total YA lo
-  // incluía y el recibo mostraba subtotal 40.90, combo -1 y total 47.90 — ocho soles que
-  // salían de la nada. Un recibo que no cuadra es peor que no tener recibo: enseña a
-  // desconfiar de la cuenta justo antes de pagar.
-  //
-  // Ahora se muestra el monto real, y solo se dice que falta calcularlo cuando de verdad
-  // no hay nada que cobrar todavía.
-  var envio=deliveryFeeAmount();
-  h+=(envio>0
-      ? reciboLinea(deliveryKmNow()!==null?'Envío · '+deliveryKmNow()+' km':'Envío · estimado por zona',SOLES+pz(envio))
-      : reciboLinea('Envío','se calcula con tu dirección','mudo'))
-    +PAPEL_TOTAL('TOTAL',total);
-  return h;
 }
 // ── 30 G · EL PEDIDO ES UN RECIBO DE ESTRAZA (aprobada) + renglones y hojas ────────────────
 // docs/maquetas/aprobadas/30G-el-carrito.png y 30G-*.png (camino de compra, 2026-09-25).
@@ -1520,22 +1201,6 @@ function payWithCulqi(amountSoles,email){
 
 // Callback global requerido por Culqi Checkout V4 — se ejecuta tras el intento de pago
 window.culqi=function(){
-  if(_pendingWeeklyPlan){
-    if(Culqi.token){
-      chargeAndFinalizeWeeklyPlan(Culqi.token.id);
-    }else{
-      // _weeklyPlanBuyInProgress también se resetea acá (antes solo en la rama gemela de
-      // pedido normal, línea de abajo) — sin esto, un rechazo de Culqi dejaba el guard de
-      // doble-tap en true para siempre: doWeeklyPlanBuy() empieza con
-      // if(_weeklyPlanBuyInProgress)return; sin ningún aviso, así que cualquier reintento
-      // era un no-op silencioso hasta recargar la página (hallazgo de auditoría UX,
-      // CRÍTICO).
-      busy=false;_weeklyPlanBuyInProgress=false;
-      wpMsg=(Culqi.error&&(Culqi.error.user_message||Culqi.error.merchant_message))||'No se pudo procesar el pago. Intenta de nuevo o con otro método.';
-      _pendingWeeklyPlan=null;render();
-    }
-    return;
-  }
   if(!_pendingOrder)return;
   if(Culqi.token){
     chargeAndFinalize(Culqi.token.id);
@@ -1907,7 +1572,7 @@ function sEntrar(){
     cuerpo=entrarCampo('l-phone','Tu teléfono','tel',savedPh||'',{ac:'tel',im:'tel'})
       +entrarCampo('l-pin','Tu PIN','password','',{im:'numeric',ac:'current-password'})
       +err
-      +'<div class="nota"><button onclick="recNewPin=null;recEmailMasked=null;recPhone=\'\';recDni=\'\';recBday=\'\';sndScreen=\'p_recover\';render()">¿Olvidaste tu PIN? · recuperar</button><br>'
+      +'<div class="nota">'
       +'<button onclick="authPinFallback=false;aErr=\'\';render()">Prefiero entrar con mi correo</button></div>';
     pie='<button class="oro" onclick="doLogin()">Entrar</button>';
   }else{

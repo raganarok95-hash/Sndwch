@@ -13,7 +13,6 @@ var WA='51930957640',GOLD='#CBA258';
 var SHADOW_SM='0 2px 6px rgba(0,0,0,.22)';
 var SHADOW_MD='0 4px 14px rgba(0,0,0,.28)';
 var SHADOW_GOLD=SHADOW_SM;
-function surfaceGrad(top,bottom){return'linear-gradient(160deg,'+top+','+bottom+')';}
 // Identidad legal del negocio — mostrada en el pie de página, en Términos, y como
 // identificación del proveedor en el Libro de Reclamaciones (exigido por el Código de
 // Protección y Defensa del Consumidor). Debe coincidir EXACTAMENTE con lo que el backend
@@ -401,32 +400,6 @@ function nextFreeSlot(){
   if(man.length)return{day:'tomorrow',label:'mañana',slot:man[0]};
   return null;
 }
-// #60 — Franjas ofrecidas para un pedido FIJO. Se toma el horario más amplio de la semana y
-// no el de hoy: la recurrencia es para un día futuro, y acotarla al horario de hoy
-// escondería franjas perfectamente válidas (o dejaría la lista vacía un día cerrado).
-function recurringSlotOptions(){
-  var abre=24,cierra=0;
-  for(var i=0;i<7;i++){
-    var r=STORE_HOURS[i];
-    if(!r)continue;
-    if(r[0]<abre)abre=r[0];
-    if(r[1]>cierra)cierra=r[1];
-  }
-  if(abre>=cierra)return[];
-  var out=[];
-  for(var m=abre*60;m<cierra*60;m+=30){
-    out.push(String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'));
-  }
-  return out;
-}
-// Salta a esa franja y deja el pedido en modo programado, para que ofrecerla sea un toque y
-// no una instrucción que el cliente tiene que ejecutar a mano.
-function useNextFreeSlot(){
-  var n=nextFreeSlot();
-  if(!n)return;
-  scheduleMode='later';schedDay=n.day;schedSlot=n.slot;
-  confirmRerender();
-}
 function schedInputValue(){
   if(!schedSlot)return'';
   // Con el desfase escrito: «2026-10-10T20:00-05:00» es el mismo instante en cualquier teléfono.
@@ -476,7 +449,6 @@ function estimatedDeliveryRange(){
   var extra=Math.max(0,queueAhead)*queueMinutesPerOrder;
   return[ESTIMATED_DELIVERY_RANGE[0]+extra,ESTIMATED_DELIVERY_RANGE[1]+extra];
 }
-function estimatedRangeText(){var r=estimatedDeliveryRange();return r[0]+'-'+r[1]+' min';}
 // La ventana como HORA, que es como la dibujan las maquetas («Llega 7:40 – 8:05 p.m.»).
 // Antes de pagar se estima con la cola que se ve; después, la del pedido manda: el servidor
 // la fijó al crearlo (promised_from/promised_to) y es la que se compara al entregar.
@@ -1244,18 +1216,6 @@ var adminLightMode=localStorage.getItem('sw_admin_light')==='1';
 // el dueño para implementar junto con el reordenamiento del grid.
 var adminToolsDrawerOpen=false;
 function toggleAdminToolsDrawer(){adminToolsDrawerOpen=!adminToolsDrawerOpen;render();}
-var recNewPin=null;
-var recEmailMasked=null;
-// Antes cualquier error del servidor (o incluso el splash de "Verificando...") borraba
-// los 3 campos enteros — el peor momento posible para pedirle a un cliente ya frustrado
-// (no puede entrar a su cuenta) que vuelva a teclear todo, en vez de solo corregir el
-// campo que falló (ej. la fecha con formato equivocado) (hallazgo de auditoría UX, MEDIO).
-var recPhone='',recDni='',recBday='';
-// El PIN nuevo se mostraba siempre visible en texto plano y grande apenas se generaba —
-// riesgo real de shoulder-surfing en un dispositivo compartido (hallazgo de auditoría de
-// UX). Ahora arranca oculto (blur) y el cliente decide cuándo revelarlo con un tap.
-var recPinRevealed=false;
-function togglePinReveal(){recPinRevealed=!recPinRevealed;render();}
 var myAddresses=[],myFavorites=[],pickedAddrId=null;
 // LOS IDS DE DIRECCIÓN SON NÚMEROS (bigint en `saved_addresses`), pero viajan como TEXTO en
 // cada onclick (`pickAddr('5')`). Comparados con === nunca coinciden: elegir una dirección
@@ -1263,12 +1223,7 @@ var myAddresses=[],myFavorites=[],pickedAddrId=null;
 // Toda comparación de un id que pasó por el HTML va por acá.
 function mismoId(a:any,b:any):boolean{return a!=null&&b!=null&&String(a)===String(b);}
 var wPhone='',wAmt='',wMsg='';
-var gcPhone='',gcAmt='',gcMsg='';
-// Bloquea un segundo tap mientras la compra sigue en curso (mismo patrón que
-// _payingInProgress en doOrder) — antes esta pantalla no tenía ningún guard contra
-// doble-submit, a diferencia del checkout normal.
-var _giftBuyInProgress=false;
-var rtStars=0,rtMsg='',chalMsg='',discChalMsg='';
+var rtStars=0,rtMsg='';
 var rtConsent=false,justRatedRef=null;
 var cmplStep='form',cmplKind='reclamo',cmplMinor=false,cmplErr='',cmplCode=null,cmplBusy=false;
 var adminComplaints=[],cmplFilterStatus='',cmplRespondingId=null;
@@ -1335,6 +1290,5 @@ var pendingGroupCode=null;
 // hubiera tocado, aunque el backend sí lo haya registrado (restock_notify_requests es
 // idempotente) — el cliente mentía sobre el estado real (hallazgo de auditoría UX, MEDIO).
 var restockNotified=(function(){try{return JSON.parse(localStorage.getItem('sw_restock_notified')||'[]');}catch(e){return [];}})();
-function saveRestockNotified(){try{localStorage.setItem('sw_restock_notified',JSON.stringify(restockNotified));}catch(e){}}
 try{groupJoinName=localStorage.getItem('sw_group_name')||'';}catch(e){}
 var _groupPollTimer=null;

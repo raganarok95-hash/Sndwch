@@ -15,65 +15,7 @@
 // puerta de entrada con su nombre de siempre, que llaman el perfil y el enlace del aviso.
 var DIAS_SEMANA=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 function goRecurring(id?:string){return (window as any).__sndNuevo.fijo.abrir(id);}
-// Guarda el carrito actual como pedido fijo. Vive acá, junto al resto del pedido fijo, para
-// que toda la funcionalidad quede en un solo sitio.
-async function saveCartAsRecurring(){
-  if(!cust){showToast('Inicia sesión para dejar un pedido fijo.');return;}
-  if(!cart.length){showToast('Arma tu pedido antes de dejarlo fijo.');return;}
-  var wd=(document.getElementById('rec-day') as HTMLSelectElement|null);
-  var sl=(document.getElementById('rec-slot') as HTMLSelectElement|null);
-  if(!wd||!sl)return;
-  var dia=parseInt(wd.value,10);
-  busy=true;busyMsg='Guardando tu pedido fijo...';render();
-  try{
-    // Con la dirección elegida en el carrito, para que cada semana llegue listo a la misma. El
-    // nombre del fijo lo pone el servidor con la carta vigente.
-    await api('recurring-add',{token:token,items:cart,weekday:dia,slot:sl.value,addressId:pickedAddrId});
-    busy=false;render();
-    showToast('Listo — te avisamos cada '+DIAS_SEMANA[dia].toLowerCase()+' a las '+sl.value+'.');
-  }catch(e){
-    busy=false;render();
-    showToast('No se pudo guardar: '+e.message);
-  }
-}
 
-// FAVORITOS
-async function loadFavorites(){
-  sndScreen='p_favorites';busy=true;busyMsg='Cargando favoritos...';render();
-  try{myFavorites=(await api('favorites-list',{token:token})).favorites;}catch(e){myFavorites=[];}
-  busy=false;render();
-}
-function sPFavorites(){
-  var h=H('MIS FAVORITOS',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
-  if(!myFavorites.length){
-    h+=VACIO('Sin favoritos','Guarda un build desde la pantalla de confirmación de tu pedido.','','mira');
-  }else{
-    h+=myFavorites.map(function(f){
-      // min-width:0+text-overflow en el nombre y flex-shrink:0 en ELIMINAR (mismo
-      // criterio que ya usa la fila de direcciones) — antes un nombre largo sin tope
-      // podía tapar o empujar el botón de eliminar en pantallas angostas.
-      return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.name)+'</span><button onclick="doDeleteFavorite(\''+f.id+'\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-weight:600;font-size:11px;flex-shrink:0">Eliminar</button></div><button onclick="loadBuild('+JSON.stringify(f.build).replace(/"/g,'&quot;')+')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:11px;border-radius:8px;text-align:center">Pedir este //</button></div>';
-    }).join('');
-  }
-  h+='</div>'+NAV();
-  return h;
-}
-async function doDeleteFavorite(id){
-  if(!(await showConfirm('¿Eliminar este favorito?')))return;
-  // Optimista: se quita de la lista al instante en vez de esperar la respuesta del
-  // servidor Y encima recargar toda la lista de nuevo — si el borrado falla, se
-  // reinserta en su posición original y se avisa con un toast.
-  var idx=myFavorites.findIndex(function(f){return f.id==id;});
-  var removed=idx>=0?myFavorites.splice(idx,1)[0]:null;
-  render();
-  try{
-    await api('favorites-delete',{token:token,id:id});
-  }catch(e){
-    if(removed)myFavorites.splice(idx,0,removed);
-    render();
-    showToast(e.message);
-  }
-}
 
 // DIRECCIONES
 async function loadAddresses(){
@@ -142,16 +84,6 @@ async function doDeleteAddress(id){
     render();
     showToast(e.message);
   }
-}
-async function doLogoutEverywhere(){
-  if(!(await showConfirm('Esto cerrará tu sesión aquí y en cualquier otro dispositivo donde hayas iniciado sesión. ¿Continuar?')))return;
-  busy=true;busyMsg='Cerrando sesiones...';render();
-  // Si el servidor no confirmó, NO se cierra la sesión local: hacerlo le haría creer al cliente
-  // que cerró todas, y un teléfono perdido seguiría con la suya abierta (antes el error se
-  // tragaba y pasaba justo eso). Se queda donde está y se le dice que no se hizo.
-  try{await api('logout-everywhere',{token:token});}
-  catch(e){busy=false;render();showToast('No se pudieron cerrar las otras sesiones: '+((e as any)&&(e as any).message||'sin conexión')+'. Vuelve a intentarlo.');return;}
-  busy=false;doLogout();
 }
 
 // Antes no existía ningún camino para que un cliente pidiera borrar su cuenta — solo un
@@ -498,71 +430,6 @@ function printTicket(ordId){
 }
 
 
-// ── DOS PANTALLAS DE CLIENTE QUE VIVÍAN EN EL ARCHIVO DEL PANEL (2026-09-10) ──────────
-// Ninguna de las dos es de admin, y las dos las abre gente SIN sesión de administrador:
-//
-//   · `sPRecover`        — recuperar el PIN. La usa un cliente que no puede entrar.
-//   · `sDeliveryConfirm` — confirmar la entrega desde el link de un solo uso. La abre quien
-//                          REPARTE, que no tiene cuenta: el token no adivinable es toda la
-//                          autorización, mismo criterio que `ref` para un invitado.
-//
-// Estaban en `10-admin-negocio.ts` por historia, no por diseño — igual que las 208 líneas
-// del flujo de dirección que ya habían salido de ahí. Mientras siguieran adentro, el panel
-// no se podía sacar del bundle sin dejar sin pantalla a las dos personas que MENOS cuenta
-// de admin tienen.
-function sPRecover(){
-  var pinBox=recNewPin?'<div style="background:var(--sw-card2,#171A14);border:2px solid '+GOLD+';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">TU NUEVO PIN //</div><div onclick="togglePinReveal()" style="cursor:pointer;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:40px;font-weight:640;color:'+GOLD+(recPinRevealed?'':';filter:blur(9px);user-select:none')+'">'+recNewPin+'</div><div onclick="togglePinReveal()" style="cursor:pointer;font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.1em;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px">'+icon(recPinRevealed?'lock':'camera',11,GOLD)+(recPinRevealed?'OCULTAR':'TOCA PARA VER')+'</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:8px">Guárdalo — úsalo para ingresar con tu teléfono. No dejes esta pantalla abierta en un dispositivo compartido.</div></div>'
-    :(recEmailMasked?'<div style="background:var(--sw-card2,#171A14);border:2px solid '+GOLD+';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">✓ CORREO ENVIADO //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);line-height:1.5">Te mandamos tu PIN nuevo a<br><b style="color:'+GOLD+'">'+esc(recEmailMasked)+'</b></div></div>':'');
-  return H('RECUPERAR CUENTA',"sndScreen='p_auth';render()")
-    +'<div style="flex:1;padding:24px 20px 40px" class="fi">'
-    +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text-body,#EFEDE4);margin-bottom:6px">RECUPERAR PIN //</div>'
-    +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:24px;line-height:1.5">Verifica tu identidad con tu teléfono, DNI y fecha de nacimiento. Si tienes correo registrado, te mandamos el PIN nuevo ahí; si no, te lo mostramos aquí mismo.</div>'
-    +pinBox
-    // Antes el formulario (teléfono/DNI/fecha) y el botón "Recuperar mi PIN //" seguían
-    // visibles sin cambio tras generar el PIN — un segundo tap invalidaba en silencio el
-    // que ya se había mostrado, sin ningún CTA claro para seguir a Ingresar (hallazgo de
-    // auditoría UX, ALTO). Ahora, con un PIN/correo ya generado, el formulario se oculta y
-    // se reemplaza por un solo botón directo a Ingresar.
-    +((recNewPin||recEmailMasked)
-      ?BTN('Ir a ingresar //',"atab='login';sndScreen='p_auth';render()")
-      :'<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">'
-        +INP('rec-phone','Teléfono // 9XXXXXXXX','tel',recPhone,'phone')
-        +INP('rec-dni','DNI // Tu número de 8 dígitos','text',recDni,'card')
-        +INP('rec-bday','Fecha de nacimiento // DD/MM/AAAA','text',recBday,'calendar')
-        +'</div>'
-        +'<div id="rec-msg" style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px;margin-bottom:12px;text-align:center"></div>'
-        +BTN('Recuperar mi PIN //','doRecover()'))
-    +'</div>';
-}
-// ⚠ ESTO VIVÍA EN EL PANEL (10-*) hasta el 2026-09-24. La pantalla de arriba ya se había
-// sacado de ahí, pero su botón no: con el panel fuera del bundle del cliente, «Recuperar mi
-// PIN» no hacía nada para quien no es el dueño — justo la persona que perdió su acceso. Nada
-// lo avisaba porque `check:cliente` solo miraba el código fuera de los strings, y un onclick
-// ES un string. Ahora también los mira.
-async function doRecover(){
-  var phone=gv('rec-phone').trim();
-  var dni=gv('rec-dni').trim();
-  var bdayRaw=gv('rec-bday').trim();
-  recPhone=phone;recDni=dni;recBday=bdayRaw;
-  var msg=(document.getElementById('rec-msg') as HTMLInputElement | null);
-  if(!phone||!dni||!bdayRaw){if(msg)msg.textContent='Completa teléfono, DNI y fecha de nacimiento.';return;}
-  var bday=parseBdayDDMMYYYY(bdayRaw);
-  if(!bday){if(msg)msg.textContent='Fecha inválida — debe ser DD/MM/AAAA y existir de verdad.';return;}
-  busy=true;busyMsg='Verificando...';render();
-  try{
-    var r=await api('recover',{phone:phone,dni:dni,bday:bday});
-    if(r.emailSent){recNewPin=null;recEmailMasked=r.emailMasked;}
-    else{recNewPin=r.newPin;recEmailMasked=null;recPinRevealed=false;}
-    // Antes el teléfono no pasaba de esta pantalla a Ingresar — el cliente lo volvía a
-    // teclear pese a haberlo escrito hace un momento (hallazgo de auditoría UX, MEDIO).
-    savedPh=phone;
-    busy=false;sndScreen='p_recover';render();
-  }catch(e){
-    busy=false;sndScreen='p_recover';render();
-    var m2=(document.getElementById('rec-msg') as HTMLInputElement | null);
-    if(m2)m2.textContent=e.message;
-  }
-}
 function sDeliveryConfirm(){
   var d=deliveryConfirmState||{};
   var caja=function(inner){

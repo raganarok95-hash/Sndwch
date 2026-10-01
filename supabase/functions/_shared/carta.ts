@@ -147,11 +147,11 @@ export const CARTA: Carta = {
   // Precios y doble de la v4 (docs/MENU_CLASICOS_USA.md, modelo/rentabilidad_por_parte.py).
   proteinas: [
     { id: "P03", nombre: "Pollo", sabor: "Cajun", desc: "Pechuga deshilachada con la mezcla cajún de la casa. Calor seco, no picante de salsa.", p15: 13.9, p30: 23.9, dbl15: 6, dbl30: 11, soloSecreto: true },
-    { id: "P04", nombre: "Atún", sabor: "House", desc: "En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.", p15: 23.9, p30: 35.9, dbl15: 10.9, dbl30: 21.9, foto: "img/prot_p04.webp" },
+    { id: "P04", nombre: "Atún", sabor: "House", desc: "En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.", p15: 22.9, p30: 33.9, dbl15: 10.9, dbl30: 21.9, foto: "img/prot_p04.webp" },
     { id: "P05", nombre: "Embutido", sabor: "Italiano", desc: "Tres fiambres ahumados laminados finos y puestos en pliegues, nunca planos.", p15: 16.9, p30: 32.9, dbl15: 9.9, dbl30: 19.9, soloEnSignature: true, foto: "img/prot_p05.webp" },
-    { id: "P06", nombre: "Albóndiga", sabor: "Marinara", desc: "Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.", p15: 23.9, p30: 35.9, dbl15: 6.9, dbl30: 13.9, foto: "img/prot_p06.webp" },
-    { id: "P08", nombre: "Pavo", sabor: "Horneado", desc: "Lonjas de un milímetro puestas en pliegues, laminadas el mismo día.", p15: 24.9, p30: 36.9, dbl15: 9, dbl30: 17, foto: "img/prot_p08.webp" },
-    { id: "P09", nombre: "Res", sabor: "Laminada", desc: "Laminada fina y salteada al momento.", p15: 23.9, p30: 35.9, dbl15: 7, dbl30: 13.9, foto: "img/prot_p09.webp" },
+    { id: "P06", nombre: "Albóndiga", sabor: "Marinara", desc: "Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.", p15: 21.9, p30: 32.9, dbl15: 6.9, dbl30: 13.9, foto: "img/prot_p06.webp" },
+    { id: "P08", nombre: "Pavo", sabor: "Horneado", desc: "Lonjas de un milímetro puestas en pliegues, laminadas el mismo día.", p15: 23.9, p30: 34.9, dbl15: 9, dbl30: 17, foto: "img/prot_p08.webp" },
+    { id: "P09", nombre: "Res", sabor: "Laminada", desc: "Laminada fina y salteada al momento.", p15: 22.9, p30: 33.9, dbl15: 7, dbl30: 13.9, foto: "img/prot_p09.webp" },
   ],
   vegetales: [
     { id: "T01", nombre: "Tomate", sabor: "Fresco", desc: "En rodajas gruesas, cortado el mismo día." },
@@ -188,19 +188,19 @@ export const CARTA: Carta = {
   // Orden de la carta v4: la estrella primero (Philly, la mayor contribución por unidad), y
   // después alternando lo caliente y lo frío para que la carta no se lea como dos bloques.
   signatures: [
-    { id: "SIG09", nombre: "Philly Cheesesteak", tipo: "Signature", orden: 1, estrella: true, pan: "B01", prot: "P09", vegetales: ["T10", "T06"], salsas: [], p15: 22.9, p30: 32.9, queso: "C02", foto: "img/sig09.jpg", fotoVertical: "img/sig09_v.webp",
+    { id: "SIG09", nombre: "Philly Cheesesteak", tipo: "Signature", orden: 1, estrella: true, pan: "B01", prot: "P09", vegetales: ["T10", "T06"], salsas: [], p15: 22.9, p30: 33.9, queso: "C02", foto: "img/sig09.jpg", fotoVertical: "img/sig09_v.webp",
       pitch: "Res laminada fina, salteada al momento con cebolla y pimiento, y cheddar fundido encima. Sin salsa: no le hace falta." },
-    { id: "SIG02", nombre: "Meatball Marinara", tipo: "Signature", orden: 2, pan: "B01", prot: "P06", vegetales: ["T01", "T03"], salsas: ["S06"], p15: 21.9, p30: 28.9, queso: "C01", foto: "img/sig02.jpg", fotoVertical: "img/sig02_v.webp",
+    { id: "SIG02", nombre: "Meatball Marinara", tipo: "Signature", orden: 2, pan: "B01", prot: "P06", vegetales: ["T01", "T03"], salsas: ["S06"], p15: 21.9, p30: 32.9, queso: "C01", foto: "img/sig02.jpg", fotoVertical: "img/sig02_v.webp",
       pitch: "Para la noche en que ya decidiste que no vas a cocinar. Albóndigas hechas acá, cocidas dentro de su propia marinara, con queso americano derretido hasta el borde. Se come con las dos manos y con servilleta al lado." },
     { id: "SIG10", nombre: "Turkey", tipo: "Signature", orden: 3, pan: "B01", prot: "P08", vegetales: ["T09", "T01", "T03", "T06"], salsas: ["S06"], p15: 23.9, p30: 34.9, foto: "img/sig10.jpg", fotoVertical: "img/sig10_v.webp",
       pitch: "Pavo horneado en lonjas finas, con lechuga, tomate, cebolla y pimiento, terminado con aceite y vinagre." },
-    { id: "SIG12", nombre: "Tuna Melt", tipo: "Signature", orden: 4, pan: "B01", prot: "P04", vegetales: [], salsas: [], p15: 22.9, p30: 36.9, queso: "C02", foto: "img/sig12.jpg", fotoVertical: "img/sig12_v.webp",
+    { id: "SIG12", nombre: "Tuna Melt", tipo: "Signature", orden: 4, pan: "B01", prot: "P04", vegetales: [], salsas: [], p15: 22.9, p30: 33.9, queso: "C02", foto: "img/sig12.jpg", fotoVertical: "img/sig12_v.webp",
       pitch: "El Classic Tuna con cheddar fundido encima: atún en lascas gruesas, mayonesa y pimienta blanca, y el queso que lo junta todo." },
-    { id: "SIG11", nombre: "Italian Hoagie", tipo: "Signature", orden: 5, pan: "B01", prot: "P05", vegetales: ["T09", "T01", "T03", "T06"], salsas: ["S06"], p15: 23.9, p30: 33.9, queso: "C01", foto: "img/sig11.jpg", fotoVertical: "img/sig11_v.webp",
+    { id: "SIG11", nombre: "Italian Hoagie", tipo: "Signature", orden: 5, pan: "B01", prot: "P05", vegetales: ["T09", "T01", "T03", "T06"], salsas: ["S06"], p15: 23.9, p30: 34.9, queso: "C01", foto: "img/sig11.jpg", fotoVertical: "img/sig11_v.webp",
       pitch: "Embutidos italianos en pliegues, queso americano, lechuga, tomate, cebolla y pimiento, con oil & vinegar, como en los delis de siempre." },
-    { id: "SIG04", nombre: "Classic Tuna", tipo: "Signature", orden: 6, pan: "B01", prot: "P04", vegetales: [], salsas: [], p15: 20.9, p30: 34.9, foto: "img/sig04.jpg", fotoVertical: "img/sig04_v.webp",
+    { id: "SIG04", nombre: "Classic Tuna", tipo: "Signature", orden: 6, pan: "B01", prot: "P04", vegetales: [], salsas: [], p15: 20.9, p30: 31.9, foto: "img/sig04.jpg", fotoVertical: "img/sig04_v.webp",
       pitch: "Para comer en el escritorio con una mano, sin que se desarme entre bocado y bocado: no lleva nada suelto adentro. Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Nada más." },
-    { id: "SIG05", nombre: "Menú secreto", tipo: "Reserve", orden: 99, secreto: { minPedidos: 3 }, pan: "B03", prot: "P03", vegetales: ["T04", "T06", "T03"], salsas: ["S02", "S12"], p15: 24.9, p30: 30.9, foto: "img/sig05.jpg", fotoVertical: "img/sig05_v.webp",
+    { id: "SIG05", nombre: "Menú secreto", tipo: "Reserve", orden: 99, secreto: { minPedidos: 3 }, pan: "B03", prot: "P03", vegetales: ["T04", "T06", "T03"], salsas: ["S02", "S12"], p15: 24.9, p30: 35.9, foto: "img/sig05.jpg", fotoVertical: "img/sig05_v.webp",
       pitch: "Solo para clientes iniciados. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo." },
   ],
 };

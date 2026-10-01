@@ -218,18 +218,6 @@ if(window.visualViewport){
 }
 window.addEventListener('offline',function(){isOffline=true;render();});
 window.addEventListener('online',function(){isOffline=false;render();});
-async function installPwa(){
-  if(!deferredInstallPrompt)return;
-  deferredInstallPrompt.prompt();
-  await deferredInstallPrompt.userChoice;
-  deferredInstallPrompt=null;
-  render();
-}
-function dismissPwaBanner(){
-  pwaDismissed=true;
-  localStorage.setItem('sw_pwa_dismissed','1');
-  render();
-}
 
 // Chequeo de ubicación de una sola vez al abrir la app (no un rastreo continuo): si el
 // cliente ya cerró el banner hoy, o niega/no tiene geolocalización, simplemente no se
@@ -244,11 +232,6 @@ function checkNearbyStore(){
     var d=haversineKm(pos.coords.latitude,pos.coords.longitude,STORE_LAT,STORE_LON);
     if(d<=NEARBY_RADIUS_KM){nearStore=true;render();}
   },function(){/* permiso denegado o ubicación no disponible — sin banner, sin insistir */},{maximumAge:600000,timeout:8000});
-}
-function dismissNearbyBanner(){
-  nearStore=false;
-  localStorage.setItem('sw_near_dismissed',new Date().toISOString().slice(0,10));
-  render();
 }
 
 // NOTIFICACIONES PUSH — avisan cuando el pedido pasa a PREPARANDO/EN CAMINO/ENTREGADO,
@@ -488,7 +471,6 @@ function render(){
 // es cuántos bloques dibujar — se elige parecido a lo que suele llegar, porque un esqueleto
 // que no se parece a lo que aparece después es peor que un spinner.
 var LIST_SCREENS: Record<string, number> = {
-  p_favorites: 3,
   p_addresses: 3,
   p_recurring: 2,
 };
@@ -565,7 +547,6 @@ function renderScreen(){
     // Registro con Google: un solo campo. Ver sGoogleAuth() en 05-*.
     case'p_gauth':     h=sGoogleAuth();break;
     case'p_welcome':   h=sWelcome();break;
-    case'p_recover':   h=sPRecover();break;
     case'p_legal':     h=sPLegal();break;
     case'p_lo_legal':  h=sPLoLegal();break;
     case'p_returns':   h=sPReturns();break;
@@ -580,14 +561,6 @@ function renderScreen(){
     case'o_secreto':   h=sMenuSecreto();break;
     case'p_pago':      h=sPPago();break;
     case'p_avisos':    h=sPAvisos();break;
-    case'p_profile':   h=sPProfile();break;
-    case'p_favorites': h=sPFavorites();break;
-    // Las dos pantallas siguen existiendo enteras — solo dejan de ser alcanzables mientras
-    // el producto esté apagado (ver PLAN_SEMANAL_ACTIVO / TARJETA_REGALO_ACTIVA). El corte
-    // va acá y no solo en el botón porque `sndScreen` sobrevive en la sesión: alguien que
-    // dejó la app abierta en esa pantalla la volvería a ver al recargar.
-    case'gift_card':   h=TARJETA_REGALO_ACTIVA?sGiftCard():(sndScreen='p_home',sPHome());break;
-    case'weekly_plan': h=PLAN_SEMANAL_ACTIVO?sWeeklyPlan():(sndScreen='p_home',sPHome());break;
     case'group_order': h=sGroupOrder();break;
     case'group_split': h=sGroupSplit();break;
     case'p_addresses': h=sPAddresses();break;

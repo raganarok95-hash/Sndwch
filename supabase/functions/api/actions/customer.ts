@@ -730,13 +730,6 @@ export async function actFavoritesAdd(b: any) {
   const rows = await sbInsert("favorites", { customer_phone: s.phone, name, build: buildFromOrder(b) });
   return { success: true, favorite: rows[0] };
 }
-export async function actFavoritesDelete(b: any) {
-  const s = await requireSession(b.token);
-  const id = String(b.id || "");
-  if (!id) throw new ApiError("Falta el favorito.");
-  await sbDelete("favorites", `id=eq.${encodeURIComponent(id)}&customer_phone=eq.${encodeURIComponent(s.phone)}`);
-  return { success: true };
-}
 
 export async function actSubmitRating(b: any) {
   const ref = String(b.ref || "").trim();
@@ -784,44 +777,6 @@ const LOW_RATING_ALERT_THRESHOLD = 2;
 
 const CHALLENGE_TARGET_ORDERS = R.CHALLENGE_TARGET_ORDERS;
 const CHALLENGE_BONUS_POINTS = R.CHALLENGE_BONUS_POINTS;
-export async function actClaimChallenge(b: any) {
-  const s = await requireSession(b.token);
-  const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(s.phone)}`);
-  if (!rows.length) throw new ApiError("Cliente no encontrado.", 404);
-  const c = rows[0];
-  const now = new Date();
-  // Antes usaba new Date().getFullYear()/getMonth() (hora del SERVIDOR, Deno Deploy
-  // corre en UTC) — mismo bug de zona horaria que tenía isWithinStoreHours: cerca de fin
-  // de mes, el "mes" del servidor podía ir ~5h adelantado del mes real en Lima.
-  const thisMonth = limaMonthKey(now);
-  if (c.challenge_claimed_month === thisMonth) throw new ApiError("Ya reclamaste el reto de este mes.", 409);
-  const monthStart = limaMonthStartIso(now);
-  // status=neq.CANCELADO (hallazgo de la re-auditoría de 10 agentes, MEDIA-ALTA): cancelar
-  // un pedido revierte el pago/puntos pero NUNCA toca payment_status (se queda 'paid') —
-  // sin este filtro, pagar 3 pedidos con crédito propio y cancelarlos de inmediato (con
-  // reembolso automático completo) reclamaba el bono gratis, repetible cada mes.
-  const orders = await sbGet(
-    "orders",
-    `customer_phone=eq.${encodeURIComponent(s.phone)}&payment_status=eq.paid&status=neq.CANCELADO&created_at=gte.${encodeURIComponent(monthStart)}&select=id`,
-  );
-  if (orders.length < CHALLENGE_TARGET_ORDERS) throw new ApiError(`Todavía te faltan pedidos este mes (${orders.length}/${CHALLENGE_TARGET_ORDERS}).`, 400);
-  // claim_monthly_challenge (marca el mes reclamado + suma el bono, atómico) va PRIMERO —
-  // antes el insert de auditoría (transactions) se hacía antes que esto, así que un fallo
-  // entre ambos dejaba un registro de bono sin el saldo real detrás (hallazgo de la
-  // auditoría de backend, mismo patrón que actAdminManualPoints). Dos solicitudes
-  // simultáneas no pueden ambas pasar el chequeo de arriba y duplicar el bono (la segunda
-  // llega tarde y la función lanza 'already_claimed').
-  const claimed = await rpc("claim_monthly_challenge", { p_phone: s.phone, p_month: thisMonth, p_bonus: CHALLENGE_BONUS_POINTS });
-  const finalRow = Array.isArray(claimed) ? claimed[0] : claimed;
-  await sbInsert("transactions", {
-    customer_phone: s.phone,
-    type: "earn_confirmed",
-    points: CHALLENGE_BONUS_POINTS,
-    description: "Reto mensual completado (" + CHALLENGE_TARGET_ORDERS + " pedidos)",
-    confirmed: true,
-  });
-  return { success: true, customer: safeCustomer(finalRow) };
-}
 
 // Reto de descubrimiento: probar DISCOVERY_TARGET_FLAVORS Signatures DISTINTOS en el mes
 // (no repetir siempre el mismo) — a diferencia de actClaimChallenge (que solo cuenta
@@ -831,41 +786,6 @@ export async function actClaimChallenge(b: any) {
 // (columna dedicada + RPC que marca el mes reclamado y suma el bono en un solo paso).
 const DISCOVERY_TARGET_FLAVORS = R.DISCOVERY_TARGET_FLAVORS;
 const DISCOVERY_BONUS_POINTS = R.DISCOVERY_BONUS_POINTS;
-export async function actClaimDiscoveryChallenge(b: any) {
-  const s = await requireSession(b.token);
-  const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(s.phone)}`);
-  if (!rows.length) throw new ApiError("Cliente no encontrado.", 404);
-  const c = rows[0];
-  const now = new Date();
-  const thisMonth = limaMonthKey(now);
-  if (c.discovery_claimed_month === thisMonth) throw new ApiError("Ya reclamaste este reto este mes.", 409);
-  const monthStart = limaMonthStartIso(now);
-  // status=neq.CANCELADO — mismo hallazgo/motivo que actClaimChallenge arriba.
-  const orders = await sbGet(
-    "orders",
-    `customer_phone=eq.${encodeURIComponent(s.phone)}&payment_status=eq.paid&status=neq.CANCELADO&created_at=gte.${encodeURIComponent(monthStart)}&select=items`,
-  );
-  const flavors = new Set<string>();
-  for (const o of orders) {
-    const items = Array.isArray(o.items) ? o.items : [];
-    for (const it of items as any[]) {
-      if (it && it.type === "sig" && it.sigId) flavors.add(String(it.sigId));
-    }
-  }
-  if (flavors.size < DISCOVERY_TARGET_FLAVORS) {
-    throw new ApiError(`Todavía te faltan sabores nuevos este mes (${flavors.size}/${DISCOVERY_TARGET_FLAVORS}).`, 400);
-  }
-  const claimed = await rpc("claim_discovery_challenge", { p_phone: s.phone, p_month: thisMonth, p_bonus: DISCOVERY_BONUS_POINTS });
-  const finalRow = Array.isArray(claimed) ? claimed[0] : claimed;
-  await sbInsert("transactions", {
-    customer_phone: s.phone,
-    type: "earn_confirmed",
-    points: DISCOVERY_BONUS_POINTS,
-    description: `Reto de descubrimiento completado (${DISCOVERY_TARGET_FLAVORS} sabores distintos)`,
-    confirmed: true,
-  });
-  return { success: true, customer: safeCustomer(finalRow) };
-}
 
 // Antes actCreditGift transfería crédito con un solo tap y sin mostrarle al cliente el
 // nombre del destinatario — un typo en el teléfono mandaba dinero real a un desconocido
@@ -1587,54 +1507,6 @@ const GIFT_CARD_AMOUNT_MAX = R.GIFT_CARD_AMOUNT_MAX;
 // mismo número, y conviene decidirlo explícitamente en vez de que se desincronice solo.
 export const GIFT_CARD_POINTS_PER_SOL = R.GIFT_CARD_POINTS_PER_SOL;
 
-export async function actGiftCardPurchase(b: any) {
-  if (!TARJETA_REGALO_ACTIVA) throw new ApiError("La tarjeta de regalo no está disponible por ahora.", 409);
-  const active = await verifyActiveSession(b.token);
-  if (!active) throw new ApiError("Sesión inválida o expirada. Inicia sesión de nuevo.", 401);
-  const s = active.payload;
-  const toPhone = String(b.toPhone || "").trim();
-  const amount = Number(b.amount || 0);
-  if (!toPhone) throw new ApiError("Ingresa el teléfono del destinatario.");
-  if (toPhone === s.phone) throw new ApiError("No puedes regalarte una tarjeta de regalo a ti mismo.");
-  if (!amount || amount < GIFT_CARD_AMOUNT_MIN || amount > GIFT_CARD_AMOUNT_MAX) {
-    throw new ApiError(`El monto debe estar entre S/${GIFT_CARD_AMOUNT_MIN} y S/${GIFT_CARD_AMOUNT_MAX}.`);
-  }
-  const receiverRows = await sbGet("customers", `phone=eq.${encodeURIComponent(toPhone)}&select=phone,name`);
-  if (!receiverRows.length) throw new ApiError("No encontramos una cuenta con ese teléfono.", 404);
-
-  const pointsNeeded = Math.round(amount * GIFT_CARD_POINTS_PER_SOL);
-  // redeem_points_for_gift_credit (misma migración que esta redacción) debita los puntos
-  // del comprador y acredita el saldo del destinatario en UNA sola transacción de
-  // Postgres — si algo falla a la mitad, ambas mitades se revierten juntas.
-  try {
-    await rpc("redeem_points_for_gift_credit", { p_from: s.phone, p_to: toPhone, p_points: pointsNeeded, p_credit_amount: amount });
-  } catch (e) {
-    if (String((e as Error).message || e).includes("insufficient_points")) {
-      throw new ApiError("No tienes puntos suficientes para este monto.", 402);
-    }
-    throw e;
-  }
-  // La fila de credit_ledger la escribe la RPC, dentro de la transacción — acá se escribía
-  // otra vez (ver actCreditGift). Los puntos (transactions) sí quedan acá: la RPC no los anota.
-  await sbInsert("transactions", {
-    customer_phone: s.phone,
-    type: "redeem",
-    points: -pointsNeeded,
-    description: `Tarjeta de regalo enviada a ${receiverRows[0].name} (S/${amount})`,
-    confirmed: true,
-  });
-  try {
-    await sendPushToPhone(toPhone, {
-      title: "¡Recibiste una tarjeta de regalo! 🎁",
-      body: `${active.row.name || "Alguien"} te regaló S/${amount.toFixed(2)} de crédito SND//WCH.`,
-      url: "./index.html",
-      tag: "sndwch-gift-received-" + Date.now(),
-    });
-  } catch {
-    // un push fallido no debe bloquear la confirmación del regalo
-  }
-  return { success: true, toName: receiverRows[0].name };
-}
 
 // PLAN SEMANAL — recarga de saldo propio con bono (a diferencia de actPrepareCreditPurchase,
 // que es para REGALAR crédito a otro cliente, esto es un top-up del propio saldo). Paga
@@ -1658,73 +1530,7 @@ export const WEEKLY_PLAN_PRICE = R.WEEKLY_PLAN_PRICE;
 export const WEEKLY_PLAN_CREDIT = R.WEEKLY_PLAN_CREDIT;
 const WEEKLY_PLAN_TTL_MINUTES = 15;
 
-export async function actPrepareWeeklyPlan(b: any) {
-  if (!PLAN_SEMANAL_ACTIVO) throw new ApiError("El Plan Semanal no está disponible por ahora.", 409);
-  const active = await verifyActiveSession(b.token);
-  if (!active) throw new ApiError("Sesión inválida o expirada. Inicia sesión de nuevo.", 401);
 
-  const nowIso = new Date().toISOString();
-  const existing = await sbGet(
-    "pending_weekly_plans",
-    `buyer_phone=eq.${encodeURIComponent(active.payload.phone)}&status=eq.pending&expires_at=gt.${encodeURIComponent(nowIso)}&select=id`,
-  );
-  if (existing.length) {
-    // Antes decía "espera un momento" — subestimaba la espera real frente al TTL
-    // verdadero de un plan pendiente (WEEKLY_PLAN_TTL_MINUTES=15). Un cliente cuyo primer
-    // intento quedó a medias podía quedar bloqueado hasta 15 min leyendo un mensaje que
-    // sonaba a segundos (hallazgo de auditoría UX, BAJO).
-    throw new ApiError(`Ya tienes un Plan Semanal en proceso. Espera hasta ${WEEKLY_PLAN_TTL_MINUTES} minutos o contáctanos si el cobro ya se hizo.`, 409);
-  }
-
-  const ref = "PLAN-" + crypto.randomUUID().slice(0, 8).toUpperCase();
-  const expiresAt = new Date(Date.now() + WEEKLY_PLAN_TTL_MINUTES * 60000).toISOString();
-  await sbInsert("pending_weekly_plans", {
-    ref,
-    buyer_phone: active.payload.phone,
-    buyer_name: active.row.name || "",
-    amount_paid: WEEKLY_PLAN_PRICE,
-    credit_amount: WEEKLY_PLAN_CREDIT,
-    expires_at: expiresAt,
-  });
-  return { success: true, ref, expiresAt, amountPaid: WEEKLY_PLAN_PRICE, creditAmount: WEEKLY_PLAN_CREDIT };
-}
-
-export async function actConfirmWeeklyPlan(b: any) {
-  // El confirm también se corta, y no solo el prepare: un plan que quedó a medio pagar
-  // ANTES del apagado no puede terminar de acreditarse después. Si eso pasara, se resuelve
-  // a mano desde el panel, que es donde debe resolverse un caso de uno.
-  if (!PLAN_SEMANAL_ACTIVO) throw new ApiError("El Plan Semanal no está disponible por ahora.", 409);
-  const s = await requireSession(b.token);
-  const ref = String(b.ref || "").trim();
-  const chargeId = String(b.chargeId || "").trim();
-  if (!ref || !chargeId) throw new ApiError("Faltan datos de la compra.");
-  const rows = await sbGet("pending_weekly_plans", `ref=eq.${encodeURIComponent(ref)}&select=*`);
-  const pp = rows[0];
-  if (!pp) throw new ApiError("No encontramos tu Plan Semanal. Vuelve a intentarlo.", 410);
-  if (pp.buyer_phone !== s.phone) throw new ApiError("No autorizado.", 403);
-  // Mismo orden que actConfirmCulqiOrder: el cargo se verifica ANTES de mirar estado y
-  // vencimiento, para no decirle "vuelve a intentarlo" a alguien a quien ya se le cobró.
-  // 'charging'/'charged' se aceptan por la misma razón (ver RESERVA_CONFIRMABLE en orders.ts
-  // y la migración plan_semanal_acepta_reserva_cobrada, que hace lo mismo en la RPC).
-  const amountCents = Math.round(Number(pp.amount_paid) * 100);
-  const paymentOk = await verifyCulqiCharge(chargeId, amountCents, ref, "credit_ref");
-  if (!paymentOk) throw new ApiError("No se pudo verificar el pago con Culqi.", 402);
-  if (!RESERVA_CONFIRMABLE.includes(pp.status)) throw new ApiError("Este Plan Semanal ya fue procesado.", 409);
-
-  // claim + otorgar crédito + registrar en el ledger van en una sola transacción SQL
-  // (confirm_weekly_plan_credit) — si cualquier paso falla, todo se revierte y la fila
-  // queda en "pending" en vez de "consumed a medias", así actReconcileCulqiCharges la
-  // detecta como huérfana en vez de darla por buena (ver comentario de la migración).
-  try {
-    await rpc("confirm_weekly_plan_credit", { p_plan_id: pp.id });
-  } catch (e) {
-    if (e instanceof Error && e.message.includes("already_processed")) {
-      throw new ApiError("Este Plan Semanal ya fue procesado.", 409);
-    }
-    throw e;
-  }
-  return { success: true, creditAmount: pp.credit_amount };
-}
 
 // Igual que actExpirePendingCreditPurchases pero para la tabla del Plan Semanal.
 export async function actExpirePendingWeeklyPlans(b: any) {
@@ -1750,23 +1556,6 @@ export async function actExpirePendingWeeklyPlans(b: any) {
   return { success: true, expired };
 }
 
-// "Avísame cuando vuelva" para un Signature agotado (por base o proteína sin stock) — hoy
-// la tarjeta AGOTADO ni siquiera deja intentar pedirlo, así que esa demanda se perdía en
-// silencio sin ningún registro de quién lo quería. Ver notifyRestockedSignatures en
-// admin.ts para el otro lado: qué pasa cuando el ingrediente vuelve a stock.
-export async function actRequestRestockNotify(b: any) {
-  const s = await requireSession(b.token);
-  const sigId = String(b.sigId || "").trim();
-  if (!SIG_DATA[sigId]) throw new ApiError("Signature inválida.");
-  try {
-    await sbInsert("restock_notify_requests", { customer_phone: s.phone, sig_id: sigId });
-  } catch (e) {
-    // Ya lo había pedido antes (unique customer_phone+sig_id) — no es un error real,
-    // solo confirma que ya está anotado.
-    if (!(e instanceof Error && e.message.includes("23505"))) throw e;
-  }
-  return { success: true };
-}
 
 // Lista de espera pre-lanzamiento (waitlist_signups) — el negocio aún no abre (ver
 // CLAUDE.md, contexto de negocio), así que esta es la única acción de captación que existe
@@ -1775,25 +1564,6 @@ export async function actRequestRestockNotify(b: any) {
 // extra aquí compite directo contra la meta de la semana 5-6 del checklist de lanzamiento.
 const WAITLIST_RATE_LIMIT = 3;
 const WAITLIST_RATE_WINDOW_MINUTES = 60;
-export async function actWaitlistJoin(b: any) {
-  const phone = String(b.phone || "").trim();
-  const name = String(b.name || "").trim().slice(0, 80) || null;
-  const source = String(b.source || "").trim().slice(0, 40) || null;
-  if (phone.replace(/\D/g, "").length < 6) throw new ApiError("Ingresa un teléfono válido.");
-  const withinLimit = await rpc("check_rate_limit", {
-    p_key: `waitlist:${phone}`,
-    p_limit: WAITLIST_RATE_LIMIT,
-    p_window_minutes: WAITLIST_RATE_WINDOW_MINUTES,
-  });
-  if (!withinLimit) throw new ApiError("Ya registramos tu teléfono. Espera un momento antes de reintentar.", 429);
-  try {
-    await sbInsert("waitlist_signups", { phone, name, source });
-  } catch (e) {
-    // Unique en phone — ya estaba anotado, no es un error real para quien reintenta.
-    if (!(e instanceof Error && e.message.includes("23505"))) throw e;
-  }
-  return { success: true };
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PAGO ABANDONADO — quien llegó a la pantalla de Culqi y no terminó.

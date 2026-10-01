@@ -575,15 +575,6 @@ function parseBdayDDMMYYYY(raw){
 // tenía su propia copia idéntica de este helper).
 function sec(t,b){return'<div style="margin-bottom:20px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:8px">'+t+'</div><p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.6">'+b+'</p></div>';}
 function isAvail(code){return invStock[code]!==false;}
-// El corte de marca, como componente. `alto` acepta cualquier medida CSS; los llamantes
-// que lo usan de divisor a pantalla completa le pasan '100%' y lo posicionan absoluto con
-// un desborde arriba y abajo, para que las barras salgan del encuadre en vez de terminar
-// en punta dentro de la pantalla.
-function CUT(alto?,ancho?,gap?){
-  var st='height:'+(alto||'100%')+(ancho?';width:'+ancho:'');
-  return'<div class="sw-cut" aria-hidden="true"'+(gap?' style="gap:'+gap+'"':'')+'>'
-    +'<i style="'+st+'"></i><i style="'+st+'"></i></div>';
-}
 // ── EL ACENTO ES DEL LADO; EL DORADO ES DEL DINERO ────────────────────────────────────
 //
 // Regla que faltaba y que se notó al pintar el armador sobre el mundo de WICHO: el dorado
@@ -619,9 +610,7 @@ var LADO_WICHO=[
   // lados comparten —el dueño pidió que cada lado tuviera su bebida—, así que su color no
   // puede estar fijado en esta lista. Lo decide ladoActual() por el lado de entrada.
   'p_rewards',    // eliges qué canjear
-  'p_favorites',  // tus armados guardados
   'p_recurring',  // eliges qué se repite y cuándo
-  'gift_card',    // eliges a quién le regalas
   'group_order'   // cada quien arma el suyo
 ];
 function ladoActual(){
@@ -635,17 +624,6 @@ function ACC(){return ladoActual()==='wicho'?'var(--sw-sky,#8CC8EC)':GOLD;}
 // El texto que va ENCIMA del acento. Sobre celeste nunca es blanco: no contrasta.
 function ACC_INK(){return ladoActual()==='wicho'?'var(--sw-sky-ink,#0E1A17)':'var(--sw-on-gold,#241a08)';}
 
-// Uno de los dos hermanos, como elemento de interfaz. `activo` dispara su reacción y,
-// en el caso de WICHO, pone a girar su ojo. El ojo se dibuja ENCIMA del de la ilustración
-// (mismo centro y radio, muestreados del archivo) porque una espiral es geometría y se
-// puede redibujar; una sonrisa nueva no, ésa exige dibujo del dueño.
-function BRO(quien,ancho,activo?){
-  var esW=quien==='wicho';
-  var ojo=esW?'<div class="sw-eye">'+SPIRAL(60,'#503C64',!!activo)+'</div>':'';
-  return'<div class="sw-bro'+(activo?' sw-on':'')+'" style="width:'+ancho+'">'
-    +'<img class="sw-bro-'+quien+'" src="img/'+quien+'.png" alt="'+(esW?'WICHO':'SANDO')+'" loading="lazy">'
-    +ojo+'</div>';
-}
 // La espiral del ojo de WICHO. `gira` la convierte en el indicador de carga.
 function SPIRAL(size,color,gira?){
   var n=148,vueltas=3.2,r=(size/2)-2.4,pts=[];

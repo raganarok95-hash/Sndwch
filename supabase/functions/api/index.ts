@@ -17,7 +17,7 @@ import { validarEntrada } from "./entrada.ts";
 import { actPing } from "./actions/health.ts";
 import { actGetCatalog, actAdminCatalogSetPrice, actAdminCatalogItemsGet, actAdminCatalogItemsSet } from "./actions/catalog.ts";
 import {
-  actRegister, actReclamarPedido, actLogin, actSessionCheck, actLogoutEverywhere, actDeleteAccount, actRecover,
+  actRegister, actReclamarPedido, actLogin, actSessionCheck, actDeleteAccount,
   actGoogleAuth, actRequestLoginCode, actVerifyLoginCode,
 } from "./actions/auth.ts";
 import {
@@ -30,17 +30,15 @@ import {
 import {
   actAddressesList, actAddressesAdd, actAddressesUpdate, actAddressesDelete,
   actSetAdTracking, actSetPreferences,
-  actFavoritesList, actFavoritesAdd, actFavoritesDelete,
+  actFavoritesList, actFavoritesAdd,
   actRecurringList, actRecurringAdd, actRecurringDelete, actRecurringSkip, actRemindRecurringOrders, actRemindPointsNudge,
   actRemindMonthlyRecap,
-  actSubmitRating, actClaimChallenge, actClaimDiscoveryChallenge, actCreditGift, actCreditLookup,
+  actSubmitRating, actCreditGift, actCreditLookup,
   actPushSubscribe, actPushUnsubscribe, actRemindUnclaimedChallenge, actRemindPeakHour,
-  actGiftCardPurchase,
   actAnniversaryGreeting, actSyncCart, actRemindAbandonedCart,
   actRemindSecondOrder, actRemindHighRankWinback, actRemindNeverOrdered,
-  actPrepareWeeklyPlan, actConfirmWeeklyPlan, actExpirePendingWeeklyPlans,
+  actExpirePendingWeeklyPlans,
   actBounceBackFirstOrder, actRemindLapsedCustomers,
-  actRequestRestockNotify, actWaitlistJoin,
   actRemindAbandonedPayment, actRemindUnusedCredit, actRemindAfterCancel,
 } from "./actions/customer.ts";
 import {
@@ -105,8 +103,6 @@ const ACTIONS: ConContrato & SinContrato = {
   "request-login-code": actRequestLoginCode,
   "verify-login-code": actVerifyLoginCode,
   "session-check": actSessionCheck,
-  recover: actRecover,
-  "logout-everywhere": actLogoutEverywhere,
   "delete-account": actDeleteAccount,
   "prepare-order": actPrepareOrder,
   "place-order": actPlaceOrder,
@@ -122,7 +118,6 @@ const ACTIONS: ConContrato & SinContrato = {
   "addresses-delete": actAddressesDelete,
   "favorites-list": actFavoritesList,
   "favorites-add": actFavoritesAdd,
-  "favorites-delete": actFavoritesDelete,
   // #60 — Pedido recurrente. NO cobra solo (el token de Culqi es de un solo uso): a la hora
   // elegida llega el aviso con el carrito armado y el cliente confirma en un toque.
   "recurring-list": actRecurringList,
@@ -135,8 +130,6 @@ const ACTIONS: ConContrato & SinContrato = {
   "remind-points-nudge": actRemindPointsNudge,
   "remind-monthly-recap": actRemindMonthlyRecap,
   "submit-rating": actSubmitRating,
-  "claim-challenge": actClaimChallenge,
-  "claim-discovery-challenge": actClaimDiscoveryChallenge,
   "credit-gift": actCreditGift,
   "credit-lookup": actCreditLookup,
   "admin-orders": actAdminOrders,
@@ -231,7 +224,6 @@ const ACTIONS: ConContrato & SinContrato = {
   "admin-calendar-update": actAdminCalendarUpdate,
   "admin-calendar-delete": actAdminCalendarDelete,
   "admin-calendar-generate": actAdminCalendarGenerate,
-  "waitlist-join": actWaitlistJoin,
   "admin-waitlist-list": actAdminWaitlistList,
   "admin-calendar-upload-image": actAdminCalendarUploadImage,
   "admin-upload-raw-video": actAdminUploadRawVideo,
@@ -258,21 +250,17 @@ const ACTIONS: ConContrato & SinContrato = {
   "admin-notify-zone": actAdminNotifyZone,
   "remind-unclaimed-challenge": actRemindUnclaimedChallenge,
   "remind-peak-hour": actRemindPeakHour,
-  "gift-card-purchase": actGiftCardPurchase,
   "anniversary-greeting": actAnniversaryGreeting,
   "sync-cart": actSyncCart,
   "remind-abandoned-cart": actRemindAbandonedCart,
   "remind-abandoned-payment": actRemindAbandonedPayment,
   "remind-unused-credit": actRemindUnusedCredit,
   "remind-after-cancel": actRemindAfterCancel,
-  "request-restock-notify": actRequestRestockNotify,
   "remind-second-order": actRemindSecondOrder,
   "remind-high-rank-winback": actRemindHighRankWinback,
   "remind-never-ordered": actRemindNeverOrdered,
   "bounce-back-first-order": actBounceBackFirstOrder,
   "remind-lapsed-customers": actRemindLapsedCustomers,
-  "prepare-weekly-plan": actPrepareWeeklyPlan,
-  "confirm-weekly-plan": actConfirmWeeklyPlan,
   "expire-pending-weekly-plans": actExpirePendingWeeklyPlans,
   "create-group-order": actCreateGroupOrder,
   "get-group-order": actGetGroupOrder,
