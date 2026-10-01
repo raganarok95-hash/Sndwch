@@ -68,7 +68,7 @@ function NAV(){
 // repetir el mismo bloque en cada pantalla de la app.
 function contactFooterHTML(){
   var igIcon='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>';
-  return'<div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--sw-bg,#12150F)">'
+  return'<div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--sw-bg,#17130E)">'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:12px">Contacto //</div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:2.1">'
     +'<div style="display:flex;align-items:center;gap:7px">'+icon('direccion',13,'#9DA096')+'Delivery — '+BIZ_CITY+'</div>'
@@ -109,8 +109,10 @@ function legalFooterLink(label,screen,extra?){
 }
 function legalLinksHTML(backTo){
   function lnk(label,screen,extra?){
-    return'<button type="button" onclick="bkTo=\''+backTo+'\';sndScreen=\''+screen+'\';'+(extra||'')+'render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#9DA096);letter-spacing:.06em;text-decoration:underline;padding:6px 2px;min-height:24px;display:inline-flex;align-items:center">'+label+' <span class="cut-sep" style="color:'+GOLD+'">//</span></button>';
+    return'<button type="button" onclick="bkTo=\''+backTo+'\';sndScreen=\''+screen+'\';'+(extra||'')+'render()" style="all:unset;cursor:pointer;font-family:Archivo,sans-serif;font-weight:700;font-size:11px;color:inherit;text-decoration:underline;text-underline-offset:3px;padding:6px 0">'+label+' <span class="cut-sep" style="color:'+GOLD+'">//</span></button>';
   }
+  // Color heredado del fondo donde se pinta (losa clara, kraft, lado WICHO): un gris fijo
+  // pensado para fondo oscuro dejaba el Libro de Reclamaciones a 2:1 sobre la losa (2026-10-01).
   return'<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:14px;justify-content:center">'
     +lnk('Cambios y devoluciones','p_returns')
     +lnk('Libro de reclamaciones','p_complaints','cmplStep=\'form\';')
@@ -139,7 +141,7 @@ function AB(t,can?,bk?,nfn?,nl?,hint?){
   // Hint bajo la barra cuando el botón está deshabilitado — explica QUÉ falta en vez de
   // dejar un botón gris sin razón visible (hallazgo de auditoría UX, severidad BAJA).
   var hintRow=(!can&&hint)?'<div style="position:fixed;bottom:66px;left:50%;transform:translateX(-50%);width:100%;max-width:480px;padding:0 20px;text-align:right;pointer-events:none"><span style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);background:rgba(11,11,11,.9);padding:4px 10px;border-radius:8px">'+esc(hint)+'</span></div>':'';
-  return hintRow+'<div class="sw-barra" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 20px;display:flex;gap:10px;align-items:center;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100"><div style="flex:1">'+tt+'</div>'+bb+'<button onclick="'+(can?nfn:'')+'" '+(can?'':'disabled')+' style="all:unset;cursor:'+(can?'pointer':'not-allowed')+';background:'+(can?GOLD:'#12150F')+';color:'+(can?'var(--sw-on-gold,#241a08)':'#73776C')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.05em;padding:13px 0;border-radius:8px;text-align:center;flex:1">'+(nl||'Continuar //')+'</button></div>';
+  return hintRow+'<div class="sw-barra" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 20px;display:flex;gap:10px;align-items:center;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100"><div style="flex:1">'+tt+'</div>'+bb+'<button onclick="'+(can?nfn:'')+'" '+(can?'':'disabled')+' style="all:unset;cursor:'+(can?'pointer':'not-allowed')+';background:'+(can?GOLD:'var(--sw-bg,#17130E)')+';color:'+(can?'var(--sw-on-gold,#241a08)':'#73776C')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.05em;padding:13px 0;border-radius:8px;text-align:center;flex:1">'+(nl||'Continuar //')+'</button></div>';
 }
 // PÍLDORA DE VIDRIO — el rótulo que se puede poner ENCIMA DE UNA FOTO.
 // Nace con el tratamiento a sangre: cuando la foto es la tarjeta, un rótulo con fondo de
@@ -292,7 +294,7 @@ function BTN(l,fn,out?){return'<button onclick="'+fn+'" style="all:unset;box-siz
 // decía que `gira` la convierte en indicador de carga— pero nunca se había usado para
 // eso: la pieza estaba construida y sin enchufar. Una espiral que gira es literalmente
 // lo que ya significa en la marca, así que no hay nada que aprender.
-function LOAD(msg){return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--sw-bg,#12150F)">'
+function LOAD(msg){return'<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--sw-bg,#17130E)">'
   +'<div style="margin-bottom:14px">'+SPIRAL(34,'var(--sw-spiral,#C3A6D2)',true)+'</div>'
   +'<div style="margin-bottom:14px">'+WORDMARK(30,true)+'</div>'
   +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.25em">'+(msg||'CARGANDO //')+'</div></div>';}
@@ -1925,7 +1927,7 @@ function sigPreviewOverlayHTML(){
     +(sigBadge(s)?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block">'+sigBadge(s)+'</span>':'')
     +'</div>';
   return'<div onclick="closeSigPreview()" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;justify-content:center" class="fi">'
-    +'<div onclick="event.stopPropagation()" style="background:var(--sw-bg,#12150F);border-radius:12px 14px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto">'
+    +'<div onclick="event.stopPropagation()" style="background:var(--sw-bg,#17130E);border-radius:12px 14px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto">'
     +hero
     +'<div style="padding:20px">'
     +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);line-height:1.6;margin-bottom:16px">'+esc(s.pitch||'')+'</p>'

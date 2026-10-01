@@ -525,7 +525,7 @@ function focusStep(delta){
 }
 function sAdminFocus(){
   var ao=sortedActiveOrders();
-  var barBg='var(--sw-bg,#12150F)';
+  var barBg='var(--sw-bg,#17130E)';
   // ⚠ UNA SOLA BARRA, NO DOS. Medido a 360×640 (gama baja): las dos barras de antes —el
   // rótulo "Modo // cocina" arriba y "‹ Pedido 1 de 4 ›" debajo— se comían 100 px de 640,
   // el 16% de la pantalla, para decir una cosa que el dueño ya sabe (en qué pantalla está)
@@ -643,7 +643,7 @@ function sAdminFocus(){
   // le agrega una segunda línea), así que cualquier número escrito a mano queda desalineado
   // en la mitad de los casos — y un degradado corrido hacia adentro del propio botón no
   // avisa de nada.
-  var fade='<div aria-hidden="true" style="position:absolute;left:0;right:0;top:0;transform:translateY(-100%);height:20px;pointer-events:none;background:linear-gradient(to top, var(--sw-bg,#12150F), rgba(0,0,0,0))"></div>';
+  var fade='<div aria-hidden="true" style="position:absolute;left:0;right:0;top:0;transform:translateY(-100%);height:20px;pointer-events:none;background:linear-gradient(to top, var(--sw-bg,#17130E), rgba(0,0,0,0))"></div>';
   var fixedBar='<div class="sw-barra" style="position:fixed;left:0;right:0;bottom:0;padding:14px 20px calc(14px + env(safe-area-inset-bottom));background:'+barBg+';border-top:1px solid var(--sw-border,#2C3228);box-shadow:0 -6px 20px rgba(0,0,0,.25)">'+fade
     +(manualPending
       ?'<button onclick="confirmAndAdvance(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:700;letter-spacing:.04em;padding:20px 0;border-radius:10px;text-align:center">'+iconTxt('check','Confirmar pago y preparar','#000')+'</button>'

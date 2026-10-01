@@ -367,7 +367,7 @@ function deliveryZonePickerHTML(){
       :'Confirma tu ubicación en el mapa y calculamos el envío al instante. Se cobra por distancia real, '+SOLES_TXT+pz(DELIVERY_KM_RATE)+' por kilómetro.')
     +'</div>' 
     +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:4px">Solo la primera vez por dirección: después queda guardada.</div>'
-    +'<button onclick="abrirUbicacion()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;background:'+GOLD+';color:#12150F;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.05em;padding:10px;border-radius:8px;text-align:center">Confirmar mi ubicación //</button>'
+    +'<button onclick="abrirUbicacion()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;background:'+GOLD+';color:var(--sw-bg,#17130E);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.05em;padding:10px;border-radius:8px;text-align:center">Confirmar mi ubicación //</button>'
     +'</div></div>';
 }
 function checkoutExtrasHTML(){

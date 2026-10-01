@@ -18,7 +18,7 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 > día es el mismo que ya usa la app (`img/yape-qr.png`, mismo contenido decodificado). Sigue
 > `businessLaunched: false`: se activa al abrir. P14 (rotar el secreto de cron) no se pudo verificar.
 
-> **ABIERTO el 2026-10-01 a las 6:20 (Lima)**: `businessLaunched` activo. ⚠ El jueves quedó abriendo a las 6:00 para la prueba: devolverlo a 11:00.
+> **ABIERTO el 2026-10-01 a las 6:20 (Lima)**: `businessLaunched` activo. El jueves volvió a abrir a las 11:00 (revertido el mismo día, 21:00 UTC).
 >
 > **No volver a pedirle al dueño** (2026-10-01, «hay cosas que me estás volviendo a pedir»):
 > **snd.pe** no es suyo («la decisión es programarlas; snd.pe no es mía»): se borra de las

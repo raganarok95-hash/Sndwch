@@ -505,7 +505,7 @@ function sOItemConfirm(){
       +'<img src="'+heroImg+'" alt="'+esc(mode==='sig'&&sig?sig.n:'')+'" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">'
       // El degradado cierra contra el fondo de la app (no contra negro) para que la foto
       // no termine en un corte duro: se funde con la pantalla en vez de estar pegada.
-      +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25) 0%,rgba(0,0,0,.05) 30%,rgba(0,0,0,.55) 70%,var(--sw-bg,#12150F) 100%)"></div>'
+      +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25) 0%,rgba(0,0,0,.05) 30%,rgba(0,0,0,.55) 70%,var(--sw-bg,#17130E) 100%)"></div>'
       +'<div style="position:absolute;left:20px;right:20px;bottom:12px">'
       +PILL(heroSub,false)+'<span style="margin-left:6px">'+PILL(szLabel(size),true)+'</span>'
       +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.12;margin-top:7px;text-shadow:0 2px 8px rgba(0,0,0,.75)">'+heroTitulo+'</div>'
