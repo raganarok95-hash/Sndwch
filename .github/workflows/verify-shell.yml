@@ -54,3 +54,10 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Abrir sndwch.app como un cliente y revisar lo que ve
         run: node scripts/sitio-real.mjs
+      # La foto de la ventana de Culqi tal como la ve el cliente: queda en la corrida para mirarla.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sitio-real-culqi
+          path: sitio-real-culqi.png
+          if-no-files-found: ignore
