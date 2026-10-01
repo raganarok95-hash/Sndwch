@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Cocina abierta · 3 opciones</title>
+<style>
+/* Propuesta funcional, no estética: negro + ámbar del panel actual, una sola tipografía
+   de sistema, tamaños de dedo (≥44px). Datos de muestra: los nombres salen de la carta. */
+:root{--bg:#0B0C0A;--card:#171915;--line:#2A2D27;--tx:#EFEDE4;--mu:#9A9C92;--amb:#F2A93B;--ok:#3FBF6A;--bad:#E5544B;--blu:#5B9BFF;--vio:#A98BFF}
+*{box-sizing:border-box;margin:0}
+body{background:#d9d6cc;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:24px;color:var(--tx)}
+.fila{display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap}
+.col{width:360px}
+.tit{color:#1b1b18;font-size:18px;font-weight:700;margin-bottom:4px}
+.sub{color:#45463f;font-size:13px;line-height:1.4;margin-bottom:10px;min-height:54px}
+.tel{width:360px;height:740px;background:var(--bg);border-radius:22px;overflow:hidden;display:flex;flex-direction:column;border:6px solid #111}
+.top{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.top b{font-size:15px}
+.pill{padding:4px 9px;border-radius:999px;font-size:12px;font-weight:700}
+.on{background:var(--ok);color:#06210f}
+.pausa{margin-left:auto;border:1px solid var(--amb);color:var(--amb);background:none;border-radius:8px;padding:8px 10px;font-size:13px;font-weight:700}
+.cont{display:flex;gap:6px;padding:10px 12px;overflow:hidden}
+.cn{flex:1;background:var(--card);border-radius:10px;padding:8px 6px;text-align:center;border:2px solid transparent}
+.cn .n{font-size:22px;font-weight:800}
+.cn .l{font-size:11px;color:var(--mu)}
+.cn.sel{border-color:var(--amb)}
+.alerta{margin:0 12px 8px;background:rgba(229,84,75,.14);border:1px solid rgba(229,84,75,.5);border-radius:10px;padding:10px;font-size:13px}
+.scroll{flex:1;overflow:hidden;padding:0 12px 12px;display:flex;flex-direction:column;gap:8px}
+.ped{background:var(--card);border-radius:12px;padding:10px 12px;border-left:6px solid var(--mu)}
+.ped .h{display:flex;align-items:baseline;gap:8px}
+.ped .num{font-size:18px;font-weight:800}
+.ped .min{margin-left:auto;font-weight:800;font-size:15px}
+.ped .it{font-size:14px;margin-top:4px;line-height:1.35}
+.ped .q{color:var(--mu);font-size:12px;margin-top:3px}
+.btn{display:block;width:100%;margin-top:8px;padding:12px;border-radius:10px;border:none;font-size:15px;font-weight:800}
+.b-amb{background:var(--amb);color:#231502}
+.b-ok{background:var(--ok);color:#06210f}
+.b-blu{background:var(--blu);color:#061633}
+.b-gh{background:none;border:1px solid var(--line);color:var(--tx)}
+.st-cola{border-left-color:var(--amb)}.st-prep{border-left-color:var(--blu)}.st-listo{border-left-color:var(--ok)}.st-cam{border-left-color:var(--vio)}.st-pago{border-left-color:var(--bad)}
+.tag{font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px;background:var(--line)}
+.tabs{display:flex;border-top:1px solid var(--line)}
+.tabs div{flex:1;text-align:center;padding:12px 0;font-size:12px;color:var(--mu)}
+.tabs .a{color:var(--amb);font-weight:800;border-top:3px solid var(--amb);margin-top:-1px}
+.receta{background:#10120f;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;line-height:1.55}
+.receta b{color:var(--amb)}
+.chk{display:flex;gap:8px;align-items:center}
+.chk i{width:18px;height:18px;border:2px solid var(--mu);border-radius:4px;display:inline-block;flex:none}
+.chk.x i{background:var(--ok);border-color:var(--ok)}
+.chk.x{color:var(--mu);text-decoration:line-through}
+.colhead{font-size:12px;font-weight:800;color:var(--mu);letter-spacing:.08em;text-transform:uppercase;margin:6px 0 2px}
+.nota{margin-top:10px;color:#2b2c27;font-size:12.5px;line-height:1.45}
+.nota b{color:#000}
+</style></head><body>
+<div class="fila">
+
+<!-- ═════════ OPCIÓN A · LA RIEL ═════════ -->
+<div class="col">
+<div class="tit">A · La riel (lista única por urgencia)</div>
+<div class="sub">Todos los pedidos en una lista, el que vence primero arriba. Los contadores filtran. Un botón por pedido: el siguiente paso.</div>
+<div class="tel">
+ <div class="top"><span class="pill on">ABIERTO</span><b>Cocina</b><span style="color:var(--mu)">19:42 · 14 hoy</span><button class="pausa">Pausar</button></div>
+ <div class="cont">
+  <div class="cn sel"><div class="n">7</div><div class="l">Todos</div></div>
+  <div class="cn"><div class="n" style="color:var(--bad)">1</div><div class="l">Pago</div></div>
+  <div class="cn"><div class="n" style="color:var(--amb)">3</div><div class="l">Cola</div></div>
+  <div class="cn"><div class="n" style="color:var(--blu)">1</div><div class="l">Armando</div></div>
+  <div class="cn"><div class="n" style="color:var(--ok)">2</div><div class="l">Listos</div></div>
+ </div>
+ <div class="scroll">
+  <div class="ped st-pago"><div class="h"><span class="num">#A41</span><span class="tag">YAPE · S/34.00</span><span class="min" style="color:var(--bad)">confirma</span></div>
+   <div class="it">Philly Cheesesteak 30CM · The Bloom</div><button class="btn b-gh">Ver captura y confirmar pago</button></div>
+  <div class="ped st-listo"><div class="h"><span class="num">#A37</span><span class="tag">LISTO</span><span class="min" style="color:var(--ok)">sale 19:45</span></div>
+   <div class="it">Tuna Melt 15CM · Turkey 15CM</div><div class="q">Av. Larco 1240 · Urb. San Andrés</div><button class="btn b-ok">Entregué al motorizado →</button></div>
+  <div class="ped st-prep"><div class="h"><span class="num">#A38</span><span class="tag">ARMANDO</span><span class="min" style="color:var(--amb)">6 min</span></div>
+   <div class="it">Meatball Marinara 30CM</div><button class="btn b-blu">Listo para salir →</button></div>
+  <div class="ped st-cola"><div class="h"><span class="num">#A39</span><span class="tag">EN COLA</span><span class="min">14 min</span></div>
+   <div class="it">Arma el tuyo 15CM · Classic Tuna 15CM</div><button class="btn b-amb">Empezar a armar →</button></div>
+  <div class="ped st-cola"><div class="h"><span class="num">#A40</span><span class="tag">EN COLA</span><span class="min">22 min</span></div>
+   <div class="it">Italian Hoagie 30CM</div></div>
+ </div>
+ <div class="tabs"><div class="a">Pedidos</div><div>Agotar</div><div>Día</div><div>Salir</div></div>
+</div>
+<div class="nota"><b>Fuerte:</b> ves todo de un vistazo y el orden ya te dice qué hacer. <b>Débil:</b> para ver la receta hay que tocar el pedido (se abre la vista C).</div>
+</div>
+
+<!-- ═════════ OPCIÓN B · EL TABLERO ═════════ -->
+<div class="col">
+<div class="tit">B · El tablero (columnas por estado)</div>
+<div class="sub">Como la pizarra de una cocina: Cola · Armando · Listos · En camino. En el celular se desliza de columna en columna; en tablet o PC se ven las cuatro.</div>
+<div class="tel">
+ <div class="top"><span class="pill on">ABIERTO</span><b>Cocina</b><span style="color:var(--mu)">19:42</span><button class="pausa">Pausar</button></div>
+ <div class="tabs" style="border-top:none;border-bottom:1px solid var(--line)"><div class="a">Cola 3</div><div>Armando 1</div><div>Listos 2</div><div>En camino 4</div></div>
+ <div class="alerta">1 pago Yape por confirmar · <b>#A41 S/34.00</b> → tocar</div>
+ <div class="scroll">
+  <div class="colhead">En cola · por hora prometida</div>
+  <div class="ped st-cola"><div class="h"><span class="num">#A39</span><span class="min">14 min</span></div>
+   <div class="it">Arma el tuyo 15CM<br>Classic Tuna 15CM</div><div class="q">Prometido 19:56</div><button class="btn b-amb">Empezar →</button></div>
+  <div class="ped st-cola"><div class="h"><span class="num">#A40</span><span class="min">22 min</span></div>
+   <div class="it">Italian Hoagie 30CM</div><div class="q">Prometido 20:04</div><button class="btn b-amb">Empezar →</button></div>
+  <div class="ped st-cola"><div class="h"><span class="num">#A42</span><span class="tag">PROGRAMADO</span><span class="min">20:30</span></div>
+   <div class="it">3 × Philly Cheesesteak 30CM</div><div class="q">Empezar a las 20:10</div></div>
+ </div>
+ <div class="tabs"><div class="a">Pedidos</div><div>Agotar</div><div>Día</div><div>Salir</div></div>
+</div>
+<div class="nota"><b>Fuerte:</b> el estado es un lugar, se entiende sin leer. Ideal en tablet. <b>Débil:</b> en el celular solo ves una columna; el pedido listo que se enfría está en otra pestaña.</div>
+</div>
+
+<!-- ═════════ OPCIÓN C · UN PEDIDO A LA VEZ ═════════ -->
+<div class="col">
+<div class="tit">C · Un pedido a la vez (la receta manda)</div>
+<div class="sub">La pantalla es el pedido que toca armar, con su receta como lista para ir marcando. Arriba, una tira con lo que espera. Es el «modo cocina» actual, hecho de nuevo.</div>
+<div class="tel">
+ <div class="top"><span class="pill on">ABIERTO</span><span style="color:var(--mu)">Pago 1 · Cola 3 · Listos 2</span><button class="pausa">Pausar</button></div>
+ <div class="scroll" style="padding-top:10px">
+  <div class="h" style="display:flex;align-items:baseline;gap:8px"><span style="font-size:26px;font-weight:800">#A38</span><span class="tag">ARMANDO</span><span style="margin-left:auto;font-weight:800;color:var(--amb)">6 min</span></div>
+  <div style="font-size:13px;color:var(--mu)">1 de 4 en cocina · prometido 19:48</div>
+  <div class="receta">
+   <div style="font-weight:800;font-size:16px;margin-bottom:6px">Meatball Marinara · 30CM</div>
+   <div class="chk x"><i></i>Pan: Classic · White</div>
+   <div class="chk x"><i></i>Albóndiga en marinara</div>
+   <div class="chk"><i></i>Queso americano</div>
+   <div class="chk"><i></i>Tomate</div>
+   <div class="chk"><i></i>Oil &amp; Vinegar</div>
+   <div style="margin-top:6px"><b>Sin cebolla</b> · la quitó el cliente</div>
+  </div>
+  <div class="receta"><div class="chk"><i></i>The Midnight · 500 ml</div></div>
+  <button class="btn b-blu" style="padding:16px;font-size:17px">Listo para salir →</button>
+  <div style="display:flex;gap:8px"><button class="btn b-gh">‹ Anterior</button><button class="btn b-gh">Siguiente ›</button></div>
+ </div>
+ <div class="tabs"><div class="a">Pedidos</div><div>Agotar</div><div>Día</div><div>Salir</div></div>
+</div>
+<div class="nota"><b>Fuerte:</b> imposible equivocarse de ingrediente; se usa con las manos ocupadas. <b>Débil:</b> no ves la cola entera; un pago por confirmar es solo un número en la tira.</div>
+</div>
+
+</div>
+</body></html>
