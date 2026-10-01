@@ -169,7 +169,7 @@ export function businessDaysSince(from: Date, to: Date): number {
   }
   return count;
 }
-export async function actAlertComplaintDeadlines(b: any) {
+export async function actAlertComplaintDeadlines(b: Entrada<"alert-complaint-deadlines"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   // Se trae todo reclamo abierto sin alertar de los últimos 40 días calendario (holgura
   // suficiente para cubrir 15 hábiles con feriados de por medio) y el filtro fino por días

@@ -27,8 +27,9 @@ while ((m = re.exec(contrato))) inicios.push([m[1], m.index]);
 // Grupos de campos compartidos (`const CAMPOS_X = { ... }`), que un contrato usa entero
 // (`e.objeto(CAMPOS_X)`) o esparcido (`...CAMPOS_X`).
 const grupos = {};
-for (const g of contrato.matchAll(/^const (CAMPOS_[A-Z_]+) = \{([\s\S]*?)^\};/gm))
-  grupos[g[1]] = [...g[2].matchAll(/^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*[:,]/gm)].map((x) => x[1]);
+const sinParentesis = (t) => { let p; do { p = t; t = t.replace(/\([^()]*\)/g, ''); } while (t !== p); return t; };
+for (const g of contrato.matchAll(/^const (CAMPOS_[A-Z_]+) = \{([\s\S]*?)\};$/gm))
+  grupos[g[1]] = [...sinParentesis(g[2].replace(/\/\/[^\n]*/g, '')).matchAll(/(?:^|[{,\s])([a-zA-Z_][a-zA-Z0-9_]*)\s*(?=[:,}]|$)/gm)].map((x) => x[1]);
 inicios.forEach(([a, i], k) => {
   const fin = k + 1 < inicios.length ? inicios[k + 1][1] : contrato.length;
   const bloque = contrato.slice(i, fin);

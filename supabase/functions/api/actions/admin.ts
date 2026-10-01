@@ -311,7 +311,7 @@ export async function actAdminInventorySetShelfLife(b: any) {
 // Cada job muerto se avisa UNA vez (mark_cron_alerted); el aviso se rearma solo cuando ese
 // job vuelve a latir bien. Sin eso, un cron roto un fin de semana manda 48 notificaciones
 // idénticas y el dueño aprende a ignorarlas — que es peor que no tener alerta.
-export async function actAlertSystemHealth(b: any) {
+export async function actAlertSystemHealth(b: Entrada<"alert-system-health"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
 
   let deadAlerted = 0;
@@ -1048,7 +1048,7 @@ export function prepShortfall(
 // solo hoy.
 const SHORTFALL_ALERT_WINDOW_HOURS = 12;
 
-export async function actAlertScheduledShortfall(b: any) {
+export async function actAlertScheduledShortfall(b: Entrada<"alert-scheduled-shortfall"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   await loadCatalogPrices();
   const nowIso = new Date().toISOString();
@@ -1152,7 +1152,7 @@ export function declineStats(
   return { total, rejected, rate, alert: total >= minCharges && rate >= threshold, reasons: reasons.slice(0, 3) };
 }
 
-export async function actAlertCardDeclines(b: any) {
+export async function actAlertCardDeclines(b: Entrada<"alert-card-declines"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const desde = new Date(Date.now() - DECLINE_WINDOW_HOURS * 3600000).toISOString();
   const rows = await sbGet(
@@ -1506,7 +1506,7 @@ export async function actAdminCalendarGenerate(b: any) {
 
 // Cron semanal — no publica nada (ninguna red social está conectada a este sistema). Desde
 // #50 además de avisar DEJA LOS BORRADORES HECHOS para las próximas semanas.
-export async function actRemindMarketingContent(b: any) {
+export async function actRemindMarketingContent(b: Entrada<"remind-marketing-content"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   await loadCatalogPrices();
   const theme = marketingContent()[marketingWeekIndex()].theme;
@@ -1857,7 +1857,7 @@ export function cookNowItems(items: BatchPlanItem[], leadDays: number = COOK_LEA
     .map((i) => ({ code: i.code, name: i.name, daysLeft: i.daysLeft as number, toCook: i.toCook }));
 }
 
-export async function actAlertCookNow(b: any) {
+export async function actAlertCookNow(b: Entrada<"alert-cook-now"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const plan = await computeBatchPlan(BATCH_DEFAULT_COVER_DAYS);
   // Sin historial suficiente el "por día" es ruido, y una alerta construida sobre ruido
@@ -2199,7 +2199,7 @@ export function retentionDigest(
   };
 }
 
-export async function actSendRetentionReport(b: any) {
+export async function actSendRetentionReport(b: Entrada<"send-retention-report"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const report = await rpc("retention_report", { p_cohort_months: RETENTION_COHORT_MONTHS });
   const digest = retentionDigest(report);
@@ -2277,7 +2277,7 @@ export function adminAccessAttempts(
   };
 }
 
-export async function actAlertAdminAccess(b: any) {
+export async function actAlertAdminAccess(b: Entrada<"alert-admin-access"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const desde = new Date(Date.now() - ADMIN_ACCESS_WINDOW_HOURS * 3600000).toISOString();
   const rows = await sbGet(
@@ -3725,7 +3725,7 @@ export async function actAdminAdSpendSet(b: any) {
 // fue el cálculo sino que hay que acordarse de abrir la pantalla"). Y el caso que más importa
 // es justo el que nadie va a ir a mirar: la campaña lleva días comprando caro mientras el
 // dueño está cocinando.
-export async function actAlertCacBrake(b: any) {
+export async function actAlertCacBrake(b: Entrada<"alert-cac-brake"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   let filasGasto: Array<{ amount: string | number; spend_date: string }> = [];
   const freno = await (async () => {

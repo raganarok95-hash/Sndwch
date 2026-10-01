@@ -203,7 +203,7 @@ export async function actAdminPublishSocial(b: any) {
 // programada ya llegó — sin esperar a que nadie toque "Publicar ahora". Un error en una
 // entrada no bloquea las demás; cada fallo queda en debug_logs vía el catch de nivel
 // superior del handler.
-export async function actAutoPublishCalendar(b: any) {
+export async function actAutoPublishCalendar(b: Entrada<"auto-publish-calendar"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const today = new Date().toISOString().slice(0, 10);
   const due = await sbGet(

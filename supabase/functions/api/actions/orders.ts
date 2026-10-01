@@ -2586,7 +2586,7 @@ export async function actCancelMyOrder(b: Entrada<"cancel-my-order"> & { _ip?: s
 // pedido Yape/Plin sin pagar solo puede estar en RECIBIDO (actAdminUpdateStatus ya
 // bloquea avanzarlo de estado sin confirmar el pago primero), así que ese es el único
 // status que hace falta revisar aquí.
-export async function actExpireStaleManualPayments(b: any) {
+export async function actExpireStaleManualPayments(b: Entrada<"expire-stale-manual-payments"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const cutoff = new Date(Date.now() - STALE_MANUAL_PAYMENT_HOURS * 3600000).toISOString();
   const stale = await sbGet(
@@ -2650,7 +2650,7 @@ function isPeakHourNowLima(): boolean {
   const limaHour = new Date(Date.now() - 5 * 3600000).getUTCHours();
   return PEAK_HOURS_LIMA.some(([start, end]) => limaHour >= start && limaHour < end);
 }
-export async function actAlertStuckOrders(b: any) {
+export async function actAlertStuckOrders(b: Entrada<"alert-stuck-orders"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const stuckMinutes = isPeakHourNowLima() ? STUCK_ORDER_MINUTES_PEAK : STUCK_ORDER_MINUTES_OFFPEAK;
   const cutoff = new Date(Date.now() - stuckMinutes * 60000).toISOString();
@@ -2780,7 +2780,7 @@ export function etaMissed(
 // dejarla 'pending' para siempre — eso también es lo que le permite a actPrepareOrder
 // bloquear una segunda reserva concurrente sin quedar bloqueado para siempre si el
 // cliente simplemente abandonó el pago.
-export async function actExpirePendingCharges(b: any) {
+export async function actExpirePendingCharges(b: Entrada<"expire-pending-charges"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const nowIso = new Date().toISOString();
   // status=in.(pending,charging): 'charging' es el estado transitorio que create-charge usa
@@ -2849,7 +2849,7 @@ const SCHEDULED_REMINDER_LEAD_MINUTES = 20;
 // Al cliente se le avisa con MUCHA más anticipación que a la cocina: 20 minutos le sirven al
 // que va a armar el sándwich, pero no al que tiene que volver a su casa para recibirlo.
 const CUSTOMER_REMINDER_LEAD_MINUTES = 60;
-export async function actAlertScheduledOrders(b: any) {
+export async function actAlertScheduledOrders(b: Entrada<"alert-scheduled-orders"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const nowIso = new Date().toISOString();
   const windowEnd = new Date(Date.now() + SCHEDULED_REMINDER_LEAD_MINUTES * 60000).toISOString();
@@ -2923,7 +2923,7 @@ export async function actAlertScheduledOrders(b: any) {
 // nuestra que corresponda a este cargo huérfano donde guardar ese estado.
 const CULQI_RECONCILE_LOOKBACK_MINUTES = 180;
 const CULQI_RECONCILE_GRACE_MINUTES = 15;
-export async function actReconcileCulqiCharges(b: any) {
+export async function actReconcileCulqiCharges(b: Entrada<"reconcile-culqi-charges"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   if (!CULQI_SECRET_KEY) return { success: true, checked: 0, orphaned: 0 };
   const r = await fetch("https://api.culqi.com/v2/charges?limit=50", {
@@ -2982,7 +2982,7 @@ export async function actReconcileCulqiCharges(b: any) {
 // SIGUE bajo/agotado — antes, si el dueño ignoraba el aviso de cruce inicial (o no vio la
 // notificación en el momento), un producto podía quedar agotado por días sin ningún
 // recordatorio adicional (hallazgo de la re-auditoría de automatización).
-export async function actRemindLowStock(b: any) {
+export async function actRemindLowStock(b: Entrada<"remind-low-stock"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const rows = await sbGet("inventory", "select=product_code,product_name,in_stock,stock_qty,low_stock_threshold");
   const outOfStock = rows.filter((r: any) => r.in_stock === false || (r.stock_qty != null && r.stock_qty <= 0));
@@ -3069,7 +3069,7 @@ export function batchExpiryStatus(rows: BatchRow[], nowMs: number): { vencidos: 
 
 const BATCH_EXPIRY_MAX_NOMBRES = 6;
 
-export async function actAlertBatchExpiry(b: any) {
+export async function actAlertBatchExpiry(b: Entrada<"alert-batch-expiry"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const rows = await sbGet(
     "inventory",
