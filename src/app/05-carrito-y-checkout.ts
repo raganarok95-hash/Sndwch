@@ -1734,6 +1734,7 @@ async function onGoogleCredential(resp){
     }
     cust=r.customer;isAdmin=r.isAdmin;token=r.token;cacheCust(cust,isAdmin);
     localStorage.setItem('sw_ph',cust.phone);localStorage.setItem('sw_tok',token);savedPh=cust.phone;
+    try{localStorage.setItem('sw_g_antes','1');}catch(e){}
     // Desde el aviso de la 06A, quien ya tenía cuenta se queda en su pedido y se le vincula.
     if(sndScreen==='o_sent'){await avisoReclamar();busy=false;render();loadUserExtras();return;}
     busy=false;sndScreen='p_home';render();loadUserExtras();
@@ -1787,6 +1788,7 @@ async function doGoogleRegister(){
     fbTrack('CompleteRegistration',{content_name:ref?'referido':'google'});
     cust=r.customer;isAdmin=!!r.isAdmin;token=r.token;cacheCust(cust,isAdmin);
     localStorage.setItem('sw_ph',cust.phone);localStorage.setItem('sw_tok',token);savedPh=cust.phone;
+    try{localStorage.setItem('sw_g_antes','1');}catch(e){}
     busy=false;go('p_welcome');loadUserExtras();
   }catch(e){
     busy=false;render();
@@ -1804,13 +1806,44 @@ async function doGoogleRegister(){
 //
 // `auto_select` es lo que resuelve su pedido: si la persona ya dio consentimiento antes y
 // tiene UNA sola sesion de Google abierta, entra sin tocar nada.
-var _oneTapPedido=false;
+var _oneTapPedido=false,_gInicializado='';
+// UNA inicialización por client id. Antes se reinicializaba en cada render, y se hacía solo
+// dentro de mountGoogleButton: en la puerta, que no tiene botón, Google nunca se enteraba.
+function googleListoParaEntrar(){
+  if(!googleConfigured())return false;
+  if(typeof google==='undefined'||!google.accounts||!google.accounts.id)return false;
+  if(_gInicializado!==GOOGLE_CLIENT_ID){
+    google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogleCredential,auto_select:true,cancel_on_tap_outside:false});
+    _gInicializado=GOOGLE_CLIENT_ID;
+  }
+  return true;
+}
+// ENTRAR SOLO CON GOOGLE AL ABRIR LA APP (dueño: «no veo que se ingrese en automático con el
+// proceso de google OAuth»). Las tres causas, ya cerradas:
+//  1. One Tap solo se pedía en pantallas con botón de Google; la app abre en la puerta, que no
+//     lo tiene, así que nunca se le preguntaba a Google por la sesión.
+//  2. El client id llega por red: en la primera visita la pantalla se armaba antes.
+//  3. El script de Google es async: si terminaba después del render, nada lo volvía a montar.
+// Esto corre cuando carga el script (onGoogleLibraryLoad), cuando llega el client id y tras
+// cada render. Al abrir la app solo se pide a quien YA entró con Google en este equipo
+// (`sw_g_antes`): a esa persona `auto_select` la vuelve a entrar sin tocar nada; a quien nunca
+// entró no se le ofrece cuenta antes de pagar (CLAUDE.md: la cuenta se ofrece UNA vez).
+function googleAlCargar(){
+  if(!googleListoParaEntrar())return;
+  mountGoogleButton();
+  var antes=false;try{antes=localStorage.getItem('sw_g_antes')==='1';}catch(e){}
+  if(antes&&!cust&&!token&&!_oneTapPedido){
+    _oneTapPedido=true;
+    try{google.accounts.id.prompt();}catch(e){}
+  }
+}
+(window as any).onGoogleLibraryLoad=googleAlCargar;
 function mountGoogleButton(){
-  if(!googleConfigured())return;
-  if(typeof google==='undefined'||!google.accounts||!google.accounts.id)return;
+  if(!googleListoParaEntrar())return;
   var el=document.getElementById('google-btn-mount');
   if(!el)return;
-  google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogleCredential,auto_select:true,cancel_on_tap_outside:false});
+  if(el.getAttribute('data-montado')==='1'&&el.childElementCount)return;
+  el.setAttribute('data-montado','1');
   // Cada hueco dice cómo quiere el botón: el de Entrar va sobre papel claro (outline) y el de la
   // losa de la 06A sobre el bloque oscuro (filled_black). El ancho es el del hueco, entre los
   // límites que Google acepta.
