@@ -1166,6 +1166,18 @@ function payAsRewardOnly(){return placeOrderDirect('Aplicando tu recompensa...',
 // horaria que se arregló en vivo). Ahora primero se valida y RESERVA todo (prepare-order,
 // ver orders.ts) y solo si eso tuvo éxito se abre Culqi — el cliente nunca llega a ver el
 // formulario de tarjeta si su pedido de todas formas iba a ser rechazado.
+// ── UN FALLO CON TARJETA NUNCA ES MUDO (2026-10-01) ──────────────────────────────────────
+// Dueño: «Pagar con culqi no funciona». No había ni una reserva ni un error registrado: el
+// motivo salía en un aviso de segundos, porque en la pantalla Pagar no existe #o-err. Ahora
+// el motivo queda escrito en la pantalla (pagarErr) y además llega al resumen diario.
+function falloConTarjeta(donde:string,msg:string,detalle?:any){
+  busy=false;_payingInProgress=false;
+  pagarErr=msg;
+  reportarError('tarjeta:'+donde,new Error(msg+(detalle?' · '+String(JSON.stringify(detalle)).slice(0,200):'')));
+  var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
+  render();
+  if(errEl&&document.body.contains(errEl))errEl.innerHTML=HERMANO_DICE('serio','No pasó el pago',msg,'alerta');
+}
 async function prepareThenPayWithCulqi(amountSoles,email){
   var po=_pendingOrder;
   if(!po)return;
@@ -1175,9 +1187,7 @@ async function prepareThenPayWithCulqi(amountSoles,email){
     // así que si no las recibe cobraría por zona mientras place-order cobra por distancia.
     await api('prepare-order',{token:token,ref:po.ref,name:po.nom,phone:po.phone,email:po.email,address:po.addr,notes:po.notes,summary:po.summary,total:po.total,items:po.items,scheduledFor:po.scheduledFor,rewardId:po.rewardId,deliveryZone:po.deliveryZone,promoCode:po.promoCode,lat:po.lat,lon:po.lon,...metaAttribution()});
   }catch(e){
-    busy=false;_payingInProgress=false;render();
-    var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
-    if(errEl)errEl.textContent=e.message;else showToast(e.message);
+    falloConTarjeta('prepare-order',e.message||'No se pudo preparar el pago.');
     return;
   }
   busy=false;render();
@@ -1189,7 +1199,7 @@ function payWithCulqi(amountSoles,email){
   // dejarlo en true aquí (ej. Culqi.js no cargó por un adblocker/CDN caído) deja el botón
   // de pagar muerto para el resto de la sesión, sin ningún mensaje de error visible en
   // los siguientes clics.
-  if(typeof Culqi==='undefined'){busy=false;_payingInProgress=false;render();showToast('No se pudo cargar la pasarela de pago. Verifica tu conexión e intenta de nuevo.');return;}
+  if(typeof Culqi==='undefined'){falloConTarjeta('sin-culqi','No se pudo cargar la pasarela de pago (Culqi). Revisa tu conexión o paga con Yape.');return;}
   if(!CULQI_PUBLIC_KEY||CULQI_PUBLIC_KEY.indexOf('REEMPLAZA')>=0){busy=false;_payingInProgress=false;render();showToast('La pasarela de pago aún no está configurada. Contacta al administrador.');return;}
   Culqi.publicKey=CULQI_PUBLIC_KEY;
   Culqi.settings({
@@ -1216,10 +1226,10 @@ window.culqi=function(){
   if(Culqi.token){
     chargeAndFinalize(Culqi.token.id);
   }else{
-    busy=false;_payingInProgress=false;render();
     var msg=(Culqi.error&&(Culqi.error.user_message||Culqi.error.merchant_message))||'No se pudo procesar el pago. Intenta de nuevo o con otro método.';
-    var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
-    if(errEl)errEl.textContent=msg;else showToast(msg);
+    // Cerrar la ventana sin pagar también llega acá: eso no es un fallo y no se reporta.
+    if(Culqi.error)falloConTarjeta('culqi',msg,Culqi.error);
+    else{busy=false;_payingInProgress=false;render();}
   }
 };
 
@@ -1235,11 +1245,8 @@ async function chargeAndFinalize(culqiToken){
     });
     var data=await resp.json().catch(function(){return{};});
     if(!resp.ok||!data.success){
-      busy=false;_payingInProgress=false;render();
-      var errEl=(document.getElementById('o-err') as HTMLInputElement | null);
-      var msg=data.error||'El pago fue rechazado. Intenta de nuevo o con otro método.';
       // El rechazo con cara (#24): el hermano serio arriba del motivo, que viene del banco.
-      if(errEl)errEl.innerHTML=HERMANO_DICE('serio','No pasó el pago',msg,'alerta');else showToast(msg);
+      falloConTarjeta('create-charge',data.error||'El pago fue rechazado. Intenta de nuevo o con otro método.',{status:resp.status});
       return;
     }
     // Pago confirmado con Culqi — el servidor re-verifica el cargo contra la reserva que
@@ -1252,15 +1259,14 @@ async function chargeAndFinalize(culqiToken){
       // El cobro ya se hizo pero el pedido no quedó registrado — bloqueamos un reintento
       // desde aquí (crearía un SEGUNDO cobro real) y pedimos contactar al local con la ref.
       busy=false;checkoutLocked=true;
+      reportarError('tarjeta:place-order-tras-cobro',new Error((e.message||'')+' · ref '+po.ref));
       lockedMsg=(e.message||'No se pudo registrar tu pedido tras el pago.')+' Ya se realizó el cobro — contáctanos con tu referencia '+po.ref+' para confirmar tu pedido manualmente. No vuelvas a intentar pagar.';
       render();
       return;
     }
     finalizeOrderSuccess(res,po,data.chargeId);
   }catch(e){
-    busy=false;_payingInProgress=false;render();
-    var errEl2=(document.getElementById('o-err') as HTMLInputElement | null);
-    if(errEl2)errEl2.textContent='Error de conexión al procesar el pago. Intenta de nuevo.';
+    falloConTarjeta('conexion','Error de conexión al procesar el pago. Intenta de nuevo.',{msg:String(e&&e.message||e)});
   }
 }
 function finalizeOrderSuccess(res,po,chargeId){
