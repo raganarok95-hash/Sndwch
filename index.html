@@ -4044,7 +4044,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '9b68ca91a2';
+var APP_BUILD = '64fe410006';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6325,7 +6325,7 @@ function sMenuSecreto() {
     return '<div class="msec fi">'
         + (foto ? '<div class="fo" aria-hidden="true"><img src="' + foto + '" alt=""></div>' : '') + '<div class="velo"></div>'
         + '<button class="sal" onclick="go(\'o_home\')" aria-label="Volver">←</button>'
-        + '<div class="wm"><img src="img/marca/avatar-1024-transparente.png" alt=""><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>'
+        + '<div class="wm"><img src="img/logo-avatar-96.png" alt=""><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>'
         + '<div class="cuerpo">'
         + '<div class="cab">Lo desbloqueaste</div>'
         + '<div class="nom"><b>' + esc(String(sig.n || '').toUpperCase()) + '</b>'
@@ -6744,7 +6744,7 @@ async function doCancelGroupOrder() {
 // Papel kraft, «QUIÉNES COMEN», una fila por persona con lo que eligió, y la barra partida:
 // «Cerrar y pagar» (cada uno paga lo suyo) a la izquierda, «Yo invito» a la derecha.
 function wmClaro() {
-    return '<div class="wm"><img src="img/marca/avatar-1024-transparente.png" alt=""><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>';
+    return '<div class="wm"><img src="img/logo-avatar-96.png" alt=""><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>';
 }
 function linkDelGrupo() { return location.origin + location.pathname + '?group=' + encodeURIComponent(groupCode || ''); }
 async function copiarEnlaceGrupo() {
@@ -6821,7 +6821,7 @@ function sGroupOrder() {
         }
         h += '</div>';
     }
-    h += '<div class="sello" aria-hidden="true"><img class="av" src="img/marca/avatar-1024-transparente.png" alt=""><div class="wmb">SND<span class="mk"><i></i><i></i></span>WCH</div><s>TRUJILLO</s></div>';
+    h += '<div class="sello" aria-hidden="true"><img class="av" src="img/logo-avatar-96.png" alt=""><div class="wmb">SND<span class="mk"><i></i><i></i></span>WCH</div><s>TRUJILLO</s></div>';
     // Se acabó el tiempo pero el pedido no se perdió (2026-09-23): los 15 minutos significan
     // «ya no entra nadie más», se paga con los que alcanzaron y se dice por qué no hubo gratis.
     if (!abierto && g.canPay && !repartido) {
@@ -6987,7 +6987,7 @@ function M15_PASAR(total, i, esSecreto, hayVault) {
 // (desde cuántos, cuál va gratis) sale de la carta.
 function platoGrupo(total, hayVault) {
     return '<section class="plato kraft grupo" aria-label="Pedido en grupo"><div class="forro"></div>'
-        + '<div class="logo" aria-hidden="true"><img src="img/marca/avatar-1024-transparente.png" alt=""></div>'
+        + '<div class="logo" aria-hidden="true"><img src="img/logo-avatar-96.png" alt=""></div>'
         + '<div class="ficha"><div class="num">Para varios</div>'
         + '<h1>Pedido en grupo</h1><div class="pitch">Mandas un enlace y cada uno elige el suyo desde su celular, Signature o armado. Tú pagas una vez y llega todo junto.</div>'
         + '<div class="regla">Desde ' + ORGANIZER_FREE_MIN_SANDWICHES + ' sándwiches, el más barato va gratis</div></div>'
@@ -7553,7 +7553,7 @@ function BYO_PUENTE() {
     if (!rec)
         return '';
     return '<button type="button" class="puente" onclick="puenteASando(\'' + rec.id + '\')">'
-        + '<span class="o"><img src="img/marca/avatar-1024-transparente.png" alt="SND//WCH"></span>'
+        + '<span class="o"><img src="img/logo-avatar-96.png" alt="SND//WCH"></span>'
         + '<span class="tx" style="flex:1;min-width:0"><b style="display:block">¿Prefieres que ya esté resuelto?</b>'
         + '<span>' + esc(rec.n) + ', la estrella de SANDO. Te llevo a su lado.</span></span>'
         + '<span class="fl" aria-hidden="true">&#8594;</span></button>';
@@ -10916,7 +10916,7 @@ function sPHome() {
         return '<button class="r" onclick="' + accion + '"><span><b>' + t + '</b><s>' + s + '</s></span><span class="fl" aria-hidden="true">→</span></button>';
     };
     return '<div class="mct mcu fi"><button class="sal" onclick="volverALaPuerta()" aria-label="Volver">←</button>'
-        + '<span class="marca-der" aria-hidden="true"><img src="img/marca/avatar-1024-transparente.png" alt="">SND<span class="wm-mark"><i></i><i></i></span>WCH</span>'
+        + '<span class="marca-der" aria-hidden="true"><img src="img/logo-avatar-96.png" alt="">SND<span class="wm-mark"><i></i><i></i></span>WCH</span>'
         + '<div class="ficha">'
         + (desde ? '<div class="hd"><em>' + esc(desde) + '</em></div>' : '')
         + '<h1>' + esc(c.name || '') + '</h1>'
@@ -11097,7 +11097,7 @@ function sOrdDetail() {
         + '<button class="ac" onclick="window.print()"><span>Guardar el recibo</span><s>PDF · no es boleta</s></button>';
     return '<div class="mct mod fi">'
         + '<button class="sal" onclick="sndScreen=\'p_orders\';render()" aria-label="Volver">←</button>'
-        + '<span class="marca-der" aria-hidden="true"><img src="img/marca/avatar-1024-transparente.png" alt="">SND<span class="wm-mark"><i></i><i></i></span>WCH</span>'
+        + '<span class="marca-der" aria-hidden="true"><img src="img/logo-avatar-96.png" alt="">SND<span class="wm-mark"><i></i><i></i></span>WCH</span>'
         + '<div class="cab"><em>Pedido ' + esc(String(o.ref || '')) + (fu ? ' · ' + fu.getUTCDate() + ' ' + MESES_CORTOS[fu.getUTCMonth()] : '') + '</em><h1>' + esc(titularDelPedido(o)) + '</h1></div>'
         + (caja ? '<div class="caja">' + caja + '</div>' : '')
         + '<div class="lns">' + lineas + '</div>'
