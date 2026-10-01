@@ -24,11 +24,17 @@ const declarados = {};
 const re = /^\s*'([a-z0-9-]+)':\s*accion</gm;
 let m; const inicios = [];
 while ((m = re.exec(contrato))) inicios.push([m[1], m.index]);
+// Grupos de campos compartidos (`const CAMPOS_X = { ... }`), que un contrato usa entero
+// (`e.objeto(CAMPOS_X)`) o esparcido (`...CAMPOS_X`).
+const grupos = {};
+for (const g of contrato.matchAll(/^const (CAMPOS_[A-Z_]+) = \{([\s\S]*?)^\};/gm))
+  grupos[g[1]] = [...g[2].matchAll(/^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*[:,]/gm)].map((x) => x[1]);
 inicios.forEach(([a, i], k) => {
   const fin = k + 1 < inicios.length ? inicios[k + 1][1] : contrato.length;
   const bloque = contrato.slice(i, fin);
   const obj = bloque.slice(bloque.indexOf('e.objeto('));
   declarados[a] = new Set([...obj.matchAll(/(?:^|[{,\s])([a-zA-Z_][a-zA-Z0-9_]*)\s*(?=[:,}\n])/g)].map((x) => x[1]));
+  for (const g of obj.matchAll(/\b(CAMPOS_[A-Z_]+)\b/g)) for (const c of grupos[g[1]] || []) declarados[a].add(c);
 });
 
 const manejador = Object.fromEntries([...idx.matchAll(/^\s*"([a-z0-9-]+)":\s*(act\w+)/gm)].map((x) => [x[1], x[2]]));
@@ -49,7 +55,7 @@ for (const a of Object.keys(declarados)) {
   const c = fn && cuerpo(fn);
   if (!c) { malos.push(`${a}: no encontré el manejador ${fn || '(sin registrar)'}`); continue; }
   const anotados = new Set([...c.matchAll(/contrato-campos:[^\n]*lee ([a-zA-Z0-9_, ]+)/g)].flatMap((x) => x[1].split(/[ ,]+/).filter(Boolean)));
-  const leidos = new Set([...c.matchAll(/\bb\.([a-zA-Z_][a-zA-Z0-9_]*)/g)].map((x) => x[1]).concat([...anotados]));
+  const leidos = new Set([...c.matchAll(/\bb\??\.([a-zA-Z_][a-zA-Z0-9_]*)/g)].map((x) => x[1]).concat([...anotados]));
   for (const campo of leidos) if (campo !== '_ip' && !declarados[a].has(campo)) malos.push(`${a}: lee b.${campo} y el contrato no lo declara (llegaría vacío)`);
   const sinCuerpo = c.replace(/\/\/[^\n]*/g, '');
   if (/\(\s*b\s*[,)]|,\s*b\s*\)/.test(sinCuerpo.replace(/^export async function \w+\(b[^)]*\)/, '')) && !anotados.size)

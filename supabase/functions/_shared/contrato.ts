@@ -25,6 +25,33 @@ const items = e.lista(e.sinRevisar() as e.Esquema<ItemCarrito>, {
   mensaje: 'Tu carrito está vacío — arma el pedido antes de dejarlo fijo.',
 });
 
+/** Lo que manda el checkout en los caminos que cobran. Texto opcional: cada acción sigue
+ *  rechazando con su propio mensaje lo que falte («Faltan datos del pedido.»). lat/lon pasan sin
+ *  tocar (readCoords los sanea; null→0 sería una coordenada válida). */
+const CAMPOS_DEL_PEDIDO = {
+  token,
+  ref: e.textoOpcional(40),
+  name: e.textoOpcional(80),
+  phone: e.textoOpcional(20),
+  email: e.textoOpcional(254),
+  address: e.textoOpcional(300),
+  notes: e.textoOpcional(500),
+  summary: e.textoOpcional(1000),
+  deliveryZone: e.textoOpcional(40),
+  total: e.numero({ min: 0, max: 100_000, opcional: true, mensaje: 'El total no es válido.' }),
+  items: e.sinRevisar(),
+  rewardId: e.textoOpcional(20),
+  promoCode: e.textoOpcional(40),
+  scheduledFor: e.textoOpcional(40),
+  recurringId: e.textoOpcional(64),
+  groupCode: e.textoOpcional(24),
+  lat: e.sinRevisar(),
+  lon: e.sinRevisar(),
+  fbp: e.textoOpcional(120),
+  fbc: e.textoOpcional(300),
+  ua: e.textoOpcional(400),
+};
+
 function accion<S>() {
   return <E extends e.Esquema<unknown>>(entrada: E) => ({ entrada, salida: undefined as unknown as S });
 }
@@ -127,6 +154,32 @@ export const CONTRATO = {
     e.objeto({ token, code: e.textoOpcional(12), address: e.textoOpcional(300), contactPhone: e.textoOpcional(20), lat: e.sinRevisar(), lon: e.sinRevisar() }),
   ),
   'export-orders': accion<Record<string, unknown>>()(e.objeto({ token })),
+
+  // ── LAS TRES QUE COBRAN (2026-10-01). Todo lo que leen ellas Y sus auxiliares
+  // (readCoords: lat/lon · readMetaAttribution: fbp/fbc/ua/groupCode · organizerWaiverFor:
+  // groupCode/token · fijoPropio: recurringId). El monto y los ítems los vuelve a calcular el
+  // servidor (deriveCart, _shared/dinero.ts): acá solo se asegura la forma.
+  'prepare-order': accion<Record<string, unknown>>()(e.objeto(CAMPOS_DEL_PEDIDO)),
+  'place-order': accion<Record<string, unknown>>()(
+    e.objeto({
+      ...CAMPOS_DEL_PEDIDO,
+      chargeId: e.textoOpcional(120),
+      paymentMethod: e.textoOpcional(20),
+      useCredit: e.bandera(),
+      cod: e.sinRevisar(),
+    }),
+  ),
+  'validate-promo-code': accion<Record<string, unknown>>()(
+    e.objeto({
+      token,
+      code: e.textoOpcional(40),
+      phone: e.textoOpcional(20),
+      rewardId: e.textoOpcional(20),
+      scheduledFor: e.textoOpcional(40),
+      groupCode: e.textoOpcional(24),
+      items: e.sinRevisar(),
+    }),
+  ),
 
   'recurring-skip': accion<{ success: true; skipOn: string | null }>()(
     e.objeto({ token, id: e.uuid('Falta el pedido fijo.'), deshacer: e.bandera() }),
