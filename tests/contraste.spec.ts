@@ -21,7 +21,9 @@ type Fallo = { pantalla: string; texto: string; px: number; ratio: number; color
 
 const PANTALLAS: [string, string][] = [
   ['entrada', "window.homeTab=null;window.sndScreen='o_home';"],
-  ['home-sando', "window.homeTab='sig';window.sndScreen='o_home';"],
+  ['home-sando', "window.homeTab='sig';window.sandoEnPlatos=false;window.sndScreen='o_home';"],
+  // Desde 2026-10-01 el lado SANDO abre en el tarot; los platos de la M15 se miden aparte.
+  ['platos-sando', "window.homeTab='sig';window.sandoEnPlatos=true;window.sndScreen='o_home';"],
   // Ya no hay un "home de WICHO": su lado ES el armador, y o_home con homeTab='byo' lo
   // redirige ahí (ver sOHome). Lo que sí hay que medir dos veces es BEBIDAS, porque es la
   // única pantalla que cambia de paleta según el lado por el que se entró.
@@ -54,6 +56,11 @@ test('ningún texto queda por debajo del contraste mínimo, en ninguna de las do
       (window as any).render();
     }, estado);
     await page.waitForTimeout(220);
+    // Se mide lo que queda en pantalla, no un cuadro a mitad de una entrada animada (el tarot
+    // abre sus cartas con opacidad creciente). Solo las animaciones finitas.
+    await page.evaluate(() => Promise.all(document.getAnimations()
+      .filter((a: any) => Number.isFinite(a.effect?.getComputedTiming().iterations))
+      .map((a) => a.finished.catch(() => {}))));
 
     const malos = await page.evaluate(() => {
       const lum = (c: string) => {

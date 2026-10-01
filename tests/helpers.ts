@@ -135,8 +135,13 @@ export async function elegirSando(page: Page) {
   // prueba que ya navegó dentro de su mundo y vuelve a llamar esto no tiene que salir de él.
   const puerta = page.getByRole('button', { name: /Ya está resuelto/ });
   const mundo = page.locator('.m15');
-  await Promise.race([puerta.waitFor(), mundo.waitFor()]);
+  const tarot = page.locator('.mtarot');
+  await Promise.race([puerta.waitFor(), mundo.waitFor(), tarot.waitFor()]);
   if (await puerta.isVisible()) await puerta.click();
+  // Desde el 2026-10-01 el lado SANDO abre en el tarot (la carta); se toca la primera carta,
+  // como un cliente, y se llega a los platos de la M15.
+  await Promise.race([mundo.waitFor(), tarot.waitFor()]);
+  if (await tarot.isVisible()) await tarot.locator('.k').first().dispatchEvent('click');
   // El mundo de SANDO es la M15: un plato por pantalla. Llegar a él pintado es el ancla.
   await mundo.waitFor();
 }
@@ -226,14 +231,22 @@ export async function entrarConTelefono(page: Page, phone = '900000001', pin = '
   await page.locator('.en-go button.oro').click();
 }
 
+// Desde dentro del lado SANDO, la ✕ de los platos vuelve a las cartas (el tarot) y la ✕ del
+// tarot vuelve a la puerta (2026-10-01). Desde el armador de WICHO hay una sola ✕.
+export async function salirALaPuerta(page: Page) {
+  const cartas = page.locator('[aria-label="Volver a las cartas"]');
+  if (await cartas.count() && await cartas.first().isVisible()) await cartas.first().click();
+  await page.locator('[aria-label="Cambiar de lado"]').first().click();
+}
+
 // Entrar se abre desde la esquina de la puerta («Entrar →») o desde PUNTOS sin sesión, como lo
 // hace un cliente. Si ya está abierta no se toca nada; si la prueba está dentro de un mundo,
 // primero vuelve a la puerta por su «×».
 export async function irAEntrar(page: Page) {
-  const entrar = page.locator('.en'), esquina = page.locator('.pta .yo'), cambiar = page.locator('[aria-label="Cambiar de lado"]').first();
+  const entrar = page.locator('.en'), esquina = page.locator('.pta .yo'), cambiar = page.locator('[aria-label="Cambiar de lado"],[aria-label="Volver a las cartas"]').first();
   await Promise.race([entrar.waitFor(), esquina.waitFor(), cambiar.waitFor()]);
   if (await entrar.isVisible()) return;
-  if (!(await esquina.isVisible())) await cambiar.click();
+  if (!(await esquina.isVisible())) await salirALaPuerta(page);
   await esquina.click();
   await entrar.waitFor();
 }
@@ -247,7 +260,7 @@ export async function irAEntrar(page: Page) {
 // Se entra como entra un cliente que ya está del lado de SANDO (donde deja `gotoApp`):
 // «Cambiar de lado» → la mitad de WICHO. El armador abre en el paso del TAMAÑO.
 export async function irAlArmador(page: Page) {
-  await page.locator('[aria-label="Cambiar de lado"]').first().click();
+  await salirALaPuerta(page);
   await page.locator('button[onclick="elegirLado(\'byo\')"]').click();
   await page.waitForSelector('text=¿De qué tamaño?');
 }
