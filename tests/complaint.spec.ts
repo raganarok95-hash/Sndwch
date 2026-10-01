@@ -2,14 +2,15 @@ import { test, expect } from '@playwright/test';
 import { gotoApp } from './helpers';
 
 // Flujo prioritario #5: Libro de Reclamaciones — público por ley, no requiere sesión.
-// Accesible desde el pie de página del home (contactFooterHTML).
+// Se llega por «Lo legal» (con cuenta) o por el enlace directo ?legal=reclamaciones; aquí se
+// abre la pantalla directo para probar el formulario de invitado.
 
 test('invitado presenta un reclamo desde el Libro de Reclamaciones', async ({ page }) => {
   const calls = await gotoApp(page, {
     'submit-complaint': (body: any) => ({ success: true, claimCode: 'REC-2026-000123' }),
   });
 
-  await page.locator('[onclick*="p_complaints"]').click();
+  await page.evaluate(() => { const w = window as any; w.cmplStep = 'form'; w.sndScreen = 'p_complaints'; w.render(); });
   await expect(page.locator('#cq-name')).toBeVisible();
 
   await page.locator('#cq-name').fill('Consumidor de Prueba');
@@ -36,7 +37,7 @@ test('invitado presenta una queja (no un reclamo)', async ({ page }) => {
     'submit-complaint': { success: true, claimCode: 'REC-2026-000124' },
   });
 
-  await page.locator('[onclick*="p_complaints"]').click();
+  await page.evaluate(() => { const w = window as any; w.cmplStep = 'form'; w.sndScreen = 'p_complaints'; w.render(); });
   await page.locator('[onclick*="cmplKind=\'queja\'"]').click();
 
   await page.locator('#cq-name').fill('Consumidor Dos');

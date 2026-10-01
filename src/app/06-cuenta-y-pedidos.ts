@@ -945,12 +945,17 @@ function sPLoLegal(){
     +'<p class="biz">'+esc(BIZ_NAME)+' · RUC '+esc(BIZ_RUC)+'<br>'+esc(BIZ_CITY)+' · '+esc(BIZ_EMAIL)+'</p>'
     +'</div>';
 }
+// La cabecera de los textos legales (2026-10-01): la misma de «Lo legal», sin la barra vieja.
+// El cuerpo de cada texto queda EXACTAMENTE como estaba (CLAUDE.md: el texto legal no se toca).
+function CAB_LEGAL(bk:string,titulo:string){
+  return'<div class="mlt fi"><button class="sal" onclick="sndScreen=\''+bk+'\';render()" aria-label="Volver">←</button><div class="cab"><em>Lo legal · '+titulo+'</em></div>';
+}
 // TÉRMINOS Y PRIVACIDAD — borrador inicial en texto simple, accesible desde el registro
 // y el perfil. ⚠️ EDITA este texto con tu política real (revisada por un abogado) antes
 // de operar de cara al público — esto es un punto de partida razonable, no asesoría legal.
 function sPLegal(){
-  var bk=(bkTo||(cust?'p_profile':'p_auth'));bkTo=null;
-  return H('TÉRMINOS Y PRIVACIDAD',"sndScreen='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
+  var bk=(bkTo||(cust?'p_lo_legal':'o_home'));bkTo=null;
+  return CAB_LEGAL(bk,'Términos y privacidad')+'<div style="flex:1;padding:8px 20px 40px;overflow-y:auto" class="fi">'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Términos<span class="cut-sep" style="color:'+GOLD+'"> // </span>y privacidad</div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:20px">Última actualización: 2026</div>'
     +providerBlockHTML()
@@ -976,7 +981,7 @@ function sPLegal(){
     +sec('CON QUIÉN LOS COMPARTIMOS //','Nunca vendemos tus datos. Se comparten solo con los proveedores necesarios para que el negocio funcione: la pasarela de pago para cobrarte, el servicio de correo para escribirte, Google para buscar tu dirección y para dejarte entrar con tu cuenta, y Meta (Facebook e Instagram) para medir qué anuncios traen pedidos de verdad. A Google le llega lo que escribes en el campo de dirección y el punto que marcas en el mapa, que es lo que permite encontrar el número exacto de tu calle; si entras con «Continuar con Google», Google sabe además que usaste tu cuenta en esta app, como en cualquier sitio donde inicias sesión con ella. A Meta le llegan tu correo, tu teléfono y tu nombre de pila SIEMPRE cifrados con un código irreversible (SHA-256, nunca legibles), junto con el monto del pedido y qué productos llevaste; como en cualquier web con publicidad, tu navegador también le deja ver tu dirección IP y las cookies que el propio píxel de Meta guarda. Además de las compras, Meta ve cuándo creas tu cuenta, cuándo agregas algo al carrito y cuándo te anotas en la lista de espera. NO le llegan tu DNI, tu fecha de nacimiento, tu PIN ni tu dirección de entrega. Esa medición sirve para saber cuánto cuesta traer un cliente nuevo — nunca para decidir qué te cobramos a ti.')
     +sec('TUS DATOS, TU DECISIÓN //','Puedes eliminar tu cuenta permanentemente desde tu perfil en cualquier momento — esto borra tus datos personales, favoritos, direcciones y crédito. Conservamos el historial de ventas ya anonimizado, sin tu nombre ni datos de contacto, para las cifras del negocio. Y si no quieres que midamos tus compras para publicidad, apágalo en tu perfil, en Privacidad: tus pedidos dejan de reportarse a Meta desde ese momento, sin que cambie nada de tu cuenta, tus puntos ni tus precios. Es tu derecho de oposición según la Ley 29733 de Protección de Datos Personales.')
     +sec('CONTACTO //','¿Preguntas sobre tus datos o tu pedido? Escríbenos por WhatsApp desde el botón de soporte, o a '+BIZ_EMAIL+'.')
-    +'</div>';
+    +'</div></div>';
 }
 // Identificación del proveedor — se repite al inicio de Términos, Cambios/Devoluciones
 // y el Libro de Reclamaciones porque cada una de esas páginas debe poder leerse por sí
@@ -994,8 +999,8 @@ function providerBlockHTML(){
 // reembolso general como en retail, pero sí una política clara de reposición si el pedido
 // llega mal. ⚠️ Revisa estos plazos/condiciones con el negocio real antes de operar.
 function sPReturns(){
-  var bk=(bkTo||(cust?'p_profile':'o_home'));bkTo=null;
-  return H('CAMBIOS Y DEVOLUCIONES',"sndScreen='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
+  var bk=(bkTo||(cust?'p_lo_legal':'o_home'));bkTo=null;
+  return CAB_LEGAL(bk,'Cambios y devoluciones')+'<div style="flex:1;padding:8px 20px 40px;overflow-y:auto" class="fi">'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Cambios<span class="cut-sep" style="color:'+GOLD+'"> // </span>y devoluciones</div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:20px">Última actualización: 2026</div>'
     +providerBlockHTML()
@@ -1004,7 +1009,7 @@ function sPReturns(){
     +sec('CANCELACIONES //','Puedes cancelar sin costo antes de que la cocina empiece a preparar tu pedido. Una vez iniciada la preparación, ya no se puede cancelar ni reembolsar.')
     +sec('TIEMPOS DE REEMBOLSO //','Cuando corresponde reembolso por el medio de pago original (tarjeta vía Culqi, Yape o Plin), el abono puede demorar entre 3 y 10 días hábiles según el operador financiero — nosotros lo iniciamos apenas se aprueba el caso.')
     +sec('CONTACTO //','Escríbenos por WhatsApp desde el botón de soporte, o a '+BIZ_EMAIL+'.')
-    +'</div>';
+    +'</div></div>';
 }
 
 // LIBRO DE RECLAMACIONES VIRTUAL — exigido por el Código de Protección y Defensa del
@@ -1012,7 +1017,7 @@ function sPReturns(){
 // formulario externo ni un Drive), identificar al proveedor, y entregar un código de
 // reclamo al consumidor. Accesible SIN cuenta — cualquiera debe poder reclamar.
 function sPComplaints(){
-  var bk=(bkTo||(cust?'p_profile':'o_home'));bkTo=null;
+  var bk=(bkTo||(cust?'p_lo_legal':'o_home'));bkTo=null;
   if(cmplStep==='success')return sComplaintsSuccess(bk);
   var kindToggle='<div style="display:flex;background:var(--sw-card,#1B1F18);border-radius:10px;padding:4px;margin-bottom:20px">'+[['reclamo','Reclamo'],['queja','Queja']].map(function(x){return'<button onclick="cmplKind=\''+x[0]+'\';render()" style="all:unset;cursor:pointer;flex:1;background:'+(cmplKind===x[0]?GOLD:'transparent')+';color:'+(cmplKind===x[0]?'var(--sw-on-gold,#241a08)':'var(--sw-text-muted,#9DA096)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">'+x[1]+'</button>';}).join('')+'</div>';
   var kindHint='<p style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.5;margin-bottom:20px">'+(cmplKind==='queja'?'Queja: malestar o disconformidad no relacionada directamente a un pedido (ej. atención, demoras).':'Reclamo: disconformidad relacionada a un producto o servicio que contrataste con nosotros.')+'</p>';
@@ -1025,7 +1030,7 @@ function sPComplaints(){
   var minorBlock='<button type="button" role="checkbox" aria-checked="'+(cmplMinor?'true':'false')+'" onclick="cmplMinor=!cmplMinor;render()" style="all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;margin:6px 0 10px;min-height:44px"><div style="flex-shrink:0;width:20px;height:20px;border-radius:4px;background:'+(cmplMinor?GOLD:'transparent')+';border:1px solid '+(cmplMinor?GOLD:'#2C3228')+';display:flex;align-items:center;justify-content:center">'+(cmplMinor?icon('check',13,'var(--sw-on-gold,#241a08)'):'')+'</div><span style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">Soy menor de edad (o reclamo en representación de uno)</span></button>'
     +(cmplMinor?INP('cq-guardian','Nombre del padre, madre o apoderado','text',undefined,'clientes'):'');
   var ta=function(id,ph){return'<textarea id="'+id+'" placeholder="'+ph+'" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;font-family:EB Garamond,serif;min-height:90px;box-sizing:border-box"></textarea>';};
-  return H('LIBRO DE RECLAMACIONES',"sndScreen='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto" class="fi">'
+  return CAB_LEGAL(bk,'Libro de Reclamaciones')+'<div style="flex:1;padding:8px 20px 40px;overflow-y:auto" class="fi">'
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Libro de<span class="cut-sep" style="color:'+GOLD+'"> // </span>reclamaciones</div>'
     +'<p style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.6;margin-bottom:16px">Conforme a lo establecido en el Código de Protección y Defensa del Consumidor, este establecimiento cuenta con un Libro de Reclamaciones a tu disposición.</p>'
     +providerBlockHTML()
@@ -1054,10 +1059,10 @@ function sPComplaints(){
     +'<div id="cq-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px;margin-top:14px">'+esc(cmplErr)+'</div>'
     +BTN(cmplBusy?'Enviando...':'Enviar '+(cmplKind==='queja'?'queja':'reclamo')+' //',cmplBusy?'':'doSubmitComplaint()')
     +'<p style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.5;margin-top:14px">Tenemos hasta 15 días hábiles para responder tu reclamo o queja, conforme a la normativa vigente.</p>'
-    +'</div>';
+    +'</div></div>';
 }
 function sComplaintsSuccess(bk){
-  return H('LIBRO DE RECLAMACIONES',"sndScreen='"+bk+"';render()")+'<div style="flex:1;padding:24px 20px 40px;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center" class="fi">'
+  return CAB_LEGAL(bk,'Libro de Reclamaciones')+'<div style="flex:1;padding:8px 20px 40px;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center" class="fi">'
     // Antes un carácter Unicode "✓" suelto a font-size:40px — sin relación con el
     // tratamiento de éxito ya establecido en la app (círculo con ícono propio, ver
     // pantalla de confirmación de pedido) — hallazgo de auditoría visual, MEDIO.
@@ -1067,7 +1072,7 @@ function sComplaintsSuccess(bk){
     +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:'+GOLD+';margin-bottom:20px">'+esc(cmplCode||'')+'</div>'
     +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.6;max-width:320px">Te enviamos una copia a tu correo. Responderemos dentro de los 15 días hábiles siguientes, conforme a ley.</p>'
     +'<div style="margin-top:24px;width:100%;max-width:280px">'+BTN('Volver al inicio //','sndScreen=\'o_home\';cmplStep=\'form\';render()')+'</div>'
-    +'</div>';
+    +'</div></div>';
 }
 async function doSubmitComplaint(){
   var g=function(id){var el=(document.getElementById(id) as HTMLInputElement | null);return el?el.value.trim():'';};
