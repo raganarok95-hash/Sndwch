@@ -1428,6 +1428,12 @@ body.kb-open #app{padding-bottom:0}
 .mll .doc i{display:block;margin-top:14px;text-align:right;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#8A4A10;text-transform:uppercase;font-style:normal}
 .mll .doc:focus-visible{outline:2px solid #8A4A10;outline-offset:2px}
 .mll .biz{margin:30px 0 0;padding-top:20px;border-top:1px solid rgba(34,32,28,.2);font:500 9px/1.8 'IBM Plex Mono',monospace;color:#5E5A52;text-transform:uppercase}
+/* Los textos legales (2026-10-01): fondo oscuro de siempre, cabecera de «Lo legal». */
+.mlt{position:relative;min-height:100dvh;box-sizing:border-box;background:#12150F;padding:18px max(0px,calc(50% - 320px)) 0;display:flex;flex-direction:column}
+.mlt .sal{all:unset;cursor:pointer;font-size:18px;color:#EFEDE4;padding:6px 20px}
+.mlt .cab{padding:22px 20px 6px}
+.mlt .cab em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#CBA258;text-transform:uppercase;font-style:normal}
+.mlt .sal:focus-visible{outline:2px solid #CBA258;outline-offset:2px}
 /* ── LA APP EN PC Y LAPTOP (2026-09-30) ─────────────────────────────────────────────────
    El dueño: «para pc y laptop básicamente el app visualmente no sirve, sale recortada como si
    fuera en cel» — y pidió que NO sea otra maqueta: «debe ser pantalla adaptable». Hasta acá
