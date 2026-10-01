@@ -86,19 +86,32 @@ async function loadAddresses(){
 // una nueva — antes solo se podía agregar/eliminar, un typo obligaba a borrar y rehacer
 // (hallazgo de auditoría UX, BAJO).
 var editingAddrId=null;
+// TUS DIRECCIONES (2026-10-01): en el papel kraft de «Tu cuenta», con los campos de la hoja del
+// carrito (30G). Hace lo mismo que la anterior: agregar, corregir y borrar, sin la barra vieja.
 function sPAddresses(){
   var editing=editingAddrId?myAddresses.find(function(a){return mismoId(a.id,editingAddrId);}):null;
-  var h=H('MIS DIRECCIONES',"sndScreen='p_home';render()")+'<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
-  if(myAddresses.length){
-    h+=myAddresses.map(function(a){
-      return'<div style="background:var(--sw-card,#1B1F18);border:1px solid '+(mismoId(editingAddrId,a.id)?GOLD:'var(--sw-border,#2C3228)')+';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(a.label)+'</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(a.address)+'</div>'+(a.reference?'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(a.reference)+'</div>':'')+'</div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\''+a.id+'\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:'+GOLD+';font-family:EB Garamond,serif;font-style:italic;font-size:11px">Editar</button><button onclick="doDeleteAddress(\''+a.id+'\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-style:italic;font-size:11px">Eliminar</button></div></div>';
-    }).join('');
-  }else{
-    h+=VACIO('Sin direcciones guardadas','Guarda la tuya abajo y la próxima vez la eliges de un toque.','','mira');
-  }
-  h+='<div style="margin-top:20px;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.15em;margin-bottom:10px">'+(editing?'Editar dirección //':'Agregar dirección //')+'</div><div style="display:flex;flex-direction:column;gap:8px">'+INP('na-label','Nombre // Casa, Trabajo...','text',editing?editing.label:undefined,'clientes')+INP('na-addr','Dirección completa','text',editing?editing.address:undefined,'direccion')+INP('na-ref','Referencia // timbre, portón, piso (opcional)','text',editing?(editing.reference||''):undefined)+'<div id="na-msg" style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger-strong,#ff5555);min-height:14px">'+newAddrMsg+'</div>'+BTN(editing?'Guardar cambios //':'Guardar dirección //','doSaveAddress()')+(editing?'<div onclick="editingAddrId=null;newAddrMsg=\'\';render()" style="text-align:center;margin-top:8px;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#9DA096)">Cancelar edición</div>':'')+'</div></div>';
-  h+='</div>'+NAV();
-  return h;
+  var campo=function(id:string,et:string,ph:string,val:string,ac:string){
+    return'<label class="campo"><s>'+et+'</s><input id="'+id+'" type="text" placeholder="'+ph+'" value="'+esc(val||'')+'"'+(ac?' autocomplete="'+ac+'"':'')+'></label>';
+  };
+  var lista=myAddresses.length
+    ?'<div class="lis">'+myAddresses.map(function(a:any){
+        var on=mismoId(editingAddrId,a.id);
+        return'<div class="r dir'+(on?' on':'')+'"><span><b>'+esc(a.label||'Sin nombre')+'</b><s>'+esc(a.address||'')+(a.reference?' · '+esc(a.reference):'')+'</s></span>'
+          +'<span class="acc"><button onclick="editingAddrId=\''+esc(String(a.id))+'\';newAddrMsg=\'\';render()">Corregir</button>'
+          +'<button onclick="doDeleteAddress(\''+esc(String(a.id))+'\')">Borrar</button></span></div>';
+      }).join('')+'</div>'
+    :'<p class="nada">Todavía no guardas ninguna. La que pongas aquí aparece al pedir, de un toque.</p>';
+  return'<div class="mct mcu mdir fi"><button class="sal" onclick="sndScreen=\'p_home\';render()" aria-label="Volver">←</button>'
+    +'<div class="cab"><em>Tu cuenta</em><h1>Tus direcciones</h1></div>'
+    +lista
+    +'<div class="form"><em>'+(editing?'Corriges «'+esc(editing.label||'')+'»':'Agrega una')+'</em>'
+    +campo('na-label','Nombre','Casa, trabajo…',editing?editing.label:'','')
+    +campo('na-addr','Dirección','Calle, número, urbanización',editing?editing.address:'','street-address')
+    +campo('na-ref','Referencia (opcional)','Portón, piso, timbre',editing?(editing.reference||''):'','')
+    +'<div id="na-msg" class="err" role="alert">'+esc(newAddrMsg||'')+'</div>'
+    +'<button class="guardar" onclick="doSaveAddress()">'+(editing?'Guardar los cambios':'Guardar la dirección')+'</button>'
+    +(editing?'<button class="cancelar" onclick="editingAddrId=null;newAddrMsg=\'\';render()">No corregir</button>':'')
+    +'</div></div>';
 }
 async function doSaveAddress(){
   var label=gv('na-label').trim();

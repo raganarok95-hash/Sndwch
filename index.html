@@ -1398,6 +1398,24 @@ body.kb-open #app{padding-bottom:0}
   .mod{position:absolute;inset:0 auto auto 0;width:100%}
   .mod .sal,.mod .acs,.mod .calif{display:none}
 }
+/* TUS DIRECCIONES (2026-10-01): kraft de «Tu cuenta» + los campos de la hoja del carrito. */
+.mct.mdir{padding-left:max(26px,calc(50% - 300px));padding-right:max(26px,calc(50% - 300px))}
+.mdir .r.dir{cursor:default;align-items:flex-start}
+.mdir .r.dir.on b{text-decoration:underline;text-underline-offset:4px}
+.mdir .r.dir .acc{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
+.mdir .r.dir .acc button{all:unset;cursor:pointer;padding:6px 0 6px 10px;text-align:right;font:700 9px/1.3 'IBM Plex Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:#6A2A08}
+.mdir .nada{margin:26px 0 0;font:500 11px/1.6 'IBM Plex Mono',monospace;color:#5E4526}
+.mdir .form{margin-top:34px;border:2px solid #4A3218;padding:18px 18px 8px}
+.mdir .form>em{display:block;margin-bottom:18px;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#5E4526;text-transform:uppercase;font-style:normal}
+.mdir .campo{display:block;border-bottom:2px solid #33230F;padding-bottom:10px;margin-bottom:18px}
+.mdir .campo s{display:block;text-decoration:none;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.22em;color:#5E4526;text-transform:uppercase}
+.mdir .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:15px;color:#33230F !important;caret-color:#9C5F14}
+.mdir .campo input::placeholder{color:#7A5B33 !important}
+.mdir .campo:focus-within{border-bottom-color:#9C5F14}
+.mdir .err{min-height:15px;font:500 11px/1.3 'IBM Plex Mono',monospace;color:#7A2E2E}
+.mdir .guardar{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin:8px 0 12px;padding:16px 0;text-align:center;background:#2A1D0E;color:#F2E4CA;font:700 13px/1 Archivo,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.mdir .cancelar{all:unset;cursor:pointer;display:block;margin:0 auto 12px;padding:8px;font:500 11px/1 'IBM Plex Mono',monospace;color:#5E4526;text-decoration:underline}
+.mdir button:focus-visible{outline:2px solid #9C5F14;outline-offset:2px}
 /* ── LA APP EN PC Y LAPTOP (2026-09-30) ─────────────────────────────────────────────────
    El dueño: «para pc y laptop básicamente el app visualmente no sirve, sale recortada como si
    fuera en cel» — y pidió que NO sea otra maqueta: «debe ser pantalla adaptable». Hasta acá
@@ -3943,7 +3961,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'bec07cbe8b';
+var APP_BUILD = '7267044247';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -11443,7 +11461,7 @@ function sPHome() {
         + '<div><em>Crédito</em><b>' + SOLES_TXT + pz(c.credit_balance || 0) + '</b></div>'
         + '</div></div>'
         + '<div class="lis">'
-        + fila('Tus direcciones', nDir ? (nDir === 1 ? 'Una guardada' : nDir + ' guardadas') : 'Ninguna guardada todavía', "sndScreen='p_addresses';render()")
+        + fila('Tus direcciones', nDir ? (nDir === 1 ? 'Una guardada' : nDir + ' guardadas') : 'Ninguna guardada todavía', "loadAddresses()")
         + fila('Tus datos', 'Nombre, teléfono, DNI', "sndScreen='p_datos';render()")
         + fila('Cómo pagas', metodoPreferido() === 'culqi' ? 'Tarjeta por defecto' : 'Yape por defecto', "sndScreen='p_pago';render()")
         + fila('Avisos', 'Cuando sale y cuando llega', "sndScreen='p_avisos';render()")
@@ -13030,20 +13048,32 @@ async function loadAddresses() {
 // una nueva — antes solo se podía agregar/eliminar, un typo obligaba a borrar y rehacer
 // (hallazgo de auditoría UX, BAJO).
 var editingAddrId = null;
+// TUS DIRECCIONES (2026-10-01): en el papel kraft de «Tu cuenta», con los campos de la hoja del
+// carrito (30G). Hace lo mismo que la anterior: agregar, corregir y borrar, sin la barra vieja.
 function sPAddresses() {
     var editing = editingAddrId ? myAddresses.find(function (a) { return mismoId(a.id, editingAddrId); }) : null;
-    var h = H('MIS DIRECCIONES', "sndScreen='p_home';render()") + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
-    if (myAddresses.length) {
-        h += myAddresses.map(function (a) {
-            return '<div style="background:var(--sw-card,#1B1F18);border:1px solid ' + (mismoId(editingAddrId, a.id) ? GOLD : 'var(--sw-border,#2C3228)') + ';border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(a.label) + '</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">' + esc(a.address) + '</div>' + (a.reference ? '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">' + esc(a.reference) + '</div>' : '') + '</div><div style="display:flex;gap:12px;flex-shrink:0;margin-left:10px"><button onclick="editingAddrId=\'' + a.id + '\';newAddrMsg=\'\';render()" style="all:unset;cursor:pointer;color:' + GOLD + ';font-family:EB Garamond,serif;font-style:italic;font-size:11px">Editar</button><button onclick="doDeleteAddress(\'' + a.id + '\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-style:italic;font-size:11px">Eliminar</button></div></div>';
-        }).join('');
-    }
-    else {
-        h += VACIO('Sin direcciones guardadas', 'Guarda la tuya abajo y la próxima vez la eliges de un toque.', '', 'mira');
-    }
-    h += '<div style="margin-top:20px;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:16px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:10px">' + (editing ? 'Editar dirección //' : 'Agregar dirección //') + '</div><div style="display:flex;flex-direction:column;gap:8px">' + INP('na-label', 'Nombre // Casa, Trabajo...', 'text', editing ? editing.label : undefined, 'clientes') + INP('na-addr', 'Dirección completa', 'text', editing ? editing.address : undefined, 'direccion') + INP('na-ref', 'Referencia // timbre, portón, piso (opcional)', 'text', editing ? (editing.reference || '') : undefined) + '<div id="na-msg" style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger-strong,#ff5555);min-height:14px">' + newAddrMsg + '</div>' + BTN(editing ? 'Guardar cambios //' : 'Guardar dirección //', 'doSaveAddress()') + (editing ? '<div onclick="editingAddrId=null;newAddrMsg=\'\';render()" style="text-align:center;margin-top:8px;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#9DA096)">Cancelar edición</div>' : '') + '</div></div>';
-    h += '</div>' + NAV();
-    return h;
+    var campo = function (id, et, ph, val, ac) {
+        return '<label class="campo"><s>' + et + '</s><input id="' + id + '" type="text" placeholder="' + ph + '" value="' + esc(val || '') + '"' + (ac ? ' autocomplete="' + ac + '"' : '') + '></label>';
+    };
+    var lista = myAddresses.length
+        ? '<div class="lis">' + myAddresses.map(function (a) {
+            var on = mismoId(editingAddrId, a.id);
+            return '<div class="r dir' + (on ? ' on' : '') + '"><span><b>' + esc(a.label || 'Sin nombre') + '</b><s>' + esc(a.address || '') + (a.reference ? ' · ' + esc(a.reference) : '') + '</s></span>'
+                + '<span class="acc"><button onclick="editingAddrId=\'' + esc(String(a.id)) + '\';newAddrMsg=\'\';render()">Corregir</button>'
+                + '<button onclick="doDeleteAddress(\'' + esc(String(a.id)) + '\')">Borrar</button></span></div>';
+        }).join('') + '</div>'
+        : '<p class="nada">Todavía no guardas ninguna. La que pongas aquí aparece al pedir, de un toque.</p>';
+    return '<div class="mct mcu mdir fi"><button class="sal" onclick="sndScreen=\'p_home\';render()" aria-label="Volver">←</button>'
+        + '<div class="cab"><em>Tu cuenta</em><h1>Tus direcciones</h1></div>'
+        + lista
+        + '<div class="form"><em>' + (editing ? 'Corriges «' + esc(editing.label || '') + '»' : 'Agrega una') + '</em>'
+        + campo('na-label', 'Nombre', 'Casa, trabajo…', editing ? editing.label : '', '')
+        + campo('na-addr', 'Dirección', 'Calle, número, urbanización', editing ? editing.address : '', 'street-address')
+        + campo('na-ref', 'Referencia (opcional)', 'Portón, piso, timbre', editing ? (editing.reference || '') : '', '')
+        + '<div id="na-msg" class="err" role="alert">' + esc(newAddrMsg || '') + '</div>'
+        + '<button class="guardar" onclick="doSaveAddress()">' + (editing ? 'Guardar los cambios' : 'Guardar la dirección') + '</button>'
+        + (editing ? '<button class="cancelar" onclick="editingAddrId=null;newAddrMsg=\'\';render()">No corregir</button>' : '')
+        + '</div></div>';
 }
 async function doSaveAddress() {
     var label = gv('na-label').trim();
