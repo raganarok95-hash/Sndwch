@@ -168,16 +168,15 @@ export const CARTA: Carta = {
     { id: "C02", nombre: "Cheddar", desc: "Curado y salado. No se pierde debajo de la carne." },
   ],
   salsas: [
-    { id: "S01", nombre: "Aioli", sabor: "Signature", desc: "Ajo y limón sobre base cremosa. Suave: va con todo." },
     { id: "S02", nombre: "Spicy", sabor: "Mayo", desc: "Cremosa al entrar. El calor llega después, y se queda.", picante: true, soloSecreto: true },
-    { id: "S03", nombre: "Smoke", sabor: "BBQ", desc: "Ahumada y espesa, con miel y pimentón. La más contundente." },
+    // 2026-10-01 (dueño): «alioli se va, entra mayonesa americana y mayonesa light, ketchup
+    // americano». Las públicas quedan en seis, más las dos del menú secreto.
+    { id: "S13", nombre: "Mayonesa", sabor: "Americana", desc: "La clásica: cremosa y suave. Va con todo." },
+    { id: "S14", nombre: "Mayonesa", sabor: "Light", desc: "La misma mayonesa, en su versión ligera." },
+    { id: "S15", nombre: "Ketchup", sabor: "Americano", desc: "Tomate, dulce y ácido a la vez." },
     { id: "S04", nombre: "Honey", sabor: "Mustard", desc: "Miel y mostaza suave. Dulce que corta, no que empalaga." },
-    { id: "S05", nombre: "SNDWCH", sabor: "Special", desc: "Salada y umami, imposible de ubicar. No decimos qué lleva." },
     { id: "S06", nombre: "Oil & Vinegar", sabor: "Classic", desc: "Aceite de oliva y vinagre. Lo que vuelve italiano a un sándwich." },
-    { id: "S08", nombre: "Teriyaki", sabor: "Glaze", desc: "Soja, jengibre y azúcar reducidos hasta que brillan." },
     { id: "S09", nombre: "Chimichurri", sabor: "Piña y Ají", desc: "Piña asada y ají. Dulce y ahumada de entrada, con picor al final.", picante: true },
-    { id: "S10", nombre: "Peanut", sabor: "Satay", desc: "Maní tostado con soya y jengibre. Espesa y tostada." },
-    { id: "S11", nombre: "Mostaza", sabor: "Dijon", desc: "Ácida y filosa. Sin una gota de dulce." },
     { id: "S12", nombre: "Picante", sabor: "Miel", desc: "Primero la miel. Después el golpe.", picante: true, soloSecreto: true },
   ],
   bebidas: [

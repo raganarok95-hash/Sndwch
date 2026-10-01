@@ -63,7 +63,7 @@ Proteínas que existen pero NO se eligen acá: Pollo // Cajun (solo menú secret
 
 **Quesos:** Americano — Se funde parejo y cubre todo, de borde a borde. · Cheddar — Curado y salado. No se pierde debajo de la carne.
 
-**Salsas:** Aioli // Signature — Ajo y limón sobre base cremosa. Suave: va con todo. · Smoke // BBQ — Ahumada y espesa, con miel y pimentón. La más contundente. · Honey // Mustard — Miel y mostaza suave. Dulce que corta, no que empalaga. · SNDWCH // Special — Salada y umami, imposible de ubicar. No decimos qué lleva. · Oil & Vinegar // Classic — Aceite de oliva y vinagre. Lo que vuelve italiano a un sándwich. · Teriyaki // Glaze — Soja, jengibre y azúcar reducidos hasta que brillan. · Chimichurri // Piña y Ají (picante) — Piña asada y ají. Dulce y ahumada de entrada, con picor al final. · Peanut // Satay — Maní tostado con soya y jengibre. Espesa y tostada. · Mostaza // Dijon — Ácida y filosa. Sin una gota de dulce.
+**Salsas:** Mayonesa // Americana — La clásica: cremosa y suave. Va con todo. · Mayonesa // Light — La misma mayonesa, en su versión ligera. · Ketchup // Americano — Tomate, dulce y ácido a la vez. · Honey // Mustard — Miel y mostaza suave. Dulce que corta, no que empalaga. · Oil & Vinegar // Classic — Aceite de oliva y vinagre. Lo que vuelve italiano a un sándwich. · Chimichurri // Piña y Ají (picante) — Piña asada y ají. Dulce y ahumada de entrada, con picor al final.
 
 ## Bebidas
 
