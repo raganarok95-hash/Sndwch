@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20261001031336
+-- foto-tomada-tras-migracion: 20261001201139
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -46,7 +46,9 @@ create table public.app_settings (
   updated_at timestamp with time zone default now() not null,
   paused_until timestamp with time zone,
   promos_killed_at timestamp with time zone,
-  promos_killed_by text
+  promos_killed_by text,
+  meta_ads_pausadas text[] default '{}'::text[] not null,
+  meta_ads_pausadas_at timestamp with time zone
 );
 
 create table public.cart_snapshots (

@@ -66,7 +66,7 @@ import { actZoneWaitlistJoin, actAdminZoneWaitlist, actAdminNotifyZone } from ".
 import {
   actCreateGroupOrder, actGetGroupOrder, actAddGroupItem, actRemoveGroupItem, actCancelGroupOrder, actCloseGroupOrder, actSplitGroupOrder, actExpireGroupShares,
 } from "./actions/group.ts";
-import { actAdminCalendarUploadImage, actAdminPublishSocial, actAdminUploadRawVideo, actAdminListRawUploads, actAutoPublishCalendar } from "./actions/social.ts";
+import { actAdminCalendarUploadImage, actAdminPublishSocial, actAdminMetaAds, actAdminUploadRawVideo, actAdminListRawUploads, actAutoPublishCalendar } from "./actions/social.ts";
 import { actAdminVideoScript } from "./actions/video.ts";
 import { ApiError } from "./types.ts";
 import { debugLog } from "./logging.ts";
@@ -230,6 +230,7 @@ const ACTIONS: ConContrato & SinContrato = {
   "admin-list-raw-uploads": actAdminListRawUploads,
   "auto-publish-calendar": actAutoPublishCalendar,
   "admin-publish-social": actAdminPublishSocial,
+  "admin-meta-ads": actAdminMetaAds,
   "admin-video-script": actAdminVideoScript,
   "get-store-hours": actGetStoreHours,
   "admin-set-store-hours": actAdminSetStoreHours,

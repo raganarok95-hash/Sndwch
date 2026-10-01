@@ -94,3 +94,22 @@ La portada de Administrar es un solo resumen: lo que pide atención hoy (lo que 
   ensancha en la laptop.
 - **Pruebas**: no se arreglan las viejas una por una («arreglar cada prueba puede generar más
   errores»): se rehacen para la app nueva.
+
+## 6 · Construido (2026-10-01)
+
+- **Cocina abierta** (`sAdminCocina`, 09-admin-operacion): una lista por urgencia, contadores que
+  filtran (Pago · Cola · Armando · En camino · Programados), un botón por pedido con su siguiente
+  paso, tocar el pedido abre la receta (el modo foco de siempre, que ahora vuelve a la lista).
+  Pausar 30 min / 1 h / 3 h / resto del día arriba; abajo Pedidos · Agotar · Administrar.
+- **Sin «Listo»**: un pedido en Armando ofrece **Pedir motorizado** (abre WhatsApp con el mensaje
+  para el grupo: pedido, dirección, referencia, mapa, quién recibe y **COBRAR S/x** solo si es
+  contra entrega sin pagar) y **Salió →** (EN CAMINO). En camino: link al motorizado y Entregado.
+- **Aviso**: suena y vibra cuando entra un pedido o un pago pasa a esperar confirmación. Compara
+  por id (antes por total: uno salía, otro entraba y no sonaba).
+- **Administrar** (`sAdminHome`): botón grande a la cocina con lo que espera, y los 5 cajones.
+- **Entrada**: con la tienda abierta el panel abre en Cocina; cerrada, en Administrar; después
+  manda el último modo elegido en esa visita.
+- **Anuncios de Meta** (Marketing → Anuncios de Meta): Apagar pausa todas las campañas activas
+  de la cuenta 221839797 y anota cuáles; Prender reactiva solo esas. Las publicaciones
+  programadas del calendario ya se publicaban solas (cron cada 15 min).
+- Pruebas: `tests/cocina-abierta.spec.ts`, `tests-api/anuncios-boton.test.ts` (defectos inyectados).

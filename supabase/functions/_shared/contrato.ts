@@ -69,6 +69,17 @@ export const CONTRATO = {
     }),
   ),
 
+  // El botón de los anuncios de Meta (dueño, 2026-10-01: «que yo pueda desactivar manualmente
+  // con un botón los anuncios de meta»). `que`: 'ver' | 'apagar' | 'prender'.
+  'admin-meta-ads': accion<{
+    cuenta: string;
+    campanas: { id: string; nombre: string; estado: string; activa: boolean }[];
+    pausadasPorBoton: string[];
+    pausadasAt: string | null;
+  }>()(
+    e.objeto({ token, que: e.texto({ min: 3, max: 8, mensaje: 'Falta qué hacer con los anuncios.' }) }),
+  ),
+
   'recurring-skip': accion<{ success: true; skipOn: string | null }>()(
     e.objeto({ token, id: e.uuid('Falta el pedido fijo.'), deshacer: e.bandera() }),
   ),

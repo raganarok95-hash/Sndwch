@@ -73,7 +73,7 @@ function renderOverlays(){
       +'</div></div>';
   }
   // Drawer de navegación lateral entre herramientas admin — ver toolsNav en H() y
-  // adminToolsSections()/adminToolsGridHTML() (definidas junto a sAdminHome). Reusa la
+  // adminToolsSections() (definida junto a sAdminHome). Reusa la
   // misma lista de secciones que el grid de admin_home, en formato de filas compactas
   // (mejor lectura vertical que el grid de 2 columnas dentro de un panel angosto).
   if(adminToolsDrawerOpen){
@@ -216,12 +216,11 @@ function startPoll(){
     // actualizaba la cola. Un pedido podía entrar sin que el dueño se enterara mientras
     // usaba la pantalla diseñada para no tener que mirar el celular (hallazgo de
     // auditoría de operación).
-    if(sndScreen!=='admin_home'&&sndScreen!=='admin_focus')return;
+    if(sndScreen!=='admin_home'&&sndScreen!=='admin_focus'&&sndScreen!=='admin_cocina')return;
     try{
       var r=await api('admin-orders',{token:token});
-      var total=r.orders.length;
-      if(total>lastPollCount&&lastPollCount>=0)playNotif();
-      lastPollCount=total;
+      lastPollCount=r.orders.length;
+      avisarSiHayNovedad(r.orders);
       adminOrdersTruncated=!!r.truncated;
       // Antes un poll fallido quedaba en silencio total — el operador veía el estado
       // de siempre sin ninguna señal de que en realidad no se está actualizando.
@@ -235,6 +234,30 @@ function startPoll(){
       if(!pollFailing){pollFailing=true;render();}
     }
   },25000);
+}
+// ── EL AVISO DE PEDIDO NUEVO (2026-10-01) ─────────────────────────────────────────────
+// Antes sonaba solo si el TOTAL de pedidos en curso subía: si en el mismo intervalo uno se
+// entregaba y otro entraba, el total quedaba igual y no sonaba nada. Ahora se compara por
+// id, y cuenta también el pago que pasa a esperar confirmación. Suena Y vibra: con las
+// manos ocupadas un aviso solo visual no existe.
+// ⚠ Estas dos viven en el paquete del CLIENTE y no en admin.js: `loadAdmin()` corre ANTES
+// de que el panel termine de cargar, y una referencia a algo de admin.js ahí dejaba al dueño
+// mirando su perfil sin panel y sin error (lo encontró tests/cocina-abierta.spec.ts).
+var panelModo='';
+function esPagoPorConfirmar(o){
+  return (o.payment_method==='yape'||o.payment_method==='plin')&&o.payment_status!=='paid';
+}
+var _pedidosVistos: Record<string, string> | null = null;
+function avisarSiHayNovedad(orders){
+  var ahora: Record<string, string> = {};
+  (orders||[]).forEach(function(o){ahora[o.id]=esPagoPorConfirmar(o)?'pago':o.status;});
+  var antes=_pedidosVistos;
+  _pedidosVistos=ahora;
+  if(!antes)return;
+  var nuevo=Object.keys(ahora).some(function(id){return !antes[id]||(ahora[id]==='pago'&&antes[id]!=='pago');});
+  if(!nuevo)return;
+  playNotif();
+  try{if(navigator.vibrate)navigator.vibrate([300,120,300,120,500]);}catch(e){}
 }
 function stopPoll(){if(pollTimer){clearInterval(pollTimer);pollTimer=null;lastPollCount=0;}}
 

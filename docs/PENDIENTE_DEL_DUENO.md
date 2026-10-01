@@ -20,6 +20,11 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 
 > **ABIERTO el 2026-10-01 a las 6:20 (Lima)**: `businessLaunched` activo. ⚠ El jueves quedó abriendo a las 6:00 para la prueba: devolverlo a 11:00.
 >
+> **No volver a pedirle al dueño** (2026-10-01, «hay cosas que me estás volviendo a pedir»):
+> **snd.pe** no es suyo («la decisión es programarlas; snd.pe no es mía»): se borra de las
+> maquetas; **las fotos las consigo yo** («obtén las fotos como has obtenido las anteriores»);
+> el kraft de la hoja del mapa **se queda**; la cuenta publicitaria de Meta es la 221839797.
+>
 > **Al día el 2026-10-01** (dueño): la **compra real de prueba ya se hizo**; los secrets de Meta
 > están puestos (no volver a listarlos como pendientes); el **provolone ya no se usa** (fuera de la
 > lista); **P14 se cierra como riesgo bajo**: el secreto de cron figura en 5 registros del historial
