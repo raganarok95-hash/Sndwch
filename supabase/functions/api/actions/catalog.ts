@@ -92,7 +92,7 @@ export async function actGetCatalog(_b: Entrada<"get-catalog">) {
       : null,
   };
 }
-export async function actAdminCatalogSetPrice(b: any) {
+export async function actAdminCatalogSetPrice(b: Entrada<"admin-catalog-set-price"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const code = String(b.code || "").trim();
   const category = String(b.category || "").trim();
@@ -145,7 +145,7 @@ export async function actAdminCatalogSetPrice(b: any) {
 // Nunca se hace UPDATE, así queda historial de qué se cobraba en qué fecha.
 const CATALOG_ITEMS_HISTORY_LIMIT = 40;
 
-export async function actAdminCatalogItemsGet(b: any) {
+export async function actAdminCatalogItemsGet(b: Entrada<"admin-catalog-items-get"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const rows = await sbGet("catalog_items", `select=*&order=id.desc&limit=${CATALOG_ITEMS_HISTORY_LIMIT}`);
   // La fila vigente de cada item_id es la primera que aparece (vienen por id descendente);
@@ -162,7 +162,7 @@ export async function actAdminCatalogItemsGet(b: any) {
   return { current, history };
 }
 
-export async function actAdminCatalogItemsSet(b: any) {
+export async function actAdminCatalogItemsSet(b: Entrada<"admin-catalog-items-set"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const itemId = String(b.itemId || "").trim();
   if (!/^SIG\d{2}$/.test(itemId)) throw new ApiError("Id de Signature inválido.", 400);

@@ -1765,7 +1765,7 @@ export function receiptChecks(
 // Requiere sesión de ADMIN: el cliente nunca ejecuta esto, así que no hay forma de que
 // alguien mande un OCR inventado para que su pedido se vea bien. Y aunque lo hiciera, no
 // confirmaría nada — el pago lo sigue confirmando una persona.
-export async function actAdminReceiptOcr(b: any) {
+export async function actAdminReceiptOcr(b: Entrada<"admin-receipt-ocr"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const ref = String(b.ref || "").trim().slice(0, 40);
   if (!ref) throw new ApiError("Falta el pedido.", 400);
@@ -1870,7 +1870,7 @@ export async function actConfirmDelivery(b: Entrada<"confirm-delivery"> & { _ip?
   return { success: true, ref: order.ref, alreadyDelivered: false };
 }
 
-export async function actAdminOrders(b: any) {
+export async function actAdminOrders(b: Entrada<"admin-orders"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const rows = await sbGet("orders", `status=in.(RECIBIDO,PREPARANDO,EN+CAMINO)&order=created_at.desc&limit=${ADMIN_ORDERS_LIMIT + 1}`);
   const orders = rows.slice(0, ADMIN_ORDERS_LIMIT);
@@ -2125,7 +2125,7 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
   return updatedOrder;
 }
 
-export async function actAdminUpdateStatus(b: any) {
+export async function actAdminUpdateStatus(b: Entrada<"admin-update-status"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const orderId = String(b.orderId || "");
   const status = String(b.status || "");
@@ -2143,7 +2143,7 @@ export async function actAdminUpdateStatus(b: any) {
 // separado y un fallo en uno (pago Yape/Plin sin confirmar, id inexistente) no aborta el
 // resto del lote, para que el operador no tenga que repetir los que sí eran válidos.
 const MAX_BULK_STATUS_ORDERS = 30;
-export async function actAdminBulkUpdateStatus(b: any) {
+export async function actAdminBulkUpdateStatus(b: Entrada<"admin-bulk-update-status"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const orderIds: string[] = Array.isArray(b.orderIds)
     ? Array.from(new Set(b.orderIds.map((x: any) => String(x)).filter(Boolean)))
@@ -2175,7 +2175,7 @@ export async function actAdminBulkUpdateStatus(b: any) {
 
 // El operador revisa su propia app de Yape/Plin y confirma aquí que el dinero llegó
 // antes de que el pedido pueda avanzar a cocina. Solo entonces se otorgan los puntos.
-export async function actAdminConfirmPayment(b: any) {
+export async function actAdminConfirmPayment(b: Entrada<"admin-confirm-payment"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const orderId = String(b.orderId || "");
   if (!orderId) throw new ApiError("Falta el pedido.");
@@ -2325,7 +2325,7 @@ export async function actUploadReceipt(b: Entrada<"upload-receipt"> & { _ip?: st
 
 // URL firmada de corta duración para que el admin vea el comprobante — nunca se expone
 // una URL pública/permanente (el bucket es privado a propósito).
-export async function actAdminReceiptUrl(b: any) {
+export async function actAdminReceiptUrl(b: Entrada<"admin-receipt-url"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const orderId = String(b.orderId || "");
   if (!orderId) throw new ApiError("Falta el pedido.");
@@ -2447,7 +2447,7 @@ async function cancelarEnLaBase(order: any, desde: string[] | null, motivo: stri
   return r?.cancelado ? r.order : null;
 }
 
-export async function actAdminCancelOrder(b: any) {
+export async function actAdminCancelOrder(b: Entrada<"admin-cancel-order"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const orderId = String(b.orderId || "");
   if (!orderId) throw new ApiError("Falta el pedido.");

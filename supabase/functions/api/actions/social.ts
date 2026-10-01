@@ -31,7 +31,7 @@ const VIDEO_MIME_EXT: Record<string, string> = { "video/mp4": "mp4", "video/quic
 // todavía que nunca llega directo a Meta; solo lo lee la sesión de procesamiento semanal.
 const RAW_UPLOADS_BUCKET = "content-uploads-raw";
 
-export async function actAdminCalendarUploadImage(b: any) {
+export async function actAdminCalendarUploadImage(b: Entrada<"admin-calendar-upload-image"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const id = String(b.id || "").trim();
   const mime = String(b.mime || "");
@@ -169,7 +169,7 @@ async function releaseClaim(id: string): Promise<void> {
   });
 }
 
-export async function actAdminPublishSocial(b: any) {
+export async function actAdminPublishSocial(b: Entrada<"admin-publish-social"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const id = String(b.id || "").trim();
   if (!id) throw new ApiError("Falta el id.", 400);
@@ -240,7 +240,7 @@ export async function actAutoPublishCalendar(b: Entrada<"auto-publish-calendar">
 // entrada de calendario correspondiente. 20MB de tope: un Reel corto bien comprimido
 // entra sin problema; algo más pesado hay que recomprimirlo antes de subir (el body de
 // una función edge no está pensado para archivos grandes en base64).
-export async function actAdminUploadRawVideo(b: any) {
+export async function actAdminUploadRawVideo(b: Entrada<"admin-upload-raw-video"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const mime = String(b.mime || "");
   const videoBase64 = String(b.videoBase64 || "");
@@ -265,7 +265,7 @@ export async function actAdminUploadRawVideo(b: any) {
   return { success: true, upload: row[0] };
 }
 
-export async function actAdminListRawUploads(b: any) {
+export async function actAdminListRawUploads(b: Entrada<"admin-list-raw-uploads"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const rows = await sbGet("content_uploads", "status=eq.pending&order=uploaded_at.desc&select=*&limit=500");
   return { uploads: rows };

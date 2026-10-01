@@ -53,8 +53,10 @@ function cuerpo(fn) {
 const malos = [];
 for (const a of Object.keys(declarados)) {
   const fn = manejador[a];
-  const c = fn && cuerpo(fn);
+  let c = fn && cuerpo(fn);
   if (!c) { malos.push(`${a}: no encontré el manejador ${fn || '(sin registrar)'}`); continue; }
+  // Una flecha que declara su PROPIO `b` (`.sort((a, b) => b.x - a.x)`) no lee la entrada.
+  c = c.replace(/\(\s*\w+\s*,\s*b\s*\)\s*=>[^\n]*/g, '');
   const anotados = new Set([...c.matchAll(/contrato-campos:[^\n]*lee ([a-zA-Z0-9_, ]+)/g)].flatMap((x) => x[1].split(/[ ,]+/).filter(Boolean)));
   const leidos = new Set([...c.matchAll(/\bb\??\.([a-zA-Z_][a-zA-Z0-9_]*)/g)].map((x) => x[1]).concat([...anotados]));
   for (const campo of leidos) if (campo !== '_ip' && !declarados[a].has(campo)) malos.push(`${a}: lee b.${campo} y el contrato no lo declara (llegaría vacío)`);
