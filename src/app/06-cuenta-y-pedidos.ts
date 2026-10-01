@@ -57,7 +57,7 @@ function sPHome(){
     return'<button class="r" onclick="'+accion+'"><span><b>'+t+'</b><s>'+s+'</s></span><span class="fl" aria-hidden="true">→</span></button>';
   };
   return'<div class="mct mcu fi"><button class="sal" onclick="volverALaPuerta()" aria-label="Volver">←</button>'
-    +'<span class="marca-der" aria-hidden="true"><img src="img/marca/avatar-1024-transparente.png" alt="">SND<span class="wm-mark"><i></i><i></i></span>WCH</span>'
+    +'<span class="marca-der" aria-hidden="true"><img src="img/logo-avatar-96.png" alt="">SND<span class="wm-mark"><i></i><i></i></span>WCH</span>'
     +'<div class="ficha">'
     +(desde?'<div class="hd"><em>'+esc(desde)+'</em></div>':'')
     +'<h1>'+esc(c.name||'')+'</h1>'
@@ -215,7 +215,7 @@ function sOrdDetail(){
     +'<button class="ac" onclick="window.print()"><span>Guardar el recibo</span><s>PDF · no es boleta</s></button>';
   return'<div class="mct mod fi">'
     +'<button class="sal" onclick="sndScreen=\'p_orders\';render()" aria-label="Volver">←</button>'
-    +'<span class="marca-der" aria-hidden="true"><img src="img/marca/avatar-1024-transparente.png" alt="">SND<span class="wm-mark"><i></i><i></i></span>WCH</span>'
+    +'<span class="marca-der" aria-hidden="true"><img src="img/logo-avatar-96.png" alt="">SND<span class="wm-mark"><i></i><i></i></span>WCH</span>'
     +'<div class="cab"><em>Pedido '+esc(String(o.ref||''))+(fu?' · '+fu.getUTCDate()+' '+MESES_CORTOS[fu.getUTCMonth()]:'')+'</em><h1>'+esc(titularDelPedido(o))+'</h1></div>'
     +(caja?'<div class="caja">'+caja+'</div>':'')
     +'<div class="lns">'+lineas+'</div>'

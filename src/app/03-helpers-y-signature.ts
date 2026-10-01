@@ -964,7 +964,7 @@ function sMenuSecreto(){
   return'<div class="msec fi">'
     +(foto?'<div class="fo" aria-hidden="true"><img src="'+foto+'" alt=""></div>':'')+'<div class="velo"></div>'
     +'<button class="sal" onclick="go(\'o_home\')" aria-label="Volver">←</button>'
-    +'<div class="wm"><img src="img/marca/avatar-1024-transparente.png" alt=""><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>'
+    +'<div class="wm"><img src="img/logo-avatar-96.png" alt=""><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>'
     +'<div class="cuerpo">'
     +'<div class="cab">Lo desbloqueaste</div>'
     +'<div class="nom"><b>'+esc(String(sig.n||'').toUpperCase())+'</b>'
@@ -1299,7 +1299,7 @@ async function doCancelGroupOrder(){
 // Papel kraft, «QUIÉNES COMEN», una fila por persona con lo que eligió, y la barra partida:
 // «Cerrar y pagar» (cada uno paga lo suyo) a la izquierda, «Yo invito» a la derecha.
 function wmClaro():string{
-  return'<div class="wm"><img src="img/marca/avatar-1024-transparente.png" alt=""><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>';
+  return'<div class="wm"><img src="img/logo-avatar-96.png" alt=""><span class="tx">SND<span class="mk"><i></i><i></i></span>WCH</span></div>';
 }
 function linkDelGrupo():string{return location.origin+location.pathname+'?group='+encodeURIComponent(groupCode||'');}
 async function copiarEnlaceGrupo(){
@@ -1365,7 +1365,7 @@ function sGroupOrder(){
     }
     h+='</div>';
   }
-  h+='<div class="sello" aria-hidden="true"><img class="av" src="img/marca/avatar-1024-transparente.png" alt=""><div class="wmb">SND<span class="mk"><i></i><i></i></span>WCH</div><s>TRUJILLO</s></div>';
+  h+='<div class="sello" aria-hidden="true"><img class="av" src="img/logo-avatar-96.png" alt=""><div class="wmb">SND<span class="mk"><i></i><i></i></span>WCH</div><s>TRUJILLO</s></div>';
   // Se acabó el tiempo pero el pedido no se perdió (2026-09-23): los 15 minutos significan
   // «ya no entra nadie más», se paga con los que alcanzaron y se dice por qué no hubo gratis.
   if(!abierto&&g.canPay&&!repartido){
@@ -1503,7 +1503,7 @@ function M15_PASAR(total:number,i:number,esSecreto:boolean,hayVault:boolean){
 // (desde cuántos, cuál va gratis) sale de la carta.
 function platoGrupo(total:number,hayVault:boolean):string{
   return'<section class="plato kraft grupo" aria-label="Pedido en grupo"><div class="forro"></div>'
-    +'<div class="logo" aria-hidden="true"><img src="img/marca/avatar-1024-transparente.png" alt=""></div>'
+    +'<div class="logo" aria-hidden="true"><img src="img/logo-avatar-96.png" alt=""></div>'
     +'<div class="ficha"><div class="num">Para varios</div>'
     +'<h1>Pedido en grupo</h1><div class="pitch">Mandas un enlace y cada uno elige el suyo desde su celular, Signature o armado. Tú pagas una vez y llega todo junto.</div>'
     +'<div class="regla">Desde '+ORGANIZER_FREE_MIN_SANDWICHES+' sándwiches, el más barato va gratis</div></div>'

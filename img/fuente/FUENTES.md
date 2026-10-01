@@ -197,3 +197,8 @@ Se miraron y se descartaron, todas del Stock gratuito: `79762529`, `394768133`, 
 vaso de cerveza, papas fritas o horizontal); `530885978`, `534327986`, `407408705` (Meatball:
 fondo claro, se pierde sobre el verde); `71261112` (Hoagie con pepperoncini, que la receta no
 lleva), `776050809` (papas), `150082453` (pan de molde y papas), `128065892` (seis sándwiches).
+
+- **`img/logo-avatar-96.png`** (2026-10-01): el avatar de los hermanos a 96 px, sacado de
+  `img/marca/avatar-1024-transparente.png` (logo propio, aprobado). Existe porque la app pedía la
+  versión de 1024 px (570 KB) para mostrarla a 26 px, y porque `img/marca/` quedaba fuera de la
+  publicación por una regla de `.vercelignore`: el logo de la cuenta salía roto en producción.

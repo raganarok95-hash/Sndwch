@@ -182,7 +182,7 @@ function BYO_PUENTE(){
   var rec=estrellaDeSando();
   if(!rec)return'';
   return'<button type="button" class="puente" onclick="puenteASando(\''+rec.id+'\')">'
-    +'<span class="o"><img src="img/marca/avatar-1024-transparente.png" alt="SND//WCH"></span>'
+    +'<span class="o"><img src="img/logo-avatar-96.png" alt="SND//WCH"></span>'
     +'<span class="tx" style="flex:1;min-width:0"><b style="display:block">¿Prefieres que ya esté resuelto?</b>'
     +'<span>'+esc(rec.n)+', la estrella de SANDO. Te llevo a su lado.</span></span>'
     +'<span class="fl" aria-hidden="true">&#8594;</span></button>';
