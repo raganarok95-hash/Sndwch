@@ -67,7 +67,7 @@ function sPHome(){
     +'<div><em>Crédito</em><b>'+SOLES_TXT+pz(c.credit_balance||0)+'</b></div>'
     +'</div></div>'
     +'<div class="lis">'
-    +fila('Tus direcciones',nDir?(nDir===1?'Una guardada':nDir+' guardadas'):'Ninguna guardada todavía',"sndScreen='p_addresses';render()")
+    +fila('Tus direcciones',nDir?(nDir===1?'Una guardada':nDir+' guardadas'):'Ninguna guardada todavía',"loadAddresses()")
     +fila('Tus datos','Nombre, teléfono, DNI',"sndScreen='p_datos';render()")
     +fila('Cómo pagas',metodoPreferido()==='culqi'?'Tarjeta por defecto':'Yape por defecto',"sndScreen='p_pago';render()")
     +fila('Avisos','Cuando sale y cuando llega',"sndScreen='p_avisos';render()")
