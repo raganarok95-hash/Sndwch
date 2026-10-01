@@ -64,7 +64,7 @@ import {
 } from "./actions/problems.ts";
 import { actZoneWaitlistJoin, actAdminZoneWaitlist, actAdminNotifyZone } from "./actions/zones.ts";
 import {
-  actCreateGroupOrder, actGetGroupOrder, actAddGroupItem, actCancelGroupOrder, actCloseGroupOrder, actSplitGroupOrder, actExpireGroupShares,
+  actCreateGroupOrder, actGetGroupOrder, actAddGroupItem, actRemoveGroupItem, actCancelGroupOrder, actCloseGroupOrder, actSplitGroupOrder, actExpireGroupShares,
 } from "./actions/group.ts";
 import { actAdminCalendarUploadImage, actAdminPublishSocial, actAdminUploadRawVideo, actAdminListRawUploads, actAutoPublishCalendar } from "./actions/social.ts";
 import { actAdminVideoScript } from "./actions/video.ts";
@@ -265,6 +265,7 @@ const ACTIONS: ConContrato & SinContrato = {
   "create-group-order": actCreateGroupOrder,
   "get-group-order": actGetGroupOrder,
   "add-group-item": actAddGroupItem,
+  "remove-group-item": actRemoveGroupItem,
   "cancel-group-order": actCancelGroupOrder,
   "close-group-order": actCloseGroupOrder,
   "split-group-order": actSplitGroupOrder,

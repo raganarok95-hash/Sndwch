@@ -1056,16 +1056,27 @@ body.kb-open #app{padding-bottom:0}
 .mgr .aviso b{display:block;font:800 13px/1.2 Archivo,sans-serif;color:#33230F}
 .mgr .aviso s{font-family:'IBM Plex Mono',monospace;font-size:10px;line-height:1.6;color:#6E4F2A;margin-top:5px}
 .mgr .sumar{margin-top:40px}
-.mgr .sumar>em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:#7A5B33;text-transform:uppercase;margin-bottom:10px}
+.mgr .intro{margin:14px 0 4px;font:500 15px/1.45 Archivo,sans-serif;color:#2A1D0E;max-width:46ch}
+.mgr .intro b{font-weight:800}
+.mgr .sumar>em{display:block;font:700 11px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#4A3218;text-transform:uppercase;margin-bottom:10px}
+.mgr .sumar h3{margin:22px 0 2px;font:700 11px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#4A3218;text-transform:uppercase}
+.mgr .tuyo{margin:14px 0 6px;padding:12px 14px;background:#FBF6E8;border:2px solid #33230F}
+.mgr .tuyo>em{display:block;font:700 11px/1.3 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#33230F;text-transform:uppercase;margin-bottom:6px}
+.mgr .tuyo .l{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px dashed rgba(74,50,24,.35);font:600 15px/1.3 Archivo,sans-serif;color:#2A1D0E}
+.mgr .tuyo .l span:first-child{flex:1}
+.mgr .tuyo .l .p{font:500 13px/1 'IBM Plex Mono',monospace}
+.mgr .tuyo .l button{all:unset;cursor:pointer;padding:8px 10px;font:700 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#8E2A18;text-transform:uppercase}
 .mgr .sumar input{display:block;width:100%;box-sizing:border-box;border:1px solid rgba(74,50,24,.45);background:rgba(255,242,218,.35);padding:12px 14px;font:600 14px/1 Archivo,sans-serif;color:#33230F;border-radius:0}
 .mgr .tam{display:flex;gap:8px;margin:10px 0 4px}
 .mgr .tam button{all:unset;cursor:pointer;flex:1;text-align:center;padding:11px 0;border:1px solid rgba(74,50,24,.45);font:700 12px/1 Archivo,sans-serif;letter-spacing:.14em;color:#6E4F2A}
 .mgr .tam button.on{background:#4A3218;border-color:#4A3218;color:#F0E2CA}
 .mgr .it{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px dashed rgba(74,50,24,.4)}
-.mgr .it .t{flex:1}
-.mgr .it .t b{display:block;font:800 14px/1.2 Archivo,sans-serif;color:#33230F}
-.mgr .it .t s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#7A5B33;margin-top:4px;text-transform:uppercase}
-.mgr .it button{all:unset;cursor:pointer;border:1px solid #4A3218;color:#33230F;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;text-transform:uppercase;padding:9px 12px}
+.mgr .it img{width:64px;height:64px;object-fit:cover;flex:none;border:1px solid rgba(74,50,24,.35)}
+.mgr .it .t{flex:1;min-width:0}
+.mgr .it .t b{display:block;font:800 15px/1.2 Archivo,sans-serif;color:#2A1D0E}
+.mgr .it .t s{display:block;text-decoration:none;font:400 13px/1.4 Archivo,sans-serif;color:#4A3218;margin-top:3px}
+.mgr .it .t i{display:block;font:600 11px/1 'IBM Plex Mono',monospace;font-style:normal;color:#33230F;margin-top:6px}
+.mgr .it button{all:unset;cursor:pointer;flex:none;border:1px solid #33230F;color:#33230F;font:700 11px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;padding:11px 12px}
 .mgr .msg{margin-top:10px;min-height:14px;font:700 10px/1.4 'IBM Plex Mono',monospace;color:#4A6B2E}
 .mgr .cancelar{all:unset;cursor:pointer;display:block;margin:26px auto 0;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#B3402A;text-transform:uppercase}
 .mgr .dir{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;padding:14px 0;border-bottom:1px dashed rgba(74,50,24,.4)}
@@ -1084,21 +1095,24 @@ body.kb-open #app{padding-bottom:0}
 /* ═══ EL MAPA DE LA DIRECCIÓN — en el lenguaje de la 34 (aprobada): kraft, etiqueta con cinta,
    barra partida dorado/celeste. Dueño, 2026-10-01: «la pantalla de la dirección es la antigua…
    ya nada debe usar esa versión antigua». ═══ */
+/* Avisos y diálogos · opción A aprobada (dueño, 2026-10-01: «Avanza con la A»): neutros, blanco y
+   tinta, el color solo en la acción. No compiten con la pantalla de atrás (kraft, WICHO o panel).
+   docs/maquetas/aprobadas/dialogos-neutros.png */
 .ov-toast{position:fixed;left:16px;right:16px;bottom:96px;z-index:400;display:flex;justify-content:center}
-.ov-toast .c{max-width:420px;width:100%;display:flex;align-items:flex-start;gap:10px;background:#FBF6E8;border:2px solid #33230F;padding:13px 14px;box-shadow:0 8px 22px rgba(40,26,10,.35)}
-.ov-toast .c.err{border-color:#8E2A18;background:#FBEDE6}
-.ov-toast p{flex:1;margin:0;font:500 15px/1.4 Archivo,sans-serif;color:#2A1D0E}
-.ov-toast .c.err p{color:#6E1E10}
-.ov-toast button{all:unset;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#33230F}
-.ov-fondo{position:fixed;inset:0;z-index:410;background:rgba(30,20,8,.55);display:flex;align-items:flex-end;justify-content:center}
-.ov-hoja{width:100%;max-width:480px;box-sizing:border-box;background:#D8BC8E;background-image:repeating-linear-gradient(0deg,rgba(90,60,20,.035) 0 1px,transparent 1px 3px);padding:24px 0 env(safe-area-inset-bottom,0px);box-shadow:0 -10px 30px rgba(30,20,8,.4)}
-.ov-hoja p{margin:0 24px 20px;font:700 18px/1.35 Archivo,sans-serif;color:#2A1D0E;white-space:pre-line}
-.ov-hoja input{all:unset;box-sizing:border-box;display:block;width:calc(100% - 48px);margin:0 24px 20px;border-bottom:2px solid #33230F;padding:8px 0;font:600 18px/1.3 Archivo,sans-serif;color:#2A1D0E}
-.ov-barra{display:flex;height:68px}
+.ov-toast .c{max-width:420px;width:100%;display:flex;align-items:flex-start;gap:10px;background:#FFFFFF;border-left:4px solid #1A1714;padding:13px 14px;box-shadow:0 8px 22px rgba(0,0,0,.28)}
+.ov-toast .c.err{border-left-color:#B3261E}
+.ov-toast p{flex:1;margin:0;font:500 15px/1.4 Archivo,sans-serif;color:#1A1714}
+.ov-toast .c.err p{color:#8C1D18}
+.ov-toast button{all:unset;cursor:pointer;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#4A4640}
+.ov-fondo{position:fixed;inset:0;z-index:410;background:rgba(20,16,10,.5);display:flex;align-items:flex-end;justify-content:center}
+.ov-hoja{width:100%;max-width:480px;box-sizing:border-box;background:#FFFFFF;padding:24px 0 env(safe-area-inset-bottom,0px);box-shadow:0 -10px 30px rgba(0,0,0,.3)}
+.ov-hoja p{margin:0 24px 20px;font:700 18px/1.35 Archivo,sans-serif;color:#1A1714;white-space:pre-line}
+.ov-hoja input{all:unset;box-sizing:border-box;display:block;width:calc(100% - 48px);margin:0 24px 20px;border-bottom:2px solid #1A1714;padding:8px 0;font:600 18px/1.3 Archivo,sans-serif;color:#1A1714}
+.ov-barra{display:flex;height:64px}
 .ov-barra button{all:unset;cursor:pointer;flex:1;display:flex;align-items:center;justify-content:center;font:800 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
-.ov-barra .si{background:#CBA258;color:#2A1D0E}
-.ov-barra .no{background:#FBF6E8;color:#33230F}
-.ov-barra button:focus-visible{outline:3px solid #2A1D0E;outline-offset:-6px}
+.ov-barra .si{background:#1A1714;color:#FFFFFF}
+.ov-barra .no{background:#F1EFEA;color:#1A1714}
+.ov-barra button:focus-visible{outline:3px solid #CBA258;outline-offset:-6px}
 #mmap{display:none;position:fixed;inset:0;background:#C9A878;z-index:9999}
 #mmap.open{display:block}
 #mmap-lienzo{position:absolute;inset:0}
@@ -1264,8 +1278,10 @@ body.kb-open #app{padding-bottom:0}
 .m30 .grupo30 button{all:unset;cursor:pointer;display:inline-block;margin-top:8px;padding:6px 0;font:700 11px/1 'IBM Plex Mono',monospace;color:#33230F;letter-spacing:.14em;text-transform:uppercase;border-bottom:1px solid #33230F}
 .m30 .grupo30 button:focus-visible{outline:2px solid #33230F;outline-offset:3px}
 /* EL PLATO DEL PEDIDO EN GRUPO: el logo grande donde los demás llevan la foto. */
-.m15 .plato.grupo .logo{position:absolute;left:0;right:0;top:0;height:58%;display:flex;align-items:center;justify-content:center;padding-top:40px;box-sizing:border-box}
-.m15 .plato.grupo .logo img{width:min(78%,420px);height:auto;max-height:100%;object-fit:contain;filter:drop-shadow(0 14px 26px rgba(60,38,14,.35))}
+/* El logo deja de encimarse con el título (dueño, 2026-10-01): ocupa la franja de arriba y nada
+   más; el texto empieza donde termina. */
+.m15 .plato.grupo .logo{position:absolute;left:0;right:0;top:0;height:44%;display:flex;align-items:center;justify-content:center;padding-top:56px;box-sizing:border-box}
+.m15 .plato.grupo .logo img{width:auto;height:100%;max-width:min(70%,380px);object-fit:contain;filter:drop-shadow(0 14px 26px rgba(60,38,14,.35))}
 .m15 .plato.grupo .regla{margin-top:16px;border-top:1px solid rgba(42,29,14,.35);border-bottom:1px solid rgba(42,29,14,.35);padding:10px 0;font:500 11px/1.6 'IBM Plex Mono',monospace;color:#2A1D0E;text-transform:uppercase;letter-spacing:.06em}
 .m15 .plato.grupo .cuenta{align-items:center}
 .m15 .plato.grupo .solo{all:unset;cursor:pointer;font-family:'EB Garamond',serif;font-size:15px;color:#2A1D0E;text-decoration:underline;text-underline-offset:3px;padding:10px 0}
@@ -1500,10 +1516,10 @@ body.kb-open #app{padding-bottom:0}
    segundo la abre. La estrella llega levantada: lo más común sigue siendo un solo toque.
    overflow:clip y no hidden: con hidden, enfocar o tocar una carta girada que se sale del borde
    desplaza el contenedor para mostrarla, y las cartas se corren. */
-.mtarot{--paso:2.5deg;--ancho:clamp(150px,42vw,190px);--origen:50% 300%;
+.mtarot{--ancho:clamp(140px,44vw,190px);
   position:relative;min-height:100dvh;margin-bottom:calc(-1 * var(--sw-barra,0px));overflow-x:clip;padding-bottom:40px;box-sizing:border-box;
   background:radial-gradient(circle at 50% 18%,#3a2a4a,#120c18 70%);background-color:#120c18;color:#E9DFC6;text-align:center;font-family:'EB Garamond',serif}
-@media (min-width:700px){.mtarot{--paso:6deg;--ancho:clamp(150px,16vw,200px);--origen:50% 240%}}
+@media (min-width:700px){.mtarot{--ancho:clamp(170px,16vw,210px)}}
 .mtarot .riel{position:absolute;top:0;left:0;right:0;z-index:7;display:flex;align-items:center;justify-content:space-between;padding:5px 8px 0 12px}
 .mtarot .riel .x,.mtarot .riel .c{all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#E9DFC6}
 .mtarot .riel .c span{min-width:22px;height:22px;border-radius:999px;background:#CBA258;color:#120c18;font:700 11px/22px Archivo,sans-serif}
@@ -1517,7 +1533,13 @@ body.kb-open #app{padding-bottom:0}
 .mtarot .elegida s{display:block;text-decoration:none;margin-top:6px;font:500 13px/1 'IBM Plex Mono',monospace;color:#C9A85C}
 .mtarot .elegida button{all:unset;box-sizing:border-box;cursor:pointer;margin-top:14px;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 22px;border-radius:999px;background:#C9A85C;color:#120c18;font:700 13px/1 Archivo,sans-serif;letter-spacing:.04em}
 .mtarot .elegida button:focus-visible{outline:3px solid #8CC8EC;outline-offset:3px}
-.mtarot .mano{position:relative;height:calc(var(--ancho) * 5 / 3 * 1.38 + 16px);margin-top:4px}
+/* LA MANO EN FILA (dueño, 2026-10-01: «volvamos al scroll horizontal pero al pasar de uno al otro debe
+   tener el efecto del cambio como voltear una carta»; antes el abanico las encimaba y costaba elegir
+   una). Una carta al centro, las vecinas asomando; al deslizar, cada carta gira sobre su eje según
+   su distancia al centro (--d, de -1 a 1, lo pone girarCartas() en cada scroll). */
+.mtarot .mano{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+  padding:22px calc(50% - var(--ancho) / 2) 26px;margin-top:6px;perspective:900px}
+.mtarot .mano::-webkit-scrollbar{display:none}
 .mtarot .k u,.mtarot .fila u{text-decoration:none;font:500 11px/1 'Bodoni Moda',serif;letter-spacing:.06em}
 .mtarot .k u{position:absolute;top:6px;left:7px;z-index:1;background:#F3E9D2;color:#2a1d0e;padding:3px 6px;border-radius:4px}
 .mtarot .k.x u{background:transparent;color:#BBB0A0}
@@ -1537,11 +1559,11 @@ body.kb-open #app{padding-bottom:0}
 .mtarot .fila.x u{border-color:#7B5EA0;color:#8CC8EC}
 .mtarot .fila.x .d{color:#BBB0A0}
 .mtarot .fila:focus-visible{outline:3px solid #8CC8EC;outline-offset:2px}
-.mtarot .k{all:unset;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;cursor:pointer;position:absolute;left:50%;bottom:8px;
-  width:var(--ancho);aspect-ratio:3/5;margin-left:calc(var(--ancho) / -2);
+.mtarot .k{all:unset;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;cursor:pointer;position:relative;flex:0 0 var(--ancho);
+  width:var(--ancho);aspect-ratio:3/4.4;scroll-snap-align:center;
   background:#F3E9D2;border:3px solid #C9A85C;border-radius:10px;overflow:hidden;color:#2a1d0e;text-align:left;
-  transform-origin:var(--origen);transform:rotate(calc(var(--o) * var(--paso)));box-shadow:0 10px 24px rgba(0,0,0,.45);
-  animation:abanico .7s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:var(--d);transition:transform .25s ease,box-shadow .25s ease}
+  --d:0;transform:rotateY(calc(var(--d) * -58deg)) scale(calc(1 - (var(--d) * var(--d)) * .1));opacity:calc(1 - (var(--d) * var(--d)) * .25);
+  box-shadow:0 10px 24px rgba(0,0,0,.45);will-change:transform}
 .mtarot .k img{width:100%;height:62%;object-fit:cover;display:block;flex-shrink:0}
 .mtarot .k .sinfoto{display:block;height:62%;background:#d9c9a8;flex-shrink:0}
 .mtarot .k b{display:block;font:700 13px/1.15 'Bodoni Moda',serif;padding:8px 8px 0}
@@ -1550,11 +1572,9 @@ body.kb-open #app{padding-bottom:0}
 .mtarot .k.x{background:#1c1324;border-color:#7B5EA0;color:#8CC8EC;align-items:center;justify-content:center;gap:10px;text-align:center}
 .mtarot .k.x .luna{font-size:40px;line-height:1}
 .mtarot .k.x em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;text-transform:uppercase;font-style:normal;color:#BBB0A0}
-.mtarot .k.sel{z-index:6;transform:rotate(calc(var(--o) * var(--paso))) translateY(-34%);box-shadow:0 0 0 2px #E8C66A,0 18px 36px rgba(0,0,0,.6)}
+.mtarot .k.sel{box-shadow:0 0 0 2px #E8C66A,0 18px 36px rgba(0,0,0,.6)}
 .mtarot .k:focus-visible{outline:3px solid #8CC8EC;outline-offset:3px}
-@keyframes abanico{from{transform:rotate(0deg) translateY(40px);opacity:0}to{transform:rotate(calc(var(--o) * var(--paso)));opacity:1}}
-@media (prefers-reduced-motion:reduce){.mtarot .k{animation:none;transition:none}}
-@media (min-width:700px){.mtarot .mano{height:calc(var(--ancho) * 5 / 3 * 1.42 + 40px)}.mtarot .k{bottom:60px}}
+@media (prefers-reduced-motion:reduce){.mtarot .k{transform:none;opacity:1}}
 /* ── LA APP EN PC Y LAPTOP (2026-09-30) ─────────────────────────────────────────────────
    El dueño: «para pc y laptop básicamente el app visualmente no sirve, sale recortada como si
    fuera en cel» — y pidió que NO sea otra maqueta: «debe ser pantalla adaptable». Hasta acá
@@ -3919,6 +3939,7 @@ function elegirLado(id) {
     }
     // Se entra siempre por el tarot (la carta), no por el último plato que se vio.
     sandoEnPlatos = false;
+    manoScroll = null;
     sndScreen = 'o_home';
     render();
 }
@@ -4066,7 +4087,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '88f314259c';
+var APP_BUILD = '3a45acd635';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6688,8 +6709,14 @@ async function submitGroupItem(item, okMsg) {
     var nameEl = document.getElementById('grp-name');
     var name = nameEl ? nameEl.value.trim() : groupJoinName;
     if (!name) {
-        groupMsg = 'Ingresa tu nombre antes de agregar tu pedido.';
-        render();
+        // Sin nombre no se agrega: se dice con un aviso y se lleva el foco al campo (antes era una
+        // línea al pie, fuera de la vista: «no deja elegir bebidas»).
+        showToast('Escribe tu nombre arriba antes de agregar.', 'error');
+        var ne = document.getElementById('grp-name');
+        if (ne) {
+            ne.scrollIntoView({ block: 'center' });
+            ne.focus();
+        }
         return;
     }
     groupJoinName = name;
@@ -6700,8 +6727,12 @@ async function submitGroupItem(item, okMsg) {
     try {
         // Manda token (vacío si es invitado) para que el servidor sepa si quien agrega es
         // quien organizó, y así no le mande una notificación push a sí mismo.
-        await api('add-group-item', { code: groupCode, contributorName: name, token: token, item: item });
-        groupMsg = okMsg;
+        var r = await api('add-group-item', { code: groupCode, contributorName: name, token: token, item: item });
+        if (r && r.id && r.llave)
+            guardarLlave(String(r.id), String(r.llave));
+        groupMsg = '';
+        // Agregar ya no es silencioso: se nombra lo que entró y aparece en «Lo tuyo», arriba.
+        showToast(okMsg);
         loadGroupOrder();
     }
     catch (e) {
@@ -6710,14 +6741,16 @@ async function submitGroupItem(item, okMsg) {
     }
 }
 function doAddGroupItem(sigId) {
-    submitGroupItem({ type: 'sig', sigId: sigId, size: groupSize, doubleProt: false, extraSauce: false, qty: 1 }, '¡Listo! Tu pedido se agregó.');
+    var sg = SIGS.find(function (x) { return x.id === sigId; });
+    submitGroupItem({ type: 'sig', sigId: sigId, size: groupSize, doubleProt: false, extraSauce: false, qty: 1 }, 'Agregado: ' + (sg ? sg.n : 'tu sándwich') + ' ' + groupSize + 'CM. Lo ves arriba, en «Lo tuyo».');
 }
 // Antes solo se podía agregar un Signature al pedido grupal (SIGS.filter en sGroupOrder) —
 // quien solo quería sumar una bebida sin sándwich no tenía forma de hacerlo (hallazgo de
 // auditoría UX). Mismo action del servidor (add-group-item -> priceCartItem ya valida
 // item.type:'side' desde que existen los carritos multi-ítem), solo faltaba la UI.
 function doAddGroupSide(code) {
-    submitGroupItem({ type: 'side', code: code, qty: 1 }, '¡Listo! Tu bebida se agregó.');
+    var dd = SIDES.find(function (x) { return x.id === code; });
+    submitGroupItem({ type: 'side', code: code, qty: 1 }, 'Agregado: ' + (dd ? dd.l : 'tu bebida') + '. Lo ves arriba, en «Lo tuyo».');
 }
 async function doCloseGroupOrder() {
     if (!(await showConfirm('¿Cerrar el pedido grupal y continuar a pagar todo junto?')))
@@ -6825,6 +6858,15 @@ function sGroupOrder() {
     var puedeCerrar = g.isOrganizer && (abierto || g.canPay);
     var h = '<div class="mgr fi"><button class="sal" onclick="' + bk + '" aria-label="Volver">←</button>' + wmClaro()
         + '<div class="tit"><em>Pedido grupal · #' + esc(g.code) + '</em><b>QUIÉNES<br>COMEN</b></div>';
+    // Qué está pasando, dicho arriba (dueño, 2026-10-01: «nunca compartí el enlace»; el grupo se crea
+    // al tocar «Armar el grupo»). Al organizador: que ya está abierto y cómo sumar gente. A quien
+    // llega por el enlace: quién lo invitó y qué hacer — casi nunca conoce SND//WCH.
+    if (abierto) {
+        var minA = Math.max(0, Math.ceil((new Date(g.expiresAt).getTime() - Date.now()) / 60000));
+        h += g.isOrganizer
+            ? '<p class="intro">Tu grupo está abierto ' + minA + ' min. Comparte el enlace para que cada uno elija lo suyo desde su celular, o agrega tú todo abajo.</p>'
+            : '<p class="intro"><b>' + esc(g.organizerName || 'Alguien') + '</b> armó este pedido y te invitó. Escribe tu nombre, elige lo tuyo y llega todo junto. Te quedan ' + minA + ' min.</p>';
+    }
     if (abierto)
         h += '<button class="link" onclick="copiarEnlaceGrupo()"><s>' + esc(linkDelGrupo().replace(/^https?:\/\//, '')) + '</s><u>Copiar enlace</u></button>';
     if (repartido) {
@@ -6881,19 +6923,72 @@ function sGroupOrder() {
     }
     return h + '</div>';
 }
-// Lo que cada uno suma: nombre, tamaño y la carta. Mismo action de siempre (add-group-item).
+// Lo que cada uno suma (dueño, 2026-10-01). Tres cosas que faltaban:
+//  · quien entra por el enlace casi nunca conoce SND//WCH: cada sándwich y cada bebida va con su
+//    foto y una línea que lo vende («es oportunidad para ganar clientes»);
+//  · agregar era silencioso y no se podía deshacer: ahora «Lo tuyo» va arriba, con lo que llevas,
+//    y cada cosa se quita ahí mismo (remove-group-item, con la llave que dio el servidor);
+//  · cada agregado se confirma con un aviso que nombra lo que entró.
+function llavesDelGrupo() {
+    try {
+        return JSON.parse(localStorage.getItem('sw_grp_llaves_' + (groupCode || '')) || '{}') || {};
+    }
+    catch (e) {
+        return {};
+    }
+}
+function guardarLlave(id, llave) {
+    var m = llavesDelGrupo();
+    m[id] = llave;
+    try {
+        localStorage.setItem('sw_grp_llaves_' + (groupCode || ''), JSON.stringify(m));
+    }
+    catch (e) { }
+}
+function loTuyoHTML(g) {
+    var yo = quienSoyEnElGrupo(g), llaves = llavesDelGrupo();
+    var mios = (g.items || []).filter(function (it) { return llaves[it.id] || (yo && it.contributorName === yo); });
+    if (!mios.length)
+        return '';
+    var suma = mios.reduce(function (a, it) { return a + it.unitPrice * it.qty; }, 0);
+    return '<div class="tuyo"><em>Lo tuyo · ' + mios.length + (mios.length === 1 ? ' cosa' : ' cosas') + ' · ' + SOLES_TXT + pz(suma) + '</em>'
+        + mios.map(function (it) {
+            var quitable = !!llaves[it.id] || !!g.isOrganizer;
+            return '<div class="l"><span>' + esc(it.label) + (it.qty > 1 ? ' ×' + it.qty : '') + '</span><span class="p">' + d2(it.unitPrice * it.qty) + '</span>'
+                + (quitable && g.status === 'open' ? '<button onclick="quitarDelGrupo(\'' + esc(String(it.id)) + '\')" aria-label="Quitar ' + esc(it.label) + '">Quitar</button>' : '') + '</div>';
+        }).join('') + '</div>';
+}
+function primeraFraseCorta(t) { var f = primeraFrase(t || ''); return f.length > 110 ? f.slice(0, 107).trim() + '…' : f; }
 function sumarAlGrupoHTML(g) {
     var h = '<div class="sumar"><em>Suma lo tuyo</em>'
         + '<input id="grp-name" aria-label="Tu nombre" placeholder="Tu nombre" autocomplete="given-name" value="' + esc(groupJoinName || (g.isOrganizer && cust ? cust.name : '')) + '">'
+        + loTuyoHTML(g)
         + '<div class="tam" role="radiogroup" aria-label="Tamaño">'
         + ['15', '30'].map(function (sz) { return '<button role="radio" aria-checked="' + (groupSize === sz) + '" class="' + (groupSize === sz ? 'on' : '') + '" onclick="groupSize=\'' + sz + '\';render()">' + sz + 'CM</button>'; }).join('') + '</div>';
-    h += SIGS.filter(function (s) { return !s.secret && sigAvailable(s); }).map(function (s) {
-        return '<div class="it"><div class="t"><b>' + esc(s.n) + '</b><s>' + esc(s.s) + ' · ' + d2(groupSize === '15' ? s.p15 : s.p30) + '</s></div><button onclick="doAddGroupItem(\'' + s.id + '\')">Agregar</button></div>';
+    h += '<h3>Los sándwiches</h3>' + SIGS.filter(function (s) { return !s.secret && sigAvailable(s); }).map(function (s) {
+        var foto = SIG_IMG[s.id] || fotoDelPlato(s.id);
+        return '<div class="it">' + (foto ? '<img src="' + foto + '" alt="" loading="lazy">' : '')
+            + '<div class="t"><b>' + esc(s.n) + '</b><s>' + esc(primeraFraseCorta(s.pitch || '')) + '</s><i>' + SOLES_TXT + pz(groupSize === '15' ? s.p15 : s.p30) + ' · ' + groupSize + 'CM</i></div>'
+            + '<button onclick="doAddGroupItem(\'' + s.id + '\')">Agregar</button></div>';
     }).join('');
-    h += SIDES.map(function (s) {
-        return '<div class="it"><div class="t"><b>' + esc(s.l) + '</b><s>' + esc(s.s) + ' · ' + d2(s.p) + '</s></div><button onclick="doAddGroupSide(\'' + s.id + '\')">Agregar</button></div>';
+    h += '<h3>Para tomar</h3>' + SIDES.filter(function (d) { return isAvail(d.id); }).map(function (d) {
+        var foto = DRINK_IMG[d.id];
+        return '<div class="it">' + (foto ? '<img src="' + foto + '" alt="" loading="lazy">' : '')
+            + '<div class="t"><b>' + esc(d.l) + '</b><s>' + esc(primeraFraseCorta(d.d || '')) + '</s><i>' + SOLES_TXT + pz(d.p) + ' · 500 ml</i></div>'
+            + '<button onclick="doAddGroupSide(\'' + d.id + '\')">Agregar</button></div>';
     }).join('');
     return h + '<div class="msg" role="status">' + esc(groupMsg) + '</div></div>';
+}
+async function quitarDelGrupo(id) {
+    var llave = llavesDelGrupo()[id] || '';
+    try {
+        await api('remove-group-item', { token: token || '', code: groupCode, id: id, llave: llave });
+        showToast('Quitado de tu pedido.');
+        loadGroupOrder();
+    }
+    catch (e) {
+        showToast(e.message, 'error');
+    }
 }
 // Los dos cierres del grupo. «Cerrar y pagar»: cada uno paga lo suyo (decisión del dueño,
 // 2026-09-24) — el servidor crea un pedido Yape por persona con su parte del envío
@@ -7030,7 +7125,7 @@ function M15_PASAR(total, i, esSecreto, hayVault) {
 // (desde cuántos, cuál va gratis) sale de la carta.
 function platoGrupo(total, hayVault) {
     return '<section class="plato kraft grupo" aria-label="Pedido en grupo"><div class="forro"></div>'
-        + '<div class="logo" aria-hidden="true"><img src="img/logo-avatar-96.png" alt=""></div>'
+        + '<div class="logo" aria-hidden="true"><img src="img/logo-avatar-640.webp" alt=""></div>'
         + '<div class="ficha"><div class="num">Para varios</div>'
         + '<h1>Pedido en grupo</h1><div class="pitch">Mandas un enlace y cada uno elige el suyo desde su celular, Signature o armado. Tú pagas una vez y llega todo junto.</div>'
         + '<div class="regla">Desde ' + ORGANIZER_FREE_MIN_SANDWICHES + ' sándwiches, el más barato va gratis</div></div>'
@@ -7058,12 +7153,55 @@ function abrirPlato(idx) {
 }
 // Primer toque: levanta la carta y marca su fila en la lista de abajo. Segundo toque: abre su
 // plato. Se hace sin render() para que el abanico no vuelva a abrirse desde cero en cada toque.
+// En la fila (2026-10-01): la carta del centro es la elegida. Tocarla abre su plato; tocar una del
+// costado la trae al centro.
 function tocarCarta(btn) {
     if (btn.classList.contains('sel')) {
         abrirPlato(Number(btn.getAttribute('data-plato')));
         return;
     }
-    marcarCarta(Number(btn.getAttribute('data-plato')));
+    var mano = btn.parentElement;
+    if (mano)
+        mano.scrollTo({ left: btn.offsetLeft - (mano.clientWidth - btn.offsetWidth) / 2, behavior: 'smooth' });
+}
+// Cada carta gira según su distancia al centro: al pasar de una a otra se ve voltearse. La del
+// centro queda elegida y marca su fila en la lista. Se guarda dónde quedó la mano para que un
+// render() (llegan la carta y el horario por red) no la devuelva al principio: eso era el «cargó
+// tres veces» del dueño, junto con la animación de entrada que se repetía en cada render.
+var manoScroll = null, _giroPedido = false;
+function girarCartas(mano) {
+    if (_giroPedido)
+        return;
+    _giroPedido = true;
+    requestAnimationFrame(function () {
+        _giroPedido = false;
+        manoScroll = mano.scrollLeft;
+        var centro = mano.scrollLeft + mano.clientWidth / 2, mejor = null, dMin = 9;
+        mano.querySelectorAll('.k').forEach(function (k) {
+            var paso = k.offsetWidth + 8;
+            var d = Math.max(-1, Math.min(1, (k.offsetLeft + k.offsetWidth / 2 - centro) / paso));
+            k.style.setProperty('--d', d.toFixed(3));
+            if (Math.abs(d) < dMin) {
+                dMin = Math.abs(d);
+                mejor = k;
+            }
+        });
+        if (mejor && !mejor.classList.contains('sel'))
+            marcarCarta(Number(mejor.getAttribute('data-plato')));
+    });
+}
+function iniciarMano() {
+    var mano = document.querySelector('.mtarot .mano');
+    if (!mano)
+        return;
+    if (manoScroll != null)
+        mano.scrollLeft = manoScroll;
+    else {
+        var e = mano.querySelector('.k.sel');
+        if (e)
+            mano.scrollLeft = e.offsetLeft - (mano.clientWidth - e.offsetWidth) / 2;
+    }
+    girarCartas(mano);
 }
 function marcarCarta(plato) {
     document.querySelectorAll('.mtarot .k').forEach(function (k) {
@@ -7082,7 +7220,6 @@ var NUM_PALABRA = ['Ninguna', 'Una', 'Dos', 'Tres', 'Cuatro', 'Cinco', 'Seis', '
 // el plato directo: quien leyó la descripción ya sabe qué está eligiendo.
 function sCartaTarot(visibles, secreto) {
     var total = visibles.length + (secreto ? 1 : 0);
-    var mitad = (total - 1) / 2;
     var n = cart.reduce(function (a, it) { return a + (it.qty || 1); }, 0);
     // El índice del plato: el primero, después el del pedido en grupo, después el resto (ver
     // sMundoSando). El secreto es el último.
@@ -7090,7 +7227,7 @@ function sCartaTarot(visibles, secreto) {
     var estrella = Math.max(0, visibles.findIndex(function (s) { return s.recommended; }));
     var cartas = visibles.map(function (s, i) {
         var sel = i === estrella;
-        return '<button class="k' + (s.recommended ? ' e' : '') + (sel ? ' sel' : '') + '" style="--o:' + (i - mitad) + ';--d:' + (i * 60) + 'ms" onclick="tocarCarta(this)" aria-pressed="' + sel + '"'
+        return '<button class="k' + (s.recommended ? ' e' : '') + (sel ? ' sel' : '') + '" onclick="tocarCarta(this)" aria-pressed="' + sel + '"'
             + ' data-plato="' + platoDe(i) + '" aria-label="Carta ' + romano(i + 1) + ': ' + esc(s.n) + ', ' + SOLES_TXT + pz(s.p15) + '">'
             + '<u>' + romano(i + 1) + '</u>'
             + (fotoDelPlato(s.id) ? '<img src="' + (SIG_IMG[s.id] || fotoDelPlato(s.id)) + '" alt="">' : '<span class="sinfoto"></span>')
@@ -7108,7 +7245,7 @@ function sCartaTarot(visibles, secreto) {
         var falta = Math.max(0, secreto.minOrders - myTotal);
         var abierto = !!cust && falta === 0;
         var pSec = visibles.length + 1;
-        cartas += '<button class="k x" style="--o:' + (total - 1 - mitad) + ';--d:' + (visibles.length * 60) + 'ms" onclick="tocarCarta(this)" aria-pressed="false"'
+        cartas += '<button class="k x" onclick="tocarCarta(this)" aria-pressed="false"'
             + ' data-plato="' + pSec + '" aria-label="Carta ' + romano(total) + ': el sándwich secreto, ' + (abierto ? 'abierto' : 'boca abajo') + '"><u>' + romano(total) + '</u><span class="luna" aria-hidden="true">☾</span><em>' + (abierto ? 'Ya es tuya' : 'Boca abajo') + '</em></button>';
         filas += '<button class="fila x" data-plato="' + pSec + '" onclick="abrirPlato(' + pSec + ')">'
             + '<u>' + romano(total) + '</u><span class="t"><b>El sándwich secreto</b>'
@@ -7122,8 +7259,8 @@ function sCartaTarot(visibles, secreto) {
         + (n ? '<button class="c" onclick="go(\'o_cart\')" aria-label="Tu pedido, ' + n + (n === 1 ? ' cosa' : ' cosas') + '"><span>' + n + '</span></button>' : '<span class="vacio"></span>')
         + '</div>'
         + '<div class="cab"><h1>Elige tu carta</h1><p>' + cuantas + ' a la vista.' + (secreto ? ' La ' + (total === 7 ? 'séptima' : 'última') + ', boca abajo.' : '') + '</p></div>'
-        + '<div class="mano">' + cartas + '</div>'
-        + '<p class="pista">Toca una carta para levantarla; otra vez, y es tuya.</p>'
+        + '<div class="mano" onscroll="girarCartas(this)">' + cartas + '</div>'
+        + '<p class="pista">Desliza para pasar de carta. Toca la del centro y es tuya.</p>'
         + '<div class="lista"><h2>Lo que dice cada carta</h2>' + filas + '</div>'
         + '</div>';
 }
@@ -13528,6 +13665,7 @@ function renderScreen() {
     // nada si no encuentra su punto de anclaje — así que preguntarle a cada render es más
     // barato que mantener una lista de pantallas que alguien va a olvidar actualizar.
     googleAlCargar();
+    iniciarMano();
     renderOverlays();
     makeClickablesAccessible();
     // render() acaba de reconstruir todo el innerHTML, así que un campo ya marcado como

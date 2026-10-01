@@ -59,6 +59,16 @@ export const CONTRATO = {
     e.objeto({ token, ref: e.texto({ min: 1, max: 40, mensaje: 'Falta el pedido.' }) }),
   ),
 
+  // Quitar lo que uno agregó a un pedido grupal (2026-10-01). La llave la da add-group-item.
+  'remove-group-item': accion<{ success: true }>()(
+    e.objeto({
+      token,
+      code: e.texto({ min: 4, max: 12, mensaje: 'Falta el código del grupo.' }),
+      id: e.uuid('Falta qué quitar.'),
+      llave: e.texto({ max: 200 }),
+    }),
+  ),
+
   'recurring-skip': accion<{ success: true; skipOn: string | null }>()(
     e.objeto({ token, id: e.uuid('Falta el pedido fijo.'), deshacer: e.bandera() }),
   ),

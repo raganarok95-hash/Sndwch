@@ -101,3 +101,37 @@ test('si el grupo no carga, la pantalla lo dice y deja reintentar (nunca en blan
   await page.getByRole('button', { name: /Reintentar/ }).click();
   await expect(page.getByRole('button', { name: /cerrar y pagar/i }).first()).toBeVisible();
 });
+
+// Quien entra por el enlace (sin cuenta) agrega una bebida, la ve en «Lo tuyo» y la quita ahí
+// mismo con la llave que le dio el servidor (dueño, 2026-10-01: «al agregar más al mío es muy
+// silencioso… puede generar pedidos por error, no permite quitarlos allí mismo»; «no deja elegir
+// bebidas»). Y sin nombre no se agrega nada.
+test('el invitado agrega una bebida, la ve en «Lo tuyo» y la quita con su llave', async ({ page }) => {
+  const items: any[] = [...ABIERTO.items];
+  const agregados: any[] = [], quitados: any[] = [];
+  const ID = '11111111-2222-3333-4444-555555555555';
+  await gotoApp(page, {
+    'get-group-order': () => ({ ...ABIERTO, isOrganizer: false, items: [...items] }),
+    'add-group-item': (b: any) => {
+      agregados.push(b);
+      items.push({ id: ID, contributorName: b.contributorName, label: 'Bebida', qty: 1, unitPrice: 6, isSandwich: false });
+      return { success: true, id: ID, llave: 'llave-firmada' };
+    },
+    'remove-group-item': (b: any) => { quitados.push(b); items.splice(items.findIndex((x) => x.id === b.id), 1); return { success: true }; },
+  });
+  await page.goto(APP_FILE + '?group=ABC123');
+  const primeraBebida = page.locator('.sumar h3:has-text("Para tomar") ~ .it').first();
+  // Sin nombre: no se llama al servidor.
+  await primeraBebida.getByRole('button', { name: 'Agregar' }).click();
+  expect(agregados.length, 'se agregó sin nombre').toBe(0);
+  await page.locator('#grp-name').fill('Juan');
+  await primeraBebida.getByRole('button', { name: 'Agregar' }).click();
+  await expect.poll(() => agregados.length).toBe(1);
+  expect(agregados[0].item.type).toBe('side');
+  const tuyo = page.locator('.tuyo');
+  await expect(tuyo, '«Lo tuyo» no aparece tras agregar').toContainText('Bebida');
+  await tuyo.getByRole('button', { name: /Quitar/ }).click();
+  await expect.poll(() => quitados.length).toBe(1);
+  expect(quitados[0].llave, 'se quitó sin la llave').toBe('llave-firmada');
+  await expect(page.locator('.tuyo')).toHaveCount(0);
+});

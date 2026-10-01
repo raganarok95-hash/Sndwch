@@ -202,3 +202,5 @@ lleva), `776050809` (papas), `150082453` (pan de molde y papas), `128065892` (se
   `img/marca/avatar-1024-transparente.png` (logo propio, aprobado). Existe porque la app pedía la
   versión de 1024 px (570 KB) para mostrarla a 26 px, y porque `img/marca/` quedaba fuera de la
   publicación por una regla de `.vercelignore`: el logo de la cuenta salía roto en producción.
+- **`img/logo-avatar-640.webp`** (2026-10-01): el mismo avatar a 640 px en WebP (38 KB) para el logo
+  grande del plato «Pedido en grupo», que con la versión de 96 px se veía pixelado.

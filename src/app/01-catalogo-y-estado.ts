@@ -985,7 +985,7 @@ function elegirLado(id){
     mode='byo';byoStep=0;sndScreen='o_build';render();return;
   }
   // Se entra siempre por el tarot (la carta), no por el último plato que se vio.
-  sandoEnPlatos=false;
+  sandoEnPlatos=false;manoScroll=null;
   sndScreen='o_home';render();
 }
 // BEBIDAS NO ES UN TERCER HERMANO. Llego a serlo por un rato y estaba mal: entrar a bebidas
