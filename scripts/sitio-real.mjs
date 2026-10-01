@@ -17,7 +17,11 @@ pagina.on('pageerror', (e) => errores.push(String(e.message || e)));
 // Culqi (dueño, 2026-10-01: «Pagar con culqi no funciona»): todo lo que su widget diga o pida mal.
 const culqiRuido = [];
 pagina.on('console', (m) => { if (m.type() === 'error' && /culqi/i.test(m.text() + (m.location()?.url || ''))) culqiRuido.push('consola: ' + m.text().slice(0, 300)); });
-pagina.on('response', (r) => { if (/culqi/i.test(r.url()) && r.status() >= 400) culqiRuido.push(`${r.status()} ${r.url().slice(0, 160)}`); });
+pagina.on('response', async (r) => {
+  if (!/culqi/i.test(r.url())) return;
+  if (r.status() >= 400) culqiRuido.push(`${r.status()} ${r.url().slice(0, 160)}`);
+  if (/json/.test(r.headers()['content-type'] || '')) console.log(`Culqi responde ${r.status()} ${r.url().slice(0, 120)}: ${(await r.text().catch(() => '')).slice(0, 400)}`);
+});
 pagina.on('requestfailed', (r) => { if (/culqi/i.test(r.url())) culqiRuido.push(`falló ${r.url().slice(0, 160)}: ${r.failure()?.errorText || ''}`); });
 pagina.on('response', (r) => { if (r.url().startsWith(SITIO) && r.status() >= 400) problemas.push(`${r.status()} ${r.url()}`); });
 
@@ -83,6 +87,15 @@ else {
   if (!culqi.visible && !culqi.marcos.length) problemas.push('Culqi.open() no mostró el formulario de pago');
 }
 for (const r of culqiRuido) problemas.push('Culqi ' + r);
+// Lo que la ventana de Culqi le MUESTRA al cliente (dueño, 2026-10-01: «el pago con tarjeta sigue
+// sin estar activo»): que abra no basta; si adentro dice que el comercio o la tarjeta no están
+// habilitados, eso se lee acá y queda en el registro de la corrida.
+for (const f of pagina.frames()) {
+  if (!/culqi/i.test(f.url())) continue;
+  const texto = await f.evaluate(() => (document.body ? document.body.innerText : '')).catch(() => '');
+  console.log('Culqi muestra (' + f.url().slice(0, 80) + '): ' + texto.replace(/\s+/g, ' ').slice(0, 600));
+  if (/no (está|esta) (habilitad|activ)|inactiv|deshabilitad|not (enabled|active)|no disponible/i.test(texto)) problemas.push('Culqi dice que el pago no está habilitado: ' + texto.replace(/\s+/g, ' ').slice(0, 200));
+}
 await pagina.screenshot({ path: 'sitio-real-culqi.png' }).catch(() => {});
 
 for (const e of errores) problemas.push('error en la página: ' + e);
