@@ -80,6 +80,26 @@ export const CONTRATO = {
     e.objeto({ token, que: e.texto({ min: 3, max: 8, mensaje: 'Falta qué hacer con los anuncios.' }) }),
   ),
 
+  // ── ACCESO (2026-10-01): las cinco acciones con que se entra y se sale de una cuenta. ──
+  'google-auth': accion<Record<string, unknown>>()(
+    e.objeto({ token, idToken: e.texto({ min: 20, max: 4096, mensaje: 'Google no mandó la credencial.' }) }),
+  ),
+  'request-login-code': accion<Record<string, unknown>>()(
+    e.objeto({ token, email: e.texto({ min: 3, max: 254, mensaje: 'Escribe tu correo.' }) }),
+  ),
+  'verify-login-code': accion<Record<string, unknown>>()(
+    e.objeto({
+      token,
+      email: e.texto({ min: 3, max: 254, mensaje: 'Escribe tu correo.' }),
+      code: e.texto({ min: 6, max: 6, mensaje: 'El código son 6 dígitos.' }),
+    }),
+  ),
+  'session-check': accion<Record<string, unknown>>()(e.objeto({ token })),
+  // El PIN es opcional: las cuentas que entran con correo o con Google no tienen.
+  'delete-account': accion<Record<string, unknown>>()(
+    e.objeto({ token, pin: { leer: (v: unknown) => (typeof v === 'string' ? v.trim().slice(0, 12) : '') } as e.Esquema<string> }),
+  ),
+
   'recurring-skip': accion<{ success: true; skipOn: string | null }>()(
     e.objeto({ token, id: e.uuid('Falta el pedido fijo.'), deshacer: e.bandera() }),
   ),

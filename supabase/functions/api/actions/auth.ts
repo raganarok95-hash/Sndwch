@@ -55,7 +55,7 @@ async function verifyGoogleIdToken(idToken: string): Promise<{ sub: string; emai
 // saved_addresses, transactions, credit_ledger), y además es lo único con lo que el negocio
 // puede ubicar a alguien para entregarle el pedido. Google no devuelve teléfono en ningún
 // scope de Sign-In.
-export async function actGoogleAuth(b: any) {
+export async function actGoogleAuth(b: Entrada<"google-auth"> & { _ip?: string }) {
   const idToken = String(b.idToken || "").trim();
   if (!idToken) throw new ApiError("Falta el token de Google.");
   const info = await verifyGoogleIdToken(idToken);
@@ -377,7 +377,7 @@ function codigoDeSeisDigitos(): string {
   return String(buf[0] % 1_000_000).padStart(6, "0");
 }
 
-export async function actRequestLoginCode(b: any) {
+export async function actRequestLoginCode(b: Entrada<"request-login-code"> & { _ip?: string }) {
   const email = normalizarCorreo(b.email);
   if (!isValidEmail(email)) throw new ApiError("Escribe un correo válido.");
 
@@ -407,7 +407,7 @@ export async function actRequestLoginCode(b: any) {
   return { success: true, masked: maskEmail(email), ttlMinutes: LOGIN_CODE_TTL_MINUTES };
 }
 
-export async function actVerifyLoginCode(b: any) {
+export async function actVerifyLoginCode(b: Entrada<"verify-login-code"> & { _ip?: string }) {
   const email = normalizarCorreo(b.email);
   const code = String(b.code || "").replace(/\D/g, "");
   if (!isValidEmail(email) || code.length !== 6) throw new ApiError("Escribe el código de 6 dígitos.");
@@ -435,7 +435,7 @@ export async function actVerifyLoginCode(b: any) {
   return { success: true, needsRegistration: false, customer: safeCustomer(row), isAdmin, token };
 }
 
-export async function actSessionCheck(b: any) {
+export async function actSessionCheck(b: Entrada<"session-check"> & { _ip?: string }) {
   // Igual que requireAdmin: verifyToken es local (sin I/O), así que customers y
   // admin_accounts pueden pedirse en paralelo en vez de en serie.
   const payload = await verifyToken(b.token);
@@ -459,7 +459,7 @@ export async function actSessionCheck(b: any) {
 // movimientos de crédito/puntos, reservas de pago, Plan Semanal sin confirmar, carritos
 // abandonados, historial de contactos de marketing, canjes de código promocional, avisos
 // de reabastecimiento, lista de espera) sí se borra por completo.
-export async function actDeleteAccount(b: any) {
+export async function actDeleteAccount(b: Entrada<"delete-account"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const pin = String(b.pin || "").trim();
   if (!pin) throw new ApiError("Ingresa tu PIN para confirmar.", 400);
