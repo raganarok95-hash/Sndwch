@@ -449,14 +449,6 @@ export async function actSessionCheck(b: any) {
   return { valid: true, customer: safeCustomer(row), isAdmin };
 }
 
-export async function actLogoutEverywhere(b: any) {
-  // verifyActiveSession ya trae la fila de customers — reusarla evita pedirla de nuevo.
-  const active = await verifyActiveSession(b.token);
-  if (!active) throw new ApiError("Sesión inválida o expirada. Inicia sesión de nuevo.", 401);
-  const current = active.row.session_version || 1;
-  await sbUpdate("customers", `phone=eq.${encodeURIComponent(active.payload.phone)}`, { session_version: current + 1 });
-  return { success: true };
-}
 
 // Borrado de cuenta a pedido del cliente (antes no existía ningún camino para esto —
 // solo un borrado manual del dueño en la base de datos). Pide el PIN de nuevo (no solo
@@ -546,49 +538,6 @@ function birthdaysMatch(stored: string, input: string): boolean {
   return !!a && !!c && a === c;
 }
 
-export async function actRecover(b: any) {
-  const phone = String(b.phone || "").trim();
-  const dni = String(b.dni || "").trim();
-  const bday = String(b.bday || "").trim();
-  if (!phone || !dni || !bday) throw new ApiError("Completa teléfono, DNI y fecha de nacimiento.");
-
-  // Mismo mecanismo de bloqueo por teléfono que actLogin (comparten la tabla
-  // login_attempts) — el chequeo va antes de saber si la cuenta existe, y responde
-  // idéntico en ambos casos.
-  const remaining = await loginLockoutRemainingMinutes(phone);
-  if (remaining !== null) throw new ApiError(`Demasiados intentos fallidos. Intenta de nuevo en ${remaining} min.`, 429);
-
-  const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(phone)}`);
-  if (!rows.length) {
-    await registerLoginFailure(phone);
-    throw new ApiError("No encontramos una cuenta con esos datos exactos.", 404);
-  }
-  const row = rows[0];
-  const match = row.dni === dni && birthdaysMatch(row.birthday, bday);
-  if (!match) {
-    await registerLoginFailure(phone);
-    throw new ApiError("No encontramos una cuenta con esos datos exactos.", 404);
-  }
-  await resetLoginAttempts(phone);
-  // crypto.getRandomValues() en vez de Math.random() (no criptográficamente seguro, a
-  // diferencia del resto de refs/tokens de la app que sí usan crypto.randomUUID) —
-  // defensa en profundidad de bajo impacto real, dado que el PIN ya son solo 4 dígitos
-  // por diseño y el login ya tiene lockout tras 5 intentos (hallazgo de auditoría de
-  // seguridad, BAJO).
-  const newPin = String(1000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 9000));
-  const hashed = await rpc("hash_pin", { plain: newPin });
-  await sbUpdate("customers", `phone=eq.${encodeURIComponent(phone)}`, { pin: hashed, session_version: (row.session_version || 1) + 1 });
-  // DNI + fecha de nacimiento no son secretos fuertes (a veces se filtran/son semi-públicos
-  // en Perú) — si el cliente tiene correo registrado, el PIN nuevo se manda ahí en vez de
-  // devolverlo aquí, para que quien solo tenga esos dos datos no pueda ver el PIN
-  // directamente en la respuesta. Sin correo en el perfil no hay otro canal disponible
-  // todavía, así que se mantiene el comportamiento anterior (mostrarlo en la app).
-  if (row.email) {
-    const sent = await sendRecoveryEmail(row.email, row.name, newPin);
-    if (sent) return { success: true, name: row.name, emailSent: true, emailMasked: maskEmail(row.email) };
-  }
-  return { success: true, newPin, name: row.name, emailSent: false };
-}
 
 // ── VINCULAR UN PEDIDO DE INVITADO A UNA CUENTA ──────────────────────────────────────────
 // UNA sola función para los DOS caminos: crear la cuenta desde el aviso de puntos (register con

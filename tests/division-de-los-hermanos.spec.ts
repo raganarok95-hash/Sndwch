@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, salirALaPuerta } from './helpers';
 
 // LA DIVISIÓN DEL MENÚ SON LOS HERMANOS, NO UNA FRANJA.
 //
@@ -24,7 +24,7 @@ import { gotoApp } from './helpers';
 const sando = (page: any) => page.getByRole('button', { name: /Ya está resuelto/ });
 const wicho = (page: any) => page.getByRole('button', { name: /Tú decides/ });
 async function aLaPuerta(page: any) {
-  await page.getByRole('button', { name: 'Cambiar de lado' }).click();
+  await salirALaPuerta(page);
   await expect(sando(page)).toBeVisible();
 }
 

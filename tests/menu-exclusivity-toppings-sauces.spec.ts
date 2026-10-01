@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { gotoApp, irAlArmador, siguientePaso, ponerRecibe, ponerDireccion, pagarConYape } from './helpers';
-import { unVegetalDelArmador } from './carta';
+import { unVegetalDelArmador, unaSalsaDelArmador, nombreDe } from './carta';
 import { CARTA } from '../supabase/functions/_shared/carta.ts';
 
 // Recorrido hasta el paso de VEGETALES del armador actual: tamaño → pan → proteína → queso
@@ -46,8 +46,8 @@ test('el jalapeño se ofrece en ARMA EL TUYO; SPICY MAYO y PICANTE MIEL (menú s
   await expect(page.locator('text=Jalapeño').first()).toBeVisible();
   await siguientePaso(page); // vegetales -> salsas
 
-  // Otras salsas siguen disponibles normalmente.
-  await expect(page.locator('text=Aioli').first()).toBeVisible();
+  // Otras salsas siguen disponibles normalmente (una cualquiera del armador, pedida a la carta).
+  await expect(page.getByText(nombreDe(unaSalsaDelArmador()).split(' // ')[0]).first()).toBeVisible();
 
   // S09 (Chimichurri // Piña y Ají) es pública y picante, pero va en la MISMA lista que
   // el resto: el picor se marca con el ícono de ají al costado, no con una sección propia

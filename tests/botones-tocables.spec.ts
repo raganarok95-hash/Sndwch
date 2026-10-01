@@ -92,7 +92,8 @@ test('en cada pantalla del camino de compra, todo botón visible recibe el toque
 
   // Y de vuelta: el «✕» del Mundo SANDO tiene que llevar a la puerta de verdad.
   await page.evaluate(() => (window as any).go('o_home'));
-  await page.locator('.m15 [aria-label="Cambiar de lado"]').click({ timeout: 5000 });
+  await page.locator('.m15 [aria-label="Volver a las cartas"]').click({ timeout: 5000 });
+  await page.locator('.mtarot [aria-label="Cambiar de lado"]').click({ timeout: 5000 });
   await expect(page.locator('.pta')).toBeVisible();
   await medir('la puerta (M2)');
 
@@ -106,7 +107,8 @@ test('en cada pantalla del camino de compra, todo botón visible recibe el toque
 // proteína, y su `z-index:95` global subía ese degradado por encima de la barra del armador.
 test('ARMA EL TUYO se puede recorrer entero y llega al carrito, tocando en cada paso', async ({ page }) => {
   await gotoApp(page, {});
-  await page.locator('.m15 [aria-label="Cambiar de lado"]').click({ timeout: 5000 });
+  await page.locator('.m15 [aria-label="Volver a las cartas"]').click({ timeout: 5000 });
+  await page.locator('.mtarot [aria-label="Cambiar de lado"]').click({ timeout: 5000 });
   await page.locator('button[onclick="elegirLado(\'byo\')"]').click({ timeout: 5000 });
   const informe: Record<string, string[]> = {};
   const opcion = '#app button[onclick]:not([onclick*="byoIrAPaso"]):not([onclick*="byoStepBack"]):not([onclick*="byoStepNext"]):not([onclick*="volverALaPuerta"]):not([disabled])';

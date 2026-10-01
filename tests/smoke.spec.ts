@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, salirALaPuerta } from './helpers';
 
 // Prueba mínima de humo — antes no existía NINGUNA prueba automatizada versionada en el
 // repo (los scripts de Playwright de sesiones anteriores se escribían y se descartaban).
@@ -35,7 +35,7 @@ import { gotoApp } from './helpers';
 test('la app carga y muestra los dos caminos de pedido', async ({ page }) => {
   await gotoApp(page);
   await expect(page.locator('button[onclick^="startOrderWithSig("]').first()).toBeVisible({ timeout: 10000 });
-  await page.getByRole('button', { name: 'Cambiar de lado' }).click();
+  await salirALaPuerta(page);
   await expect(page.locator('button[onclick="elegirLado(\'sig\')"]')).toBeVisible();
   await expect(page.locator('button[onclick="elegirLado(\'byo\')"]')).toBeVisible();
   await page.locator('button[onclick="elegirLado(\'sig\')"]').click();

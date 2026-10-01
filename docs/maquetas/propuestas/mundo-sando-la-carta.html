@@ -1,0 +1,64 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Anton&family=IBM+Plex+Mono:wght@500;700&family=EB+Garamond:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#2a2a2a;padding:22px;display:flex;gap:22px;font-family:'EB Garamond',serif}
+.f{width:372px;height:812px;position:relative;overflow:hidden;color:#2A1D0E;
+  background:#C6A579;background-image:repeating-linear-gradient(0deg,rgba(80,52,20,.05) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(80,52,20,.045) 0 1px,transparent 1px 4px),radial-gradient(130% 70% at 18% 0%,rgba(255,242,218,.45),transparent 62%)}
+.tag{position:absolute;top:0;left:0;z-index:60;background:#000;color:#fff;font:600 10px/1 Archivo,sans-serif;letter-spacing:.14em;padding:6px 10px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:30px 20px 0}
+.top .x{font-size:18px}
+.marca{font:700 13px/1 Archivo,sans-serif;display:flex;align-items:center;gap:5px}
+.wm{display:inline-flex;gap:.16em}.wm i{display:block;width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;background:#CBA258}.wm i+i{background:#8CC8EC}
+.cab{padding:22px 20px 0;position:relative}
+.cab em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#5E4526;text-transform:uppercase;font-style:normal}
+.cab h1{font-family:Anton,sans-serif;font-weight:400;font-size:40px;line-height:.9;text-transform:uppercase;margin-top:8px}
+.cab p{font-style:italic;font-size:15px;color:#4A3218;margin-top:8px;max-width:230px}
+.sando{position:absolute;right:14px;top:-4px;height:128px}
+.cab{min-height:132px}
+.rej{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:20px 20px 0}
+.c{background:#F2E4CA;border:1.5px solid #4A3218;overflow:hidden;position:relative}
+.c img{width:100%;height:96px;object-fit:cover;display:block}
+.c .t{padding:8px 10px 10px}
+.c b{display:block;font:800 13px/1.15 Archivo,sans-serif;text-transform:uppercase}
+.c s{display:block;text-decoration:none;margin-top:6px;font:500 11px/1 'IBM Plex Mono',monospace;color:#5E4526}
+.c .st{position:absolute;top:6px;left:6px;background:#2A1D0E;color:#F2E4CA;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;padding:4px 6px;text-transform:uppercase}
+.sec{grid-column:1/-1;background:#0A0B0C;border-color:#0A0B0C;color:#F2F0EA;display:flex;align-items:center;gap:12px;padding:0}
+.sec .ph{width:118px;height:84px;background:#151719;display:flex;align-items:center;justify-content:center;font-size:26px;color:#8CC8EC;flex-shrink:0;position:relative;overflow:hidden}
+.sec .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(7px) brightness(.55)}
+.sec .ph span{position:relative}
+.sec b{font:800 14px/1.1 Archivo,sans-serif;text-transform:uppercase}
+.sec s{color:#B9B5AA}
+.sec.on .ph img{filter:none}
+.pie{position:absolute;left:0;right:0;bottom:0;padding:14px 20px 18px;font:500 10px/1.5 'IBM Plex Mono',monospace;color:#4A3218;text-transform:uppercase;border-top:1px dashed rgba(74,50,24,.4);background:#C6A579}
+.nota{color:#ddd;font:13px/1.5 Archivo,sans-serif;max-width:300px}
+.nota b{color:#fff}
+</style></head><body>
+<div class="f"><div class="tag">M15-0 · LA CARTA (cliente nuevo)</div>
+  <div class="top"><span class="x">✕</span><span class="marca">SND<span class="wm"><i></i><i></i></span>WCH</span></div>
+  <div class="cab"><em>Lado SANDO · ya está resuelto</em><h1>La carta</h1><p>Seis recetas cerradas. Toca una para verla entera.</p><img class="sando" src="../../../img/sando2_cuerpo_forro.png"></div>
+  <div class="rej">
+    <div class="c"><span class="st">★ La estrella</span><img src="../../../img/sig09.jpg"><div class="t"><b>Philly Cheesesteak</b><s>desde S/22.90</s></div></div>
+    <div class="c"><img src="../../../img/sig02.jpg"><div class="t"><b>Meatball Marinara</b><s>desde S/21.90</s></div></div>
+    <div class="c"><img src="../../../img/sig10.jpg"><div class="t"><b>Turkey</b><s>desde S/23.90</s></div></div>
+    <div class="c"><img src="../../../img/sig12.jpg"><div class="t"><b>Tuna Melt</b><s>desde S/22.90</s></div></div>
+    <div class="c"><img src="../../../img/sig11.jpg"><div class="t"><b>Italian Hoagie</b><s>desde S/23.90</s></div></div>
+    <div class="c"><img src="../../../img/sig04.jpg"><div class="t"><b>Classic Tuna</b><s>desde S/20.90</s></div></div>
+    <div class="c sec"><div class="ph"><img src="../../../img/sig05.jpg"><span>🔒</span></div><div class="t"><b>Menú secreto</b><s>Se abre en tu 3er pedido</s></div></div>
+  </div>
+</div>
+<div class="f"><div class="tag">M15-0 · con el secreto abierto</div>
+  <div class="top"><span class="x">✕</span><span class="marca">SND<span class="wm"><i></i><i></i></span>WCH</span></div>
+  <div class="cab"><em>Lado SANDO · ya está resuelto</em><h1>La carta</h1><p>Seis recetas cerradas. Toca una para verla entera.</p><img class="sando" src="../../../img/sando2_cuerpo_forro.png"></div>
+  <div class="rej">
+    <div class="c"><span class="st">★ La estrella</span><img src="../../../img/sig09.jpg"><div class="t"><b>Philly Cheesesteak</b><s>desde S/22.90</s></div></div>
+    <div class="c"><img src="../../../img/sig02.jpg"><div class="t"><b>Meatball Marinara</b><s>desde S/21.90</s></div></div>
+    <div class="c"><img src="../../../img/sig10.jpg"><div class="t"><b>Turkey</b><s>desde S/23.90</s></div></div>
+    <div class="c"><img src="../../../img/sig12.jpg"><div class="t"><b>Tuna Melt</b><s>desde S/22.90</s></div></div>
+    <div class="c"><img src="../../../img/sig11.jpg"><div class="t"><b>Italian Hoagie</b><s>desde S/23.90</s></div></div>
+    <div class="c"><img src="../../../img/sig04.jpg"><div class="t"><b>Classic Tuna</b><s>desde S/20.90</s></div></div>
+    <div class="c sec on"><div class="ph"><img src="../../../img/sig05.jpg"></div><div class="t"><b>Menú secreto</b><s>Ya es tuyo · desde S/24.90</s></div></div>
+  </div>
+</div>
+<div class="nota"><p><b>Cómo funciona.</b> Al entrar al lado SANDO aparece primero <b>la carta</b>: los seis Signatures y el menú secreto, de un vistazo.</p><br><p>Tocar uno abre <b>su plato a pantalla completa, tal como hoy</b> (foto, receta, «Lo quiero»), y desde ahí se sigue deslizando a los demás. La ✕ del plato vuelve a la carta.</p><br><p>El secreto se ve borroso y con candado hasta tu 3er pedido; después, con foto y precio. Nombres, precios y fotos salen de la carta real.</p></div>
+</body></html>

@@ -1434,6 +1434,67 @@ body.kb-open #app{padding-bottom:0}
 .mlt .cab{padding:22px 20px 6px}
 .mlt .cab em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#CBA258;text-transform:uppercase;font-style:normal}
 .mlt .sal:focus-visible{outline:2px solid #CBA258;outline-offset:2px}
+/* LA CARTA DEL LADO SANDO · EL TAROT (aprobado 2026-10-01, docs/maquetas/aprobadas/la-carta-tarot.png).
+   Las cartas se abren en abanico al llegar; la del secreto, boca abajo. En el celular de cada carta
+   se ve una franja, así que el PRIMER toque la levanta (y abajo se lee su nombre y su precio) y el
+   segundo la abre. La estrella llega levantada: lo más común sigue siendo un solo toque.
+   overflow:clip y no hidden: con hidden, enfocar o tocar una carta girada que se sale del borde
+   desplaza el contenedor para mostrarla, y las cartas se corren. */
+.mtarot{--paso:2.5deg;--ancho:clamp(150px,42vw,190px);--origen:50% 300%;
+  position:relative;min-height:100dvh;margin-bottom:calc(-1 * var(--sw-barra,0px));overflow-x:clip;padding-bottom:40px;box-sizing:border-box;
+  background:radial-gradient(circle at 50% 18%,#3a2a4a,#120c18 70%);background-color:#120c18;color:#E9DFC6;text-align:center;font-family:'EB Garamond',serif}
+@media (min-width:700px){.mtarot{--paso:6deg;--ancho:clamp(150px,16vw,200px);--origen:50% 240%}}
+.mtarot .riel{position:absolute;top:0;left:0;right:0;z-index:7;display:flex;align-items:center;justify-content:space-between;padding:5px 8px 0 12px}
+.mtarot .riel .x,.mtarot .riel .c{all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#E9DFC6}
+.mtarot .riel .c span{min-width:22px;height:22px;border-radius:999px;background:#CBA258;color:#120c18;font:700 11px/22px Archivo,sans-serif}
+.mtarot .riel .vacio{width:44px}
+.mtarot .riel .wm{font:700 13px/1 Archivo,sans-serif;color:#E9DFC6;display:flex;align-items:center;gap:5px}
+.mtarot .cab{padding-top:56px}
+.mtarot h1{margin:0;font-family:'Bodoni Moda',serif;font-style:italic;font-weight:500;font-size:40px;line-height:1;color:#E9DFC6}
+.mtarot .cab p{margin:8px 0 0;font-style:italic;font-size:18px;color:#BBB0A0}
+.mtarot .elegida{position:relative;z-index:8;margin:22px auto 0;max-width:320px;padding:0 20px;min-height:96px}
+.mtarot .elegida b{display:block;font:500 22px/1.15 'Bodoni Moda',serif;color:#F3E9D2}
+.mtarot .elegida s{display:block;text-decoration:none;margin-top:6px;font:500 13px/1 'IBM Plex Mono',monospace;color:#C9A85C}
+.mtarot .elegida button{all:unset;box-sizing:border-box;cursor:pointer;margin-top:14px;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 22px;border-radius:999px;background:#C9A85C;color:#120c18;font:700 13px/1 Archivo,sans-serif;letter-spacing:.04em}
+.mtarot .elegida button:focus-visible{outline:3px solid #8CC8EC;outline-offset:3px}
+.mtarot .mano{position:relative;height:calc(var(--ancho) * 5 / 3 * 1.38 + 16px);margin-top:4px}
+.mtarot .k u,.mtarot .fila u{text-decoration:none;font:500 11px/1 'Bodoni Moda',serif;letter-spacing:.06em}
+.mtarot .k u{position:absolute;top:6px;left:7px;z-index:1;background:#F3E9D2;color:#2a1d0e;padding:3px 6px;border-radius:4px}
+.mtarot .k.x u{background:transparent;color:#BBB0A0}
+.mtarot .pista{margin:6px 20px 0;font-style:italic;font-size:15px;color:#BBB0A0}
+.mtarot .lista{max-width:560px;margin:22px auto 0;padding:0 16px;text-align:left}
+.mtarot .lista h2{margin:0 0 6px;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;text-transform:uppercase;color:#C9A85C}
+.mtarot .fila{all:unset;box-sizing:border-box;cursor:pointer;display:flex;gap:12px;align-items:flex-start;width:100%;padding:14px 10px;border-top:1px solid rgba(233,223,198,.14);border-radius:8px}
+.mtarot .fila u{flex:0 0 34px;height:34px;border:1.5px solid #C9A85C;border-radius:999px;display:flex;align-items:center;justify-content:center;color:#E9DFC6;margin-top:2px}
+.mtarot .fila .t{flex:1;min-width:0}
+.mtarot .fila b{display:block;font:500 18px/1.2 'Bodoni Moda',serif;color:#F3E9D2}
+.mtarot .fila b em{font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.14em;color:#C9A85C;margin-left:6px;vertical-align:middle;text-transform:uppercase}
+.mtarot .fila .d{display:block;margin-top:5px;font-size:15px;line-height:1.4;color:#D9CFBA}
+.mtarot .fila .p{display:block;margin-top:7px;font:500 11px/1 'IBM Plex Mono',monospace;color:#C9A85C}
+.mtarot .fila .ir{flex:0 0 auto;align-self:center;font-size:18px;color:#C9A85C}
+.mtarot .fila.on{background:rgba(201,168,92,.12)}
+.mtarot .fila.on u{background:#C9A85C;color:#120c18}
+.mtarot .fila.x u{border-color:#7B5EA0;color:#8CC8EC}
+.mtarot .fila.x .d{color:#BBB0A0}
+.mtarot .fila:focus-visible{outline:3px solid #8CC8EC;outline-offset:2px}
+.mtarot .k{all:unset;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;cursor:pointer;position:absolute;left:50%;bottom:8px;
+  width:var(--ancho);aspect-ratio:3/5;margin-left:calc(var(--ancho) / -2);
+  background:#F3E9D2;border:3px solid #C9A85C;border-radius:10px;overflow:hidden;color:#2a1d0e;text-align:left;
+  transform-origin:var(--origen);transform:rotate(calc(var(--o) * var(--paso)));box-shadow:0 10px 24px rgba(0,0,0,.45);
+  animation:abanico .7s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:var(--d);transition:transform .25s ease,box-shadow .25s ease}
+.mtarot .k img{width:100%;height:62%;object-fit:cover;display:block;flex-shrink:0}
+.mtarot .k .sinfoto{display:block;height:62%;background:#d9c9a8;flex-shrink:0}
+.mtarot .k b{display:block;font:700 13px/1.15 'Bodoni Moda',serif;padding:8px 8px 0}
+.mtarot .k s{display:block;text-decoration:none;font:500 11px/1 'IBM Plex Mono',monospace;padding:6px 8px 0;color:#5E4526}
+.mtarot .k i{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:#2a1d0e;color:#C9A85C;font:normal 13px/22px serif;text-align:center}
+.mtarot .k.x{background:#1c1324;border-color:#7B5EA0;color:#8CC8EC;align-items:center;justify-content:center;gap:10px;text-align:center}
+.mtarot .k.x .luna{font-size:40px;line-height:1}
+.mtarot .k.x em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;text-transform:uppercase;font-style:normal;color:#BBB0A0}
+.mtarot .k.sel{z-index:6;transform:rotate(calc(var(--o) * var(--paso))) translateY(-34%);box-shadow:0 0 0 2px #E8C66A,0 18px 36px rgba(0,0,0,.6)}
+.mtarot .k:focus-visible{outline:3px solid #8CC8EC;outline-offset:3px}
+@keyframes abanico{from{transform:rotate(0deg) translateY(40px);opacity:0}to{transform:rotate(calc(var(--o) * var(--paso)));opacity:1}}
+@media (prefers-reduced-motion:reduce){.mtarot .k{animation:none;transition:none}}
+@media (min-width:700px){.mtarot .mano{height:calc(var(--ancho) * 5 / 3 * 1.42 + 40px)}.mtarot .k{bottom:60px}}
 /* ── LA APP EN PC Y LAPTOP (2026-09-30) ─────────────────────────────────────────────────
    El dueño: «para pc y laptop básicamente el app visualmente no sirve, sale recortada como si
    fuera en cel» — y pidió que NO sea otra maqueta: «debe ser pantalla adaptable». Hasta acá
@@ -1445,7 +1506,7 @@ body.kb-open #app{padding-bottom:0}
    · las barras fijas van a todo el ancho, o a la mitad derecha cuando la pantalla está partida.
    Las pantallas viejas que aún no migraron (perfil, pedidos…) siguen en su columna. */
 @media (min-width:900px){
-  #app:has(.pta,.m15,.f01,.b3,.bw,.mw,.m30,.m34,.m31,.en,.m06,.msec,.mfj,.mtp,.mgr,.mct,.m35){max-width:none;box-shadow:none}
+  #app:has(.pta,.mtarot,.m15,.f01,.b3,.bw,.mw,.m30,.m34,.m31,.en,.m06,.msec,.mfj,.mtp,.mgr,.mct,.m35){max-width:none;box-shadow:none}
   .m30,.m34,.en,.m06,.msec,.mfj,.mtp,.mgr,.mct,.m35{padding-left:max(26px,calc(50% - 300px));padding-right:max(26px,calc(50% - 300px))}
   .mw{padding-left:max(0px,calc(50% - 320px));padding-right:max(0px,calc(50% - 320px))}
   .m35 .ir,.en-go,.m30-go,.m06-go,.msec .go,.mfj .go,.mgr .go{max-width:none}
@@ -1544,11 +1605,11 @@ body.kb-open #app{padding-bottom:0}
     // Precios y doble de la v4 (docs/MENU_CLASICOS_USA.md, modelo/rentabilidad_por_parte.py).
     proteinas: [
       { id: "P03", nombre: "Pollo", sabor: "Cajun", desc: "Pechuga deshilachada con la mezcla cajún de la casa. Calor seco, no picante de salsa.", p15: 13.9, p30: 23.9, dbl15: 6, dbl30: 11, soloSecreto: true },
-      { id: "P04", nombre: "Atún", sabor: "House", desc: "En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.", p15: 23.9, p30: 35.9, dbl15: 10.9, dbl30: 21.9, foto: "img/prot_p04.webp" },
+      { id: "P04", nombre: "Atún", sabor: "House", desc: "En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.", p15: 22.9, p30: 33.9, dbl15: 10.9, dbl30: 21.9, foto: "img/prot_p04.webp" },
       { id: "P05", nombre: "Embutido", sabor: "Italiano", desc: "Tres fiambres ahumados laminados finos y puestos en pliegues, nunca planos.", p15: 16.9, p30: 32.9, dbl15: 9.9, dbl30: 19.9, soloEnSignature: true, foto: "img/prot_p05.webp" },
-      { id: "P06", nombre: "Albóndiga", sabor: "Marinara", desc: "Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.", p15: 23.9, p30: 35.9, dbl15: 6.9, dbl30: 13.9, foto: "img/prot_p06.webp" },
-      { id: "P08", nombre: "Pavo", sabor: "Horneado", desc: "Lonjas de un milímetro puestas en pliegues, laminadas el mismo día.", p15: 24.9, p30: 36.9, dbl15: 9, dbl30: 17, foto: "img/prot_p08.webp" },
-      { id: "P09", nombre: "Res", sabor: "Laminada", desc: "Laminada fina y salteada al momento.", p15: 23.9, p30: 35.9, dbl15: 7, dbl30: 13.9, foto: "img/prot_p09.webp" }
+      { id: "P06", nombre: "Albóndiga", sabor: "Marinara", desc: "Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.", p15: 21.9, p30: 32.9, dbl15: 6.9, dbl30: 13.9, foto: "img/prot_p06.webp" },
+      { id: "P08", nombre: "Pavo", sabor: "Horneado", desc: "Lonjas de un milímetro puestas en pliegues, laminadas el mismo día.", p15: 23.9, p30: 34.9, dbl15: 9, dbl30: 17, foto: "img/prot_p08.webp" },
+      { id: "P09", nombre: "Res", sabor: "Laminada", desc: "Laminada fina y salteada al momento.", p15: 22.9, p30: 33.9, dbl15: 7, dbl30: 13.9, foto: "img/prot_p09.webp" }
     ],
     vegetales: [
       { id: "T01", nombre: "Tomate", sabor: "Fresco", desc: "En rodajas gruesas, cortado el mismo día." },
@@ -1565,16 +1626,15 @@ body.kb-open #app{padding-bottom:0}
       { id: "C02", nombre: "Cheddar", desc: "Curado y salado. No se pierde debajo de la carne." }
     ],
     salsas: [
-      { id: "S01", nombre: "Aioli", sabor: "Signature", desc: "Ajo y limón sobre base cremosa. Suave: va con todo." },
       { id: "S02", nombre: "Spicy", sabor: "Mayo", desc: "Cremosa al entrar. El calor llega después, y se queda.", picante: true, soloSecreto: true },
-      { id: "S03", nombre: "Smoke", sabor: "BBQ", desc: "Ahumada y espesa, con miel y pimentón. La más contundente." },
+      // 2026-10-01 (dueño): «alioli se va, entra mayonesa americana y mayonesa light, ketchup
+      // americano». Las públicas quedan en seis, más las dos del menú secreto.
+      { id: "S13", nombre: "Mayonesa", sabor: "Americana", desc: "La clásica: cremosa y suave. Va con todo." },
+      { id: "S14", nombre: "Mayonesa", sabor: "Light", desc: "La misma mayonesa, en su versión ligera." },
+      { id: "S15", nombre: "Ketchup", sabor: "Americano", desc: "Tomate, dulce y ácido a la vez." },
       { id: "S04", nombre: "Honey", sabor: "Mustard", desc: "Miel y mostaza suave. Dulce que corta, no que empalaga." },
-      { id: "S05", nombre: "SNDWCH", sabor: "Special", desc: "Salada y umami, imposible de ubicar. No decimos qué lleva." },
       { id: "S06", nombre: "Oil & Vinegar", sabor: "Classic", desc: "Aceite de oliva y vinagre. Lo que vuelve italiano a un sándwich." },
-      { id: "S08", nombre: "Teriyaki", sabor: "Glaze", desc: "Soja, jengibre y azúcar reducidos hasta que brillan." },
       { id: "S09", nombre: "Chimichurri", sabor: "Piña y Ají", desc: "Piña asada y ají. Dulce y ahumada de entrada, con picor al final.", picante: true },
-      { id: "S10", nombre: "Peanut", sabor: "Satay", desc: "Maní tostado con soya y jengibre. Espesa y tostada." },
-      { id: "S11", nombre: "Mostaza", sabor: "Dijon", desc: "Ácida y filosa. Sin una gota de dulce." },
       { id: "S12", nombre: "Picante", sabor: "Miel", desc: "Primero la miel. Después el golpe.", picante: true, soloSecreto: true }
     ],
     bebidas: [
@@ -1596,11 +1656,11 @@ body.kb-open #app{padding-bottom:0}
         vegetales: ["T10", "T06"],
         salsas: [],
         p15: 22.9,
-        p30: 32.9,
+        p30: 33.9,
         queso: "C02",
         foto: "img/sig09.jpg",
         fotoVertical: "img/sig09_v.webp",
-        pitch: "Res laminada fina, salteada al momento con cebolla y pimiento, y cheddar fundido encima. Sin salsa: no le hace falta."
+        pitch: "El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. Tan jugoso que no lleva salsa. Es el que pides cuando el hambre va en serio."
       },
       {
         id: "SIG02",
@@ -1612,11 +1672,11 @@ body.kb-open #app{padding-bottom:0}
         vegetales: ["T01", "T03"],
         salsas: ["S06"],
         p15: 21.9,
-        p30: 28.9,
+        p30: 32.9,
         queso: "C01",
         foto: "img/sig02.jpg",
         fotoVertical: "img/sig02_v.webp",
-        pitch: "Para la noche en que ya decidiste que no vas a cocinar. Albóndigas hechas acá, cocidas dentro de su propia marinara, con queso americano derretido hasta el borde. Se come con las dos manos y con servilleta al lado."
+        pitch: "Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. Caliente, contundente, de los que se comen con las dos manos. Para la noche en que ya decidiste no cocinar."
       },
       {
         id: "SIG10",
@@ -1631,7 +1691,7 @@ body.kb-open #app{padding-bottom:0}
         p30: 34.9,
         foto: "img/sig10.jpg",
         fotoVertical: "img/sig10_v.webp",
-        pitch: "Pavo horneado en lonjas finas, con lechuga, tomate, cebolla y pimiento, terminado con aceite y vinagre."
+        pitch: "Pavo horneado en lonjas finas con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. Llena sin pesar: el almuerzo que no te tumba la tarde."
       },
       {
         id: "SIG12",
@@ -1643,11 +1703,11 @@ body.kb-open #app{padding-bottom:0}
         vegetales: [],
         salsas: [],
         p15: 22.9,
-        p30: 36.9,
+        p30: 33.9,
         queso: "C02",
         foto: "img/sig12.jpg",
         fotoVertical: "img/sig12_v.webp",
-        pitch: "El Classic Tuna con cheddar fundido encima: atún en lascas gruesas, mayonesa y pimienta blanca, y el queso que lo junta todo."
+        pitch: "Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco. Cremoso, caliente y con todo el sabor del clásico americano."
       },
       {
         id: "SIG11",
@@ -1659,11 +1719,11 @@ body.kb-open #app{padding-bottom:0}
         vegetales: ["T09", "T01", "T03", "T06"],
         salsas: ["S06"],
         p15: 23.9,
-        p30: 33.9,
+        p30: 34.9,
         queso: "C01",
         foto: "img/sig11.jpg",
         fotoVertical: "img/sig11_v.webp",
-        pitch: "Embutidos italianos en pliegues, queso americano, lechuga, tomate, cebolla y pimiento, con oil & vinegar, como en los delis de siempre."
+        pitch: "Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. El sándwich de deli de toda la vida: cada capa suma sabor y ninguna sobra. Para cuando quieres de todo en un solo pan."
       },
       {
         id: "SIG04",
@@ -1675,10 +1735,10 @@ body.kb-open #app{padding-bottom:0}
         vegetales: [],
         salsas: [],
         p15: 20.9,
-        p30: 34.9,
+        p30: 31.9,
         foto: "img/sig04.jpg",
         fotoVertical: "img/sig04_v.webp",
-        pitch: "Para comer en el escritorio con una mano, sin que se desarme entre bocado y bocado: no lleva nada suelto adentro. Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Nada más."
+        pitch: "Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Simple y bien hecho: no lleva nada suelto, así que se come con una mano, en el escritorio o en camino."
       },
       {
         id: "SIG05",
@@ -1691,7 +1751,7 @@ body.kb-open #app{padding-bottom:0}
         vegetales: ["T04", "T06", "T03"],
         salsas: ["S02", "S12"],
         p15: 24.9,
-        p30: 30.9,
+        p30: 35.9,
         foto: "img/sig05.jpg",
         fotoVertical: "img/sig05_v.webp",
         pitch: "Solo para clientes iniciados. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo."
@@ -2763,7 +2823,6 @@ var WA = '51930957640', GOLD = '#CBA258';
 var SHADOW_SM = '0 2px 6px rgba(0,0,0,.22)';
 var SHADOW_MD = '0 4px 14px rgba(0,0,0,.28)';
 var SHADOW_GOLD = SHADOW_SM;
-function surfaceGrad(top, bottom) { return 'linear-gradient(160deg,' + top + ',' + bottom + ')'; }
 // Identidad legal del negocio — mostrada en el pie de página, en Términos, y como
 // identificación del proveedor en el Libro de Reclamaciones (exigido por el Código de
 // Protección y Defensa del Consumidor). Debe coincidir EXACTAMENTE con lo que el backend
@@ -3157,39 +3216,6 @@ function nextFreeSlot() {
         return { day: 'tomorrow', label: 'mañana', slot: man[0] };
     return null;
 }
-// #60 — Franjas ofrecidas para un pedido FIJO. Se toma el horario más amplio de la semana y
-// no el de hoy: la recurrencia es para un día futuro, y acotarla al horario de hoy
-// escondería franjas perfectamente válidas (o dejaría la lista vacía un día cerrado).
-function recurringSlotOptions() {
-    var abre = 24, cierra = 0;
-    for (var i = 0; i < 7; i++) {
-        var r = STORE_HOURS[i];
-        if (!r)
-            continue;
-        if (r[0] < abre)
-            abre = r[0];
-        if (r[1] > cierra)
-            cierra = r[1];
-    }
-    if (abre >= cierra)
-        return [];
-    var out = [];
-    for (var m = abre * 60; m < cierra * 60; m += 30) {
-        out.push(String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'));
-    }
-    return out;
-}
-// Salta a esa franja y deja el pedido en modo programado, para que ofrecerla sea un toque y
-// no una instrucción que el cliente tiene que ejecutar a mano.
-function useNextFreeSlot() {
-    var n = nextFreeSlot();
-    if (!n)
-        return;
-    scheduleMode = 'later';
-    schedDay = n.day;
-    schedSlot = n.slot;
-    confirmRerender();
-}
 function schedInputValue() {
     if (!schedSlot)
         return '';
@@ -3247,7 +3273,6 @@ function estimatedDeliveryRange() {
     var extra = Math.max(0, queueAhead) * queueMinutesPerOrder;
     return [ESTIMATED_DELIVERY_RANGE[0] + extra, ESTIMATED_DELIVERY_RANGE[1] + extra];
 }
-function estimatedRangeText() { var r = estimatedDeliveryRange(); return r[0] + '-' + r[1] + ' min'; }
 // La ventana como HORA, que es como la dibujan las maquetas («Llega 7:40 – 8:05 p.m.»).
 // Antes de pagar se estima con la cola que se ve; después, la del pedido manda: el servidor
 // la fijó al crearlo (promised_from/promised_to) y es la que se compara al entregar.
@@ -3832,6 +3857,8 @@ function elegirLado(id) {
         render();
         return;
     }
+    // Se entra siempre por el tarot (la carta), no por el último plato que se vio.
+    sandoEnPlatos = false;
     sndScreen = 'o_home';
     render();
 }
@@ -3979,7 +4006,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'cc9ab8ec56';
+var APP_BUILD = 'fefaf22dbc';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -4079,18 +4106,6 @@ var adminLightMode = localStorage.getItem('sw_admin_light') === '1';
 // el dueño para implementar junto con el reordenamiento del grid.
 var adminToolsDrawerOpen = false;
 function toggleAdminToolsDrawer() { adminToolsDrawerOpen = !adminToolsDrawerOpen; render(); }
-var recNewPin = null;
-var recEmailMasked = null;
-// Antes cualquier error del servidor (o incluso el splash de "Verificando...") borraba
-// los 3 campos enteros — el peor momento posible para pedirle a un cliente ya frustrado
-// (no puede entrar a su cuenta) que vuelva a teclear todo, en vez de solo corregir el
-// campo que falló (ej. la fecha con formato equivocado) (hallazgo de auditoría UX, MEDIO).
-var recPhone = '', recDni = '', recBday = '';
-// El PIN nuevo se mostraba siempre visible en texto plano y grande apenas se generaba —
-// riesgo real de shoulder-surfing en un dispositivo compartido (hallazgo de auditoría de
-// UX). Ahora arranca oculto (blur) y el cliente decide cuándo revelarlo con un tap.
-var recPinRevealed = false;
-function togglePinReveal() { recPinRevealed = !recPinRevealed; render(); }
 var myAddresses = [], myFavorites = [], pickedAddrId = null;
 // LOS IDS DE DIRECCIÓN SON NÚMEROS (bigint en `saved_addresses`), pero viajan como TEXTO en
 // cada onclick (`pickAddr('5')`). Comparados con === nunca coinciden: elegir una dirección
@@ -4098,12 +4113,7 @@ var myAddresses = [], myFavorites = [], pickedAddrId = null;
 // Toda comparación de un id que pasó por el HTML va por acá.
 function mismoId(a, b) { return a != null && b != null && String(a) === String(b); }
 var wPhone = '', wAmt = '', wMsg = '';
-var gcPhone = '', gcAmt = '', gcMsg = '';
-// Bloquea un segundo tap mientras la compra sigue en curso (mismo patrón que
-// _payingInProgress en doOrder) — antes esta pantalla no tenía ningún guard contra
-// doble-submit, a diferencia del checkout normal.
-var _giftBuyInProgress = false;
-var rtStars = 0, rtMsg = '', chalMsg = '', discChalMsg = '';
+var rtStars = 0, rtMsg = '';
 var rtConsent = false, justRatedRef = null;
 var cmplStep = 'form', cmplKind = 'reclamo', cmplMinor = false, cmplErr = '', cmplCode = null, cmplBusy = false;
 var adminComplaints = [], cmplFilterStatus = '', cmplRespondingId = null;
@@ -4201,10 +4211,6 @@ var restockNotified = (function () { try {
 catch (e) {
     return [];
 } })();
-function saveRestockNotified() { try {
-    localStorage.setItem('sw_restock_notified', JSON.stringify(restockNotified));
-}
-catch (e) { } }
 try {
     groupJoinName = localStorage.getItem('sw_group_name') || '';
 }
@@ -4901,15 +4907,6 @@ function parseBdayDDMMYYYY(raw) {
 // tenía su propia copia idéntica de este helper).
 function sec(t, b) { return '<div style="margin-bottom:20px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';letter-spacing:.15em;margin-bottom:8px">' + t + '</div><p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.6">' + b + '</p></div>'; }
 function isAvail(code) { return invStock[code] !== false; }
-// El corte de marca, como componente. `alto` acepta cualquier medida CSS; los llamantes
-// que lo usan de divisor a pantalla completa le pasan '100%' y lo posicionan absoluto con
-// un desborde arriba y abajo, para que las barras salgan del encuadre en vez de terminar
-// en punta dentro de la pantalla.
-function CUT(alto, ancho, gap) {
-    var st = 'height:' + (alto || '100%') + (ancho ? ';width:' + ancho : '');
-    return '<div class="sw-cut" aria-hidden="true"' + (gap ? ' style="gap:' + gap + '"' : '') + '>'
-        + '<i style="' + st + '"></i><i style="' + st + '"></i></div>';
-}
 // ── EL ACENTO ES DEL LADO; EL DORADO ES DEL DINERO ────────────────────────────────────
 //
 // Regla que faltaba y que se notó al pintar el armador sobre el mundo de WICHO: el dorado
@@ -4945,9 +4942,7 @@ var LADO_WICHO = [
     // lados comparten —el dueño pidió que cada lado tuviera su bebida—, así que su color no
     // puede estar fijado en esta lista. Lo decide ladoActual() por el lado de entrada.
     'p_rewards', // eliges qué canjear
-    'p_favorites', // tus armados guardados
     'p_recurring', // eliges qué se repite y cuándo
-    'gift_card', // eliges a quién le regalas
     'group_order' // cada quien arma el suyo
 ];
 function ladoActual() {
@@ -4963,17 +4958,6 @@ function ladoActual() {
 function ACC() { return ladoActual() === 'wicho' ? 'var(--sw-sky,#8CC8EC)' : GOLD; }
 // El texto que va ENCIMA del acento. Sobre celeste nunca es blanco: no contrasta.
 function ACC_INK() { return ladoActual() === 'wicho' ? 'var(--sw-sky-ink,#0E1A17)' : 'var(--sw-on-gold,#241a08)'; }
-// Uno de los dos hermanos, como elemento de interfaz. `activo` dispara su reacción y,
-// en el caso de WICHO, pone a girar su ojo. El ojo se dibuja ENCIMA del de la ilustración
-// (mismo centro y radio, muestreados del archivo) porque una espiral es geometría y se
-// puede redibujar; una sonrisa nueva no, ésa exige dibujo del dueño.
-function BRO(quien, ancho, activo) {
-    var esW = quien === 'wicho';
-    var ojo = esW ? '<div class="sw-eye">' + SPIRAL(60, '#503C64', !!activo) + '</div>' : '';
-    return '<div class="sw-bro' + (activo ? ' sw-on' : '') + '" style="width:' + ancho + '">'
-        + '<img class="sw-bro-' + quien + '" src="img/' + quien + '.png" alt="' + (esW ? 'WICHO' : 'SANDO') + '" loading="lazy">'
-        + ojo + '</div>';
-}
 // La espiral del ojo de WICHO. `gira` la convierte en el indicador de carga.
 function SPIRAL(size, color, gira) {
     var n = 148, vueltas = 3.2, r = (size / 2) - 2.4, pts = [];
@@ -5383,24 +5367,6 @@ function sigBadge(s) { return (s.newUntil && Date.now() < new Date(s.newUntil + 
 // `availableUntil` es para variantes de temporada de verdad: el Signature entero deja de
 // listarse/pedirse al pasar la fecha. Espejo server-side: SIG_AVAILABILITY en catalog.ts.
 function sigAvailable(s) { return !s.availableUntil || Date.now() < new Date(s.availableUntil + 'T23:59:59').getTime(); }
-// `thumb` (opcional, HTML de un <img> ya armado) muestra una miniatura a la izquierda —
-// mismo patrón que ya usaba la lista de Signature builds. Sin thumb, la tarjeta se ve
-// exactamente igual que antes (bases nunca tienen foto propia, solo proteínas).
-// Punto de anclaje del botón de "Continuar con Google". Google lo dibuja él mismo dentro
-// de este div (renderButton), así que acá solo va el hueco y la línea que lo explica.
-// Existe como helper y no copiado en cada pantalla porque el botón aparece en tres sitios
-// —PUNTOS sin sesión, el checkout de invitado y la primera apertura— y tres copias del
-// mismo markup se desincronizan a la primera.
-// mountGoogleButton() lo busca por id después de cada render y no hace nada si no está,
-// así que una pantalla que no lo incluya sigue funcionando igual.
-function googleCtaHTML(texto) {
-    if (!googleConfigured())
-        return '';
-    return '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin:14px 0">'
-        + '<div id="google-btn-mount"></div>'
-        + (texto ? '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);text-align:center;max-width:280px;line-height:1.5">' + texto + '</div>' : '')
-        + '</div>';
-}
 function ST(n, t, s) { return '<div style="margin-bottom:20px"><h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.15;text-wrap:balance">' + (n ? n + '<span class="cut-sep" style="color:' + GOLD + '"> // </span>' : '') + t + '</h2>' + (s ? '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:5px">' + s + '</p>' : '') + '</div>'; }
 // font-size:15px a propósito (no 14px) — iOS Safari hace zoom automático al enfocar
 // cualquier input con font-size menor a 16px, lo que rompe el layout del checkout en
@@ -5662,16 +5628,6 @@ function startOrderWithSig(id) {
     mode = 'sig';
     sigId = id;
     go('o_sig');
-}
-// Igual que startOrder('byo') pero deja el pan ya preseleccionado en el paso 1 — antes las
-// filas de BASES en Home decían "Elegir →" pero llamaban a startOrder('byo') sin pasar
-// nada, así que abrían el asistente desde cero sin preseleccionar el pan que el cliente
-// acababa de tocar (hallazgo de auditoría UX, ALTO — texto y acción no coincidían).
-function startOrderWithBase(id) {
-    resetBuilder();
-    mode = 'byo';
-    base = id;
-    go('o_build');
 }
 // editingItemQty: cuando se está editando una línea ya en el carrito (ver
 // editCartItem), guarda la cantidad original para que currentBuiltItem() la respete al
@@ -5958,20 +5914,7 @@ function cartComboDiscount() { return cartDesglose().combo; }
 function cartOffPeakDrinkDiscount() { return cartDesglose().valle; }
 // Cuánto costaría subir ESTE sándwich (ya en 15CM) a 30CM, pan incluido. Usado por R03.
 function itemSizeUpgradeDiff(it) { var t = DINERO.tasar(it); return t ? t.subir30 / 100 : 0; }
-// 15CM y no del menú secreto: la regla de R06 y del sándwich gratis del organizador.
-function isFreeSandwichEligible(it) { var t = DINERO.tasar(it); return !!t && t.elegible.sandwich; }
-// Cuántos sándwiches (no ítems: las bebidas no cuentan) hay en el carrito.
-function cartSandwichQty() {
-    var n = 0;
-    cart.forEach(function (it) { if (it.type !== 'side')
-        n += it.qty; });
-    return n;
-}
-// Índice del 15CM que se regala al organizador (-1 si no corresponde) y cuánto vale.
-function organizerFreeIdx() { return cartDesglose().organizador.indice; }
 function organizerFreeAmount() { return cartDesglose().organizador.monto; }
-// Precio del sándwich (pan incluido) o de la bebida, sin extras.
-function itemBasePrice(it) { var t = DINERO.tasar(it); return t ? t.base / 100 : 0; }
 // La primera línea del carrito a la que se le puede aplicar la recompensa, o -1.
 function findRewardTargetIndex(rewardId) { return DINERO.lineaDeLaRecompensa(cart, rewardId); }
 // Cuánto perdona la recompensa sobre la línea `targetIdx`. Se pide el desglose con esa
@@ -5982,8 +5925,6 @@ function rewardWaiverAmount(rewardId, targetIdx) {
     var d = DINERO.desglose(cart, { recompensa: rewardId, organizador: !!pendingGroupCode, cuandoMs: effectiveOrderDate().getTime() });
     return d.recompensa && d.recompensa.indice === targetIdx ? d.recompensa.monto : 0;
 }
-// Combo y hora valle no se suman: se aplica el mayor.
-function cartStackedDiscount() { var d = cartDesglose(); return Math.max(d.combo, d.valle); }
 function cartBaseTotal() { return cart.reduce(function (s, it) { return s + itemLineTotal(it); }, 0); }
 // El código promocional lo valida y lo descuenta el servidor aparte; acá se resta el mismo
 // monto que él confirmó.
@@ -6143,43 +6084,6 @@ function addSideToCart(code) {
     fbTrack('AddToCart', { currency: 'PEN', value: d ? d.p : 0 });
     showToast('¡' + (d ? d.l : 'Producto') + ' agregado! //', 'success');
 }
-function sideQtyChange(code, delta) {
-    var it = cart.find(function (x) { return x.type === 'side' && x.code === code; });
-    if (!it)
-        return;
-    it.qty += delta;
-    if (it.qty <= 0)
-        cart = cart.filter(function (x) { return x !== it; });
-    // Mismo guard que cartQtyChange/cartRemove/editCartItem — antes faltaba acá, así que
-    // quitar a 0 la bebida a la que se le aplicó R05 (bebida gratis) desde ESTE picker (a
-    // diferencia de "Quitar" en TU CARRITO) dejaba la recompensa pintada como seleccionada
-    // pero sin poder tocarla para soltarla (hallazgo de auditoría UX, MEDIO).
-    if (appliedReward && findRewardTargetIndex(appliedReward) < 0)
-        appliedReward = null;
-    saveCart();
-    render();
-}
-function cartQtyChange(idx, delta) {
-    syncConfirmFields();
-    var it = cart[idx];
-    if (!it)
-        return;
-    it.qty += delta;
-    if (it.qty <= 0)
-        cart.splice(idx, 1);
-    if (appliedReward && findRewardTargetIndex(appliedReward) < 0)
-        appliedReward = null;
-    saveCart();
-    render();
-}
-function cartRemove(idx) {
-    syncConfirmFields();
-    cart.splice(idx, 1);
-    if (appliedReward && findRewardTargetIndex(appliedReward) < 0)
-        appliedReward = null;
-    saveCart();
-    render();
-}
 // pendingGroupCode se limpia acá y en doLogout() a propósito (2026-08-27). Antes solo se
 // limpiaba tras un pedido pagado con éxito, así que sobrevivía a un abandono: el
 // organizador cerraba un grupo de 5+, no pagaba, vaciaba el carrito, armaba un pedido
@@ -6253,52 +6157,6 @@ async function loadUserExtras() {
         myOrders = results[2].value.orders || [];
     render();
 }
-// ORDER SIGNATURE
-// Lista de espera pre-lanzamiento — el negocio real aún no abre (ver CLAUDE.md), así que
-// esto le da a cualquier visitante sin cuenta una forma de decir "avísenme" sin la
-// fricción de un registro completo (DNI, PIN, etc.). Solo se muestra a invitados y
-// desaparece (localStorage) apenas se anota, para no insistir en cada visita.
-async function joinWaitlist() {
-    var phone = gv('wl-phone').trim();
-    var name = gv('wl-name').trim();
-    if (phone.replace(/\D/g, '').length < 6) {
-        wlMsg = 'Ingresa un teléfono válido.';
-        render();
-        return;
-    }
-    wlMsg = 'Enviando...';
-    render();
-    try {
-        await api('waitlist-join', { phone: phone, name: name || null, source: 'app_home' });
-        wlDone = true;
-        localStorage.setItem('sw_wl_done', '1');
-        wlPhone = '';
-        wlName = '';
-        wlMsg = '';
-        fbTrack('Lead', { content_name: 'lista_de_espera' });
-        showToast('¡Listo! Te avisamos apenas abramos.', 'success');
-    }
-    catch (e) {
-        wlMsg = e.message || 'No se pudo registrar.';
-    }
-    render();
-}
-function waitlistCardHTML() {
-    if (cust || wlDone || businessLaunched)
-        return '';
-    // Copy reforzado (plan de conversión desde frío, MARKETING_PLAN.md §14.4.2) — antes era
-    // un mensaje puramente pasivo ("te avisamos"), sin ningún incentivo concreto visible en
-    // el primer segundo. Ahora menciona el código BIENVENIDA real (ya creado, -S/5, mínimo
-    // S/15) en vez de prometer un mecanismo de "primeros N inscritos" que no existe en el
-    // backend — nunca se promete algo que la app no cumple de verdad (Product Principle #2).
-    return '<div style="background:var(--sw-card,#1B1F18);border:1px solid ' + GOLD + ';border-radius:12px;padding:16px;margin-bottom:16px">'
-        + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Sé de los primeros<span class="cut-sep" style="color:' + GOLD + '"> // </span>en probarlo</div>'
-        + '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin:4px 0 12px;line-height:1.5">Déjanos tu teléfono y te avisamos apenas empecemos a repartir de verdad — usa el código <b style="color:' + GOLD + '">BIENVENIDA</b> en tu primer pedido y llévate S/5 de descuento.</div>'
-        + '<div style="display:flex;flex-direction:column;gap:8px">' + INP('wl-phone', 'Teléfono', 'tel', wlPhone) + INP('wl-name', 'Nombre // opcional', 'text', wlName) + '</div>'
-        + (wlMsg ? '<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger,#ff8888);margin-top:8px">' + esc(wlMsg) + '</div>' : '')
-        + '<div style="margin-top:10px">' + BTN('Avísame //', 'joinWaitlist()') + '</div>'
-        + '</div>';
-}
 // ── PANTALLA DE ELECCION (concepto 1) ─────────────────────────────────────────────
 // Las dos mitades del logo, a sangre, cada una como boton de su lado. Sin lista de
 // producto debajo y sin tarjetas: lo unico que se decide aca es de quien es el pedido.
@@ -6338,16 +6196,6 @@ function RIEL(o) {
     var der = o.derecha || '<div style="width:44px"></div>';
     return '<div style="position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:6px;height:52px;padding:0 8px;'
         + 'background:var(--sw-bg,#0F1A14);border-bottom:1px solid var(--sw-border-soft,#16241C)">' + izq + centro + der + '</div>';
-}
-// El boton de volver a la puerta. Es el UNICO camino para cambiar de hermano, y es a
-// proposito que no sea un interruptor siempre visible: dos pestanas convertirian otra vez
-// los dos mundos en una sola pantalla con un filtro.
-function BOTON_PUERTA() {
-    return '<button onclick="volverALaPuerta()" aria-label="Cambiar de lado" style="all:unset;cursor:pointer;width:44px;height:44px;'
-        + 'display:flex;align-items:center;justify-content:center;gap:3px">'
-        + '<span style="display:block;width:9px;height:9px;border-radius:999px;background:' + GOLD + '"></span>'
-        + '<span style="display:block;width:9px;height:9px;border-radius:999px;background:var(--sw-sky,#8CC8EC)"></span>'
-        + '</button>';
 }
 // La PANTALLA - el contenedor. El cuerpo NO trae margen lateral a proposito: la imagen va a
 // sangre y es BLOQUE/SECCION quien mete el texto en la caja. Asi "a sangre" es el estado
@@ -6454,85 +6302,6 @@ function sMenuSecreto() {
         + '<div class="go sw-barra"><button class="oro" onclick="startOrderWithSig(\'' + sig.id + '\')">Pedirlo a ciegas</button><button class="cel" onclick="startOrderWithSig(\'' + sig.id + '\')">' + precio + '</button></div>'
         + '</div>';
 }
-function vaultSection() {
-    var secretSig = SIGS.find(function (s) { return s.secret; });
-    if (!secretSig)
-        return '';
-    // ── EL MENU SECRETO (rediseñado 2026-09-17, variantes A/B/D elegidas por el dueño) ──
-    //
-    // El ojo en espiral de WICHO es el simbolo: en esta paleta el morado tiene UN solo
-    // trabajo —lo que sorprende— asi que el secreto es justo para lo que existe. Y gira,
-    // porque un ojo hipnotico quieto es un dibujo; girando es una promesa.
-    //
-    // BLOQUEADO: la foto REAL detras, desenfocada al punto de que se ve que HAY algo pero
-    // no que es. Al presionar, el desenfoque BAJA sin llegar a cero: es una mirada, nunca
-    // la revelacion. Esa linea no es estetica — la composicion del secreto no se revela
-    // jamas antes de pedirlo, y una foto nitida la revelaria.
-    //
-    // ⚠ Y LA BARRA DE PROGRESO NO ES ADORNO. Antes la tarjeta solo decia "te faltan N
-    // pedidos": un umbral sin progreso visible es teatro (Ko & Song, Cornell 2025, sobre
-    // restaurantes). Se muestra lo AVANZADO, no solo lo que falta.
-    var vaultCard = secretSig ? (function () {
-        var myTotal = cust ? (cust.total_orders || 0) : 0;
-        var missing = Math.max(0, secretSig.minOrders - myTotal);
-        var unlocked = !!cust && missing === 0;
-        var hechos = Math.min(myTotal, secretSig.minOrders);
-        var ojo = '<img src="img/ojo-espiral.webp" alt="" aria-hidden="true" class="sw-ojo" ';
-        var rot = '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;'
-            + 'letter-spacing:.24em;text-transform:uppercase;color:var(--sw-spiral,#C3A6D2);'
-            + 'margin-bottom:10px">Menú secreto</div>';
-        if (unlocked) {
-            // DESBLOQUEADO (variante D): la foto sin tapar, el sello y el precio. `sw-revelar`
-            // corre UNA vez al montarse, asi que el paso de tapado a revelado se ve.
-            return '<div style="margin:20px 0 16px">' + rot
-                + '<div onclick="sndScreen=\'o_secreto\';render()" class="sw-revelar" '
-                + 'style="position:relative;border-radius:12px;overflow:hidden;height:300px;cursor:pointer">'
-                + (SIG_IMG[secretSig.id] ? '<img src="' + SIG_IMG[secretSig.id] + '" alt="' + esc(secretSig.n)
-                    + '" style="width:100%;height:100%;object-fit:cover">' : '')
-                + '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,15,28,.55) 0%,transparent 34%,rgba(10,12,9,.95) 100%)"></div>'
-                + '<span style="position:absolute;top:13px;left:13px;display:inline-flex;align-items:center;gap:7px;'
-                + 'background:var(--sw-spiral,#C3A6D2);color:#1A1220;border-radius:999px;padding:5px 12px;font-size:9px;'
-                + 'font-weight:600;letter-spacing:.14em;text-transform:uppercase">'
-                + ojo + 'style="width:13px;height:13px"></span>Te lo ganaste</span>'
-                + '<div style="position:absolute;left:0;right:0;bottom:0;padding:18px">'
-                + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
-                + 'font-weight:640;color:var(--sw-text,#fff);line-height:1.02">' + esc(secretSig.n) + '</div>'
-                + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
-                + 'color:var(--sw-text-muted4,#C6C9BE);margin-top:6px">No preguntes qué lleva.</div>'
-                + '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px">'
-                + '<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;'
-                + 'font-weight:640;color:var(--sw-spiral,#C3A6D2)">' + SOLES + pz(secretSig.p15) + '</span>'
-                + '<span style="background:var(--sw-spiral,#C3A6D2);color:#1A1220;border-radius:999px;'
-                + 'padding:11px 22px;font-size:13px;font-weight:600">Pedirlo</span></div>'
-                + '</div></div></div>';
-        }
-        // BLOQUEADO (A + la mirada de B). `sw-espiar` baja el desenfoque mientras se
-        // mantiene presionado, y lo devuelve al soltar: el secreto no se queda abierto.
-        var seg = '';
-        for (var i = 0; i < secretSig.minOrders; i++) {
-            seg += '<span style="flex:1;height:4px;border-radius:999px;background:'
-                + (i < hechos ? 'var(--sw-spiral,#C3A6D2)' : 'rgba(195,166,210,.2)') + '"></span>';
-        }
-        return '<div style="margin:20px 0 16px">' + rot
-            + '<div class="sw-espiar" style="position:relative;border-radius:12px;overflow:hidden;height:284px">'
-            + (SIG_IMG[secretSig.id] ? '<img class="sw-tapada" src="' + SIG_IMG[secretSig.id] + '" alt="" aria-hidden="true" '
-                + 'style="width:100%;height:100%;object-fit:cover">' : '')
-            + '<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 40%,rgba(74,61,98,.34),rgba(10,12,9,.94) 74%)"></div>'
-            + '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;'
-            + 'justify-content:center;padding:26px;text-align:center">'
-            + ojo + 'style="width:56px;height:56px;margin-bottom:15px">'
-            + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;'
-            + 'font-weight:640;color:var(--sw-text,#fff);line-height:1.05">' + esc(secretSig.n) + '</div>'
-            + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;'
-            + 'color:var(--sw-text-muted4,#C6C9BE);margin-top:9px;max-width:250px;line-height:1.5">'
-            + 'No está en la carta. Cambia cada mes. Se revela cuando lo pides.</div>'
-            + '<div style="display:flex;gap:6px;width:170px;margin-top:22px">' + seg + '</div>'
-            + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-spiral,#C3A6D2);'
-            + 'margin-top:11px;letter-spacing:.06em">' + hechos + ' de ' + secretSig.minOrders + ' pedidos</div>'
-            + '</div></div></div>';
-    })() : '';
-    return vaultCard ? BLOQUE(vaultCard) : '';
-}
 // == LOS DOS MUNDOS (escritos de cero, 2026-09-17) ======================================
 //
 // Hasta hoy elegir un hermano solo cambiaba una pestana dentro de UNA sola pagina: el
@@ -6547,76 +6316,6 @@ function vaultSection() {
 //   BEBIDAS - pantalla propia alcanzable desde los dos lados, que CONSERVA el color del
 //             lado desde el que se entro. No es un tercer hermano: es el mismo producto
 //             visto desde cualquiera de los dos.
-// Una carta de la carta. La foto ES la tarjeta: es lo unico que de verdad vende un
-// sandwich, y en la app anterior competia con un parrafo por el mismo espacio.
-function TILE_SIGNATURE(sig, ancho) {
-    var av = sigInStock(sig);
-    var img = SIG_IMG[sig.id];
-    var alto = ancho ? 232 : 196;
-    var foto = img
-        ? '<img src="' + img + '" alt="' + esc(sig.n) + '" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block' + (av ? '' : ';filter:grayscale(1)') + '">'
-        : '<div style="width:100%;height:100%;background:var(--sw-card2,#122019)"></div>';
-    // Un agotado NO se esconde: un hueco en la carta no se explica solo, y esconderlo manda
-    // al cliente a buscar a otro lado.
-    var sello = av
-        ? (sig.recommended
-            ? '<span style="position:absolute;top:11px;left:11px;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);'
-                + 'font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;letter-spacing:.14em;'
-                + 'text-transform:uppercase;border-radius:999px;padding:4px 10px">La estrella</span>'
-            : sigBadge(sig) ? '<span style="position:absolute;top:11px;left:11px;background:rgba(0,0,0,.58);color:var(--sw-text,#fff);'
-                + 'font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;border-radius:999px;padding:4px 10px">' + esc(sigBadge(sig)) + '</span>' : '')
-        : '<span style="position:absolute;top:11px;left:11px;background:rgba(0,0,0,.65);color:var(--sw-danger,#ff8888);'
-            + 'font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;border-radius:999px;padding:4px 10px">Agotado</span>';
-    var cuerpo = '<div style="position:absolute;left:0;right:0;bottom:0;padding:13px;'
-        + 'background:linear-gradient(180deg,transparent 28%,rgba(0,0,0,.9) 100%)">'
-        + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:' + (ancho ? '22' : '18') + 'px;'
-        + 'font-weight:640;color:var(--sw-text,#fff);line-height:1.02;text-shadow:0 1px 8px rgba(0,0,0,.8)">' + esc(sig.n) + '</div>'
-        + (av ? '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:' + GOLD + ';margin-top:4px;'
-            + 'text-shadow:0 1px 8px rgba(0,0,0,.8)">' + SOLES + pz(sig.p15)
-            + '<span style="color:rgba(255,255,255,.72);font-size:9px;margin-left:7px">30CM ' + SOLES + pz(sig.p30) + '</span></div>' : '')
-        + '</div>';
-    if (!av)
-        return '<div style="grid-column:span ' + (ancho ? 2 : 1) + ';position:relative;height:' + alto + 'px;overflow:hidden;'
-            + 'border-radius:10px;background:var(--sw-card2,#122019);opacity:.5">' + foto + sello + cuerpo + '</div>';
-    return '<button type="button" onclick="startOrderWithSig(\'' + sig.id + '\')" aria-label="' + esc(sig.n) + '" '
-        + 'style="all:unset;box-sizing:border-box;cursor:pointer;display:block;grid-column:span ' + (ancho ? 2 : 1) + ';'
-        + 'position:relative;width:100%;height:' + alto + 'px;overflow:hidden;border-radius:10px;background:var(--sw-card2,#122019)">'
-        + foto + sello + cuerpo + '</button>';
-}
-// El estado del local, en UNA linea. En la app anterior eran tres renglones sueltos arriba
-// del todo; es informacion util pero no es la portada.
-function LINEA_ESTADO() {
-    var ss = storeStatus();
-    var abierto = businessLaunched && ss.open;
-    var texto = !businessLaunched ? 'Aún no abrimos' : ss.label;
-    var color = !businessLaunched ? ACC() : (abierto ? 'var(--sw-ok,#25D366)' : 'var(--sw-danger,#ff8888)');
-    return BLOQUE('<div style="display:flex;align-items:center;gap:8px;padding:12px 0 2px;flex-wrap:wrap">'
-        + '<span style="display:inline-block;width:6px;height:6px;border-radius:999px;background:' + color + '"></span>'
-        + '<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.2em;'
-        + 'text-transform:uppercase;color:' + color + '">' + esc(texto) + '</span>'
-        + '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096)">'
-        + 'Delivery desde ' + SOLES_TXT + pz(DELIVERY_MIN_FEE) + ' según la distancia</span></div>');
-}
-// El carrito, como zona derecha del riel. Solo aparece cuando hay algo: un carrito vacio
-// dibujado en cada pantalla es ruido que nunca se toca.
-function RIEL_CARRITO() {
-    if (!cart.length)
-        return '';
-    var n = unidadesEnCarrito();
-    return '<button type="button" onclick="go(\'o_cart\')" aria-label="Ver carrito (' + n + ')" '
-        + 'style="all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;'
-        + 'font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:' + ACC_INK() + ';background:' + ACC() + ';'
-        + 'border-radius:999px">' + n + '</button>';
-}
-// El mundo de SANDO: su carta cerrada.
-// La bebida mas barata, derivada. Un "desde S/5" escrito a mano se vuelve mentira el dia
-// que el dueno repricie una bebida desde el panel, sin tocar una linea de codigo.
-function precioBebidaMin() {
-    var ps = SIDES.filter(function (d) { return isAvail(d.id); }).map(function (d) { return d.p; });
-    if (!ps.length)
-        ps = SIDES.map(function (d) { return d.p; });
-    return ps.length ? Math.min.apply(null, ps) : 0;
-}
 // ── BEBIDAS · lado SANDO: el vaso a sangre · lado WICHO: tres franjas (maquetas aprobadas) ──
 // docs/maquetas/aprobadas/bebidas-lado-sando.png, bebidas-lado-wicho.png y
 // bebidas-sando-sigo-sin-bebida.png. Es la misma pantalla para los dos lados, pintada como el
@@ -7243,9 +6942,97 @@ function platoGrupo(total, hayVault) {
         + M15_PASAR(total, 1, false, hayVault)
         + '</section>';
 }
+// ── LA CARTA DEL LADO SANDO: EL TAROT (dueño, 2026-10-01: «el concepto de la 3 está hermoso
+// excepcional», docs/maquetas/aprobadas/la-carta-tarot.png). Al entrar al lado SANDO se ven
+// todas las cartas en abanico y la del secreto boca abajo; al tocar una se abre SU plato a
+// pantalla completa, como antes. La ✕ del plato vuelve al tarot; la del tarot, a la puerta.
+var sandoEnPlatos = false;
+function abrirPlato(idx) {
+    sandoEnPlatos = true;
+    render();
+    setTimeout(function () {
+        var s = document.querySelectorAll('.m15 .pistas > section')[idx];
+        var pistas = document.querySelector('.m15 .pistas');
+        if (s && pistas)
+            pistas.scrollTop = s.offsetTop;
+    }, 0);
+}
+// Primer toque: levanta la carta y marca su fila en la lista de abajo. Segundo toque: abre su
+// plato. Se hace sin render() para que el abanico no vuelva a abrirse desde cero en cada toque.
+function tocarCarta(btn) {
+    if (btn.classList.contains('sel')) {
+        abrirPlato(Number(btn.getAttribute('data-plato')));
+        return;
+    }
+    marcarCarta(Number(btn.getAttribute('data-plato')));
+}
+function marcarCarta(plato) {
+    document.querySelectorAll('.mtarot .k').forEach(function (k) {
+        var on = Number(k.getAttribute('data-plato')) === plato;
+        k.classList.toggle('sel', on);
+        k.setAttribute('aria-pressed', String(on));
+    });
+    document.querySelectorAll('.mtarot .lista .fila').forEach(function (f) {
+        f.classList.toggle('on', Number(f.getAttribute('data-plato')) === plato);
+    });
+}
+var NUM_PALABRA = ['Ninguna', 'Una', 'Dos', 'Tres', 'Cuatro', 'Cinco', 'Seis', 'Siete', 'Ocho', 'Nueve', 'Diez'];
+// LA CARTA VENDE (dueño, 2026-10-01: «si bien el concepto es hermoso debemos hacer que venda
+// también»): arriba el abanico, numerado como un tarot; abajo la lista con el MISMO número, lo
+// que lleva cada uno dicho para antojar (el pitch de la carta) y su precio. Tocar una fila abre
+// el plato directo: quien leyó la descripción ya sabe qué está eligiendo.
+function sCartaTarot(visibles, secreto) {
+    var total = visibles.length + (secreto ? 1 : 0);
+    var mitad = (total - 1) / 2;
+    var n = cart.reduce(function (a, it) { return a + (it.qty || 1); }, 0);
+    // El índice del plato: el primero, después el del pedido en grupo, después el resto (ver
+    // sMundoSando). El secreto es el último.
+    var platoDe = function (i) { return i === 0 ? 0 : i + 1; };
+    var estrella = Math.max(0, visibles.findIndex(function (s) { return s.recommended; }));
+    var cartas = visibles.map(function (s, i) {
+        var sel = i === estrella;
+        return '<button class="k' + (s.recommended ? ' e' : '') + (sel ? ' sel' : '') + '" style="--o:' + (i - mitad) + ';--d:' + (i * 60) + 'ms" onclick="tocarCarta(this)" aria-pressed="' + sel + '"'
+            + ' data-plato="' + platoDe(i) + '" aria-label="Carta ' + romano(i + 1) + ': ' + esc(s.n) + ', ' + SOLES_TXT + pz(s.p15) + '">'
+            + '<u>' + romano(i + 1) + '</u>'
+            + (fotoDelPlato(s.id) ? '<img src="' + (SIG_IMG[s.id] || fotoDelPlato(s.id)) + '" alt="">' : '<span class="sinfoto"></span>')
+            + '<b>' + esc(s.n) + '</b><s>' + SOLES_TXT + pz(s.p15) + '</s>' + (s.recommended ? '<i>★</i>' : '') + '</button>';
+    }).join('');
+    var filas = visibles.map(function (s, i) {
+        var sel = i === estrella;
+        return '<button class="fila' + (sel ? ' on' : '') + '" data-plato="' + platoDe(i) + '" onclick="abrirPlato(' + platoDe(i) + ')">'
+            + '<u>' + romano(i + 1) + '</u><span class="t"><b>' + esc(s.n) + (s.recommended ? ' <em>★ La estrella</em>' : '') + '</b>'
+            + '<span class="d">' + esc(s.pitch || '') + '</span>'
+            + '<span class="p">' + SOLES_TXT + pz(s.p15) + ' · 30CM ' + SOLES_TXT + pz(s.p30) + '</span></span><span class="ir" aria-hidden="true">→</span></button>';
+    }).join('');
+    if (secreto) {
+        var myTotal = cust ? (cust.total_orders || 0) : 0;
+        var falta = Math.max(0, secreto.minOrders - myTotal);
+        var abierto = !!cust && falta === 0;
+        var pSec = visibles.length + 1;
+        cartas += '<button class="k x" style="--o:' + (total - 1 - mitad) + ';--d:' + (visibles.length * 60) + 'ms" onclick="tocarCarta(this)" aria-pressed="false"'
+            + ' data-plato="' + pSec + '" aria-label="Carta ' + romano(total) + ': el sándwich secreto, ' + (abierto ? 'abierto' : 'boca abajo') + '"><u>' + romano(total) + '</u><span class="luna" aria-hidden="true">☾</span><em>' + (abierto ? 'Ya es tuya' : 'Boca abajo') + '</em></button>';
+        filas += '<button class="fila x" data-plato="' + pSec + '" onclick="abrirPlato(' + pSec + ')">'
+            + '<u>' + romano(total) + '</u><span class="t"><b>El sándwich secreto</b>'
+            + '<span class="d">No está en la carta y cambia cada mes. No se dice qué lleva: se revela cuando lo pides.</span>'
+            + '<span class="p">' + (abierto ? 'Ya es tuyo · ' + SOLES_TXT + pz(secreto.p15) : 'Se da vuelta en tu pedido número ' + secreto.minOrders + (cust ? ' · te ' + (falta === 1 ? 'falta 1' : 'faltan ' + falta) : '')) + '</span></span><span class="ir" aria-hidden="true">→</span></button>';
+    }
+    var cuantas = NUM_PALABRA[visibles.length] || String(visibles.length);
+    return '<div class="mtarot fi">'
+        + '<div class="riel"><button class="x" onclick="volverALaPuerta()" aria-label="Cambiar de lado">&#10005;</button>'
+        + '<span class="wm">SND<span class="wm-mark" aria-hidden="true"><i></i><i></i></span>WCH</span>'
+        + (n ? '<button class="c" onclick="go(\'o_cart\')" aria-label="Tu pedido, ' + n + (n === 1 ? ' cosa' : ' cosas') + '"><span>' + n + '</span></button>' : '<span class="vacio"></span>')
+        + '</div>'
+        + '<div class="cab"><h1>Elige tu carta</h1><p>' + cuantas + ' a la vista.' + (secreto ? ' La ' + (total === 7 ? 'séptima' : 'última') + ', boca abajo.' : '') + '</p></div>'
+        + '<div class="mano">' + cartas + '</div>'
+        + '<p class="pista">Toca una carta para levantarla; otra vez, y es tuya.</p>'
+        + '<div class="lista"><h2>Lo que dice cada carta</h2>' + filas + '</div>'
+        + '</div>';
+}
 function sMundoSando() {
     var visibles = sigsEnOrden(SIGS.filter(function (x) { return !x.secret && sigAvailable(x); }));
     var secreto = SIGS.find(function (s) { return s.secret; });
+    if (!sandoEnPlatos)
+        return sCartaTarot(visibles, secreto);
     // +1: el plato del pedido en grupo, que va segundo (ver platoGrupo).
     var total = visibles.length + 1 + (secreto ? 1 : 0);
     var sirve = broPose('sando', 'cuerpo');
@@ -7293,7 +7080,7 @@ function sMundoSando() {
     }
     var n = cart.reduce(function (a, it) { return a + (it.qty || 1); }, 0);
     return '<div class="m15 fi">'
-        + '<div class="riel"><button class="x" onclick="volverALaPuerta()" aria-label="Cambiar de lado">&#10005;</button>'
+        + '<div class="riel"><button class="x" onclick="sandoEnPlatos=false;render()" aria-label="Volver a las cartas">&#10005;</button>'
         + '<span class="wm">SND<span class="wm-mark" aria-hidden="true"><i></i><i></i></span>WCH</span>'
         + (n ? '<button class="c" onclick="go(\'o_cart\')" aria-label="Tu pedido, ' + n + (n === 1 ? ' cosa' : ' cosas') + '"><span>' + n + '</span></button>' : '<span class="vacio"></span>')
         + '</div>'
@@ -7988,9 +7775,6 @@ function FICHA(etiqueta, sel, fn) {
     // `aria-pressed` porque son interruptores, no enlaces: dicen si están puestas o no.
     return '<button type="button" aria-pressed="' + (sel ? 'true' : 'false') + '" onclick="' + fn + '" style="all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:5px;background:' + (sel ? ACC() : 'var(--sw-card,#1B1F18)') + ';border:1px solid ' + (sel ? ACC() : 'var(--sw-border,#2C3228)') + ';border-radius:999px;padding:10px 16px;cursor:pointer;transition:all .15s;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:' + (sel ? 'var(--sw-on-gold,#241a08)' : 'var(--sw-text,#fff)') + '">' + etiqueta + '</button>';
 }
-function FICHA_OFF(etiqueta) {
-    return '<div style="display:inline-flex;align-items:center;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:999px;padding:10px 16px;opacity:.35;font-family:\'Bodoni Moda\',serif;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096);text-decoration:line-through">' + etiqueta + '</div>';
-}
 // ORDER CONFIRM + SMART UPSELL
 // PER-ITEM REVIEW — revisar un sándwich recién armado antes de agregarlo al carrito
 function sOItemConfirm() {
@@ -8148,20 +7932,6 @@ async function doSaveFavorite() {
 // La pantalla vive entera en sMundoBebidas (03-*), junto a la carta de SANDO, porque las
 // dos son mundos y comparten las mismas piezas. Acá solo queda el nombre que usa el router.
 function sOSides() { return sMundoBebidas(); }
-// CARRITO + CHECKOUT
-function cartItemsHTML() {
-    // El carrito vacío era la única pantalla sin dueño: un rótulo dorado suelto en medio de
-    // la nada, mientras "sin pedidos", "sin direcciones", "sin favoritos" y "sin pedidos
-    // fijos" ya recibían al cliente con el hermano del lado en el que está. Y es de las
-    // primeras que ve alguien que abre la app por curiosidad. Ahora usa el mismo `VACIO()`.
-    if (!cart.length)
-        return VACIO('Carrito vacío', 'Elige un Signature o arma el tuyo — todo se junta acá antes de pagar.', null, 'piensa');
-    return cart.map(function (it, idx) {
-        var extras = itemExtrasLabel(it);
-        var canEdit = it.type !== 'side';
-        return '<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px"><div style="flex:1"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + esc(itemLabel(it)) + '</div>' + (extras ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">' + esc(extras) + '</div>' : '') + '</div><div style="display:flex;gap:10px;flex-shrink:0">' + (canEdit ? '<button onclick="editCartItem(' + idx + ')" style="all:unset;cursor:pointer;color:' + GOLD + ';font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px">Editar</button>' : '') + '<button onclick="cartRemove(' + idx + ')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px">Quitar</button></div></div>' + (canEdit ? '<div onclick="editItemNote(' + idx + ')" style="cursor:pointer;margin-top:4px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096)">' + (it.note ? icon('reclamo', 11, '#9DA096') + '<span style="margin-left:5px">' + esc(it.note) + '</span>' : '+ agregar nota (ej. sin cebolla)') + '</div>' : '') + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><div style="display:flex;align-items:center;gap:10px"><button onclick="cartQtyChange(' + idx + ',-1)" aria-label="Quitar una unidad" style="all:unset;cursor:pointer;width:44px;height:44px;line-height:44px;background:var(--sw-card2,#171A14);border-radius:8px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600">−</button><span class="bump" style="display:inline-block;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);min-width:16px;text-align:center">' + it.qty + '</span><button onclick="cartQtyChange(' + idx + ',1)" aria-label="Agregar una unidad" style="all:unset;cursor:pointer;width:44px;height:44px;line-height:44px;background:var(--sw-card2,#171A14);border-radius:8px;text-align:center;color:var(--sw-text,#FFFFFF);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600">+</button></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:' + GOLD + '">' + SOLES + pz(itemLineTotal(it)) + '</span></div></div>';
-    }).join('');
-}
 // Edita un producto ya en el carrito: lo saca y precarga el builder con su
 // configuración exacta, para no tener que rearmarlo desde cero.
 function editCartItem(idx) {
@@ -8676,15 +8446,6 @@ function qrPolyNew(num, shift) {
         out[j] = 0;
     return out;
 }
-function qrPolyMultiply(a, b) {
-    var num = new Array(a.length + b.length - 1);
-    for (var i = 0; i < num.length; i++)
-        num[i] = 0;
-    for (var i = 0; i < a.length; i++)
-        for (var j = 0; j < b.length; j++)
-            num[i + j] ^= qrGexp(qrGlog(a[i]) + qrGlog(b[j]));
-    return qrPolyNew(num, 0);
-}
 function qrPolyMod(a, b) {
     if (a.length - b.length < 0)
         return a;
@@ -8694,12 +8455,6 @@ function qrPolyMod(a, b) {
         num[i] ^= qrGexp(qrGlog(b[i]) + ratio);
     return qrPolyMod(qrPolyNew(num, 0), b);
 }
-function qrErrorCorrectPolynomial(len) {
-    var a = [1];
-    for (var i = 0; i < len; i++)
-        a = qrPolyMultiply(a, [1, qrGexp(i)]);
-    return a;
-}
 // count,total,data por bloque — índice (typeNumber-1)*4+ecIdx con ecIdx L=0,M=1,Q=2,H=3.
 var qrRSBlockTable = [
     [1, 26, 19], [1, 26, 16], [1, 26, 13], [1, 26, 9], [1, 44, 34], [1, 44, 28], [1, 44, 22], [1, 44, 16],
@@ -8708,361 +8463,12 @@ var qrRSBlockTable = [
     [2, 98, 78], [4, 49, 31], [2, 32, 14, 4, 33, 15], [4, 39, 13, 1, 40, 14], [2, 121, 97], [2, 60, 38, 2, 61, 39], [4, 40, 18, 2, 41, 19], [4, 40, 14, 2, 41, 15],
     [2, 146, 116], [3, 58, 36, 2, 59, 37], [4, 36, 16, 4, 37, 17], [4, 36, 12, 4, 37, 13], [2, 86, 68, 2, 87, 69], [4, 69, 43, 1, 70, 44], [6, 43, 19, 2, 44, 20], [6, 43, 15, 2, 44, 16],
 ];
-function qrGetRSBlocks(typeNumber, ecIdx) {
-    var row = qrRSBlockTable[(typeNumber - 1) * 4 + ecIdx];
-    var list = [];
-    var len = row.length / 3;
-    for (var i = 0; i < len; i++) {
-        var count = row[i * 3], totalCount = row[i * 3 + 1], dataCount = row[i * 3 + 2];
-        for (var j = 0; j < count; j++)
-            list.push({ totalCount: totalCount, dataCount: dataCount });
-    }
-    return list;
-}
-function qrBufNew() { return { buffer: [], length: 0 }; }
-function qrBufPutBit(buf, bit) {
-    var bufIndex = Math.floor(buf.length / 8);
-    if (buf.buffer.length <= bufIndex)
-        buf.buffer.push(0);
-    if (bit)
-        buf.buffer[bufIndex] |= (0x80 >>> (buf.length % 8));
-    buf.length++;
-}
-function qrBufPut(buf, num, length) { for (var i = 0; i < length; i++)
-    qrBufPutBit(buf, ((num >>> (length - i - 1)) & 1) === 1); }
-function qrLengthBits(typeNumber) { return typeNumber < 10 ? 8 : 16; }
-function qrStringToBytes(s) {
-    var out = [];
-    var utf8 = unescape(encodeURIComponent(s));
-    for (var i = 0; i < utf8.length; i++)
-        out.push(utf8.charCodeAt(i) & 0xff);
-    return out;
-}
-function qrCreateBytes(buffer, rsBlocks) {
-    var offset = 0, maxDcCount = 0, maxEcCount = 0;
-    var dcdata = new Array(rsBlocks.length), ecdata = new Array(rsBlocks.length);
-    for (var r = 0; r < rsBlocks.length; r++) {
-        var dcCount = rsBlocks[r].dataCount, ecCount = rsBlocks[r].totalCount - dcCount;
-        maxDcCount = Math.max(maxDcCount, dcCount);
-        maxEcCount = Math.max(maxEcCount, ecCount);
-        dcdata[r] = new Array(dcCount);
-        for (var i = 0; i < dcdata[r].length; i++)
-            dcdata[r][i] = 0xff & buffer.buffer[i + offset];
-        offset += dcCount;
-        var rsPoly = qrErrorCorrectPolynomial(ecCount);
-        var rawPoly = qrPolyNew(dcdata[r], rsPoly.length - 1);
-        var modPoly = qrPolyMod(rawPoly, rsPoly);
-        ecdata[r] = new Array(rsPoly.length - 1);
-        for (var i2 = 0; i2 < ecdata[r].length; i2++) {
-            var modIndex = i2 + modPoly.length - ecdata[r].length;
-            ecdata[r][i2] = modIndex >= 0 ? modPoly[modIndex] : 0;
-        }
-    }
-    var totalCodeCount = 0;
-    for (var b = 0; b < rsBlocks.length; b++)
-        totalCodeCount += rsBlocks[b].totalCount;
-    var data = new Array(totalCodeCount);
-    var index = 0;
-    for (var i3 = 0; i3 < maxDcCount; i3++)
-        for (var r3 = 0; r3 < rsBlocks.length; r3++)
-            if (i3 < dcdata[r3].length)
-                data[index++] = dcdata[r3][i3];
-    for (var i4 = 0; i4 < maxEcCount; i4++)
-        for (var r4 = 0; r4 < rsBlocks.length; r4++)
-            if (i4 < ecdata[r4].length)
-                data[index++] = ecdata[r4][i4];
-    return data;
-}
-function qrCreateData(typeNumber, ecIdx, text) {
-    var rsBlocks = qrGetRSBlocks(typeNumber, ecIdx);
-    var buffer = qrBufNew();
-    var bytes = qrStringToBytes(text);
-    qrBufPut(buffer, 4, 4);
-    qrBufPut(buffer, bytes.length, qrLengthBits(typeNumber));
-    for (var i = 0; i < bytes.length; i++)
-        qrBufPut(buffer, bytes[i], 8);
-    var totalDataCount = 0;
-    for (var b = 0; b < rsBlocks.length; b++)
-        totalDataCount += rsBlocks[b].dataCount;
-    if (buffer.length > totalDataCount * 8)
-        throw new Error('qr overflow');
-    if (buffer.length + 4 <= totalDataCount * 8)
-        qrBufPut(buffer, 0, 4);
-    while (buffer.length % 8 !== 0)
-        qrBufPutBit(buffer, false);
-    while (true) {
-        if (buffer.length >= totalDataCount * 8)
-            break;
-        qrBufPut(buffer, 0xEC, 8);
-        if (buffer.length >= totalDataCount * 8)
-            break;
-        qrBufPut(buffer, 0x11, 8);
-    }
-    return qrCreateBytes(buffer, rsBlocks);
-}
 var qrPatternPositionTable = [
     [], [6, 18], [6, 22], [6, 26], [6, 30], [6, 34], [6, 22, 38], [6, 24, 42], [6, 26, 46], [6, 28, 50],
 ];
-function qrGetBCHDigit(data) { var d = 0; while (data !== 0) {
-    d++;
-    data >>>= 1;
-} return d; }
 var QR_G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | 1;
 var QR_G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
 var QR_G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | 1;
-function qrGetBCHTypeInfo(data) {
-    var d = data << 10;
-    while (qrGetBCHDigit(d) - qrGetBCHDigit(QR_G15) >= 0)
-        d ^= (QR_G15 << (qrGetBCHDigit(d) - qrGetBCHDigit(QR_G15)));
-    return ((data << 10) | d) ^ QR_G15_MASK;
-}
-// Solo entra en juego desde versión 7 (nuestro uso real — número/MECARD/URL corta
-// — nunca llega tan lejos, pero se implementa completo para no dejar un encoder
-// que silenciosamente produzca un QR inválido si algún día se codifica más texto).
-function qrGetBCHTypeNumber(data) {
-    var d = data << 12;
-    while (qrGetBCHDigit(d) - qrGetBCHDigit(QR_G18) >= 0)
-        d ^= (QR_G18 << (qrGetBCHDigit(d) - qrGetBCHDigit(QR_G18)));
-    return (data << 12) | d;
-}
-function qrSetupTypeNumber(m, test) {
-    var bits = qrGetBCHTypeNumber(m.typeNumber);
-    for (var i = 0; i < 18; i++) {
-        var mod = (!test && ((bits >> i) & 1) === 1);
-        m.modules[Math.floor(i / 3)][i % 3 + m.moduleCount - 8 - 3] = mod;
-    }
-    for (var i2 = 0; i2 < 18; i2++) {
-        var mod2 = (!test && ((bits >> i2) & 1) === 1);
-        m.modules[i2 % 3 + m.moduleCount - 8 - 3][Math.floor(i2 / 3)] = mod2;
-    }
-}
-function qrGetMask(pattern, i, j) {
-    switch (pattern) {
-        case 0: return (i + j) % 2 === 0;
-        case 1: return i % 2 === 0;
-        case 2: return j % 3 === 0;
-        case 3: return (i + j) % 3 === 0;
-        case 4: return (Math.floor(i / 2) + Math.floor(j / 3)) % 2 === 0;
-        case 5: return (i * j) % 2 + (i * j) % 3 === 0;
-        case 6: return ((i * j) % 2 + (i * j) % 3) % 2 === 0;
-        case 7: return ((i * j) % 3 + (i + j) % 2) % 2 === 0;
-        default: return false;
-    }
-}
-// Nota: solo versiones 1-10 (suficiente para "MECARD:N:...;TEL:9XXXXXXXX;;", ~40
-// caracteres) — evita necesitar la tabla completa de posiciones de alineación
-// (hasta versión 40) que el estándar define para QRs mucho más grandes.
-function qrGetPatternPosition(typeNumber) { return qrPatternPositionTable[typeNumber - 1]; }
-function qrEcLevelIdxToBCH(ecIdx) { return [1, 0, 3, 2][ecIdx]; }
-function qrModelNew(typeNumber, ecIdx) { return { typeNumber: typeNumber, ecIdx: ecIdx, modules: null, moduleCount: 0, dataCache: null, text: '' }; }
-function qrIsDark(m, row, col) { return m.modules[row][col]; }
-function qrSetupPositionProbePattern(m, row, col) {
-    for (var r = -1; r <= 7; r++) {
-        if (row + r <= -1 || m.moduleCount <= row + r)
-            continue;
-        for (var c = -1; c <= 7; c++) {
-            if (col + c <= -1 || m.moduleCount <= col + c)
-                continue;
-            var dark = (r >= 0 && r <= 6 && (c === 0 || c === 6)) || (c >= 0 && c <= 6 && (r === 0 || r === 6)) || (r >= 2 && r <= 4 && c >= 2 && c <= 4);
-            m.modules[row + r][col + c] = dark;
-        }
-    }
-}
-function qrSetupTimingPattern(m) {
-    for (var r = 8; r < m.moduleCount - 8; r++) {
-        if (m.modules[r][6] != null)
-            continue;
-        m.modules[r][6] = (r % 2 === 0);
-    }
-    for (var c = 8; c < m.moduleCount - 8; c++) {
-        if (m.modules[6][c] != null)
-            continue;
-        m.modules[6][c] = (c % 2 === 0);
-    }
-}
-function qrSetupPositionAdjustPattern(m) {
-    var pos = qrGetPatternPosition(m.typeNumber);
-    for (var i = 0; i < pos.length; i++)
-        for (var j = 0; j < pos.length; j++) {
-            var row = pos[i], col = pos[j];
-            if (m.modules[row][col] != null)
-                continue;
-            for (var r = -2; r <= 2; r++)
-                for (var c = -2; c <= 2; c++) {
-                    var dark = (r === -2 || r === 2 || c === -2 || c === 2 || (r === 0 && c === 0));
-                    m.modules[row + r][col + c] = dark;
-                }
-        }
-}
-function qrSetupTypeInfo(m, test, maskPattern) {
-    var data = (qrEcLevelIdxToBCH(m.ecIdx) << 3) | maskPattern;
-    var bits = qrGetBCHTypeInfo(data);
-    for (var i = 0; i < 15; i++) {
-        var mod = (!test && ((bits >> i) & 1) === 1);
-        if (i < 6)
-            m.modules[i][8] = mod;
-        else if (i < 8)
-            m.modules[i + 1][8] = mod;
-        else
-            m.modules[m.moduleCount - 15 + i][8] = mod;
-    }
-    for (var i2 = 0; i2 < 15; i2++) {
-        var mod2 = (!test && ((bits >> i2) & 1) === 1);
-        if (i2 < 8)
-            m.modules[8][m.moduleCount - i2 - 1] = mod2;
-        else if (i2 < 9)
-            m.modules[8][15 - i2 - 1 + 1] = mod2;
-        else
-            m.modules[8][15 - i2 - 1] = mod2;
-    }
-    m.modules[m.moduleCount - 8][8] = !test;
-}
-function qrMapData(m, data, maskPattern) {
-    var inc = -1, row = m.moduleCount - 1, bitIndex = 7, byteIndex = 0;
-    for (var col = m.moduleCount - 1; col > 0; col -= 2) {
-        if (col === 6)
-            col--;
-        while (true) {
-            for (var c = 0; c < 2; c++) {
-                if (m.modules[row][col - c] == null) {
-                    var dark = false;
-                    if (byteIndex < data.length)
-                        dark = (((data[byteIndex] >>> bitIndex) & 1) === 1);
-                    if (qrGetMask(maskPattern, row, col - c))
-                        dark = !dark;
-                    m.modules[row][col - c] = dark;
-                    bitIndex--;
-                    if (bitIndex === -1) {
-                        byteIndex++;
-                        bitIndex = 7;
-                    }
-                }
-            }
-            row += inc;
-            if (row < 0 || m.moduleCount <= row) {
-                row -= inc;
-                inc = -inc;
-                break;
-            }
-        }
-    }
-}
-function qrGetLostPoint(m) {
-    var moduleCount = m.moduleCount, lostPoint = 0;
-    for (var row = 0; row < moduleCount; row++)
-        for (var col = 0; col < moduleCount; col++) {
-            var sameCount = 0, dark = qrIsDark(m, row, col);
-            for (var r = -1; r <= 1; r++) {
-                if (row + r < 0 || moduleCount <= row + r)
-                    continue;
-                for (var c = -1; c <= 1; c++) {
-                    if (col + c < 0 || moduleCount <= col + c)
-                        continue;
-                    if (r === 0 && c === 0)
-                        continue;
-                    if (dark === qrIsDark(m, row + r, col + c))
-                        sameCount++;
-                }
-            }
-            if (sameCount > 5)
-                lostPoint += (3 + sameCount - 5);
-        }
-    for (var row2 = 0; row2 < moduleCount - 1; row2++)
-        for (var col2 = 0; col2 < moduleCount - 1; col2++) {
-            var cnt = 0;
-            if (qrIsDark(m, row2, col2))
-                cnt++;
-            if (qrIsDark(m, row2 + 1, col2))
-                cnt++;
-            if (qrIsDark(m, row2, col2 + 1))
-                cnt++;
-            if (qrIsDark(m, row2 + 1, col2 + 1))
-                cnt++;
-            if (cnt === 0 || cnt === 4)
-                lostPoint += 3;
-        }
-    for (var row3 = 0; row3 < moduleCount; row3++)
-        for (var col3 = 0; col3 < moduleCount - 6; col3++) {
-            if (qrIsDark(m, row3, col3) && !qrIsDark(m, row3, col3 + 1) && qrIsDark(m, row3, col3 + 2) && qrIsDark(m, row3, col3 + 3) && qrIsDark(m, row3, col3 + 4) && !qrIsDark(m, row3, col3 + 5) && qrIsDark(m, row3, col3 + 6))
-                lostPoint += 40;
-        }
-    for (var col4 = 0; col4 < moduleCount; col4++)
-        for (var row4 = 0; row4 < moduleCount - 6; row4++) {
-            if (qrIsDark(m, row4, col4) && !qrIsDark(m, row4 + 1, col4) && qrIsDark(m, row4 + 2, col4) && qrIsDark(m, row4 + 3, col4) && qrIsDark(m, row4 + 4, col4) && !qrIsDark(m, row4 + 5, col4) && qrIsDark(m, row4 + 6, col4))
-                lostPoint += 40;
-        }
-    var darkCount = 0;
-    for (var col5 = 0; col5 < moduleCount; col5++)
-        for (var row5 = 0; row5 < moduleCount; row5++)
-            if (qrIsDark(m, row5, col5))
-                darkCount++;
-    var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
-    lostPoint += ratio * 10;
-    return lostPoint;
-}
-function qrMakeImpl(m, test, maskPattern) {
-    m.moduleCount = m.typeNumber * 4 + 17;
-    m.modules = new Array(m.moduleCount);
-    for (var row = 0; row < m.moduleCount; row++) {
-        m.modules[row] = new Array(m.moduleCount);
-        for (var c = 0; c < m.moduleCount; c++)
-            m.modules[row][c] = null;
-    }
-    qrSetupPositionProbePattern(m, 0, 0);
-    qrSetupPositionProbePattern(m, m.moduleCount - 7, 0);
-    qrSetupPositionProbePattern(m, 0, m.moduleCount - 7);
-    qrSetupPositionAdjustPattern(m);
-    qrSetupTimingPattern(m);
-    qrSetupTypeInfo(m, test, maskPattern);
-    if (m.typeNumber >= 7)
-        qrSetupTypeNumber(m, test);
-    if (m.dataCache == null)
-        m.dataCache = qrCreateData(m.typeNumber, m.ecIdx, m.text);
-    qrMapData(m, m.dataCache, maskPattern);
-}
-function qrGetBestMaskPattern(m) {
-    var minLostPoint = 0, pattern = 0;
-    for (var i = 0; i < 8; i++) {
-        qrMakeImpl(m, true, i);
-        var lp = qrGetLostPoint(m);
-        if (i === 0 || minLostPoint > lp) {
-            minLostPoint = lp;
-            pattern = i;
-        }
-    }
-    return pattern;
-}
-// Punto de entrada: intenta versiones 1..10 hasta que el texto quepa (nivel M).
-// Si algún día se necesita codificar algo más largo que ~90 caracteres esto
-// lanza — no hay fallback silencioso a un QR roto.
-function qrMakeMatrix(text) {
-    for (var typeNumber = 1; typeNumber <= 10; typeNumber++) {
-        try {
-            var m = qrModelNew(typeNumber, 1);
-            m.text = text;
-            qrMakeImpl(m, false, qrGetBestMaskPattern(m));
-            return { size: m.moduleCount, isDark: function (r, c) { return qrIsDark(m, r, c); } };
-        }
-        catch (e) {
-            if (String((e && e.message) || e).indexOf('overflow') < 0)
-                throw e;
-        }
-    }
-    throw new Error('texto demasiado largo para el QR');
-}
-// SVG compacto: un solo <path> con todos los módulos oscuros (evita cientos de
-// <rect> individuales) + quiet zone de 4 módulos (mínimo del estándar para que
-// cualquier lector lo reconozca).
-function qrSvgHTML(text, pxSize) {
-    var qr = qrMakeMatrix(text);
-    var size = qr.size, quiet = 4, total = size + quiet * 2;
-    var d = '';
-    for (var r = 0; r < size; r++)
-        for (var c = 0; c < size; c++)
-            if (qr.isDark(r, c))
-                d += 'M' + (c + quiet) + ' ' + (r + quiet) + 'h1v1h-1z';
-    return '<svg viewBox="0 0 ' + total + ' ' + total + '" width="' + pxSize + '" height="' + pxSize + '" style="background:#fff;border-radius:8px" shape-rendering="crispEdges"><path d="' + d + '" fill="var(--sw-on-gold,#241a08)"/></svg>';
-}
 function paymentMethodPickerHTML(t) {
     var culqiConfigured = CULQI_PUBLIC_KEY && CULQI_PUBLIC_KEY.indexOf('REEMPLAZA') < 0;
     // Antes había un botón "YAPE" y otro "PLIN" por separado para el pago manual, pero
@@ -9314,48 +8720,6 @@ function payButtonLabel(t, fallback) {
     if (manualPayMethod)
         return 'Ya realicé el pago //';
     return fallback;
-}
-// ── EL CARRITO ES UN RECIBO (2026-09-10) ──────────────────────────────────────────────
-//
-// Dirección visual elegida por el dueño sobre los mockups: ETIQUETA para todo lo que sea
-// comprobante. Un carrito YA es un recibo; lo que faltaba era que se viera como uno.
-//
-// Y no es solo estética. Antes el total era un número grande y los descuentos eran líneas
-// diminutas en cursiva DEBAJO, en verde, apiladas. Quien mirara rápido veía el total y no
-// de dónde salía. Acá cada descuento es una LÍNEA con su propio renglón y su monto, como
-// en cualquier boleta: se puede seguir la cuenta de arriba abajo.
-//
-// El papel es claro a propósito, en una app oscura: un comprobante se lee como papel. Por
-// eso los colores de acá no salen de los tokens del tema —que se invierten con el lado—
-// sino que son fijos: es papel, y el papel no cambia de color según con qué hermano estés.
-function reciboHTML(base, total, combo, valle, organizador, recompensa) {
-    var h = PAPEL_ABRE('TU PEDIDO · NO ES BOLETA')
-        + reciboLinea('Subtotal', SOLES + pz(base));
-    if (combo > 0)
-        h += reciboLinea('Combo · sándwich + bebida', '-' + SOLES + pz(combo), 'ahorro');
-    if (valle > 0)
-        h += reciboLinea('Bebida gratis · hora valle', '-' + SOLES + pz(valle), 'ahorro');
-    if (organizador > 0)
-        h += reciboLinea('Sándwich del organizador', '-' + SOLES + pz(organizador), 'ahorro');
-    if (recompensa > 0)
-        h += reciboLinea('Recompensa canjeada', '-' + SOLES + pz(recompensa), 'ahorro');
-    // ⚠ EL ENVÍO SÍ ESTÁ EN EL TOTAL, y decir lo contrario rompía el recibo.
-    //
-    // La primera versión de esta línea decía "se calcula con tu dirección" dando por hecho
-    // que el envío venía después. No: `payableTotal()` es `cartFinalTotal() + deliveryFeeAmount()`,
-    // y sin pin `deliveryFeeAmount()` cae a la tarifa por zona. O sea que el total YA lo
-    // incluía y el recibo mostraba subtotal 40.90, combo -1 y total 47.90 — ocho soles que
-    // salían de la nada. Un recibo que no cuadra es peor que no tener recibo: enseña a
-    // desconfiar de la cuenta justo antes de pagar.
-    //
-    // Ahora se muestra el monto real, y solo se dice que falta calcularlo cuando de verdad
-    // no hay nada que cobrar todavía.
-    var envio = deliveryFeeAmount();
-    h += (envio > 0
-        ? reciboLinea(deliveryKmNow() !== null ? 'Envío · ' + deliveryKmNow() + ' km' : 'Envío · estimado por zona', SOLES + pz(envio))
-        : reciboLinea('Envío', 'se calcula con tu dirección', 'mudo'))
-        + PAPEL_TOTAL('TOTAL', total);
-    return h;
 }
 // ── 30 G · EL PEDIDO ES UN RECIBO DE ESTRAZA (aprobada) + renglones y hojas ────────────────
 // docs/maquetas/aprobadas/30G-el-carrito.png y 30G-*.png (camino de compra, 2026-09-25).
@@ -10011,25 +9375,6 @@ function payWithCulqi(amountSoles, email) {
 }
 // Callback global requerido por Culqi Checkout V4 — se ejecuta tras el intento de pago
 window.culqi = function () {
-    if (_pendingWeeklyPlan) {
-        if (Culqi.token) {
-            chargeAndFinalizeWeeklyPlan(Culqi.token.id);
-        }
-        else {
-            // _weeklyPlanBuyInProgress también se resetea acá (antes solo en la rama gemela de
-            // pedido normal, línea de abajo) — sin esto, un rechazo de Culqi dejaba el guard de
-            // doble-tap en true para siempre: doWeeklyPlanBuy() empieza con
-            // if(_weeklyPlanBuyInProgress)return; sin ningún aviso, así que cualquier reintento
-            // era un no-op silencioso hasta recargar la página (hallazgo de auditoría UX,
-            // CRÍTICO).
-            busy = false;
-            _weeklyPlanBuyInProgress = false;
-            wpMsg = (Culqi.error && (Culqi.error.user_message || Culqi.error.merchant_message)) || 'No se pudo procesar el pago. Intenta de nuevo o con otro método.';
-            _pendingWeeklyPlan = null;
-            render();
-        }
-        return;
-    }
     if (!_pendingOrder)
         return;
     if (Culqi.token) {
@@ -10535,7 +9880,7 @@ function sEntrar() {
         cuerpo = entrarCampo('l-phone', 'Tu teléfono', 'tel', savedPh || '', { ac: 'tel', im: 'tel' })
             + entrarCampo('l-pin', 'Tu PIN', 'password', '', { im: 'numeric', ac: 'current-password' })
             + err
-            + '<div class="nota"><button onclick="recNewPin=null;recEmailMasked=null;recPhone=\'\';recDni=\'\';recBday=\'\';sndScreen=\'p_recover\';render()">¿Olvidaste tu PIN? · recuperar</button><br>'
+            + '<div class="nota">'
             + '<button onclick="authPinFallback=false;aErr=\'\';render()">Prefiero entrar con mi correo</button></div>';
         pie = '<button class="oro" onclick="doLogin()">Entrar</button>';
     }
@@ -11915,26 +11260,6 @@ function sPRewards() {
         + (alcanza ? '<p>Lo eliges al pagar, en PUNTOS.</p>' : '') + '</div>'
         + '</div>';
 }
-// Insignias de hitos — puramente derivadas de datos que ya viven en `cust` (sin pedir
-// nada nuevo al servidor): marcan progreso acumulado (no solo del mes en curso, a
-// diferencia de los retos de arriba) para darle al perfil una sensación de colección sin
-// reintroducir un multiplicador de puntos por nivel (retirado a propósito del proyecto).
-function computeBadges(c) {
-    return [
-        { icon: 'sandwich', label: 'Primer pedido', unlocked: (c.total_orders || 0) >= 1 },
-        { icon: 'flame', label: 'Frecuente', sub: '10+ pedidos', unlocked: (c.total_orders || 0) >= 10 },
-        { icon: 'crown', label: 'Leyenda', sub: '25+ pedidos', unlocked: (c.total_orders || 0) >= 25 },
-        { icon: 'compass', label: 'Explorador', sub: 'reto descubrimiento', unlocked: !!c.discovery_claimed_month },
-        { icon: 'trophy', label: 'Recurrente', sub: 'reto mensual', unlocked: !!c.challenge_claimed_month },
-        { icon: 'heart', label: 'Embajador', sub: '3+ referidos', unlocked: (c.total_referrals || 0) >= 3 },
-    ];
-}
-function badgesHTML(c) {
-    var badges = computeBadges(c), unlockedCount = badges.filter(function (b) { return b.unlocked; }).length;
-    return '<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:12px">Insignias<span class="cut-sep" style="color:' + GOLD + '"> // </span>' + unlockedCount + '/' + badges.length + '</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">' + badges.map(function (b) {
-        return '<div style="background:' + (b.unlocked ? 'var(--sw-forest-deep,#1E4636)' : 'var(--sw-card2,#171A14)') + ';border:1px solid ' + (b.unlocked ? GOLD : 'var(--sw-border,#2C3228)') + ';border-radius:10px;padding:10px;text-align:center;opacity:' + (b.unlocked ? 1 : .4) + '"><div>' + icon(b.icon, 22, (b.unlocked ? GOLD : '#666')) + '</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:11px;font-weight:600;color:' + (b.unlocked ? '#FFFFFF' : '#9DA096') + ';margin-top:4px">' + b.label + '</div>' + (b.sub ? '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:8px;color:var(--sw-text-muted,#9DA096);margin-top:2px">' + b.sub + '</div>' : '') + '</div>';
-    }).join('') + '</div></div>';
-}
 // #55 — La escalera de referidos, pintada dentro de la tarjeta del programa.
 //
 // Sin esto el escalonado no existe para el cliente: los puntos extra le caerían de sorpresa
@@ -11990,51 +11315,6 @@ function referralLadderHTML(refs) {
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;color:var(--sw-text-muted,#9DA096);margin-bottom:4px">PREMIOS EXTRA //</div>'
         + filas
         + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + GOLD + ';margin-top:6px">' + esc(pie) + '</div></div>';
-}
-function sPProfile() {
-    var initial = esc((cust.name || '?').trim().charAt(0).toUpperCase());
-    var heroHTML = '<div style="background:linear-gradient(135deg,#1B1F18,#12150F);border:1px solid var(--sw-border,#2C3228);border-radius:20px;padding:22px;margin-bottom:16px;display:flex;align-items:center;gap:16px"><div style="flex:0 0 auto;width:56px;height:56px;border-radius:50%;background:' + GOLD + ';display:flex;align-items:center;justify-content:center;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:#12241D">' + initial + '</div><div style="flex:1;min-width:0"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(cust.name) + '</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:4px">' + esc(cust.phone) + '</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.15em;margin-top:6px">' + rankName(cust.total_orders) + ' //</div></div><div style="flex:0 0 auto;text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:8px 12px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:' + GOLD + ';line-height:1">' + (cust.points || 0) + '</div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em;margin-top:2px">Pts</div></div></div>';
-    var referralHTML = '<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Programa<span class="cut-sep" style="color:' + GOLD + '"> // </span>referidos</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:4px">' + cust.phone + '</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:12px">Tu código de referido · ' + (cust.total_referrals || 0) + ' amigos referidos</div>' + referralLadderHTML(cust.total_referrals) + '<button onclick="shareReferral()" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:12px;border-radius:8px;text-align:center">Compartir por WhatsApp //</button></div>';
-    // Antes las 3 tarjetas de abajo (crédito/tarjeta de regalo/Plan Semanal) no tenían
-    // ningún elemento que las diferencie, pese a tener lógicas de negocio muy distintas
-    // (transferir saldo YA propio, comprar saldo para OTRO gastando PUNTOS, o comprar saldo
-    // para MÍ pagando con tarjeta real) — hallazgo de auditoría UX, MEDIO.
-    var balanceCompareHTML = '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted2,#868A7E);margin:4px 0 12px;line-height:1.5">Con tu saldo actual → <b style="color:var(--sw-text-muted,#9DA096)">crédito</b>. Con tus puntos → <b style="color:var(--sw-text-muted,#9DA096)">tarjeta de regalo</b>. Con tarjeta hoy → <b style="color:var(--sw-text-muted,#9DA096)">Plan Semanal</b>.</div>';
-    var creditHTML = '<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Crédito<span class="cut-sep" style="color:' + GOLD + '"> // </span>SND//WCH</div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:40px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:4px">' + SOLES + pz(cust.credit_balance || 0) + '</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-bottom:14px;line-height:1.5">No es dinero real: no se retira ni se transfiere a un banco. Solo sirve para pagar pedidos o regalarlo a otro cliente SND//WCH.</div><div style="display:flex;flex-direction:column;gap:8px">' + INP('cg-phone', 'Teléfono del amigo // 9XXXXXXXX', 'tel', wPhone, 'phone') + INP('cg-amt', 'Monto a regalar // S/', 'number', wAmt, 'coin') + '<div id="cg-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';min-height:14px">' + wMsg + '</div>' + BTN('Regalar crédito //', 'doCreditGift()', true) + '</div></div>';
-    // "con tu tarjeta" contradecía el mecanismo real desde que se rediseñó a puntos (sin
-    // ningún cobro) — quedó con la copy vieja de antes de ese rediseño (hallazgo de
-    // auditoría UX, ALTO — confirmado en vivo, la pantalla de compra en sí ya decía bien
-    // "REGALAR CON PUNTOS", solo este teaser quedó desactualizado).
-    var giftCardHTML = '<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Tarjeta<span class="cut-sep" style="color:' + GOLD + '"> // </span>de regalo</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-bottom:14px;line-height:1.5">Usa tus puntos para regalarle crédito a otro cliente al instante — sin gastar tu saldo. Ideal para cumpleaños o para invitar a un amigo.</div>' + BTN('Comprar y regalar //', "sndScreen='gift_card';render()", true) + '</div>';
-    var weeklyPlanHTML = '<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Plan<span class="cut-sep" style="color:' + GOLD + '"> // </span>semanal</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-bottom:14px;line-height:1.5">Paga ' + SOLES + pz(WEEKLY_PLAN_PRICE) + ' hoy y recibe ' + SOLES + pz(WEEKLY_PLAN_CREDIT) + ' en saldo para pedir cuando quieras esta semana. Bono de ' + SOLES + pz(WEEKLY_PLAN_CREDIT - WEEKLY_PLAN_PRICE) + ' de regalo.</div>' + BTN('Activar plan semanal //', "sndScreen='weekly_plan';render()") + '</div>';
-    var challengeHTML = '<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Reto<span class="cut-sep" style="color:' + GOLD + '"> // </span>mensual</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:12px;line-height:1.5">Haz ' + CHALLENGE_TARGET_ORDERS + ' pedidos pagados este mes y gana ' + CHALLENGE_BONUS_POINTS + ' puntos extra.</div><div id="chal-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-bottom:10px;min-height:14px">' + chalMsg + '</div>' + BTN('Reclamar recompensa //', 'doClaimChallenge()', true) + '</div>';
-    var discoveryHTML = '<div style="background:var(--sw-card2,#171A14);border:1px solid rgba(203,162,88,.25);border-radius:12px;padding:18px;margin-bottom:16px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:10px">Reto<span class="cut-sep" style="color:' + GOLD + '"> // </span>descubrimiento</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:12px;line-height:1.5">Prueba ' + DISCOVERY_TARGET_FLAVORS + ' Signatures distintos este mes (no repitas siempre el mismo) y gana ' + DISCOVERY_BONUS_POINTS + ' puntos extra.</div><div id="disc-chal-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-bottom:10px;min-height:14px">' + discChalMsg + '</div>' + BTN('Reclamar recompensa //', 'doClaimDiscoveryChallenge()', true) + '</div>';
-    var pushHTML = '<div onclick="togglePushNotifications()" style="background:' + (pushSubscribed ? 'var(--sw-card2,#171A14)' : 'var(--sw-card,#1B1F18)') + ';border:1px solid ' + (pushSubscribed ? GOLD : '#2C3228') + ';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer;box-shadow:' + (pushSubscribed ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Notificaciones<span class="cut-sep" style="color:' + GOLD + '"> // </span>push</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">Avísame cuando mi pedido esté en camino o listo</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:' + (pushSubscribed ? GOLD : 'var(--sw-text-muted,#9DA096)') + '">' + (pushSubscribed ? '✓' : '○') + '</span></div>' + (pushMsg ? '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:8px">' + esc(pushMsg) + '</div>' : '') + '</div>';
-    // Las 7 tarjetas de abajo (referidos/crédito/tarjeta de regalo/Plan Semanal/2 retos/
-    // push) antes se sucedían sin ningún agrupamiento, pese a tener mecánicas muy distintas
-    // (crecimiento vs. manejo de saldo vs. gamificación) — se agrupan bajo 2 eyebrows y se
-    // marca la única tarjeta con cobro real (Plan Semanal) para que no se confunda con las
-    // demás, que solo mueven saldo/puntos propios — hallazgo de auditoría visual, MEDIO.
-    var adOptOut = !!(cust && cust.ad_tracking_opt_out);
-    var sectionLabel = function (t) { return '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:20px 0 10px">' + t + '</div>'; };
-    weeklyPlanHTML = weeklyPlanHTML.replace('Plan<span class="cut-sep"', '<span style="float:right;font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);letter-spacing:.04em">Pago con tarjeta</span>Plan<span class="cut-sep"');
-    return H('MI PERFIL', 'sndScreen=\'p_home\';render()') + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">' + heroHTML
-        + badgesHTML(cust)
-        + pushHTML
-        + sectionLabel('Retos y referidos //') + referralHTML + challengeHTML + discoveryHTML
-        + sectionLabel('Tu saldo //') + balanceCompareHTML + creditHTML + (TARJETA_REGALO_ACTIVA ? giftCardHTML : '') + (PLAN_SEMANAL_ACTIVO ? weeklyPlanHTML : '')
-        + sectionLabel('Tus preferencias //')
-        // «Cómo pagas» y «Avisos» (filas de la maqueta de Tu cuenta), con su estado a la vista.
-        + [['p_pago', 'Cómo pagas', metodoPreferido() === 'culqi' ? 'Tarjeta por defecto' : 'Yape por defecto'],
-            ['p_avisos', 'Avisos', avisosDe().pedido ? (avisosDe().promo ? 'Tu pedido y novedades' : 'Solo tu pedido') : (avisosDe().promo ? 'Solo novedades' : 'Apagados')]]
-            .map(function (x) { return '<div onclick="prefMsg=\'\';sndScreen=\'' + x[0] + '\';render()" role="button" tabindex="0" style="display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:16px 18px;margin-bottom:8px;cursor:pointer"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + x[1] + '</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">' + x[2] + '</div></div><span style="color:' + GOLD + '">→</span></div>'; }).join('')
-        + sectionLabel('Privacidad //')
-        // El interruptor va en el PERFIL y no escondido dentro del texto legal: un derecho que
-        // solo se puede ejercer leyendo doce párrafos hasta el final no se ejerce nunca. Se
-        // muestra apagado (medición activa) porque es el estado real de quien aceptó la política
-        // al registrarse — no se pinta un consentimiento que nadie dio.
-        + '<div onclick="toggleAdTracking()" style="background:' + (adOptOut ? 'var(--sw-card2,#171A14)' : 'var(--sw-card,#1B1F18)') + ';border:1px solid ' + (adOptOut ? GOLD : '#2C3228') + ';border-radius:12px;padding:18px;margin-bottom:16px;cursor:pointer;box-shadow:' + (adOptOut ? SHADOW_GOLD : SHADOW_SM) + '"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">No medir<span class="cut-sep" style="color:' + GOLD + '"> // </span>mis compras</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px;line-height:1.45">Deja de reportar tus pedidos a Meta para medir anuncios. No cambia precios, puntos ni nada de tu pedido.</div></div><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:' + (adOptOut ? GOLD : 'var(--sw-text-muted,#9DA096)') + '">' + (adOptOut ? '✓' : '○') + '</span></div>' + (adOptOutMsg ? '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';margin-top:8px">' + esc(adOptOutMsg) + '</div>' : '') + '</div>'
-        + '<div onclick="sndScreen=\'p_legal\';render()" style="cursor:pointer;text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em;padding:10px;margin-bottom:6px">Términos y privacidad //</div>' + '<div style="display:flex;flex-direction:column;gap:10px"><button onclick="doLogout()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid var(--sw-border,#25382D);color:var(--sw-text-muted,#9DA096);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión //</button><button onclick="doLogoutEverywhere()" style="all:unset;cursor:pointer;display:block;width:100%;border:1px solid rgba(255,85,85,.35);color:var(--sw-danger,#ff8888);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:14px;border-radius:10px;text-align:center">Cerrar sesión en todos los dispositivos //</button><button onclick="doDeleteAccount()" style="all:unset;cursor:pointer;display:block;width:100%;color:var(--sw-danger-strong,#ff5555);font-family:\'EB Garamond\',serif;font-size:11px;letter-spacing:.05em;padding:10px;text-align:center;opacity:.7">Eliminar mi cuenta permanentemente</button></div></div>' + NAV();
 }
 function shareReferral() {
     // Antes solo mandaba el número como "código" — el amigo tenía que escribirlo a mano
@@ -12102,340 +11382,6 @@ async function doCreditGift() {
     _creditGiftInProgress = false;
     render();
 }
-// Tarjeta de regalo digital: se paga con puntos PROPIOS y acredita saldo a OTRO cliente
-// — distinta de doCreditGift (que transfiere saldo ya propio, sin gastar puntos).
-// Rediseño de esta sesión: antes cobraba de verdad por Culqi (dos pasos, prepare +
-// widget + confirm) porque Culqi no soporta "cobrar con puntos" — el dueño pidió
-// corregirlo a la intención original. Ahora es una sola llamada atómica al servidor
-// (redeem_points_for_gift_credit), sin cobro, reserva, ni ventana de expiración.
-// ── MONTOS SUGERIDOS, TRADUCIDOS A PRODUCTO ──────────────────────────────────────────
-// Regalar exige decidir un número, y decidir un número en abstracto es justo donde la gente
-// abandona: "¿cuánto es suficiente para un regalo?" no tiene respuesta hasta que alguien
-// dice qué compra ese monto.
-//
-// ⚠ LOS MONTOS SE DERIVAN DEL CATÁLOGO, NO SE ESCRIBEN. Si un Signature sube de precio, un
-// monto fijo escrito acá pasaría a NO alcanzar para lo que promete — un regalo que se queda
-// corto en la caja es peor que no haberlo sugerido. Se redondea hacia ARRIBA al múltiplo de
-// cinco por lo mismo: el error nunca puede caer del lado de que no alcance.
-function giftSugerencias() {
-    // El menú secreto se excluye: su precio no es representativo de la carta pública y el
-    // destinatario puede ni siquiera tenerlo desbloqueado.
-    var publicos = SIGS.filter(function (x) { return !x.secret; });
-    if (!publicos.length)
-        publicos = SIGS;
-    var arriba5 = function (v) { return Math.max(GIFT_CARD_AMOUNT_MIN, Math.ceil(v / 5) * 5); };
-    var p15 = Math.min.apply(null, publicos.map(function (x) { return x.p15 || 0; }).filter(Boolean));
-    var p30 = Math.min.apply(null, publicos.map(function (x) { return x.p30 || 0; }).filter(Boolean));
-    if (!isFinite(p15) || !p15)
-        return [];
-    var lista = [
-        { v: arriba5(p15), t: 'Un 15CM' },
-        { v: arriba5(p30 || p15 * 1.4), t: 'Un 30CM' },
-        { v: arriba5(p15 * 2), t: 'Dos 15CM' }
-    ];
-    // Sin duplicados y dentro del rango que el servidor acepta — ofrecer un monto que el
-    // checkout va a rechazar es peor que no ofrecerlo.
-    var vistos = {}, out = [];
-    lista.forEach(function (x) {
-        if (vistos[x.v] || x.v > GIFT_CARD_AMOUNT_MAX)
-            return;
-        vistos[x.v] = 1;
-        out.push(x);
-    });
-    return out;
-}
-function giftElegirMonto(v) {
-    gcAmt = String(v);
-    var e = document.getElementById('gc-amt');
-    if (e)
-        e.value = gcAmt;
-    gcMsg = '';
-    render();
-}
-function sGiftCard() {
-    var amt = parseFloat(gcAmt) || 0;
-    var ptsCost = amt > 0 ? Math.round(amt * GIFT_CARD_POINTS_PER_SOL) : 0;
-    var saldo = cust.points || 0;
-    var alcanza = ptsCost <= saldo;
-    var sug = giftSugerencias();
-    // Las tarjetas de monto: el número grande, y debajo QUÉ COMPRA. La que ya está elegida se
-    // marca, para que después de tocarla siga claro cuál se eligió.
-    // ⚠ SI NO ALCANZA PARA NADA, DECIRLO ARRIBA Y CON EL CAMINO. Tres montos apagados sin
-    // explicación son una pantalla que dice "no puedes" tres veces sin decir cuánto falta.
-    // Los pedidos se derivan del 15CM más barato de la carta, no de un ticket escrito a mano.
-    var minPts = Math.round(GIFT_CARD_AMOUNT_MIN * GIFT_CARD_POINTS_PER_SOL);
-    var ticket = sug.length ? sug[0].v : 0;
-    var faltanPedidos = ticket > 0 ? Math.ceil((minPts - saldo) / ticket) : 0;
-    var lejos = saldo < minPts ? '<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:14px">'
-        + '<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);line-height:1.5">Todavía no te alcanza para el regalo más chico: te faltan <b style="color:' + GOLD + '">' + (minPts - saldo) + ' pts</b>'
-        + (faltanPedidos > 0 ? ', más o menos <b style="color:' + GOLD + '">' + faltanPedidos + ' pedido' + (faltanPedidos === 1 ? '' : 's') + '</b>' : '') + '.</div>'
-        + '</div>' : '';
-    var chips = sug.length ? lejos + '<div style="display:flex;gap:8px;margin-bottom:14px">' + sug.map(function (x) {
-        var sel = amt === x.v;
-        var pts = Math.round(x.v * GIFT_CARD_POINTS_PER_SOL);
-        var puede = pts <= saldo;
-        return '<div onclick="giftElegirMonto(' + x.v + ')" style="flex:1;cursor:pointer;text-align:center;padding:12px 6px;border-radius:10px;'
-            + 'background:' + (sel ? 'rgba(203,162,88,.14)' : 'var(--sw-card,#1B1F18)') + ';border:1px solid ' + (sel ? GOLD : 'var(--sw-border,#2C3228)') + ';'
-            + 'opacity:' + (puede ? '1' : '.45') + '">'
-            + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:' + (sel ? GOLD : 'var(--sw-text,#FFFFFF)') + ';line-height:1">' + SOLES_TXT + pz(x.v) + '</div>'
-            + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:4px">' + x.t + '</div>'
-            + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + (puede ? GOLD : 'var(--sw-text-muted,#9DA096)') + ';letter-spacing:.08em;margin-top:3px">' + pts + ' PTS</div>'
-            + '</div>';
-    }).join('') + '</div>' : '';
-    // Qué queda después. Un saldo de puntos que solo se ve ANTES de gastar deja al cliente
-    // haciendo la resta de cabeza justo cuando está por decidir.
-    var resto = ptsCost > 0 ? '<div style="background:var(--sw-card2,#171A14);border-radius:10px;padding:12px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">'
-        + '<div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096)">Cuesta</div>'
-        + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:' + (alcanza ? GOLD : 'var(--sw-danger-strong,#ff5555)') + ';line-height:1.15">' + ptsCost + ' pts</div></div>'
-        + '<div style="text-align:right"><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096)">' + (alcanza ? 'Te quedan' : 'Te faltan') + '</div>'
-        + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF);line-height:1.15">' + Math.abs(saldo - ptsCost) + ' pts</div></div>'
-        + '</div>' : '';
-    // Qué recibe el otro. Sin esto "crédito SND//WCH" es una palabra sin forma, y quien regala
-    // no puede explicarle a su amigo qué le acaba de llegar.
-    var explica = '<div style="border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-top:18px">'
-        + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">Qué recibe //</div>'
-        + '<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);line-height:1.55">Le llega el saldo <b>al instante</b>, listo para usar en cualquier pedido. No vence, no hay que canjear ningún código, y si no le alcanza para todo el pedido paga la diferencia normal.</div>'
-        + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:8px;line-height:1.45">Si todavía no tiene cuenta, el saldo lo espera: se le acredita con su número apenas se registre.</div>'
-        + '</div>';
-    return H('TARJETA DE REGALO', 'sndScreen=\'p_profile\';render()') + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
-        + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Tarjeta<span class="cut-sep" style="color:' + GOLD + '"> // </span>de regalo</div>'
-        + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:6px;line-height:1.5">Convierte tus puntos en un sándwich para alguien más. Entre ' + SOLES_TXT + pz(GIFT_CARD_AMOUNT_MIN) + ' y ' + SOLES_TXT + pz(GIFT_CARD_AMOUNT_MAX) + '.</p>'
-        + '<p style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + GOLD + ';letter-spacing:.05em;margin-bottom:16px">Tienes ' + saldo + ' pts // ' + GIFT_CARD_POINTS_PER_SOL + ' pts = ' + SOLES_TXT + pz(1) + '</p>'
-        + chips
-        + '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">'
-        + INP('gc-phone', 'Teléfono del destinatario // 9XXXXXXXX', 'tel', gcPhone, 'phone')
-        + INP('gc-amt', 'Monto // ' + SOLES_TXT, 'number', gcAmt, 'coin')
-        + '</div>'
-        + resto
-        + '<div id="gc-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;color:' + GOLD + ';min-height:14px;margin-bottom:10px">' + esc(gcMsg) + '</div>'
-        + BTN('Regalar con puntos //', 'doGiftCardBuy()')
-        + explica
-        + '</div>' + NAV();
-}
-async function doGiftCardBuy() {
-    if (_giftBuyInProgress)
-        return;
-    var phoneEl = document.getElementById('gc-phone');
-    var amtEl = document.getElementById('gc-amt');
-    var phone = phoneEl ? phoneEl.value.trim() : '';
-    var amt = amtEl ? parseFloat(amtEl.value) : NaN;
-    gcPhone = phone;
-    gcAmt = amtEl ? amtEl.value : '';
-    if (!phone || !amt || amt < GIFT_CARD_AMOUNT_MIN || amt > GIFT_CARD_AMOUNT_MAX) {
-        gcMsg = 'Ingresa un teléfono y un monto entre ' + SOLES_TXT + pz(GIFT_CARD_AMOUNT_MIN) + ' y ' + SOLES_TXT + pz(GIFT_CARD_AMOUNT_MAX) + '.';
-        render();
-        return;
-    }
-    var ptsCost = Math.round(amt * GIFT_CARD_POINTS_PER_SOL);
-    if (ptsCost > (cust.points || 0)) {
-        gcMsg = 'No tienes puntos suficientes para este monto.';
-        render();
-        return;
-    }
-    var name;
-    try {
-        var lookup = await api('credit-lookup', { token: token, toPhone: phone });
-        name = lookup.name;
-    }
-    catch (e) {
-        gcMsg = e.message;
-        render();
-        return;
-    }
-    if (!(await showConfirm('¿Regalar ' + SOLES_TXT + pz(amt) + ' de crédito a ' + name + ' (' + phone + ') por ' + ptsCost + ' puntos?')))
-        return;
-    _giftBuyInProgress = true;
-    busy = true;
-    busyMsg = 'Procesando...';
-    render();
-    try {
-        var res = await api('gift-card-purchase', { token: token, toPhone: phone, amount: amt });
-        var r = await api('session-check', { token: token });
-        if (r.valid) {
-            cust = r.customer;
-            cacheCust(cust, isAdmin);
-        }
-        busy = false;
-        _giftBuyInProgress = false;
-        gcPhone = '';
-        gcAmt = '';
-        showToast('¡Regalaste crédito a ' + (res.toName || name) + '!');
-        sndScreen = 'p_profile';
-        render();
-    }
-    catch (e) {
-        busy = false;
-        _giftBuyInProgress = false;
-        gcMsg = e.message;
-        render();
-    }
-}
-// Plan Semanal — mismo esqueleto de dos pasos que la tarjeta de regalo (prepare +
-// Culqi + confirm), pero acredita al PROPIO comprador en vez de a otro cliente, y con
-// monto fijo (sin inputs de teléfono/monto que llenar).
-var wpMsg = '', wpEmail = '';
-var wpCritical = false;
-var _weeklyPlanBuyInProgress = false;
-var _pendingWeeklyPlan = null;
-function sWeeklyPlan() {
-    return H('PLAN SEMANAL', 'sndScreen=\'p_profile\';render()') + '<div style="flex:1;padding:24px 20px 140px;overflow-y:auto" class="fi">'
-        + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Plan<span class="cut-sep" style="color:' + GOLD + '"> // </span>semanal</div>'
-        + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:20px;line-height:1.5">Paga ' + SOLES + pz(WEEKLY_PLAN_PRICE) + ' hoy con tu tarjeta y recibe ' + SOLES + pz(WEEKLY_PLAN_CREDIT) + ' en saldo SND//WCH al instante — pide cuando quieras esta semana, el saldo no vence.</p>'
-        // ── ETIQUETA ──────────────────────────────────────────────────────────────────────
-        // El Plan Semanal es una PROPUESTA DE PAGO: pones S/95 y recibes S/100. Eran dos
-        // tarjetas separadas, así que la cuenta —los S/5 que ganas— había que hacerla de
-        // cabeza. En el papel las tres líneas se leen juntas y el trato se entiende de un
-        // vistazo, que es lo único que esta pantalla tiene que lograr.
-        //
-        // ⚠ La ganancia se interpola de las constantes, nunca se escribe. Son las mismas que
-        // cobra el servidor, y un número a mano acá sería una promesa que se rompe el día que
-        // el dueño mueva el precio — el defecto que ya obligó a reescribir el contenido de
-        // marketing entero.
-        + PAPEL_ABRE('PLAN SEMANAL · NO ES BOLETA')
-        + reciboLinea('Pagas hoy con tarjeta', SOLES + pz(WEEKLY_PLAN_PRICE))
-        + reciboLinea('Recibes en saldo, al instante', SOLES + pz(WEEKLY_PLAN_CREDIT))
-        + reciboLinea('Ganas', '+' + SOLES + pz(money(WEEKLY_PLAN_CREDIT - WEEKLY_PLAN_PRICE)), 'ahorro')
-        + PAPEL_TOTAL('A PAGAR', WEEKLY_PLAN_PRICE)
-        + INP('wp-email', 'Tu correo (para el comprobante)', 'email', wpEmail || (cust && cust.email) || '', 'mail')
-        + '<div id="wp-msg" style="font-family:\'EB Garamond\',serif;font-size:11px;min-height:14px;margin:8px 0 12px' + (wpCritical ? ';color:var(--sw-danger-strong,#ff5555);background:rgba(255,85,85,.08);border:1px solid rgba(255,85,85,.3);border-radius:8px;padding:10px 12px' : ';color:' + GOLD) + '">' + esc(wpMsg) + '</div>'
-        + BTN('Activar plan semanal //', 'doWeeklyPlanBuy()')
-        + '</div>' + NAV();
-}
-async function doWeeklyPlanBuy() {
-    if (_weeklyPlanBuyInProgress)
-        return;
-    var emailEl = document.getElementById('wp-email');
-    var email = emailEl ? emailEl.value.trim() : '';
-    wpEmail = email;
-    wpCritical = false;
-    if (!email) {
-        wpMsg = 'Ingresa tu correo para el comprobante de pago.';
-        render();
-        return;
-    }
-    if (!(await showConfirm('¿Pagar ' + SOLES_TXT + pz(WEEKLY_PLAN_PRICE) + ' y recibir ' + SOLES_TXT + pz(WEEKLY_PLAN_CREDIT) + ' en saldo?')))
-        return;
-    _weeklyPlanBuyInProgress = true;
-    busy = true;
-    busyMsg = 'Verificando...';
-    render();
-    var prep;
-    try {
-        prep = await api('prepare-weekly-plan', { token: token });
-    }
-    catch (e) {
-        busy = false;
-        _weeklyPlanBuyInProgress = false;
-        wpMsg = e.message;
-        render();
-        return;
-    }
-    busy = false;
-    render();
-    _pendingWeeklyPlan = { ref: prep.ref, amount: prep.amountPaid, creditAmount: prep.creditAmount, email: email };
-    payWeeklyPlanWithCulqi(prep.amountPaid, email, prep.ref);
-}
-function payWeeklyPlanWithCulqi(amountSoles, email, ref) {
-    if (typeof Culqi === 'undefined') {
-        _weeklyPlanBuyInProgress = false;
-        wpMsg = 'No se pudo cargar la pasarela de pago. Verifica tu conexión e intenta de nuevo.';
-        _pendingWeeklyPlan = null;
-        render();
-        return;
-    }
-    if (!CULQI_PUBLIC_KEY || CULQI_PUBLIC_KEY.indexOf('REEMPLAZA') >= 0) {
-        _weeklyPlanBuyInProgress = false;
-        wpMsg = 'La pasarela de pago aún no está configurada. Contacta al administrador.';
-        _pendingWeeklyPlan = null;
-        render();
-        return;
-    }
-    Culqi.publicKey = CULQI_PUBLIC_KEY;
-    Culqi.settings({
-        title: 'SND//WCH',
-        currency: 'PEN',
-        amount: Math.round(amountSoles * 100),
-        description: 'Plan Semanal ' + ref
-    });
-    Culqi.options({
-        lang: 'auto',
-        installments: false,
-        paymentMethods: { tarjeta: true, yape: true, billetera: false, bancaMovil: false, agente: false, cuotealo: false }
-    });
-    Culqi.open();
-}
-async function chargeAndFinalizeWeeklyPlan(culqiToken) {
-    if (!_pendingWeeklyPlan)
-        return;
-    var pw = _pendingWeeklyPlan;
-    busy = true;
-    busyMsg = 'Procesando pago...';
-    render();
-    try {
-        var resp = await fetch(CREDIT_CHARGE_FN_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: culqiToken, amountSoles: pw.amount, email: pw.email, ref: pw.ref })
-        });
-        var data = await resp.json().catch(function () { return {}; });
-        if (!resp.ok || !data.success) {
-            busy = false;
-            _weeklyPlanBuyInProgress = false;
-            wpMsg = data.error || 'El pago fue rechazado. Intenta de nuevo o con otro método.';
-            _pendingWeeklyPlan = null;
-            render();
-            return;
-        }
-        try {
-            await api('confirm-weekly-plan', { token: token, chargeId: data.chargeId, ref: pw.ref });
-        }
-        catch (e) {
-            busy = false;
-            _weeklyPlanBuyInProgress = false;
-            wpCritical = true;
-            wpMsg = (e.message || 'No se pudo confirmar tu Plan Semanal.') + ' Ya se realizó el cobro — contáctanos con tu referencia ' + pw.ref + ' para confirmar el saldo manualmente. No vuelvas a intentar pagar.';
-            _pendingWeeklyPlan = null;
-            render();
-            return;
-        }
-        var r = await api('session-check', { token: token });
-        if (r.valid) {
-            cust = r.customer;
-            cacheCust(cust, isAdmin);
-        }
-        busy = false;
-        _weeklyPlanBuyInProgress = false;
-        wpEmail = '';
-        _pendingWeeklyPlan = null;
-        showToast('¡Listo! Recibiste ' + SOLES + pz(pw.creditAmount) + ' en saldo.');
-        sndScreen = 'p_profile';
-        render();
-    }
-    catch (e) {
-        // Mismo riesgo que el catch de arriba (confirm-weekly-plan falló): no sabemos si el
-        // cargo llegó a ejecutarse antes de que se cortara la conexión.
-        busy = false;
-        _weeklyPlanBuyInProgress = false;
-        wpCritical = true;
-        wpMsg = 'No pudimos confirmar si el pago se procesó (falló la conexión). Antes de reintentar, contáctanos con tu referencia ' + pw.ref + ' para verificar si ya se hizo el cobro.';
-        _pendingWeeklyPlan = null;
-        render();
-    }
-}
-async function doRequestRestockNotify(sigId) {
-    if (restockNotified.indexOf(sigId) >= 0)
-        return;
-    try {
-        await api('request-restock-notify', { token: token, sigId: sigId });
-        restockNotified.push(sigId);
-        saveRestockNotified();
-        render();
-        showToast('Te avisamos apenas vuelva.', 'success');
-    }
-    catch (e) {
-        showToast(e.message);
-    }
-}
 // Guardias de reentrada, como ya tienen doCreditGift/doGiftCardBuy/doWeeklyPlanBuy. BTN()
 // no genera `disabled`, así que el botón sigue clickeable durante la llamada. El servidor
 // rechaza el segundo reclamo de forma atómica (RPC claim_monthly_challenge), así que no se
@@ -12444,42 +11390,6 @@ async function doRequestRestockNotify(sigId) {
 // funcionó. Un mensaje que contradice lo que acaba de pasar erosiona la confianza.
 var _challengeClaimInProgress = false;
 var _discChallengeClaimInProgress = false;
-async function doClaimChallenge() {
-    if (_challengeClaimInProgress)
-        return;
-    _challengeClaimInProgress = true;
-    try {
-        var res = await api('claim-challenge', { token: token });
-        if (res.customer) {
-            cust = res.customer;
-            cacheCust(cust, isAdmin);
-        }
-        chalMsg = '¡Reto completado! +' + CHALLENGE_BONUS_POINTS + ' pts';
-    }
-    catch (e) {
-        chalMsg = e.message;
-    }
-    _challengeClaimInProgress = false;
-    render();
-}
-async function doClaimDiscoveryChallenge() {
-    if (_discChallengeClaimInProgress)
-        return;
-    _discChallengeClaimInProgress = true;
-    try {
-        var res = await api('claim-discovery-challenge', { token: token });
-        if (res.customer) {
-            cust = res.customer;
-            cacheCust(cust, isAdmin);
-        }
-        discChalMsg = '¡Reto completado! +' + DISCOVERY_BONUS_POINTS + ' pts';
-    }
-    catch (e) {
-        discChalMsg = e.message;
-    }
-    _discChallengeClaimInProgress = false;
-    render();
-}
 // Limpia todo el estado en memoria específico del cliente/admin que acaba de cerrar
 // sesión — antes solo se limpiaba `cust`/`token`, así que en un dispositivo compartido
 // (logout de A, login de B sin recargar la página) myOrders/myAddresses/myFavorites (y
@@ -12986,89 +11896,6 @@ function sAlgoSalioMal() {
 // puerta de entrada con su nombre de siempre, que llaman el perfil y el enlace del aviso.
 var DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 function goRecurring(id) { return window.__sndNuevo.fijo.abrir(id); }
-// Guarda el carrito actual como pedido fijo. Vive acá, junto al resto del pedido fijo, para
-// que toda la funcionalidad quede en un solo sitio.
-async function saveCartAsRecurring() {
-    if (!cust) {
-        showToast('Inicia sesión para dejar un pedido fijo.');
-        return;
-    }
-    if (!cart.length) {
-        showToast('Arma tu pedido antes de dejarlo fijo.');
-        return;
-    }
-    var wd = document.getElementById('rec-day');
-    var sl = document.getElementById('rec-slot');
-    if (!wd || !sl)
-        return;
-    var dia = parseInt(wd.value, 10);
-    busy = true;
-    busyMsg = 'Guardando tu pedido fijo...';
-    render();
-    try {
-        // Con la dirección elegida en el carrito, para que cada semana llegue listo a la misma. El
-        // nombre del fijo lo pone el servidor con la carta vigente.
-        await api('recurring-add', { token: token, items: cart, weekday: dia, slot: sl.value, addressId: pickedAddrId });
-        busy = false;
-        render();
-        showToast('Listo — te avisamos cada ' + DIAS_SEMANA[dia].toLowerCase() + ' a las ' + sl.value + '.');
-    }
-    catch (e) {
-        busy = false;
-        render();
-        showToast('No se pudo guardar: ' + e.message);
-    }
-}
-// FAVORITOS
-async function loadFavorites() {
-    sndScreen = 'p_favorites';
-    busy = true;
-    busyMsg = 'Cargando favoritos...';
-    render();
-    try {
-        myFavorites = (await api('favorites-list', { token: token })).favorites;
-    }
-    catch (e) {
-        myFavorites = [];
-    }
-    busy = false;
-    render();
-}
-function sPFavorites() {
-    var h = H('MIS FAVORITOS', "sndScreen='p_home';render()") + '<div style="flex:1;padding:20px 20px 140px;overflow-y:auto" class="fi">';
-    if (!myFavorites.length) {
-        h += VACIO('Sin favoritos', 'Guarda un build desde la pantalla de confirmación de tu pedido.', '', 'mira');
-    }
-    else {
-        h += myFavorites.map(function (f) {
-            // min-width:0+text-overflow en el nombre y flex-shrink:0 en ELIMINAR (mismo
-            // criterio que ya usa la fila de direcciones) — antes un nombre largo sin tope
-            // podía tapar o empujar el botón de eliminar en pantallas angostas.
-            return '<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:16px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(f.name) + '</span><button onclick="doDeleteFavorite(\'' + f.id + '\')" style="all:unset;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:EB Garamond,serif;font-weight:600;font-size:11px;flex-shrink:0">Eliminar</button></div><button onclick="loadBuild(' + JSON.stringify(f.build).replace(/"/g, '&quot;') + ')" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.08em;padding:11px;border-radius:8px;text-align:center">Pedir este //</button></div>';
-        }).join('');
-    }
-    h += '</div>' + NAV();
-    return h;
-}
-async function doDeleteFavorite(id) {
-    if (!(await showConfirm('¿Eliminar este favorito?')))
-        return;
-    // Optimista: se quita de la lista al instante en vez de esperar la respuesta del
-    // servidor Y encima recargar toda la lista de nuevo — si el borrado falla, se
-    // reinserta en su posición original y se avisa con un toast.
-    var idx = myFavorites.findIndex(function (f) { return f.id == id; });
-    var removed = idx >= 0 ? myFavorites.splice(idx, 1)[0] : null;
-    render();
-    try {
-        await api('favorites-delete', { token: token, id: id });
-    }
-    catch (e) {
-        if (removed)
-            myFavorites.splice(idx, 0, removed);
-        render();
-        showToast(e.message);
-    }
-}
 // DIRECCIONES
 async function loadAddresses() {
     sndScreen = 'p_addresses';
@@ -13158,27 +11985,6 @@ async function doDeleteAddress(id) {
         render();
         showToast(e.message);
     }
-}
-async function doLogoutEverywhere() {
-    if (!(await showConfirm('Esto cerrará tu sesión aquí y en cualquier otro dispositivo donde hayas iniciado sesión. ¿Continuar?')))
-        return;
-    busy = true;
-    busyMsg = 'Cerrando sesiones...';
-    render();
-    // Si el servidor no confirmó, NO se cierra la sesión local: hacerlo le haría creer al cliente
-    // que cerró todas, y un teléfono perdido seguiría con la suya abierta (antes el error se
-    // tragaba y pasaba justo eso). Se queda donde está y se le dice que no se hizo.
-    try {
-        await api('logout-everywhere', { token: token });
-    }
-    catch (e) {
-        busy = false;
-        render();
-        showToast('No se pudieron cerrar las otras sesiones: ' + (e && e.message || 'sin conexión') + '. Vuelve a intentarlo.');
-        return;
-    }
-    busy = false;
-    doLogout();
 }
 // Antes no existía ningún camino para que un cliente pidiera borrar su cuenta — solo un
 // borrado manual del dueño en la base de datos. Pide el PIN de nuevo (no solo el token de
@@ -13613,96 +12419,6 @@ function printTicket(ordId) {
     w.document.write(html);
     w.document.close();
 }
-// ── DOS PANTALLAS DE CLIENTE QUE VIVÍAN EN EL ARCHIVO DEL PANEL (2026-09-10) ──────────
-// Ninguna de las dos es de admin, y las dos las abre gente SIN sesión de administrador:
-//
-//   · `sPRecover`        — recuperar el PIN. La usa un cliente que no puede entrar.
-//   · `sDeliveryConfirm` — confirmar la entrega desde el link de un solo uso. La abre quien
-//                          REPARTE, que no tiene cuenta: el token no adivinable es toda la
-//                          autorización, mismo criterio que `ref` para un invitado.
-//
-// Estaban en `10-admin-negocio.ts` por historia, no por diseño — igual que las 208 líneas
-// del flujo de dirección que ya habían salido de ahí. Mientras siguieran adentro, el panel
-// no se podía sacar del bundle sin dejar sin pantalla a las dos personas que MENOS cuenta
-// de admin tienen.
-function sPRecover() {
-    var pinBox = recNewPin ? '<div style="background:var(--sw-card2,#171A14);border:2px solid ' + GOLD + ';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">TU NUEVO PIN //</div><div onclick="togglePinReveal()" style="cursor:pointer;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:40px;font-weight:640;color:' + GOLD + (recPinRevealed ? '' : ';filter:blur(9px);user-select:none') + '">' + recNewPin + '</div><div onclick="togglePinReveal()" style="cursor:pointer;font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.1em;margin-top:6px;display:flex;align-items:center;justify-content:center;gap:5px">' + icon(recPinRevealed ? 'lock' : 'camera', 11, GOLD) + (recPinRevealed ? 'OCULTAR' : 'TOCA PARA VER') + '</div><div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:8px">Guárdalo — úsalo para ingresar con tu teléfono. No dejes esta pantalla abierta en un dispositivo compartido.</div></div>'
-        : (recEmailMasked ? '<div style="background:var(--sw-card2,#171A14);border:2px solid ' + GOLD + ';border-radius:12px;padding:20px;margin-bottom:16px;text-align:center"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:8px">✓ CORREO ENVIADO //</div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);line-height:1.5">Te mandamos tu PIN nuevo a<br><b style="color:' + GOLD + '">' + esc(recEmailMasked) + '</b></div></div>' : '');
-    return H('RECUPERAR CUENTA', "sndScreen='p_auth';render()")
-        + '<div style="flex:1;padding:24px 20px 40px" class="fi">'
-        + '<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text-body,#EFEDE4);margin-bottom:6px">RECUPERAR PIN //</div>'
-        + '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:24px;line-height:1.5">Verifica tu identidad con tu teléfono, DNI y fecha de nacimiento. Si tienes correo registrado, te mandamos el PIN nuevo ahí; si no, te lo mostramos aquí mismo.</div>'
-        + pinBox
-        // Antes el formulario (teléfono/DNI/fecha) y el botón "Recuperar mi PIN //" seguían
-        // visibles sin cambio tras generar el PIN — un segundo tap invalidaba en silencio el
-        // que ya se había mostrado, sin ningún CTA claro para seguir a Ingresar (hallazgo de
-        // auditoría UX, ALTO). Ahora, con un PIN/correo ya generado, el formulario se oculta y
-        // se reemplaza por un solo botón directo a Ingresar.
-        + ((recNewPin || recEmailMasked)
-            ? BTN('Ir a ingresar //', "atab='login';sndScreen='p_auth';render()")
-            : '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">'
-                + INP('rec-phone', 'Teléfono // 9XXXXXXXX', 'tel', recPhone, 'phone')
-                + INP('rec-dni', 'DNI // Tu número de 8 dígitos', 'text', recDni, 'card')
-                + INP('rec-bday', 'Fecha de nacimiento // DD/MM/AAAA', 'text', recBday, 'calendar')
-                + '</div>'
-                + '<div id="rec-msg" style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px;margin-bottom:12px;text-align:center"></div>'
-                + BTN('Recuperar mi PIN //', 'doRecover()'))
-        + '</div>';
-}
-// ⚠ ESTO VIVÍA EN EL PANEL (10-*) hasta el 2026-09-24. La pantalla de arriba ya se había
-// sacado de ahí, pero su botón no: con el panel fuera del bundle del cliente, «Recuperar mi
-// PIN» no hacía nada para quien no es el dueño — justo la persona que perdió su acceso. Nada
-// lo avisaba porque `check:cliente` solo miraba el código fuera de los strings, y un onclick
-// ES un string. Ahora también los mira.
-async function doRecover() {
-    var phone = gv('rec-phone').trim();
-    var dni = gv('rec-dni').trim();
-    var bdayRaw = gv('rec-bday').trim();
-    recPhone = phone;
-    recDni = dni;
-    recBday = bdayRaw;
-    var msg = document.getElementById('rec-msg');
-    if (!phone || !dni || !bdayRaw) {
-        if (msg)
-            msg.textContent = 'Completa teléfono, DNI y fecha de nacimiento.';
-        return;
-    }
-    var bday = parseBdayDDMMYYYY(bdayRaw);
-    if (!bday) {
-        if (msg)
-            msg.textContent = 'Fecha inválida — debe ser DD/MM/AAAA y existir de verdad.';
-        return;
-    }
-    busy = true;
-    busyMsg = 'Verificando...';
-    render();
-    try {
-        var r = await api('recover', { phone: phone, dni: dni, bday: bday });
-        if (r.emailSent) {
-            recNewPin = null;
-            recEmailMasked = r.emailMasked;
-        }
-        else {
-            recNewPin = r.newPin;
-            recEmailMasked = null;
-            recPinRevealed = false;
-        }
-        // Antes el teléfono no pasaba de esta pantalla a Ingresar — el cliente lo volvía a
-        // teclear pese a haberlo escrito hace un momento (hallazgo de auditoría UX, MEDIO).
-        savedPh = phone;
-        busy = false;
-        sndScreen = 'p_recover';
-        render();
-    }
-    catch (e) {
-        busy = false;
-        sndScreen = 'p_recover';
-        render();
-        var m2 = document.getElementById('rec-msg');
-        if (m2)
-            m2.textContent = e.message;
-    }
-}
 function sDeliveryConfirm() {
     var d = deliveryConfirmState || {};
     var caja = function (inner) {
@@ -13981,19 +12697,6 @@ if (window.visualViewport) {
 }
 window.addEventListener('offline', function () { isOffline = true; render(); });
 window.addEventListener('online', function () { isOffline = false; render(); });
-async function installPwa() {
-    if (!deferredInstallPrompt)
-        return;
-    deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice;
-    deferredInstallPrompt = null;
-    render();
-}
-function dismissPwaBanner() {
-    pwaDismissed = true;
-    localStorage.setItem('sw_pwa_dismissed', '1');
-    render();
-}
 // Chequeo de ubicación de una sola vez al abrir la app (no un rastreo continuo): si el
 // cliente ya cerró el banner hoy, o niega/no tiene geolocalización, simplemente no se
 // muestra nada — nunca insiste ni vuelve a pedir permiso en la misma sesión.
@@ -14013,11 +12716,6 @@ function checkNearbyStore() {
             render();
         }
     }, function () { }, { maximumAge: 600000, timeout: 8000 });
-}
-function dismissNearbyBanner() {
-    nearStore = false;
-    localStorage.setItem('sw_near_dismissed', new Date().toISOString().slice(0, 10));
-    render();
 }
 // NOTIFICACIONES PUSH — avisan cuando el pedido pasa a PREPARANDO/EN CAMINO/ENTREGADO,
 // incluso con la app cerrada. Solo disponibles para clientes con cuenta (la suscripción
@@ -14323,7 +13021,6 @@ function render() {
 // es cuántos bloques dibujar — se elige parecido a lo que suele llegar, porque un esqueleto
 // que no se parece a lo que aparece después es peor que un spinner.
 var LIST_SCREENS = {
-    p_favorites: 3,
     p_addresses: 3,
     p_recurring: 2,
 };
@@ -14433,9 +13130,6 @@ function renderScreen() {
             case 'p_welcome':
                 h = sWelcome();
                 break;
-            case 'p_recover':
-                h = sPRecover();
-                break;
             case 'p_legal':
                 h = sPLegal();
                 break;
@@ -14477,22 +13171,6 @@ function renderScreen() {
                 break;
             case 'p_avisos':
                 h = sPAvisos();
-                break;
-            case 'p_profile':
-                h = sPProfile();
-                break;
-            case 'p_favorites':
-                h = sPFavorites();
-                break;
-            // Las dos pantallas siguen existiendo enteras — solo dejan de ser alcanzables mientras
-            // el producto esté apagado (ver PLAN_SEMANAL_ACTIVO / TARJETA_REGALO_ACTIVA). El corte
-            // va acá y no solo en el botón porque `sndScreen` sobrevive en la sesión: alguien que
-            // dejó la app abierta en esa pantalla la volvería a ver al recargar.
-            case 'gift_card':
-                h = TARJETA_REGALO_ACTIVA ? sGiftCard() : (sndScreen = 'p_home', sPHome());
-                break;
-            case 'weekly_plan':
-                h = PLAN_SEMANAL_ACTIVO ? sWeeklyPlan() : (sndScreen = 'p_home', sPHome());
                 break;
             case 'group_order':
                 h = sGroupOrder();
