@@ -36,6 +36,14 @@ function ubicarDireccionEnMapa(){
   dirBorrador={label:gv('na-label').trim(),addr:gv('na-addr').trim(),ref:gv('na-ref').trim()};
   abrirMapaPara('p_addresses',null,dirBorrador.addr);
 }
+// La dirección guardada queda con su pin para siempre: no hay que volver a ubicarla.
+async function fijarPinDeGuardada(id:any,lat:number,lon:number){
+  var a:any=id!=null?myAddresses.find(function(x:any){return mismoId(x.id,id);}):null;
+  if(!a)return null;
+  try{await api('addresses-update',{token:token,id:a.id,label:a.label,address:a.address,reference:a.reference||'',lat:lat,lon:lon});a.lat=lat;a.lon=lon;}
+  catch(e:any){showToast('No se pudo guardar la ubicación de «'+(a.label||'tu dirección')+'»: '+e.message,'error');}
+  return a;
+}
 // Vuelta del mapa a la pantalla que lo abrió (ver confirmMap).
 async function despuesDelMapa(vuelve:string,texto:string){
   var lat=window._mLat,lon=window._mLon;
@@ -45,14 +53,16 @@ async function despuesDelMapa(vuelve:string,texto:string){
   }
   if(vuelve==='group_split'){
     var id=mapaDirId;mapaDirId=null;
-    var a=id?myAddresses.find(function(x:any){return mismoId(x.id,id);}):null;
-    if(a){
-      // La dirección guardada queda con su pin para siempre: no hay que volver a ubicarla.
-      try{await api('addresses-update',{token:token,id:a.id,label:a.label,address:a.address,reference:a.reference||'',lat:lat,lon:lon});a.lat=lat;a.lon=lon;}
-      catch(e:any){showToast('No se pudo guardar el pin de «'+(a.label||'tu dirección')+'»: '+e.message,'error');}
-      repartoAddrId=a.id;
-    }else repartoAddrId='__mapa';
+    var a=await fijarPinDeGuardada(id,lat,lon);
+    repartoAddrId=a?a.id:'__mapa';
     sndScreen='group_split';render();return;
+  }
+  if(vuelve==='o_cart'){
+    // Una guardada ubicada desde «Dónde te lo dejamos»: queda con su pin y elegida para pagar.
+    var id2=mapaDirId;mapaDirId=null;
+    var g=await fijarPinDeGuardada(id2,lat,lon);
+    if(g){pickAddr(g.id);dirElegida=null;}
+    sndScreen='o_cart';render();return;
   }
   sndScreen=vuelve;render();
 }

@@ -935,9 +935,14 @@ function sODir(){
     // La nota de la maqueta («Fuera de los distritos que cubrimos no llegamos todavía») se quitó:
     // desde el 2026-09-30 no hay zonas ni tope de distancia (dueño). Una promesa que ya no es cierta.
     +'</div>'
+    // Una guardada SIN pin se ubica en el mapa ELLA MISMA y queda guardada con su pin (dueño,
+    // 2026-10-01: «pide marcar en mapa aún si seleccionas una dirección guardada, luego no deja
+    // seleccionar en el mapa o ir a pagar»). Antes el botón abría el mapa para una dirección nueva.
     +'<div class="m30-go sw-barra">'+(sel&&envSel!=null
       ?'<button class="oro" onclick="usarDireccion()">Usar esta</button><button class="cel" onclick="usarDireccion()">'+SOLES_TXT+pz(envSel)+'</button>'
-      :'<button class="oro" onclick="otraDireccion()">Marcar en el mapa</button>')+'</div>';
+      :sel
+        ?'<button class="oro solo" onclick="abrirMapaPara(\'o_cart\','+esc(JSON.stringify(sel.id))+','+esc(JSON.stringify(sel.address||''))+')">Ubicar «'+esc(sel.label||'esta')+'» en el mapa</button>'
+        :'<button class="oro solo" onclick="otraDireccion()">Marcar en el mapa</button>')+'</div>';
 }
 function usarDireccion(){
   if(dirElegida==null)return;
@@ -2223,9 +2228,12 @@ function closeMap(){mapaVuelveA=null;mapaDirId=null;(document.getElementById('mm
 function confirmMap(){
   var inp=(document.getElementById('maddr-input') as HTMLInputElement | null);
   var a=inp?inp.value.trim():'';
+  // Sin texto escrito vale lo que Google leyó bajo el pin. Antes «Es acá» no hacía nada y no
+  // decía por qué: parecía que el mapa no dejaba seguir.
+  if(!a){var hm=(document.getElementById('maddr-hint') as HTMLElement|null);var t=hm&&!hm.querySelector('i')?(hm.textContent||'').trim():'';if(t&&t!=='Buscando…')a=t;}
   if(!a){
-    if(inp)inp.style.borderColor='var(--sw-danger-strong,#ff5555)';
-    setTimeout(function(){if(inp)inp.style.borderColor='var(--sw-border,#2C3228)';},1500);
+    avisoMapa('Escribe tu calle y número arriba (o una referencia) para que el motorizado te encuentre.');
+    if(inp)inp.focus();
     return;
   }
   if(_lmap){var c=_lmap.getCenter();window._mLat=c.lat();window._mLon=c.lng();}
