@@ -611,7 +611,7 @@ function renderScreen(){
   // pantallas (checkout, PUNTOS sin sesión, bienvenida), y mountGoogleButton() ya no hace
   // nada si no encuentra su punto de anclaje — así que preguntarle a cada render es más
   // barato que mantener una lista de pantallas que alguien va a olvidar actualizar.
-  mountGoogleButton();
+  googleAlCargar();
   renderOverlays();
   makeClickablesAccessible();
   // render() acaba de reconstruir todo el innerHTML, así que un campo ya marcado como

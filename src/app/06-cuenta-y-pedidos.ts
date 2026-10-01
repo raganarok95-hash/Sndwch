@@ -563,6 +563,9 @@ var _discChallengeClaimInProgress=false;
 // homólogo admin) resolvía de nuevo (hallazgo de auditoría de código).
 function doLogout(){
   cust=null;isAdmin=false;savedPh='';token='';aErr='';clearGoogleLink();
+  // Quien sale a propósito no puede volver a entrar solo en la próxima apertura.
+  try{localStorage.removeItem('sw_g_antes');}catch(e){}
+  try{if(typeof google!=='undefined'&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();}catch(e){}
   // El login por correo también es estado de sesión. Sin esta línea, quien cerraba sesión
   // dejaba el formulario en «teléfono y PIN» para la persona siguiente, y —peor— dejaba en
   // memoria `authProof`, la prueba de que SU correo ya se verificó: el registro la manda, y

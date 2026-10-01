@@ -458,6 +458,8 @@ async function loadStoreHoursBackground(){
       // no un secreto: lo peor que puede pasar es que quede uno viejo, y el de abajo lo
       // pisa en cuanto responde el servidor.
       try{localStorage.setItem('sw_gcid',r.googleClientId);}catch(e){}
+      // Llegó después del primer render: se monta ahora, sin esperar a que el cliente toque algo.
+      googleAlCargar();
     }
     // La key de Google Maps viaja al cliente igual que el id del píxel: una key de navegador
     // es pública por diseño (se ve en el HTML de cualquier sitio que use Maps) y lo que la
