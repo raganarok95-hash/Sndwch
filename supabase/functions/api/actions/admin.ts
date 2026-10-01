@@ -94,7 +94,7 @@ async function notifyRestockedSignatures(restockedCode: string): Promise<void> {
 export async function actAdminManualPoints(b: Entrada<"admin-manual-points"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const phone = String(b.phone || "").trim();
-  const pts = parseInt(b.pts, 10);
+  const pts = parseInt(String(b.pts), 10);
   if (!phone || !pts || pts < 1) throw new ApiError("Ingresa teléfono y puntos válidos.");
   const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(phone)}&select=name`);
   if (!rows.length) throw new ApiError("Cliente no encontrado: " + phone, 404);
