@@ -46,6 +46,7 @@ vive en el chat o en `/tmp`, no existe.
 | 34 · Dónde te lo dejamos | `34-donde-te-lo-dejamos.png` | `i1.html` #2 | «34 y bebidas de wicho aprobadas» |
 | 35 · Algo salió mal | `35-algo-salio-mal.png` | perdida — recorte de captura | «25 también» (era la 35) — ⚠ el PNG trae el SANDO viejo; la pantalla se construye con el actual (sando2_cuerpo_b, la misma pose) |
 | Bebidas · lado WICHO | `bebidas-lado-wicho.png` | `i1.html` #3 | «34 y bebidas de wicho aprobadas» |
+| Diálogos y avisos · neutros | `dialogos-neutros.png` | `../propuestas/dialogos-3-opciones.html` #A | «Avanza con la A» (2026-10-01): blanco y tinta, el color solo en la acción; no compiten con la pantalla de atrás. Las B y C de la lámina NO se aprobaron |
 | Bebidas · lado SANDO | `bebidas-lado-sando.png` | `w2.html` #6 | «Bebidas 3 aprobada» |
 | Entrar | `entrar.png` | `w2.html` #2 | «entrar 2 aprobada» (corregida: se cortaba la cabeza de SANDO) |
 | Tus pedidos · los sellos | `tus-pedidos-los-sellos.png` | `v2.html` #2 | «Tus pedidos me suena bien» — **trae «Pedir lo mismo» arriba** |

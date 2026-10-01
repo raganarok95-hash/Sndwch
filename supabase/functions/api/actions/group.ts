@@ -5,9 +5,10 @@
 // duplicar la lógica de pago: actCloseGroupOrder solo devuelve los items ya agregados para
 // que el cliente los cargue con loadCart() y pague exactamente como cualquier pedido
 // multi-item (con combo/gating de menú secreto ya validados por ese mismo camino).
-import { sbGet, sbInsert, sbUpdate, rpc } from "../db.ts";
+import { sbGet, sbInsert, sbUpdate, sbDelete, rpc, leer } from "../db.ts";
 import { ApiError } from "../types.ts";
-import { requireSession, verifyActiveSession, verifyCronSecret } from "../session.ts";
+import { requireSession, verifyActiveSession, verifyCronSecret, llaveDeItemDeGrupo } from "../session.ts";
+import type { Entrada, Salida } from "../../_shared/contrato.ts";
 import { loadCatalogPrices, priceCartItem, assertCartGatesAllowed, deriveCart, ORGANIZER_FREE_MIN_SANDWICHES } from "../catalog.ts";
 import { sendPushToPhone, sendPushToAdmins } from "../push.ts";
 import { finalizeAndInsertOrder, restockOrderItems, restockBestEffort, resolveDeliveryFee } from "./orders.ts";
@@ -122,7 +123,8 @@ export async function actAddGroupItem(b: any) {
   // su propio carrito personal por separado.
   assertCartGatesAllowed([b.item], 0);
   const priced = priceCartItem(b.item); // valida el ítem — lanza ApiError si es inválido
-  await sbInsert("group_order_items", { group_order_id: g.id, contributor_name: contributorName, item: priced.item });
+  const filas = await sbInsert("group_order_items", { group_order_id: g.id, contributor_name: contributorName, item: priced.item });
+  const nuevoId = String((Array.isArray(filas) ? filas[0] : filas)?.id || "");
 
   // Avisa a quien organizó que alguien más se sumó — antes tenía que quedarse mirando la
   // pantalla (o refrescar) para saber cuándo ya podía cerrar y pagar. Si quien organiza es
@@ -145,7 +147,30 @@ export async function actAddGroupItem(b: any) {
       // un push fallido no debe bloquear que el pedido se agregue
     }
   }
+  // El id y su llave vuelven a quien agregó: con eso puede quitarlo ahí mismo (actRemoveGroupItem).
+  return { success: true, id: nuevoId, llave: nuevoId ? await llaveDeItemDeGrupo(nuevoId) : "" };
+}
+
+// QUITAR LO QUE AGREGASTE (dueño, 2026-10-01: «al agregar más al mío es muy silencioso… puede
+// generar pedidos por error, no permite quitarlos allí mismo»). Puede quitar quien lo agregó (trae la
+// llave que le dio add-group-item) o quien organiza (su sesión). Solo con el grupo abierto.
+export async function actRemoveGroupItem(b: Entrada<"remove-group-item">): Promise<Salida<"remove-group-item">> {
+  const code = b.code.toUpperCase();
+  const g = await fetchGroupOrder(code);
+  if (g.status !== "open" || new Date(g.expires_at).getTime() < Date.now()) {
+    throw new ApiError("Este pedido grupal ya se cerró: ya no se puede quitar nada.", 409);
+  }
+  let puede = !!b.llave && b.llave === (await llaveDeItemDeGrupo(b.id));
+  if (!puede && b.token) {
+    const active = await verifyActiveSession(b.token);
+    puede = !!active && active.payload.phone === g.organizer_phone;
+  }
+  if (!puede) throw new ApiError("Solo puedes quitar lo que agregaste tú.", 403);
+  const [fila] = await leer("group_order_items", ["id"], `id=eq.${b.id}&group_order_id=eq.${g.id}`);
+  if (!fila) throw new ApiError("Eso ya no está en el grupo.", 404);
+  await sbDelete("group_order_items", `id=eq.${b.id}&group_order_id=eq.${g.id}`);
   return { success: true };
+
 }
 
 export async function actCancelGroupOrder(b: any) {

@@ -31,6 +31,12 @@ async function hmac(data: string): Promise<string> {
   const sig = await crypto.subtle.sign("HMAC", key, enc.encode(data));
   return b64url(new Uint8Array(sig));
 }
+// La llave para quitar un ítem de un pedido grupal (2026-10-01). Quien agrega por el enlace no
+// tiene cuenta: la llave, firmada con el secreto de sesión, prueba que ESE ítem lo agregó este
+// teléfono. Los ids de los ítems los ve todo el grupo; la llave, solo quien agregó.
+export async function llaveDeItemDeGrupo(id: string): Promise<string> {
+  return await hmac("grupo-item:" + id);
+}
 export async function signToken(payload: SessionPayload): Promise<string> {
   const p = b64url(enc.encode(JSON.stringify(payload)));
   const s = await hmac(p);

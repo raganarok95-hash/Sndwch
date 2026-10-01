@@ -20,7 +20,7 @@ test('alguien sin cuenta se une por link y agrega su pedido', async ({ page }) =
   await page.locator('#grp-name').fill('Beto');
   await page.getByRole('button', { name: 'AGREGAR' }).first().click();
 
-  await expect(page.locator('text=¡Listo! Tu pedido se agregó.')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText(/^Agregado: .* Lo ves arriba/)).toBeVisible({ timeout: 10000 });
 
   const addCall = calls.find((c) => c.action === 'add-group-item');
   expect(addCall).toBeTruthy();
@@ -50,7 +50,7 @@ test('alguien sin cuenta agrega solo una bebida al pedido grupal, sin sándwich'
   await page.locator('#grp-name').fill('Beto');
   await page.getByRole('button', { name: 'AGREGAR' }).last().click();
 
-  await expect(page.locator('text=¡Listo! Tu bebida se agregó.')).toBeVisible({ timeout: 10000 });
+  await expect(page.getByText(/^Agregado: .* Lo ves arriba/)).toBeVisible({ timeout: 10000 });
 
   const addCall = calls.find((c) => c.action === 'add-group-item');
   expect(addCall).toBeTruthy();

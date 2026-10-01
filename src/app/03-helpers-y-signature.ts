@@ -1259,26 +1259,37 @@ function stopGroupPoll(){if(_groupPollTimer){clearInterval(_groupPollTimer);_gro
 async function submitGroupItem(item,okMsg){
   var nameEl=(document.getElementById('grp-name') as HTMLInputElement | null);
   var name=nameEl?nameEl.value.trim():groupJoinName;
-  if(!name){groupMsg='Ingresa tu nombre antes de agregar tu pedido.';render();return;}
+  if(!name){
+    // Sin nombre no se agrega: se dice con un aviso y se lleva el foco al campo (antes era una
+    // línea al pie, fuera de la vista: «no deja elegir bebidas»).
+    showToast('Escribe tu nombre arriba antes de agregar.','error');
+    var ne=document.getElementById('grp-name') as HTMLInputElement|null;if(ne){ne.scrollIntoView({block:'center'});ne.focus();}
+    return;
+  }
   groupJoinName=name;
   try{localStorage.setItem('sw_group_name',name);}catch(e){}
   try{
     // Manda token (vacío si es invitado) para que el servidor sepa si quien agrega es
     // quien organizó, y así no le mande una notificación push a sí mismo.
-    await api('add-group-item',{code:groupCode,contributorName:name,token:token,item:item});
-    groupMsg=okMsg;
+    var r=await api('add-group-item',{code:groupCode,contributorName:name,token:token,item:item});
+    if(r&&r.id&&r.llave)guardarLlave(String(r.id),String(r.llave));
+    groupMsg='';
+    // Agregar ya no es silencioso: se nombra lo que entró y aparece en «Lo tuyo», arriba.
+    showToast(okMsg);
     loadGroupOrder();
   }catch(e){groupMsg=e.message;render();}
 }
 function doAddGroupItem(sigId){
-  submitGroupItem({type:'sig',sigId:sigId,size:groupSize,doubleProt:false,extraSauce:false,qty:1},'¡Listo! Tu pedido se agregó.');
+  var sg=SIGS.find(function(x){return x.id===sigId;});
+  submitGroupItem({type:'sig',sigId:sigId,size:groupSize,doubleProt:false,extraSauce:false,qty:1},'Agregado: '+(sg?sg.n:'tu sándwich')+' '+groupSize+'CM. Lo ves arriba, en «Lo tuyo».');
 }
 // Antes solo se podía agregar un Signature al pedido grupal (SIGS.filter en sGroupOrder) —
 // quien solo quería sumar una bebida sin sándwich no tenía forma de hacerlo (hallazgo de
 // auditoría UX). Mismo action del servidor (add-group-item -> priceCartItem ya valida
 // item.type:'side' desde que existen los carritos multi-ítem), solo faltaba la UI.
 function doAddGroupSide(code){
-  submitGroupItem({type:'side',code:code,qty:1},'¡Listo! Tu bebida se agregó.');
+  var dd=SIDES.find(function(x){return x.id===code;});
+  submitGroupItem({type:'side',code:code,qty:1},'Agregado: '+(dd?dd.l:'tu bebida')+'. Lo ves arriba, en «Lo tuyo».');
 }
 async function doCloseGroupOrder(){
   if(!(await showConfirm('¿Cerrar el pedido grupal y continuar a pagar todo junto?')))return;
@@ -1358,6 +1369,15 @@ function sGroupOrder(){
   var puedeCerrar=g.isOrganizer&&(abierto||g.canPay);
   var h='<div class="mgr fi"><button class="sal" onclick="'+bk+'" aria-label="Volver">←</button>'+wmClaro()
     +'<div class="tit"><em>Pedido grupal · #'+esc(g.code)+'</em><b>QUIÉNES<br>COMEN</b></div>';
+  // Qué está pasando, dicho arriba (dueño, 2026-10-01: «nunca compartí el enlace»; el grupo se crea
+  // al tocar «Armar el grupo»). Al organizador: que ya está abierto y cómo sumar gente. A quien
+  // llega por el enlace: quién lo invitó y qué hacer — casi nunca conoce SND//WCH.
+  if(abierto){
+    var minA=Math.max(0,Math.ceil((new Date(g.expiresAt).getTime()-Date.now())/60000));
+    h+=g.isOrganizer
+      ?'<p class="intro">Tu grupo está abierto '+minA+' min. Comparte el enlace para que cada uno elija lo suyo desde su celular, o agrega tú todo abajo.</p>'
+      :'<p class="intro"><b>'+esc(g.organizerName||'Alguien')+'</b> armó este pedido y te invitó. Escribe tu nombre, elige lo tuyo y llega todo junto. Te quedan '+minA+' min.</p>';
+  }
   if(abierto)h+='<button class="link" onclick="copiarEnlaceGrupo()"><s>'+esc(linkDelGrupo().replace(/^https?:\/\//,''))+'</s><u>Copiar enlace</u></button>';
   if(repartido){
     h+=partesDelGrupoHTML(g);
@@ -1410,19 +1430,59 @@ function sGroupOrder(){
   }
   return h+'</div>';
 }
-// Lo que cada uno suma: nombre, tamaño y la carta. Mismo action de siempre (add-group-item).
+// Lo que cada uno suma (dueño, 2026-10-01). Tres cosas que faltaban:
+//  · quien entra por el enlace casi nunca conoce SND//WCH: cada sándwich y cada bebida va con su
+//    foto y una línea que lo vende («es oportunidad para ganar clientes»);
+//  · agregar era silencioso y no se podía deshacer: ahora «Lo tuyo» va arriba, con lo que llevas,
+//    y cada cosa se quita ahí mismo (remove-group-item, con la llave que dio el servidor);
+//  · cada agregado se confirma con un aviso que nombra lo que entró.
+function llavesDelGrupo():Record<string,string>{
+  try{return JSON.parse(localStorage.getItem('sw_grp_llaves_'+(groupCode||''))||'{}')||{};}catch(e){return {};}
+}
+function guardarLlave(id:string,llave:string){
+  var m=llavesDelGrupo();m[id]=llave;
+  try{localStorage.setItem('sw_grp_llaves_'+(groupCode||''),JSON.stringify(m));}catch(e){}
+}
+function loTuyoHTML(g:any):string{
+  var yo=quienSoyEnElGrupo(g),llaves=llavesDelGrupo();
+  var mios=(g.items||[]).filter(function(it:any){return llaves[it.id]||(yo&&it.contributorName===yo);});
+  if(!mios.length)return'';
+  var suma=mios.reduce(function(a:number,it:any){return a+it.unitPrice*it.qty;},0);
+  return'<div class="tuyo"><em>Lo tuyo · '+mios.length+(mios.length===1?' cosa':' cosas')+' · '+SOLES_TXT+pz(suma)+'</em>'
+    +mios.map(function(it:any){
+      var quitable=!!llaves[it.id]||!!g.isOrganizer;
+      return'<div class="l"><span>'+esc(it.label)+(it.qty>1?' ×'+it.qty:'')+'</span><span class="p">'+d2(it.unitPrice*it.qty)+'</span>'
+        +(quitable&&g.status==='open'?'<button onclick="quitarDelGrupo(\''+esc(String(it.id))+'\')" aria-label="Quitar '+esc(it.label)+'">Quitar</button>':'')+'</div>';
+    }).join('')+'</div>';
+}
+function primeraFraseCorta(t:string):string{var f=primeraFrase(t||'');return f.length>110?f.slice(0,107).trim()+'…':f;}
 function sumarAlGrupoHTML(g:any):string{
   var h='<div class="sumar"><em>Suma lo tuyo</em>'
     +'<input id="grp-name" aria-label="Tu nombre" placeholder="Tu nombre" autocomplete="given-name" value="'+esc(groupJoinName||(g.isOrganizer&&cust?cust.name:''))+'">'
+    +loTuyoHTML(g)
     +'<div class="tam" role="radiogroup" aria-label="Tamaño">'
     +['15','30'].map(function(sz){return'<button role="radio" aria-checked="'+(groupSize===sz)+'" class="'+(groupSize===sz?'on':'')+'" onclick="groupSize=\''+sz+'\';render()">'+sz+'CM</button>';}).join('')+'</div>';
-  h+=SIGS.filter(function(s){return!s.secret&&sigAvailable(s);}).map(function(s){
-    return'<div class="it"><div class="t"><b>'+esc(s.n)+'</b><s>'+esc(s.s)+' · '+d2(groupSize==='15'?s.p15:s.p30)+'</s></div><button onclick="doAddGroupItem(\''+s.id+'\')">Agregar</button></div>';
+  h+='<h3>Los sándwiches</h3>'+SIGS.filter(function(s){return!s.secret&&sigAvailable(s);}).map(function(s){
+    var foto=SIG_IMG[s.id]||fotoDelPlato(s.id);
+    return'<div class="it">'+(foto?'<img src="'+foto+'" alt="" loading="lazy">':'')
+      +'<div class="t"><b>'+esc(s.n)+'</b><s>'+esc(primeraFraseCorta(s.pitch||''))+'</s><i>'+SOLES_TXT+pz(groupSize==='15'?s.p15:s.p30)+' · '+groupSize+'CM</i></div>'
+      +'<button onclick="doAddGroupItem(\''+s.id+'\')">Agregar</button></div>';
   }).join('');
-  h+=SIDES.map(function(s){
-    return'<div class="it"><div class="t"><b>'+esc(s.l)+'</b><s>'+esc(s.s)+' · '+d2(s.p)+'</s></div><button onclick="doAddGroupSide(\''+s.id+'\')">Agregar</button></div>';
+  h+='<h3>Para tomar</h3>'+SIDES.filter(function(d){return isAvail(d.id);}).map(function(d){
+    var foto=DRINK_IMG[d.id];
+    return'<div class="it">'+(foto?'<img src="'+foto+'" alt="" loading="lazy">':'')
+      +'<div class="t"><b>'+esc(d.l)+'</b><s>'+esc(primeraFraseCorta(d.d||''))+'</s><i>'+SOLES_TXT+pz(d.p)+' · 500 ml</i></div>'
+      +'<button onclick="doAddGroupSide(\''+d.id+'\')">Agregar</button></div>';
   }).join('');
   return h+'<div class="msg" role="status">'+esc(groupMsg)+'</div></div>';
+}
+async function quitarDelGrupo(id:string){
+  var llave=llavesDelGrupo()[id]||'';
+  try{
+    await api('remove-group-item',{token:token||'',code:groupCode,id:id,llave:llave});
+    showToast('Quitado de tu pedido.');
+    loadGroupOrder();
+  }catch(e:any){showToast(e.message,'error');}
 }
 // Los dos cierres del grupo. «Cerrar y pagar»: cada uno paga lo suyo (decisión del dueño,
 // 2026-09-24) — el servidor crea un pedido Yape por persona con su parte del envío
@@ -1533,7 +1593,7 @@ function M15_PASAR(total:number,i:number,esSecreto:boolean,hayVault:boolean){
 // (desde cuántos, cuál va gratis) sale de la carta.
 function platoGrupo(total:number,hayVault:boolean):string{
   return'<section class="plato kraft grupo" aria-label="Pedido en grupo"><div class="forro"></div>'
-    +'<div class="logo" aria-hidden="true"><img src="img/logo-avatar-96.png" alt=""></div>'
+    +'<div class="logo" aria-hidden="true"><img src="img/logo-avatar-640.webp" alt=""></div>'
     +'<div class="ficha"><div class="num">Para varios</div>'
     +'<h1>Pedido en grupo</h1><div class="pitch">Mandas un enlace y cada uno elige el suyo desde su celular, Signature o armado. Tú pagas una vez y llega todo junto.</div>'
     +'<div class="regla">Desde '+ORGANIZER_FREE_MIN_SANDWICHES+' sándwiches, el más barato va gratis</div></div>'
@@ -1559,9 +1619,42 @@ function abrirPlato(idx:number){
 }
 // Primer toque: levanta la carta y marca su fila en la lista de abajo. Segundo toque: abre su
 // plato. Se hace sin render() para que el abanico no vuelva a abrirse desde cero en cada toque.
+// En la fila (2026-10-01): la carta del centro es la elegida. Tocarla abre su plato; tocar una del
+// costado la trae al centro.
 function tocarCarta(btn:HTMLElement){
   if(btn.classList.contains('sel')){abrirPlato(Number(btn.getAttribute('data-plato')));return;}
-  marcarCarta(Number(btn.getAttribute('data-plato')));
+  var mano=btn.parentElement as HTMLElement|null;
+  if(mano)mano.scrollTo({left:btn.offsetLeft-(mano.clientWidth-btn.offsetWidth)/2,behavior:'smooth'});
+}
+// Cada carta gira según su distancia al centro: al pasar de una a otra se ve voltearse. La del
+// centro queda elegida y marca su fila en la lista. Se guarda dónde quedó la mano para que un
+// render() (llegan la carta y el horario por red) no la devuelva al principio: eso era el «cargó
+// tres veces» del dueño, junto con la animación de entrada que se repetía en cada render.
+var manoScroll:number|null=null,_giroPedido=false;
+function girarCartas(mano:HTMLElement){
+  if(_giroPedido)return;_giroPedido=true;
+  requestAnimationFrame(function(){
+    _giroPedido=false;
+    manoScroll=mano.scrollLeft;
+    var centro=mano.scrollLeft+mano.clientWidth/2,mejor:any=null,dMin=9;
+    mano.querySelectorAll('.k').forEach(function(k:any){
+      var paso=k.offsetWidth+8;
+      var d=Math.max(-1,Math.min(1,(k.offsetLeft+k.offsetWidth/2-centro)/paso));
+      k.style.setProperty('--d',d.toFixed(3));
+      if(Math.abs(d)<dMin){dMin=Math.abs(d);mejor=k;}
+    });
+    if(mejor&&!mejor.classList.contains('sel'))marcarCarta(Number(mejor.getAttribute('data-plato')));
+  });
+}
+function iniciarMano(){
+  var mano=document.querySelector('.mtarot .mano') as HTMLElement|null;
+  if(!mano)return;
+  if(manoScroll!=null)mano.scrollLeft=manoScroll;
+  else{
+    var e=mano.querySelector('.k.sel') as HTMLElement|null;
+    if(e)mano.scrollLeft=e.offsetLeft-(mano.clientWidth-e.offsetWidth)/2;
+  }
+  girarCartas(mano);
 }
 function marcarCarta(plato:number){
   document.querySelectorAll('.mtarot .k').forEach(function(k){
@@ -1579,7 +1672,6 @@ var NUM_PALABRA=['Ninguna','Una','Dos','Tres','Cuatro','Cinco','Seis','Siete','O
 // el plato directo: quien leyó la descripción ya sabe qué está eligiendo.
 function sCartaTarot(visibles:any[],secreto:any){
   var total=visibles.length+(secreto?1:0);
-  var mitad=(total-1)/2;
   var n=cart.reduce(function(a,it){return a+(it.qty||1);},0);
   // El índice del plato: el primero, después el del pedido en grupo, después el resto (ver
   // sMundoSando). El secreto es el último.
@@ -1587,7 +1679,7 @@ function sCartaTarot(visibles:any[],secreto:any){
   var estrella=Math.max(0,visibles.findIndex(function(s:any){return s.recommended;}));
   var cartas=visibles.map(function(s:any,i:number){
     var sel=i===estrella;
-    return'<button class="k'+(s.recommended?' e':'')+(sel?' sel':'')+'" style="--o:'+(i-mitad)+';--d:'+(i*60)+'ms" onclick="tocarCarta(this)" aria-pressed="'+sel+'"'
+    return'<button class="k'+(s.recommended?' e':'')+(sel?' sel':'')+'" onclick="tocarCarta(this)" aria-pressed="'+sel+'"'
       +' data-plato="'+platoDe(i)+'" aria-label="Carta '+romano(i+1)+': '+esc(s.n)+', '+SOLES_TXT+pz(s.p15)+'">'
       +'<u>'+romano(i+1)+'</u>'
       +(fotoDelPlato(s.id)?'<img src="'+(SIG_IMG[s.id]||fotoDelPlato(s.id))+'" alt="">':'<span class="sinfoto"></span>')
@@ -1605,7 +1697,7 @@ function sCartaTarot(visibles:any[],secreto:any){
     var falta=Math.max(0,secreto.minOrders-myTotal);
     var abierto=!!cust&&falta===0;
     var pSec=visibles.length+1;
-    cartas+='<button class="k x" style="--o:'+(total-1-mitad)+';--d:'+(visibles.length*60)+'ms" onclick="tocarCarta(this)" aria-pressed="false"'
+    cartas+='<button class="k x" onclick="tocarCarta(this)" aria-pressed="false"'
       +' data-plato="'+pSec+'" aria-label="Carta '+romano(total)+': el sándwich secreto, '+(abierto?'abierto':'boca abajo')+'"><u>'+romano(total)+'</u><span class="luna" aria-hidden="true">☾</span><em>'+(abierto?'Ya es tuya':'Boca abajo')+'</em></button>';
     filas+='<button class="fila x" data-plato="'+pSec+'" onclick="abrirPlato('+pSec+')">'
       +'<u>'+romano(total)+'</u><span class="t"><b>El sándwich secreto</b>'
@@ -1619,8 +1711,8 @@ function sCartaTarot(visibles:any[],secreto:any){
     +(n?'<button class="c" onclick="go(\'o_cart\')" aria-label="Tu pedido, '+n+(n===1?' cosa':' cosas')+'"><span>'+n+'</span></button>':'<span class="vacio"></span>')
     +'</div>'
     +'<div class="cab"><h1>Elige tu carta</h1><p>'+cuantas+' a la vista.'+(secreto?' La '+(total===7?'séptima':'última')+', boca abajo.':'')+'</p></div>'
-    +'<div class="mano">'+cartas+'</div>'
-    +'<p class="pista">Toca una carta para levantarla; otra vez, y es tuya.</p>'
+    +'<div class="mano" onscroll="girarCartas(this)">'+cartas+'</div>'
+    +'<p class="pista">Desliza para pasar de carta. Toca la del centro y es tuya.</p>'
     +'<div class="lista"><h2>Lo que dice cada carta</h2>'+filas+'</div>'
     +'</div>';
 }
