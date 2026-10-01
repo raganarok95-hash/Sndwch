@@ -4,7 +4,7 @@ function sWelcome(){
   var nm=cust?cust.name.split(' ')[0]:'';
   var rwd=RWDS.slice().reverse().find(function(r){return pts>=r.pts;});
   var next=RWDS.find(function(r){return r.pts>pts;});
-  return'<div onclick="sndScreen=\'p_home\';render()" style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--sw-bg,#12150F);padding:48px 24px;position:relative;overflow:hidden">'
+  return'<div onclick="sndScreen=\'p_home\';render()" style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--sw-bg,#17130E);padding:48px 24px;position:relative;overflow:hidden">'
     +'<div style="position:absolute;top:-80px;right:-80px;width:300px;height:300px;border-radius:50%;background:rgba(203,162,88,.06)"></div>'
     +'<div style="position:absolute;bottom:-60px;left:-60px;width:220px;height:220px;border-radius:50%;background:rgba(203,162,88,.04)"></div>'
     +'<div style="text-align:center;position:relative;z-index:1;width:100%">'
@@ -717,7 +717,7 @@ function sPComplaints(){
     +INP('cq-email','Correo electrónico','email',cust?cust.email:undefined,'mail')
     +minorBlock
     +'</div>'
-    +'<div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>'
+    +'<div style="height:1px;background:var(--sw-bg,#17130E);margin:20px 0"></div>'
     +ST('02','El '+(cmplKind==='queja'?'malestar':'pedido'),'')
     +'<div style="display:flex;flex-direction:column;gap:10px">'
     +INP('cq-ref','Referencia del pedido // opcional (ej: SND-1234)','text')

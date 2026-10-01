@@ -31,7 +31,7 @@ function DHERO(label,big,sub?){
 }
 function DBAR(label,value,max,color?){
   var pct=max>0?Math.min(100,Math.round((value/max)*100)):0;
-  return'<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#EFEDE4)">'+label+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+(color||GOLD)+'">'+value+'</span></div><div style="background:var(--sw-bg,#12150F);border-radius:4px;height:8px;overflow:hidden"><div style="background:'+(color||GOLD)+';height:100%;width:'+pct+'%;border-radius:4px"></div></div></div>';
+  return'<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#EFEDE4)">'+label+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+(color||GOLD)+'">'+value+'</span></div><div style="background:var(--sw-bg,#17130E);border-radius:4px;height:8px;overflow:hidden"><div style="background:'+(color||GOLD)+';height:100%;width:'+pct+'%;border-radius:4px"></div></div></div>';
 }
 function sAdminDashboard(){
   var h=H('PANEL DE NEGOCIO',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
@@ -118,19 +118,19 @@ function sAdminDashboard(){
   if(d.avgEtaMinutes!=null){
     h+='<div style="margin-top:10px">'+DTILE('Tiempo estimado promedio ofrecido',d.avgEtaMinutes+' min','Cuando se marca "EN CAMINO"')+'</div>';
   }
-  h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:16px 0"></div>';
+  h+='<div style="height:1px;background:var(--sw-bg,#17130E);margin:16px 0"></div>';
   // Productos top
   h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Productos más vendidos //</div>';
   if(d.topProducts&&d.topProducts.length){
     var pMax=Math.max.apply(null,d.topProducts.map(function(p){return p.count;}).concat([1]));
     h+=d.topProducts.map(function(p){
       var pct=Math.round((p.count/pMax)*100);
-      return'<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(p.name)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">'+p.count+' vendidos · '+SOLES+pz(p.revenue)+'</span></div><div style="background:var(--sw-bg,#12150F);border-radius:4px;height:8px;overflow:hidden"><div style="background:'+GOLD+';height:100%;width:'+pct+'%;border-radius:4px"></div></div></div>';
+      return'<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(p.name)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">'+p.count+' vendidos · '+SOLES+pz(p.revenue)+'</span></div><div style="background:var(--sw-bg,#17130E);border-radius:4px;height:8px;overflow:hidden"><div style="background:'+GOLD+';height:100%;width:'+pct+'%;border-radius:4px"></div></div></div>';
     }).join('');
   }else{
     h+='<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:16px">Aún no hay ventas pagadas para rankear productos.</div>';
   }
-  h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:16px 0"></div>';
+  h+='<div style="height:1px;background:var(--sw-bg,#17130E);margin:16px 0"></div>';
   // Clientes
   h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Clientes //</div>';
   h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
@@ -173,7 +173,7 @@ function sAdminDashboard(){
   // así que ya no tiene sentido mostrarlo como un bucket aparte en este gráfico.
   var tMax=Math.max(tiers.FREQUENT||0,tiers.REGULAR||0,tiers.MEMBER||0,1);
   h+=DBAR('Frequent',tiers.FREQUENT||0,tMax,GOLD)+DBAR('Regular',tiers.REGULAR||0,tMax,'#7FA894')+DBAR('Member',tiers.MEMBER||0,tMax,'#4A6B5A');
-  h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:16px 0"></div>';
+  h+='<div style="height:1px;background:var(--sw-bg,#17130E);margin:16px 0"></div>';
   // Clientes en riesgo de fuga — priorizados por días sin pedir Y rango (perder a alguien
   // de MESA FUNDADORA pesa más que perder a alguien NUEVO). No reemplaza los recordatorios
   // automáticos (remind-second-order/remind-high-rank-winback), es para que el dueño
@@ -187,7 +187,7 @@ function sAdminDashboard(){
   }else{
     h+='<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:14px">Sin clientes en riesgo por ahora.</div>';
   }
-  h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:16px 0"></div>';
+  h+='<div style="height:1px;background:var(--sw-bg,#17130E);margin:16px 0"></div>';
   // Puntos
   h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Puntos //</div>';
   h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px">'
@@ -195,7 +195,7 @@ function sAdminDashboard(){
     +DTILE('Canjeados',d.points.redeemed)
     +DTILE('En circulación',d.points.outstanding,undefined,true)
     +'</div>';
-  h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:16px 0"></div>';
+  h+='<div style="height:1px;background:var(--sw-bg,#17130E);margin:16px 0"></div>';
   h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Exportar //</div>';
   h+='<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">'
     +'<button onclick="exportCsv(\'export-orders\',\'pedidos\')" style="all:unset;cursor:pointer;background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:12px;border-radius:8px;text-align:center">Exportar pedidos (CSV) //</button>'
@@ -237,7 +237,7 @@ async function exportCsv(action,filename){
 // razón funcional (hallazgo de auditoría visual, MEDIO). H() también trae el toggle
 // claro/oscuro y sndScreen='admin_home' vía loadAdmin() (no solo render()), que esta pantalla no
 // tenía.
-function sAdminGen(){return'<div style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#12150F)">'+H('Puntos manuales','loadAdmin()')+'<div style="flex:1;padding:24px 20px" class="fi"><p style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text-muted,#9DA096);margin-bottom:20px;line-height:1.6">Otorga puntos confirmados directamente a un cliente.</p><div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">'+INP('ag-ph','Teléfono del cliente // 9XXXXXXXX','tel',agPhone,'phone')+INP('ag-pts','Puntos a otorgar // Ej: 25','number',agPts)+BTN('Otorgar puntos //','doManualPts()')+'</div><div id="ag-msg" style="font-family:\'EB Garamond\',serif;font-size:13px;color:'+GOLD+';min-height:20px">'+agMsg+'</div>'
+function sAdminGen(){return'<div style="min-height:100vh;display:flex;flex-direction:column;background:var(--sw-bg,#17130E)">'+H('Puntos manuales','loadAdmin()')+'<div style="flex:1;padding:24px 20px" class="fi"><p style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text-muted,#9DA096);margin-bottom:20px;line-height:1.6">Otorga puntos confirmados directamente a un cliente.</p><div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">'+INP('ag-ph','Teléfono del cliente // 9XXXXXXXX','tel',agPhone,'phone')+INP('ag-pts','Puntos a otorgar // Ej: 25','number',agPts)+BTN('Otorgar puntos //','doManualPts()')+'</div><div id="ag-msg" style="font-family:\'EB Garamond\',serif;font-size:13px;color:'+GOLD+';min-height:20px">'+agMsg+'</div>'
   +'<div style="height:1px;background:var(--sw-card,#1B1F18);margin:28px 0 24px"></div>'
   +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:4px;text-wrap:balance">Crédito<span class="cut-sep" style="color:'+GOLD+'"> // </span>ajuste manual</div>'
   +'<p style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-text-muted,#9DA096);margin:8px 0 20px;line-height:1.6">Corrige el saldo de crédito interno de un cliente (ej. reponer un pedido cancelado que se pagó con crédito). Puede ser negativo para descontar un exceso otorgado por error.</p><div style="display:flex;flex-direction:column;gap:12px">'+INP('ac-ph','Teléfono del cliente // 9XXXXXXXX','tel',acPhone,'phone')+INP('ac-delta','Monto // positivo suma, negativo descuenta','number',acDelta,'coin')+BTN('Ajustar crédito //','doManualCredit()')+'</div><div id="ac-msg" style="font-family:\'EB Garamond\',serif;font-size:13px;color:'+GOLD+';min-height:20px;margin-top:12px">'+acMsg+'</div></div></div>';}
@@ -523,7 +523,7 @@ function sAdminMgr(){
   return H('ADMINISTRADORES',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">'
     +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:14px">Cuentas admin // '+_adminList.length+'</div>'
     +_adminList.map(function(a){var sp=a.role==='superadmin';return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(a.name)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(a.phone)+' · '+(sp?'Superadmin':'admin')+'</div></div>'+(sp?'<span style="font-family:EB Garamond,serif;font-style:italic;font-size:8px;color:'+GOLD+'">Principal</span>':'<button onclick="delAdmin(\''+a.phone+'\')" style="all:unset;cursor:pointer;font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-danger-strong,#ff5555)">Eliminar</button>')+'</div>';}).join('')
-    +'<div style="height:1px;background:var(--sw-bg,#12150F);margin:16px 0"></div>'
+    +'<div style="height:1px;background:var(--sw-bg,#17130E);margin:16px 0"></div>'
     +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:12px">Agregar admin //</div>'
     +'<div style="display:flex;flex-direction:column;gap:10px">'
     +INP('aa-nm','Nombre del nuevo admin','text',undefined,'clientes')
@@ -543,7 +543,7 @@ async function loadAdminCatalog(){
   busy=false;render();
 }
 function cpNumField(id,label,val){
-  return'<div style="flex:1;min-width:64px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:8px;color:var(--sw-text-muted,#9DA096);margin-bottom:4px">'+label+'</div><input id="'+id+'" type="number" step="0.1" value="'+val+'" style="background:var(--sw-bg,#12150F);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:8px 10px;color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;box-sizing:border-box"></div>';
+  return'<div style="flex:1;min-width:64px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:8px;color:var(--sw-text-muted,#9DA096);margin-bottom:4px">'+label+'</div><input id="'+id+'" type="number" step="0.1" value="'+val+'" style="background:var(--sw-bg,#17130E);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:8px 10px;color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;box-sizing:border-box"></div>';
 }
 function cpRow(label,inputsHtml,fn){
   return'<div class="cp-row" data-name="'+esc(label.toLowerCase())+'" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:10px">'
@@ -584,21 +584,21 @@ function sAdminCatalog(){
         cpNumField('cp-protein-'+p.id+'-p15','15CM',p.p15)+cpNumField('cp-protein-'+p.id+'-p30','30CM',p.p30)+cpNumField('cp-protein-'+p.id+'-pDbl','Doble 15CM +',p.pDbl)+cpNumField('cp-protein-'+p.id+'-pDbl30','Doble 30CM +',p.pDbl30),
         "saveCatalogPrice('protein','"+p.id+"')");
     }).join('')
-    +'<div style="height:1px;background:var(--sw-bg,#12150F);margin:16px 0"></div>'
+    +'<div style="height:1px;background:var(--sw-bg,#17130E);margin:16px 0"></div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:12px">Signatures //</div>'
     +SIGS.map(function(s){
       return cpRow(s.n+' '+s.s,
         cpNumField('cp-sig-'+s.id+'-p15','15CM',s.p15)+cpNumField('cp-sig-'+s.id+'-p30','30CM',s.p30),
         "saveCatalogPrice('sig','"+s.id+"')");
     }).join('')
-    +'<div style="height:1px;background:var(--sw-bg,#12150F);margin:16px 0"></div>'
+    +'<div style="height:1px;background:var(--sw-bg,#17130E);margin:16px 0"></div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:12px">Bebidas y sides //</div>'
     +SIDES.map(function(d){
       return cpRow(d.l+' '+d.s,
         cpNumField('cp-side-'+d.id+'-price','Precio',d.p),
         "saveCatalogPrice('side','"+d.id+"')");
     }).join('')
-    +'<div style="height:1px;background:var(--sw-bg,#12150F);margin:16px 0"></div>'
+    +'<div style="height:1px;background:var(--sw-bg,#17130E);margin:16px 0"></div>'
     +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:12px">Recompensas // puntos</div>'
     +RWDS.map(function(rw){
       return cpRow(rw.n+' '+rw.s,
@@ -751,7 +751,7 @@ function sAdminSecretSignature(){
       +[0,1,2].map(function(i){var h=ssHints[i]||{t:'',s:''};return'<div style="display:flex;gap:6px;margin-bottom:6px"><div style="flex:1">'+INP('ss-h'+i+'t','Pista '+(i+1)+' (ej. Pica, y no de mentira)',h.t||undefined)+'</div><div style="flex:1">'+INP('ss-h'+i+'s','Detalle (opcional)',h.s||undefined)+'</div></div>';}).join('')
       +'</div>'
     +BTN('Publicar sándwich del mes //','saveSecretSignature()')
-    +(ssHistory.length?'<div style="height:1px;background:var(--sw-bg,#12150F);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
+    +(ssHistory.length?'<div style="height:1px;background:var(--sw-bg,#17130E);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
       +ssHistory.map(function(h){return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">'+esc(h.name)+' · '+new Date(h.created_at).toLocaleDateString('es-PE',{timeZone:'America/Lima'})+'</div>';}).join(''):'')
     +'</div>';
 }
@@ -816,7 +816,7 @@ function sAdminCatalogItems(){
         var c=ciCur[id];
         return ssChip(ciSel===id,(c.active===false?'○ ':'')+esc(c.name),"ciPick('"+id+"')");
       }).join('')+'</div>'
-    +(ciSel?'<div style="height:1px;background:var(--sw-bg,#12150F);margin:0 0 16px"></div>'
+    +(ciSel?'<div style="height:1px;background:var(--sw-bg,#17130E);margin:0 0 16px"></div>'
       +'<div style="margin-bottom:12px"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:4px">Nombre</div>'+INP('ci-name','ej. The Original','text',ciName)+'</div>'
       +'<div style="display:flex;gap:8px;margin-bottom:12px">'
         +'<div style="flex:1"><div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096);margin-bottom:4px">Subtítulo</div>'+INP('ci-sub','Signature','text',ciSub)+'</div>'
@@ -839,7 +839,7 @@ function sAdminCatalogItems(){
       +'<div style="margin-bottom:20px">'+ssChip(ciActive,(ciActive?'✓ ':'')+'Activo en la carta',"ciSyncInputs();ciActive=!ciActive;render()")+'</div>'
       +BTN('Publicar cambios //','saveCatalogItem()')
       :'<p style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096)">No hay Signatures publicados todavía.</p>')
-    +(ciHistory.length?'<div style="height:1px;background:var(--sw-bg,#12150F);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
+    +(ciHistory.length?'<div style="height:1px;background:var(--sw-bg,#17130E);margin:22px 0 14px"></div><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Historial //</div>'
       +ciHistory.map(function(h){return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:10px 14px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">'+esc(h.item_id)+' · '+esc(h.name)+' · '+SOLES_TXT+pz(h.price_15)+'/'+SOLES_TXT+pz(h.price_30)+' · '+new Date(h.created_at).toLocaleDateString('es-PE',{timeZone:'America/Lima'})+'</div>';}).join(''):'')
     +'</div>';
 }
@@ -915,7 +915,7 @@ function sAdminCustomer(){
   if(custDetailErr)h+='<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-danger,#ff8888);margin-top:12px;text-align:center">'+esc(custDetailErr)+'</div>';
   if(custDetail){
     var c=custDetail.customer;
-    h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>'
+    h+='<div style="height:1px;background:var(--sw-bg,#17130E);margin:20px 0"></div>'
       +'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:12px;padding:16px;margin-bottom:16px">'
       +'<div style="font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(c.name)+'</div>'
       +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:4px">'+esc(c.phone)+(c.email?' · '+esc(c.email):'')+'</div>'
@@ -927,10 +927,10 @@ function sAdminCustomer(){
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Pedidos recientes // '+custDetail.orders.length+'</div>';
     h+=custDetail.orders.length?custDetail.orders.map(function(o){return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#EFEDE4)">'+esc(o.ref)+'</div><div style="font-family:EB Garamond,serif;font-style:italic;font-size:9px;color:var(--sw-text-muted,#9DA096)">'+esc(o.date)+' · '+SOLES+pz(o.total)+'</div></div>'+stBadge(o.status)+'</div>';}).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096)">Sin pedidos //</div>';
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 10px">Historial de puntos // '+custDetail.transactions.length+'</div>';
-    h+=custDetail.transactions.length?custDetail.transactions.map(function(t){var pos=t.points>=0;return'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #12150F"><span style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">'+esc(t.description)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:13px;color:'+(pos?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)')+'">'+(pos?'+':'')+t.points+'</span></div>';}).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096)">Sin movimientos //</div>';
+    h+=custDetail.transactions.length?custDetail.transactions.map(function(t){var pos=t.points>=0;return'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--sw-bg,#17130E)"><span style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">'+esc(t.description)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:13px;color:'+(pos?'var(--sw-ok,#25D366)':'var(--sw-danger,#ff8888)')+'">'+(pos?'+':'')+t.points+'</span></div>';}).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096)">Sin movimientos //</div>';
     if(custDetail.ratings&&custDetail.ratings.length){
       h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 10px">Calificaciones // '+custDetail.ratings.length+'</div>';
-      h+=custDetail.ratings.map(function(r){return'<div style="padding:8px 0;border-bottom:1px solid #12150F"><span style="color:#F5C518">'+'★'.repeat(r.stars)+'</span>'+(r.comment?'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(r.comment)+'</div>':'')+'</div>';}).join('');
+      h+=custDetail.ratings.map(function(r){return'<div style="padding:8px 0;border-bottom:1px solid var(--sw-bg,#17130E)"><span style="color:#F5C518">'+'★'.repeat(r.stars)+'</span>'+(r.comment?'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+esc(r.comment)+'</div>':'')+'</div>';}).join('');
     }
   }
   h+='</div>';
@@ -961,7 +961,7 @@ function sAdminSearch(){
     +'</select></div>';
   h+=BTN('Buscar //','doSearchOrders()');
   if(searchResults!==null){
-    h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
+    h+='<div style="height:1px;background:var(--sw-bg,#17130E);margin:20px 0"></div>';
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Resultados // '+searchResults.length+(searchTruncated?' (recortado)':'')+'</div>';
     h+=searchResults.length?searchResults.map(function(o,i){
       return'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px;margin-bottom:10px">'
@@ -1134,7 +1134,7 @@ function sAdminReport(){
   if(reportErr)h+='<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-danger,#ff8888);margin-top:12px;text-align:center">'+esc(reportErr)+'</div>';
   if(reportData){
     var d=reportData;
-    h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
+    h+='<div style="height:1px;background:var(--sw-bg,#17130E);margin:20px 0"></div>';
     h+='<div style="display:flex;gap:10px;margin-bottom:16px">'
       +DTILE('Ingresos',SOLES+pz(d.revenue),d.count+' pedidos')
       +DTILE('Ticket prom.',SOLES+pz(d.avgTicket))
@@ -1143,9 +1143,9 @@ function sAdminReport(){
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Por método de pago //</div>';
     h+=Object.keys(d.byMethod).length?Object.keys(d.byMethod).map(function(m){var v=d.byMethod[m];return DBAR(m.toUpperCase(),v.count,d.count);}).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096)">Sin datos //</div>';
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 10px">Productos top //</div>';
-    h+=d.topProducts.length?d.topProducts.map(function(p){return'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #12150F"><span style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#EFEDE4)">'+esc(p.name)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">'+p.count+' · '+SOLES+pz(p.revenue)+'</span></div>';}).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096)">Sin datos //</div>';
+    h+=d.topProducts.length?d.topProducts.map(function(p){return'<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--sw-bg,#17130E)"><span style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#EFEDE4)">'+esc(p.name)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">'+p.count+' · '+SOLES+pz(p.revenue)+'</span></div>';}).join(''):'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096)">Sin datos //</div>';
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 10px">Por día //</div>';
-    h+=d.byDay.length?d.byDay.map(function(day){return'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #12150F"><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096)">'+esc(day.date)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">'+day.count+' · '+SOLES+pz(day.revenue)+'</span></div>';}).join(''):'';
+    h+=d.byDay.length?d.byDay.map(function(day){return'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--sw-bg,#17130E)"><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096)">'+esc(day.date)+'</span><span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:'+GOLD+'">'+day.count+' · '+SOLES+pz(day.revenue)+'</span></div>';}).join(''):'';
   }
   h+='</div>';
   return h;
@@ -1240,7 +1240,7 @@ function sAdminPrepList(){
   // persona armando, los tiempos se acumulan, así que tres pedidos para las 8pm no se
   // empiezan todos a las 7:55.
   if(d.orders.length){
-    h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:18px 0"></div>';
+    h+='<div style="height:1px;background:var(--sw-bg,#17130E);margin:18px 0"></div>';
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:4px">Orden de armado //</div>';
     h+='<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-bottom:10px;line-height:1.5">Calculado hacia atrás desde cada hora de entrega, contando '+(d.minutesPerOrder||5)+' min por sándwich y que los armas uno tras otro.</div>';
     var plan=(d.assembly&&d.assembly.length)?d.assembly:d.orders.map(function(o){return{ref:o.ref,customerName:o.customerName,deliveryTime:o.deliveryTime,startBy:null,late:false};});
@@ -1583,7 +1583,7 @@ function sAdminCalendar(){
   // "automático" era engañoso. Ahora nombra la cadencia real (semanal) sin prometer más
   // de lo que existe hoy.
   h+='<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-bottom:10px;line-height:1.5">Sube aquí el video crudo (sin editar) de lo que grabaste — se procesa en la próxima sesión semanal de contenido (la disparas tú por chat cuando tengas clips listos), que lo recorta al formato correcto, escribe el caption y lo agenda.</div>';
-  h+='<label style="cursor:pointer;display:inline-block;background:'+(rawVideoUploading?'#12150F':GOLD)+';color:'+(rawVideoUploading?'#73776C':'var(--sw-on-gold,#241a08)')+';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:10px 16px;border-radius:8px">'
+  h+='<label style="cursor:pointer;display:inline-block;background:'+(rawVideoUploading?'var(--sw-bg,#17130E)':GOLD)+';color:'+(rawVideoUploading?'#73776C':'var(--sw-on-gold,#241a08)')+';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:10px 16px;border-radius:8px">'
     +(rawVideoUploading?'Subiendo...':'+ Subir clip (MP4/MOV) →')
     +'<input type="file" accept="video/mp4,video/quicktime" onchange="handleRawVideoFile(event)" style="display:none" '+(rawVideoUploading?'disabled':'')+'>'
     +'</label>';
@@ -2080,7 +2080,7 @@ function sAdminRecipes(){
   h+='<div style="background:var(--sw-card,#1B1F18);border:1px solid '+GOLD+';border-radius:10px;padding:14px;margin-bottom:18px">'
     +'<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Escalar a //</div>'
     +'<div style="display:flex;gap:8px;align-items:center">'
-    +'<input id="rec-target" type="number" min="1" inputmode="numeric" value="'+esc(String(recipeTarget||''))+'" placeholder="porciones" style="flex:1;min-width:0;background:var(--sw-bg,#12150F);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-family:EB Garamond,serif;font-size:13px">'
+    +'<input id="rec-target" type="number" min="1" inputmode="numeric" value="'+esc(String(recipeTarget||''))+'" placeholder="porciones" style="flex:1;min-width:0;background:var(--sw-bg,#17130E);border:1px solid var(--sw-border,#2C3228);border-radius:8px;padding:10px 12px;color:var(--sw-text,#FFFFFF);font-family:EB Garamond,serif;font-size:13px">'
     +'<button onclick="setRecipeTarget(document.getElementById(\'rec-target\').value)" style="all:unset;cursor:pointer;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:10px 16px;border-radius:8px">Calcular</button>'
     +(recipesData.targetPortions?'<button onclick="setRecipeTarget(\'\')" style="all:unset;cursor:pointer;font-family:EB Garamond,serif;font-size:11px;color:var(--sw-text-muted,#9DA096);padding:10px">Quitar</button>':'')
     +'</div></div>';
@@ -2125,7 +2125,7 @@ function sAdminRecipes(){
         +(st.minutes
           ?(corriendo
             ?'<button onclick="stopRecipeTimer()" style="all:unset;cursor:pointer;background:var(--sw-danger,#ff8888);color:var(--sw-on-gold,#241a08);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:640;padding:6px 12px;border-radius:8px">'+recipeTimerLeft()+' ✕</button>'
-            :'<button onclick="startRecipeTimer(\''+esc2(r.recipe_code)+'\','+idx+','+st.minutes+')" style="all:unset;cursor:pointer;background:var(--sw-bg,#12150F);border:1px solid '+GOLD+';color:'+GOLD+';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:6px 12px;border-radius:8px">'+st.minutes+' min ▶</button>')
+            :'<button onclick="startRecipeTimer(\''+esc2(r.recipe_code)+'\','+idx+','+st.minutes+')" style="all:unset;cursor:pointer;background:var(--sw-bg,#17130E);border:1px solid '+GOLD+';color:'+GOLD+';font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:11px;font-weight:600;padding:6px 12px;border-radius:8px">'+st.minutes+' min ▶</button>')
           :'<span style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096)">sin tiempo</span>')
         +'</span></div>';
     }).join('');
@@ -2136,7 +2136,7 @@ function sAdminRecipes(){
     // #4 — Etiquetas. La vida útil viene del INVENTARIO (la misma que usa la alerta de
     // caducidad), no de la receta: dos números para lo mismo terminan en que uno gana solo.
     s+='<div style="margin-top:12px">'
-      +'<button onclick="printRecipeLabels(\''+esc2(r.recipe_code)+'\')" style="all:unset;cursor:pointer;background:var(--sw-bg,#12150F);border:1px solid var(--sw-border,#2C3228);color:var(--sw-text,#FFFFFF);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:9px 14px;border-radius:8px">Imprimir '+esc2(r.yield_portions)+' etiquetas //</button>'
+      +'<button onclick="printRecipeLabels(\''+esc2(r.recipe_code)+'\')" style="all:unset;cursor:pointer;background:var(--sw-bg,#17130E);border:1px solid var(--sw-border,#2C3228);color:var(--sw-text,#FFFFFF);font-family:Bodoni Moda,serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:9px 14px;border-radius:8px">Imprimir '+esc2(r.yield_portions)+' etiquetas //</button>'
       +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:5px;line-height:1.5">'
       +(r.shelfLifeDays>0
         ?'Con fecha de hoy y límite a '+esc2(r.shelfLifeDays)+' días, tomado del inventario.'
@@ -2211,7 +2211,7 @@ function sAdminCashClose(){
   // vino a arreglar.
   var cl=d.creditLiability;
   if(cl&&cl.customers){
-    h+='<div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
+    h+='<div style="height:1px;background:var(--sw-bg,#17130E);margin:20px 0"></div>';
     h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:8px">Crédito que debes // acumulado, no de hoy</div>';
     h+='<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:16px">'
       +'<div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-body,#EFEDE4)">'+cl.customers+' cliente'+(cl.customers===1?'':'s')+' con saldo</div>'

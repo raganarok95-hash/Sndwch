@@ -72,6 +72,16 @@ const PALETA_VIEJA = {
   // chequeo los veía (2026-09-24).
   '#8BAF9A': '--sw-text-muted2',
   '#6E8A7A': '--sw-text-muted3',
+  // Los seis verdes oscuros que quedaban escritos a mano en el shell (2026-10-01): el fondo de
+  // Entrar, la losa 06A, la carta del secreto, «Tus pedidos», «Algo salió mal» y las pantallas
+  // legales. El dueño los vio («en ciertas pantallas se ve de fondo el fondo verde») y los
+  // encontró un recorrido que mide el color de fondo de cada elemento de cada pantalla.
+  '#1E2B22': 'la tinta café #241B12',
+  '#101B15': '--sw-bg',
+  '#26362C': '--sw-card',
+  '#0E1208': '--sw-bg',
+  '#1D2A22': '--sw-card',
+  '#12150F': '--sw-bg (#17130E)',
 };
 
 // Todo lo que pinta HTML fuera del cliente: los correos, el prompt de video y la página legal

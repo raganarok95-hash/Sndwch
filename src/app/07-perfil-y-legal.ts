@@ -486,7 +486,7 @@ function printTicket(ordId){
 function sDeliveryConfirm(){
   var d=deliveryConfirmState||{};
   var caja=function(inner){
-    return'<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--sw-bg,#12150F)">'
+    return'<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--sw-bg,#17130E)">'
       +'<div style="max-width:360px;width:100%;text-align:center">'+inner+'</div></div>';
   };
   if(d.loading){

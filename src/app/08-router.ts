@@ -455,7 +455,7 @@ function render(){
       reportarError('pantalla:'+String(sndScreen),e);
       var appEl=(document.getElementById('app') as HTMLElement | null);
       if(appEl){
-        appEl.innerHTML='<div style="min-height:100vh;background:#12150F;padding:28px 22px;font-family:\'EB Garamond\',serif;color:#EFEDE4">'
+        appEl.innerHTML='<div style="min-height:100vh;background:#17130E;padding:28px 22px;font-family:\'EB Garamond\',serif;color:#EFEDE4">'
           +'<div style="font-family:\'Bodoni Moda\',serif;font-size:22px;font-weight:640;color:#fff;margin-bottom:10px">Algo se rompió al abrir esta pantalla</div>'
           +'<p style="font-size:15px;line-height:1.55;color:#9DA096;margin-bottom:18px">No es culpa tuya. Toca el botón de abajo para recargar la app con la última versión; si vuelve a pasar, mándanos esta pantalla completa.</p>'
           +'<div style="background:#171A14;border:1px solid #2C3228;border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.6;word-break:break-word;margin-bottom:20px">'
@@ -484,13 +484,13 @@ function renderScreen(){
     // dashboard, inventario, etc.) mostraba el splash de pantalla completa (logo +
     // "CARGANDO //"), borrando todo el contexto previo, cuando ya existe skeletonCards()
     // para esto mismo del lado cliente (hallazgo de auditoría de diseño admin, ALTO).
-    if(sndScreen.indexOf('admin')===0){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#12150F);padding:20px" class="fi '+(adminLightMode?'admin-light':'admin-dark')+'">'+skeletonCards(4,64)+'</div>';}
+    if(sndScreen.indexOf('admin')===0){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#17130E);padding:20px" class="fi '+(adminLightMode?'admin-light':'admin-dark')+'">'+skeletonCards(4,64)+'</div>';}
     // Las pantallas de LISTA del cliente reciben el mismo trato que ya tenía el admin: el
     // armazón con bloques del tamaño real en vez del splash de pantalla completa. El splash
     // borra el contexto y deja al cerebro en una espera sin final a la vista; el esqueleto
     // dice qué viene. Solo aplica donde lo que llega ES una lista de tarjetas — en un cobro
     // o un login no hay armazón que anticipar y el splash sigue siendo lo correcto.
-    else if(LIST_SCREENS[sndScreen]){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#12150F);padding:20px" class="fi">'+skeletonCards(LIST_SCREENS[sndScreen],64)+'</div>';}
+    else if(LIST_SCREENS[sndScreen]){appElBusy.innerHTML='<div style="min-height:100vh;background:var(--sw-bg,#17130E);padding:20px" class="fi">'+skeletonCards(LIST_SCREENS[sndScreen],64)+'</div>';}
     else{appElBusy.innerHTML=LOAD(busyMsg);}
     return;
   }
@@ -603,7 +603,7 @@ function renderScreen(){
   // miden 100dvh, así que el contenedor quedaba más alto que ellas y la puerta se podía subir
   // dejando ver una franja verde abajo (dueño, 2026-10-01, captura del celular). 100vh queda
   // solo como respaldo para navegadores sin dvh. Lo vigila tests/puerta-sin-scroll.spec.ts.
-  (document.getElementById('app') as HTMLInputElement | null).innerHTML='<div class="'+(adminScope?(adminLight?'admin-light':'admin-dark'):'')+'" style="min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;background:var(--sw-bg,#12150F)">'+offlineBanner+updateBanner+h+'</div>';
+  (document.getElementById('app') as HTMLInputElement | null).innerHTML='<div class="'+(adminScope?(adminLight?'admin-light':'admin-dark'):'')+'" style="min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;background:var(--sw-bg,#17130E)">'+offlineBanner+updateBanner+h+'</div>';
   if(nueva)nueva.pintar(document.getElementById('pantalla-nueva') as HTMLElement);
   window.scrollTo(0,sameScreen?scrollY:0);
   _lastRenderedSc=sndScreen;

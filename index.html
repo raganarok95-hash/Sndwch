@@ -58,10 +58,10 @@
      con la foto del producto, que es lo único que vende. Sobre negro la foto es lo más
      luminoso del cuadro y el verde vuelve a significar algo — el lado de SANDO — en vez de
      ser el color del papel tapiz.
-     ⚠ NO es un fondo neutro: lleva verde dentro (#12150F, no #121212). El tinte por lado
+     ⚠ NO es un fondo neutro: lleva verde dentro (#17130E, no #121212). El tinte por lado
      sigue existiendo (ver data-lado abajo), solo que ahora la temperatura del negro hace
      el trabajo silencioso y el acento el ruidoso. */
-  /* ⚠ SUBIDO EL 2026-09-17, a pedido del dueño. Antes el lado de SANDO era #12150F y el de
+  /* ⚠ SUBIDO EL 2026-09-17, a pedido del dueño. Antes el lado de SANDO era #17130E y el de
      WICHO #0D1216: tres puntos de diferencia. El atributo `data-lado` cambiaba, la app no.
      "¿si selecciono derecha o izquierda no debería ir a la opción respectiva con el color
      respectivo?" — tenía razón, y medirlo lo confirmó.
@@ -230,7 +230,7 @@ body,#app{transition:background-color .42s ease}
 /* Identidad admin "Modo cocina de una mano" (elegida por el dueño entre 3 mockups,
    2026-07-29) — reemplaza la piel "misma que el cliente" que tenía el admin antes.
    .admin-dark es el estado por defecto (antes el admin oscuro no tenía NINGUNA clase
-   propia, solo heredaba los valores de fallback del cliente #12150F/etc. — por eso hacía
+   propia, solo heredaba los valores de fallback del cliente #17130E/etc. — por eso hacía
    falta esta clase nueva, no solo ajustar .admin-light). Negro puro + un solo acento ámbar
    (ver GOLD reasignado en render()/app.ts, mismo mecanismo ya usado para adminLight)
    pensado para legibilidad bajo luz de cocina y con el pulgar, no para "verse elegante". */
@@ -268,7 +268,7 @@ body,#app{transition:background-color .42s ease}
 .admin-light .wm-mark i:first-child{background:#8A5000}
 .admin-light .wm-mark i:last-child{background:#1F5F86}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html,body{background:#12150F;min-height:100%;-webkit-tap-highlight-color:transparent}
+html,body{background:#17130E;min-height:100%;-webkit-tap-highlight-color:transparent}
 body{font-family:'EB Garamond',serif;color:#fff;position:relative;font-variant-numeric:lining-nums tabular-nums}
 .cut-sep{}
 /* Marca "//" del wordmark — dos barras sesgadas, en vez del simple glifo "//" (que en
@@ -301,7 +301,7 @@ body{font-family:'EB Garamond',serif;color:#fff;position:relative;font-variant-n
    armador 68, la del panel otra). El valor de respaldo es el de la nav, y solo se usa
    entre que la página existe y el primer render. La altura medida ya incluye el área
    segura del iPhone, porque cada barra la lleva en su propio padding. */
-#app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;padding-bottom:var(--sw-barra,calc(49px + env(safe-area-inset-bottom,0px)));background:#12150F;position:relative;z-index:1;box-sizing:border-box}
+#app{max-width:480px;margin:0 auto;min-height:100vh;min-height:100dvh;padding-bottom:var(--sw-barra,calc(49px + env(safe-area-inset-bottom,0px)));background:#17130E;position:relative;z-index:1;box-sizing:border-box}
 ::-webkit-scrollbar{width:0}
 input{outline:none;border:none;font-family:'EB Garamond',serif}
 input::placeholder{color:var(--sw-text-muted,#9DA096);font-size:13px}
@@ -368,25 +368,25 @@ body.kb-open #app{padding-bottom:0}
    marcado. Tipografías de las maquetas: Anton, Archivo, IBM Plex Mono, Instrument Serif. */
 
 /* 35 · ALGO SALIÓ MAL — docs/maquetas/aprobadas/35-algo-salio-mal.png */
-.m35{position:relative;min-height:100dvh;background:#EFE6D4;color:#1E2B22;overflow:hidden;padding-bottom:74px;box-sizing:border-box}
+.m35{position:relative;min-height:100dvh;background:#EFE6D4;color:#241B12;overflow:hidden;padding-bottom:74px;box-sizing:border-box}
 .m35 .forro{position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:5}
 .m35 .wicho{position:absolute;right:0;top:0;bottom:0;width:8px;background:#8CC8EC;z-index:5}
-.m35 .sal{all:unset;cursor:pointer;position:absolute;top:18px;left:24px;font-size:18px;color:#1E2B22;z-index:6}
+.m35 .sal{all:unset;cursor:pointer;position:absolute;top:18px;left:24px;font-size:18px;color:#241B12;z-index:6}
 .m35 .cab{padding:103px 26px 0 24px}
 .m35 .cab em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#D8823C;text-transform:uppercase;font-style:normal}
-.m35 .cab h1{margin:16px 0 0;font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;font-size:28px;line-height:1.1;color:#1E2B22}
+.m35 .cab h1{margin:16px 0 0;font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;font-size:28px;line-height:1.1;color:#241B12}
 .m35 .cab p{margin:14px 0 0;max-width:190px;font-family:'Instrument Serif',serif;font-size:13px;line-height:1.3;color:#5F6B58}
 .m35 .figura{position:absolute;left:-24px;bottom:72px;height:348px;z-index:2;pointer-events:none}
 .m35 .ops{margin:46px 16px 0 158px;border-top:1px solid rgba(30,43,34,.14)}
 .m35 .op{all:unset;display:block;cursor:pointer;width:100%;box-sizing:border-box;padding:22px 0 16px;border-bottom:1px solid rgba(30,43,34,.14)}
-.m35 .op b{display:block;font:700 17px/1.1 Archivo,sans-serif;color:#1E2B22}
+.m35 .op b{display:block;font:700 17px/1.1 Archivo,sans-serif;color:#241B12}
 .m35 .op i{display:block;margin-top:7px;font-family:'Instrument Serif',serif;font-size:12px;color:#8C8F82}
 .m35 .op.on b{color:#D8823C}
 .m35 .op:focus-visible{outline:2px solid #D8823C;outline-offset:2px}
-.m35 textarea{display:block;width:100%;box-sizing:border-box;margin-top:10px;border:1px solid rgba(30,43,34,.25);background:#F6F0E3;border-radius:4px;padding:10px;font:13px/1.35 'Instrument Serif',serif;color:#1E2B22;resize:vertical;min-height:64px}
+.m35 textarea{display:block;width:100%;box-sizing:border-box;margin-top:10px;border:1px solid rgba(30,43,34,.25);background:#F6F0E3;border-radius:4px;padding:10px;font:13px/1.35 'Instrument Serif',serif;color:#241B12;resize:vertical;min-height:64px}
 .m35 .plazo{margin:46px 24px 0 158px;max-width:190px;font:400 11px/1.3 'IBM Plex Mono',monospace;color:#8C8F82}
 .m35 .err{margin:14px 24px 0 158px;font:600 11px/1.3 'IBM Plex Mono',monospace;color:#B3402A}
-.m35 .ir{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;height:74px;border:0;background:#1E2B22;color:#EFE6D4;font:700 12px/1 Archivo,sans-serif;letter-spacing:.24em;text-transform:uppercase;cursor:pointer;z-index:20}
+.m35 .ir{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:480px;height:74px;border:0;background:#241B12;color:#EFE6D4;font:700 12px/1 Archivo,sans-serif;letter-spacing:.24em;text-transform:uppercase;cursor:pointer;z-index:20}
 .m35 .ir:disabled{opacity:.55;cursor:default}
 /* MENÚ SECRETO — docs/maquetas/aprobadas/menu-secreto-estructura.png + menu-secreto-fondo.png
    (t2.html #C, «el bocado de cerca»). CSS copiado de la fuente; lo único que cambia es que
@@ -396,7 +396,7 @@ body.kb-open #app{padding-bottom:0}
    Una sola pantalla para todo el acceso: correo, código, primera vez, Google y el PIN de antes.
    Lo que cambia entre un momento y otro es el campo, nunca la pantalla. */
 .en{position:relative;min-height:100dvh;margin-bottom:calc(-1 * var(--sw-barra,0px));background:#F0EBDE;display:flex;flex-direction:column}
-.en .esc{position:relative;flex:0 0 auto;height:368px;overflow:hidden;background:linear-gradient(180deg,#1D2A22 0%,#16202A 100%) #1D2A22}
+.en .esc{position:relative;flex:0 0 auto;height:368px;overflow:hidden;background:linear-gradient(180deg,#221B14 0%,#17130E 100%) #221B14}
 .en .esc .sd{position:absolute;left:26px;bottom:12px;height:238px;width:auto;z-index:2}
 .en .esc .wc{position:absolute;right:28px;bottom:12px;height:172px;width:auto;z-index:2}
 .en .esc .piso{position:absolute;left:0;right:0;bottom:0;height:86px;z-index:1;background:linear-gradient(180deg,transparent,rgba(0,0,0,.34))}
@@ -407,7 +407,7 @@ body.kb-open #app{padding-bottom:0}
 .en .cuerpo{padding:50px 26px calc(var(--sw-barra,74px) + 24px);display:flex;flex-direction:column}
 .en .campo{display:block;border-bottom:2px solid #33230F;padding-bottom:12px;margin-bottom:24px}
 .en .campo s{display:block;text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6B4E28;text-transform:uppercase}
-.en .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:11px;font-family:'IBM Plex Mono',monospace;font-size:18px;color:#33230F !important;caret-color:#9C5F14}
+.en .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:11px;font-family:'IBM Plex Mono',monospace;font-size:18px;color:#33230F !important;caret-color:#7A4508}
 /* ⚠ `!important` a propósito: la regla global `input{color:#EFEDE4 !important}` (fondo oscuro)
    pintaba lo escrito crema sobre el papel crema de Entrar y la losa, o sea invisible. */
 .en .campo input::placeholder{color:rgba(51,35,15,.38)}
@@ -484,13 +484,15 @@ body.kb-open #app{padding-bottom:0}
 .eh b{display:block;font:800 15px/1.25 Archivo,sans-serif}
 .eh p{margin:3px 0 0;font:500 13px/1.45 Archivo,sans-serif;color:#4A4038}
 .eh.alerta{box-shadow:inset 4px 0 0 #B23A1E,0 2px 10px rgba(0,0,0,.12)}
+/* Un vacío sobre el celeste de las pantallas de WICHO (.mw): tinta, no dorado ni gris de fondo oscuro. */
+.mw .vacio-t{color:#0E2430!important}.mw .vacio-p{color:#2E4A58!important}
 .en .doble{font:700 15px/1.3 Archivo,sans-serif;color:#33230F;margin:0 0 18px}
 .en .primera{font:500 13px/1.5 Archivo,sans-serif;color:#4A3218;margin:-8px 0 22px}
 .en .nota{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6B4E28;line-height:1.9;text-transform:uppercase}
 .en .nota button{all:unset;cursor:pointer;display:inline-block;padding:8px 0;color:#33230F;font-weight:700;text-decoration:underline;text-underline-offset:3px}
 .en .esc.corta{height:270px}.en .esc.corta .sd{height:176px}.en .esc.corta .wc{height:128px}
 .en .par{display:flex;gap:18px}.en .par .campo{flex:1;min-width:0}
-.en .campo input:focus-visible{outline:none}.en .campo:focus-within{border-bottom-color:#9C5F14}
+.en .campo input:focus-visible{outline:none}.en .campo:focus-within{border-bottom-color:#7A4508}
 .en .goo{width:100%}
 .en-go button:focus-visible{outline:2px solid #2A2113;outline-offset:-4px}
 .en-go{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:74px;display:flex;z-index:90}
@@ -538,13 +540,13 @@ body.kb-open #app{padding-bottom:0}
 /* ═══ MUNDO SANDO · un plato a la vez (maqueta M15, fuente m8.html) ═══════════════════════
    No hay scroll de fichas: cada Signature ocupa la pantalla y se pasa al siguiente de costado
    (scroll-snap). El último es el secreto. CSS copiado de la fuente. */
-.m15{position:relative;height:100dvh;min-height:600px;margin-bottom:calc(-1 * var(--sw-barra,0px));background:#101B15;font-family:'EB Garamond',serif;overflow:hidden}
+.m15{position:relative;height:100dvh;min-height:600px;margin-bottom:calc(-1 * var(--sw-barra,0px));background:#17130E;font-family:'EB Garamond',serif;overflow:hidden}
 .m15 .riel{position:absolute;top:0;left:0;right:0;z-index:7;display:flex;align-items:center;justify-content:space-between;padding:5px 8px 0 12px;pointer-events:none}
 .m15 .riel>*{pointer-events:auto}
 .m15 .riel .x{all:unset;pointer-events:auto;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#F7F4EA;text-shadow:0 2px 10px rgba(0,0,0,.8)}
 .m15 .riel .wm{font-family:'Fraunces',serif;font-weight:620;font-size:13px;color:#F7F4EA;text-shadow:0 2px 10px rgba(0,0,0,.8)}
 .m15 .riel .c{all:unset;pointer-events:auto;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center}
-.m15 .riel .c span{width:30px;height:30px;border-radius:50%;background:#CBA258;color:#101B15;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}
+.m15 .riel .c span{width:30px;height:30px;border-radius:50%;background:#CBA258;color:#17130E;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px}
 .m15 .riel .vacio{width:44px}
 /* Recorrido HACIA ABAJO (dueño 2026-09-30: «el scroll para la derecha se siente raro»). */
 .m15 .pistas{display:flex;flex-direction:column;height:100%;overflow-y:auto;overflow-x:hidden;scroll-snap-type:y mandatory;scrollbar-width:none;overscroll-behavior:contain}
@@ -554,7 +556,7 @@ body.kb-open #app{padding-bottom:0}
 .m15 .plato{position:relative;flex:0 0 100%;height:100%;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:0 20px 30px 22px;box-sizing:border-box}
 .m15 .foto{position:absolute;left:0;right:0;top:0;height:60%;overflow:hidden}
 .m15 .foto img{width:100%;height:100%;object-fit:cover;display:block}
-.m15 .foto .baja{position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,16,12,.55) 0%,transparent 28%,transparent 62%,#101B15 100%)}
+.m15 .foto .baja{position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,16,12,.55) 0%,transparent 28%,transparent 62%,#17130E 100%)}
 .m15 .forro{position:absolute;left:0;top:0;bottom:0;width:7px;background:#D8823C;z-index:6}
 .m15 .sirve{position:absolute;right:14px;top:calc(60% - 152px);width:104px;z-index:5;filter:drop-shadow(0 8px 20px rgba(0,0,0,.55))}
 .m15 .ficha{position:relative;z-index:4}
@@ -563,11 +565,11 @@ body.kb-open #app{padding-bottom:0}
 .m15 h1{font-family:'Bodoni Moda',serif;font-weight:640;font-size:44px;color:#F7F4EA;line-height:.96;margin:12px 0 0}
 .m15 .pitch{font-size:14px;color:#9BA890;line-height:1.55;margin-top:14px;max-width:31ch}
 .m15 .pie{position:relative;z-index:4;margin-top:18px}
-.m15 .puno{height:9px;background:#26362C;margin-bottom:16px;background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.45) 0 2px,transparent 2px 6px)}
+.m15 .puno{height:9px;background:#2C241B;margin-bottom:16px;background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.45) 0 2px,transparent 2px 6px)}
 .m15 .cuenta{display:flex;align-items:flex-end;justify-content:space-between;gap:14px}
 .m15 .cuenta .p{font-family:'Bodoni Moda',serif;font-weight:640;font-size:38px;color:#CBA258;line-height:.9}
 .m15 .cuenta .p s{text-decoration:none;display:block;font-family:'EB Garamond',serif;font-size:12px;color:#7E8C76;letter-spacing:.06em;margin-top:7px}
-.m15 .cuenta .b{all:unset;cursor:pointer;background:#CBA258;color:#101B15;padding:16px 28px;font-family:'Bodoni Moda',serif;font-weight:640;font-size:15px;flex:0 0 auto}
+.m15 .cuenta .b{all:unset;cursor:pointer;background:#CBA258;color:#17130E;padding:16px 28px;font-family:'Bodoni Moda',serif;font-weight:640;font-size:15px;flex:0 0 auto}
 .m15 .cuenta .b:focus-visible{outline:2px solid #F7F4EA;outline-offset:3px}
 .m15 .cuenta .b[disabled]{opacity:.5;cursor:default}
 .m15 .pasar{position:relative;margin-top:26px;display:flex;align-items:center;gap:7px;z-index:4}
@@ -591,7 +593,7 @@ body.kb-open #app{padding-bottom:0}
 /* ═══ BEBIDAS · lado SANDO: el vaso a sangre (w2.html #B3) · lado WICHO: tres franjas (i1.html #B) ═══
    docs/maquetas/aprobadas/bebidas-lado-sando.png, bebidas-lado-wicho.png y
    bebidas-sando-sigo-sin-bebida.png. El pie «Agregar | precio» es de la bebida que se ve o se eligió. */
-.b3{position:relative;height:100dvh;min-height:600px;margin-bottom:calc(-1 * var(--sw-barra,0px));background:#0E1208;overflow:hidden}
+.b3{position:relative;height:100dvh;min-height:600px;margin-bottom:calc(-1 * var(--sw-barra,0px));background:#120E0A;overflow:hidden}
 .b3 .sal{all:unset;cursor:pointer;position:absolute;top:8px;left:12px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;z-index:44}
 .b3 .pistas{display:flex;height:100%;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
 .b3 .pistas::-webkit-scrollbar{display:none}
@@ -651,24 +653,24 @@ body.kb-open #app{padding-bottom:0}
 .f01 .sal{all:unset;cursor:pointer;position:absolute;top:8px;left:12px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:21px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.8);z-index:6}
 .f01 .cuerpo{padding:18px 18px 0 22px}
 .f01 .num{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#D8823C;text-transform:uppercase}
-.f01 h1{font-family:Anton,sans-serif;font-weight:700;font-size:40px;line-height:.95;color:#1E2B22;margin:8px 0 10px;text-transform:uppercase;letter-spacing:-.01em}
+.f01 h1{font-family:Anton,sans-serif;font-weight:700;font-size:40px;line-height:.95;color:#241B12;margin:8px 0 10px;text-transform:uppercase;letter-spacing:-.01em}
 .f01 .fila{display:flex;align-items:baseline;gap:14px;padding:8px 0;border-bottom:1px solid rgba(30,43,34,.18)}
 .f01 .fila em{flex:0 0 66px;font:700 8px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.22em;color:#6C7C64;text-transform:uppercase}
-.f01 .fila span{font-family:'EB Garamond',serif;font-size:15px;color:#1E2B22}
+.f01 .fila span{font-family:'EB Garamond',serif;font-size:15px;color:#241B12}
 .f01 .tam{display:flex;gap:10px;margin-top:16px}
-.f01 .tam button{all:unset;box-sizing:border-box;cursor:pointer;flex:1;height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:2px solid #1E2B22;color:#1E2B22;font:700 13px/1 Archivo,sans-serif;letter-spacing:.06em}
+.f01 .tam button{all:unset;box-sizing:border-box;cursor:pointer;flex:1;height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border:2px solid #241B12;color:#241B12;font:700 13px/1 Archivo,sans-serif;letter-spacing:.06em}
 .f01 .tam button s{text-decoration:none;font:500 11px/1 'IBM Plex Mono',monospace;letter-spacing:.06em}
-.f01 .tam button.on{background:#1E2B22;color:#EFE6D4}
+.f01 .tam button.on{background:#241B12;color:#EFE6D4}
 .f01 .tam button:focus-visible,.f01 .dp:focus-visible{outline:2px solid #D8823C;outline-offset:2px}
 .f01 .dp{all:unset;box-sizing:border-box;cursor:pointer;margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:44px;border-top:1px solid rgba(30,43,34,.18);border-bottom:1px solid rgba(30,43,34,.18)}
 .f01 .dp em{display:block;font:700 8px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.24em;color:#6C7C64;text-transform:uppercase}
-.f01 .dp n{display:block;font-family:'EB Garamond',serif;font-size:15px;color:#1E2B22;margin-top:5px}
-.f01 .dp .r{display:flex;align-items:center;gap:10px;font:600 13px/1 'IBM Plex Mono',monospace;color:#1E2B22}
+.f01 .dp n{display:block;font-family:'EB Garamond',serif;font-size:15px;color:#241B12;margin-top:5px}
+.f01 .dp .r{display:flex;align-items:center;gap:10px;font:600 13px/1 'IBM Plex Mono',monospace;color:#241B12}
 .f01 .dp .sw{width:38px;height:22px;border-radius:999px;background:#C9C1AD;position:relative;flex:0 0 auto}
 .f01 .dp .sw:after{content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
-.f01 .dp[aria-pressed="true"] .sw{background:#1E2B22}
+.f01 .dp[aria-pressed="true"] .sw{background:#241B12}
 .f01 .dp[aria-pressed="true"] .sw:after{left:19px}
-.f01 .pie{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:75px;background:#1E2B22;display:flex;align-items:center;justify-content:space-between;padding:0 18px 0 26px;box-sizing:border-box;z-index:90}
+.f01 .pie{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:75px;background:#241B12;display:flex;align-items:center;justify-content:space-between;padding:0 18px 0 26px;box-sizing:border-box;z-index:90}
 .f01 .pie .p{font:600 24px/1 'IBM Plex Mono',monospace;color:#EFE6D4}
 .f01 .pie button{all:unset;cursor:pointer;background:#D8823C;color:#231204;font:700 13px/1 Archivo,sans-serif;letter-spacing:.14em;text-transform:uppercase;padding:13px 22px}
 .f01 .pie button:focus-visible{outline:2px solid #EFE6D4;outline-offset:3px}
@@ -690,18 +692,18 @@ body.kb-open #app{padding-bottom:0}
 .m30 .sello{position:relative;z-index:6;border:2px solid #4A3218;padding:16px 16px 14px;transform:rotate(-1deg);background:rgba(242,228,202,.34)}
 .m30 .sello .hd{display:flex;justify-content:space-between;border-bottom:1.5px solid #4A3218;padding-bottom:10px;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#4A3218}
 .m30 .li{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:baseline;gap:9px;width:100%;padding:10px 0;border-bottom:1px dashed rgba(74,50,24,.42)}
-.m30 .li i{font-family:'IBM Plex Mono',monospace;font-style:normal;font-size:10px;color:#7A5B33;width:17px;flex:0 0 auto}
+.m30 .li i{font-family:'IBM Plex Mono',monospace;font-style:normal;font-size:10px;color:#4E3519;width:17px;flex:0 0 auto}
 .m30 .li .q{flex:1;min-width:0}
 .m30 .li b{display:block;font:800 14px/1.2 Archivo,sans-serif;color:#33230F;text-transform:uppercase;letter-spacing:-.01em}
-.m30 .li s{display:block;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#7A5B33;margin-top:4px;text-transform:uppercase}
+.m30 .li s{display:block;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:9px;color:#4E3519;margin-top:4px;text-transform:uppercase}
 .m30 .li p{margin:0;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#33230F}
-.m30 .li p del{color:#7A5B33;text-decoration-thickness:1.5px;margin-right:2px}
+.m30 .li p del{color:#4E3519;text-decoration-thickness:1.5px;margin-right:2px}
 .m30 .ex{display:flex;justify-content:space-between;padding:6px 0;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E4F2A;text-transform:uppercase}
 .m30 .en{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:baseline;gap:9px;width:100%;padding:8px 0;border-top:1px dashed rgba(74,50,24,.42)}
-.m30 .en em{flex:0 0 52px;font:700 8px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.2em;color:#7A5B33;text-transform:uppercase}
+.m30 .en em{flex:0 0 52px;font:700 8px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.2em;color:#4E3519;text-transform:uppercase}
 .m30 .en n{flex:1;min-width:0;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#33230F;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.m30 .en u{text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#9C5F14;text-transform:uppercase;flex:0 0 auto}
-.m30 .en.falta n{color:#9C5F14}
+.m30 .en u{text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#7A4508;text-transform:uppercase;flex:0 0 auto}
+.m30 .en.falta n{color:#7A4508}
 .m30 .en.falta u{background:#33230F;color:#F2E4CA;padding:4px 6px}
 .m30 .li:focus-visible,.m30 .en:focus-visible{outline:2px solid #33230F;outline-offset:2px}
 .m30 .tt{display:flex;align-items:flex-end;justify-content:space-between;margin-top:10px;border-top:2px solid #4A3218;padding-top:11px}
@@ -721,13 +723,13 @@ body.kb-open #app{padding-bottom:0}
 .m30-go button:focus-visible{outline:2px solid #2A2113;outline-offset:-4px}
 .hvelo{position:fixed;inset:0;background:rgba(40,26,10,.45);z-index:95}
 .hoja{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;bottom:74px;z-index:96;background:#F0EBDE;padding:22px 26px 24px;border-top:3px solid #33230F;box-sizing:border-box;max-height:calc(100dvh - 140px);overflow-y:auto}
-.hoja em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.26em;color:#7A5B33;text-transform:uppercase}
+.hoja em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.26em;color:#4E3519;text-transform:uppercase}
 .hoja h3{font-family:Anton,sans-serif;font-weight:700;font-size:34px;line-height:.9;color:#33230F;margin:10px 0 20px;letter-spacing:-.02em;text-transform:uppercase}
 .hoja .campo{display:block;border-bottom:2px solid #33230F;padding-bottom:10px;margin-bottom:20px}
-.hoja .campo s{display:block;text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#7A5B33;text-transform:uppercase}
-.hoja .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:18px;color:#33230F !important;caret-color:#9C5F14}
+.hoja .campo s{display:block;text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#4E3519;text-transform:uppercase}
+.hoja .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:18px;color:#33230F !important;caret-color:#7A4508}
 .hoja .campo input::placeholder{color:#B8A583}
-.hoja .nota{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#7A5B33;line-height:1.9;text-transform:uppercase}
+.hoja .nota{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#4E3519;line-height:1.9;text-transform:uppercase}
 .hoja .err{font:600 11px/1.5 'IBM Plex Mono',monospace;color:#8A2410;min-height:16px;margin:-8px 0 10px}
 .hoja .dias{display:flex;gap:8px;margin-bottom:14px}
 .hoja .dias button,.hoja .fr button,.hoja .op{all:unset;box-sizing:border-box;cursor:pointer}
@@ -739,7 +741,7 @@ body.kb-open #app{padding-bottom:0}
 .hoja .fr button[aria-pressed="true"]{background:#33230F;color:#F2E4CA}
 .hoja .fr button[disabled]{color:#8A7550;text-decoration:line-through;cursor:default}
 .hoja .op{display:flex;justify-content:space-between;align-items:center;width:100%;padding:14px 0;border-top:1px dashed rgba(74,50,24,.42);font-family:'IBM Plex Mono',monospace;font-size:12px;color:#33230F}
-.hoja .op u{text-decoration:none;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#9C5F14;text-transform:uppercase}
+.hoja .op u{text-decoration:none;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#7A4508;text-transform:uppercase}
 .hoja .cant{display:flex;align-items:center;gap:16px;margin-bottom:14px}
 .hoja .cant button{all:unset;cursor:pointer;width:44px;height:44px;border:1px solid #33230F;display:flex;align-items:center;justify-content:center;font:600 18px/1 'IBM Plex Mono',monospace;color:#33230F}
 .hoja .cant b{font-family:Anton,sans-serif;font-weight:700;font-size:28px;color:#33230F;min-width:30px;text-align:center}
@@ -749,7 +751,7 @@ body.kb-open #app{padding-bottom:0}
 .m34{position:relative;min-height:100dvh;margin-bottom:calc(-1 * var(--sw-barra,0px));padding:0 26px 110px;box-sizing:border-box}
 .m34 .sal{all:unset;cursor:pointer;position:absolute;top:8px;left:12px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#3A2710}
 .m34 .tit{padding-top:80px}
-.m34 .tit em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.26em;color:#7A5B33;text-transform:uppercase}
+.m34 .tit em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.26em;color:#4E3519;text-transform:uppercase}
 .m34 .tit b{display:block;font-family:Anton,sans-serif;font-weight:700;font-size:46px;line-height:.86;color:#3A2710;margin-top:10px;letter-spacing:-.02em;text-transform:uppercase}
 .m34 .et{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;position:relative;margin-top:30px;background:#FBF6E8;padding:15px 16px 14px;box-shadow:0 8px 20px rgba(70,46,16,.22)}
 .m34 .et:nth-of-type(odd){transform:rotate(-.7deg)}.m34 .et:nth-of-type(even){transform:rotate(.6deg)}
@@ -757,12 +759,12 @@ body.kb-open #app{padding-bottom:0}
 .m34 .et[aria-pressed="true"]{box-shadow:0 0 0 3px #33230F,0 8px 20px rgba(70,46,16,.22)}
 .m34 .et.otra{background:transparent;border:1px dashed rgba(74,50,24,.5);box-shadow:none;transform:rotate(-.5deg)}
 .m34 .et.otra:after{display:none}
-.m34 .et .hd{display:flex;justify-content:space-between;border-bottom:1px dashed rgba(74,50,24,.35);padding-bottom:8px;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#7A5B33;text-transform:uppercase}
+.m34 .et .hd{display:flex;justify-content:space-between;border-bottom:1px dashed rgba(74,50,24,.35);padding-bottom:8px;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#4E3519;text-transform:uppercase}
 .m34 .et b{display:block;font:800 16px/1.2 Archivo,sans-serif;color:#33230F;margin-top:10px;letter-spacing:-.01em}
-.m34 .et s{display:block;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#7A5B33;margin-top:6px;text-transform:uppercase}
+.m34 .et s{display:block;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#4E3519;margin-top:6px;text-transform:uppercase}
 .m34 .et .pie{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;border-top:1px solid rgba(74,50,24,.3);padding-top:9px}
 .m34 .et .pie i{font-family:'IBM Plex Mono',monospace;font-style:normal;font-size:11px;color:#33230F}
-.m34 .et .pie u{text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#9C5F14;text-transform:uppercase}
+.m34 .et .pie u{text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#7A4508;text-transform:uppercase}
 .m34 .et.otra b{color:#4A3218}.m34 .et.otra .hd{color:#6E4F2A}
 .m34 .et:focus-visible{outline:2px solid #33230F;outline-offset:3px}
 .m34 .nota{margin-top:40px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6E4F2A;line-height:1.8;text-transform:uppercase}
@@ -818,7 +820,7 @@ body.kb-open #app{padding-bottom:0}
    docs/maquetas/aprobadas/06A-*.png (fuentes y1.html #A y aviso-puntos.html). SANDO está DETRÁS
    de la losa: no hay forma de que tape un dato. El aviso para quien pagó sin cuenta vive DENTRO
    de la losa, en el renglón de los puntos; con el correo, la losa sube en el mismo lugar. */
-.m06{position:relative;min-height:100dvh;margin-bottom:calc(-1 * var(--sw-barra,0px));display:flex;flex-direction:column;background:#1E2B22}
+.m06{position:relative;min-height:100dvh;margin-bottom:calc(-1 * var(--sw-barra,0px));display:flex;flex-direction:column;background:#241B12}
 .m06 .forro{position:absolute;left:0;top:0;bottom:0;width:8px;background:#D8823C;z-index:50}
 .m06 .arr{position:relative;flex:0 0 auto;height:472px;transition:height .35s ease}
 .m06.sube .arr{height:300px}
@@ -830,12 +832,12 @@ body.kb-open #app{padding-bottom:0}
 .m06 .sub{font-family:'Instrument Serif',serif;font-style:italic;font-size:21px;color:#A6B79A;margin-top:20px;line-height:1.25}
 .m06 .sub u{display:block;text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.24em;color:#5F7358;margin-top:11px;text-transform:uppercase}
 .m06.sube .sub{display:none}
-.m06 .losa{position:relative;z-index:10;flex:1;background:#EFE6D4;padding:22px 26px calc(74px + 24px) 30px}
-.m06 .ca{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #1E2B22;padding-bottom:12px}
+.m06 .losa{position:relative;z-index:10;flex:1;background:#EFE6D4;color:#33230F;padding:22px 26px calc(74px + 24px) 30px}
+.m06 .ca{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #241B12;padding-bottom:12px}
 .m06 .ca em{font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.24em;color:#5F7358;text-transform:uppercase}
-.m06 .ca u{text-decoration:none;font-family:Anton,sans-serif;font-size:22px;color:#1E2B22;letter-spacing:.01em}
+.m06 .ca u{text-decoration:none;font-family:Anton,sans-serif;font-size:22px;color:#241B12;letter-spacing:.01em}
 .m06 .dr{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:13px 0;border-bottom:1px solid rgba(30,43,34,.16);font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;color:#6C7C64;text-transform:uppercase}
-.m06 .dr b{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;letter-spacing:0;color:#1E2B22;text-align:right}
+.m06 .dr b{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;letter-spacing:0;color:#241B12;text-align:right}
 .m06 .dr b.pt{color:#B3651A}
 .m06 .dr button{all:unset;cursor:pointer;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#B3651A;text-transform:uppercase;padding:6px 0}
 .m06 .dr.espera{border-bottom:0;padding-bottom:10px}
@@ -843,26 +845,26 @@ body.kb-open #app{padding-bottom:0}
 .m06 .nota{font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.7;color:#6C7C64;padding:12px 0;border-bottom:1px solid rgba(30,43,34,.16)}
 .m06 .nota label{cursor:pointer;color:#B3651A;text-decoration:underline;text-underline-offset:3px}
 .m06 .guardar{display:flex;gap:8px;align-items:stretch}
-.m06 .guardar .g{flex:1;min-height:44px;background:#1E2B22;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.m06 .guardar .c{all:unset;cursor:pointer;box-sizing:border-box;flex:0 0 auto;min-height:44px;display:flex;align-items:center;padding:0 12px;border:1px solid rgba(30,43,34,.35);font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#1E2B22;text-transform:uppercase}
+.m06 .guardar .g{flex:1;min-height:44px;background:#241B12;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.m06 .guardar .c{all:unset;cursor:pointer;box-sizing:border-box;flex:0 0 auto;min-height:44px;display:flex;align-items:center;padding:0 12px;border:1px solid rgba(30,43,34,.35);font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#241B12;text-transform:uppercase}
 .m06 .guardar .c.solo{flex:1;justify-content:center}
-.m06 .campo{display:block;border-bottom:2px solid #1E2B22;padding:14px 0 10px}
+.m06 .campo{display:block;border-bottom:2px solid #241B12;padding:14px 0 10px}
 .m06 .campo s{display:block;text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#5F7358;text-transform:uppercase}
-.m06 .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:9px;font-family:'IBM Plex Mono',monospace;font-size:17px;color:#1E2B22 !important;caret-color:#B3651A}
+.m06 .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:9px;font-family:'IBM Plex Mono',monospace;font-size:17px;color:#241B12 !important;caret-color:#B3651A}
 .m06 .campo input::placeholder{color:#A9AE9C}
 .m06 .campo.cod input{font-size:28px;letter-spacing:.32em}
 .m06 .par{display:flex;gap:16px}.m06 .par .campo{flex:1;min-width:0}
 .m06 .mini{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#6C7C64;line-height:1.8;margin-top:12px;text-transform:uppercase}
-.m06 .mini b{color:#1E2B22;font-weight:700}
-.m06 .mini button{all:unset;cursor:pointer;color:#1E2B22;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.m06 .mini b{color:#241B12;font-weight:700}
+.m06 .mini button{all:unset;cursor:pointer;color:#241B12;font-weight:700;text-decoration:underline;text-underline-offset:3px}
 .m06 .err{font:600 11px/1.5 'IBM Plex Mono',monospace;color:#9A2A12;min-height:16px;margin-top:10px}
 .m06 .extra{margin-top:18px;display:flex;flex-direction:column;gap:10px}
-.m06 .extra button{all:unset;cursor:pointer;box-sizing:border-box;min-height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border:1px solid rgba(30,43,34,.3);font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#1E2B22;text-transform:uppercase}
+.m06 .extra button{all:unset;cursor:pointer;box-sizing:border-box;min-height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border:1px solid rgba(30,43,34,.3);font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;color:#241B12;text-transform:uppercase}
 .m06-go{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:74px;display:flex;z-index:90}
 .m06-go button{all:unset;box-sizing:border-box;cursor:pointer;flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
 .m06-go .oro{background:#D8823C;color:#231204;justify-content:flex-end;padding-right:16px}
-.m06-go .cel{background:#EFE6D4;color:#1E2B22;justify-content:flex-start;padding-left:16px}
-.m06-go button:focus-visible{outline:2px solid #1E2B22;outline-offset:-4px}
+.m06-go .cel{background:#EFE6D4;color:#241B12;justify-content:flex-start;padding-left:16px}
+.m06-go button:focus-visible{outline:2px solid #241B12;outline-offset:-4px}
 
 /* ═══ MUNDO WICHO · el armador (maqueta M22 + el puente, aprobada 2026-09-24) ═══════════════
    docs/maquetas/aprobadas/mundo-wicho-M22-con-puente.png y su fuente m22-con-puente.html.
@@ -1009,11 +1011,11 @@ body.kb-open #app{padding-bottom:0}
    de apoyo era mono de 9.5 px en mayúsculas y marrón claro sobre kraft. Ahora es letra normal,
    a 15 px y oscura; la mono queda solo para rótulos cortos. */
 .mct .r s{display:block;text-decoration:none;font:500 15px/1.4 Archivo,sans-serif;color:#4A3218;margin-top:4px}
-.mct .r:focus-visible{outline:2px solid #9C5F14;outline-offset:2px}
+.mct .r:focus-visible{outline:2px solid #7A4508;outline-offset:2px}
 .mct .marca{flex-shrink:0;width:22px;height:22px;border:2px solid #4A3218;border-radius:999px;display:flex;align-items:center;justify-content:center}
 .mct .r.on .marca::after{content:'';width:10px;height:10px;border-radius:999px;background:#4A3218}
 .mct .llave{flex-shrink:0;width:44px;height:24px;border:2px solid #4A3218;border-radius:999px;position:relative;box-sizing:border-box}
-.mct .llave::after{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:999px;background:#7A5B33;transition:left .15s}
+.mct .llave::after{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:999px;background:#4E3519;transition:left .15s}
 .mct .r.on .llave{background:#4A3218}
 .mct .r.on .llave::after{left:23px;background:#F2E4CA}
 .mct .nota{margin-top:22px;font:500 13px/1.55 Archivo,sans-serif;color:#4A3218}
@@ -1094,21 +1096,21 @@ body.kb-open #app{padding-bottom:0}
 .mgr .mk{display:inline-flex;gap:.16em;align-items:center;margin:0 .1em}
 .mgr .mk i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
 .mgr .wm .mk i:first-child{background:#A8791E}.mgr .wm .mk i:last-child{background:#2E7FA8}
-.mgr .tit em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#7A5B33;text-transform:uppercase}
+.mgr .tit em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#4E3519;text-transform:uppercase}
 .mgr .tit b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:46px;line-height:.86;color:#3A2710;margin-top:10px;letter-spacing:-.02em}
 .mgr .link{all:unset;box-sizing:border-box;cursor:pointer;width:100%;margin-top:18px;border:1px dashed rgba(74,50,24,.55);padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
 .mgr .link s{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#4A3218;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mgr .link u{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#9C5F14;text-transform:uppercase;flex:0 0 auto}
+.mgr .link u{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;color:#7A4508;text-transform:uppercase;flex:0 0 auto}
 .mgr .gente{margin-top:22px}
 .mgr .g{display:flex;align-items:baseline;gap:12px;padding:13px 0;border-bottom:1px dashed rgba(74,50,24,.4)}
 .mgr .g k{width:26px;height:26px;border-radius:999px;background:#4A3218;color:#F0E2CA;font:700 11px/26px Archivo,sans-serif;text-align:center;flex:0 0 auto}
 .mgr .g .t{flex:1;min-width:0}
 .mgr .g .t b{display:block;font:800 14px/1.2 Archivo,sans-serif;color:#33230F}
-.mgr .g .t s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#7A5B33;margin-top:4px;text-transform:uppercase}
+.mgr .g .t s{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#4E3519;margin-top:4px;text-transform:uppercase}
 .mgr .g p{margin:0;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#33230F}
 .mgr .g.esp .t b{color:#8A6A3C}.mgr .g.esp k{background:transparent;border:1px dashed #8A6A3C;color:#8A6A3C;line-height:24px;box-sizing:border-box}
 .mgr .g.esp.urge .t s:first-of-type{color:#B3402A}
-.mgr .g .t s.oro{color:#9C5F14;font-weight:700}
+.mgr .g .t s.oro{color:#7A4508;font-weight:700}
 .mgr .g .pagar{all:unset;cursor:pointer;background:#4A3218;color:#F0E2CA;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;text-transform:uppercase;padding:9px 12px;align-self:center}
 .mgr .g .est{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:#4A6B2E;align-self:center}
 .mgr .g .est.no{color:#B3402A}
@@ -1118,7 +1120,7 @@ body.kb-open #app{padding-bottom:0}
 .mgr .sello .mk i:first-child{background:rgba(168,121,30,.55)}.mgr .sello .mk i:last-child{background:rgba(46,127,168,.55)}
 .mgr .sello s{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.3em;color:rgba(74,50,24,.38);margin-top:7px}
 .mgr .cta .l{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#6E4F2A;text-transform:uppercase}
-.mgr .cta .l.oro{color:#9C5F14;font-weight:700}
+.mgr .cta .l.oro{color:#7A4508;font-weight:700}
 .mgr .cta .tt{display:flex;align-items:flex-end;justify-content:space-between;margin-top:8px;border-top:2px solid #4A3218;padding-top:10px}
 .mgr .cta .tt em{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#6E4F2A;padding-bottom:7px;text-transform:uppercase}
 .mgr .cta .tt b{font-family:Anton,sans-serif;font-weight:400;font-size:42px;line-height:.82;color:#33230F}
@@ -1151,15 +1153,15 @@ body.kb-open #app{padding-bottom:0}
 .mgr .cancelar{all:unset;cursor:pointer;display:block;margin:26px auto 0;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#B3402A;text-transform:uppercase}
 .mgr .dir{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;padding:14px 0;border-bottom:1px dashed rgba(74,50,24,.4)}
 .mgr .dir b{display:block;font:800 15px/1.1 Archivo,sans-serif;color:#33230F}
-.mgr .dir s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7A5B33;margin-top:5px}
-.mgr .dir.on b::before{content:'● ';color:#9C5F14}
+.mgr .dir s{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#4E3519;margin-top:5px}
+.mgr .dir.on b::before{content:'● ';color:#7A4508}
 .mgr .go{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;bottom:0;height:74px;z-index:45;display:flex}
 .mgr .go button{all:unset;cursor:pointer;flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
 .mgr .go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
 .mgr .go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
 .mgr .go .solo{justify-content:center;padding:0}
 .mgr .go button:focus-visible,.mgr button:focus-visible{outline:2px solid #33230F;outline-offset:-4px}
-.m35 .listo{margin:40px 24px 0 158px;font-family:'Instrument Serif',serif;font-style:italic;font-size:18px;line-height:1.3;color:#1E2B22}
+.m35 .listo{margin:40px 24px 0 158px;font-family:'Instrument Serif',serif;font-style:italic;font-size:18px;line-height:1.3;color:#241B12}
 </style>
 <style>
 /* ═══ EL MAPA DE LA DIRECCIÓN — en el lenguaje de la 34 (aprobada): kraft, etiqueta con cinta,
@@ -1194,9 +1196,9 @@ body.kb-open #app{padding-bottom:0}
 #mmap-top em{font:700 11px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.22em;color:#4A3218;text-transform:uppercase}
 #mmap-top .campo{display:block;border-bottom:2px solid #33230F;padding-bottom:8px;margin-top:2px}
 #mmap-top .campo s{display:block;text-decoration:none;font:700 11px/1 'IBM Plex Mono',monospace;letter-spacing:.16em;color:#4A3218;text-transform:uppercase}
-#mmap-top .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:8px;font:600 18px/1.25 Archivo,sans-serif;color:#2A1D0E !important;caret-color:#9C5F14}
+#mmap-top .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:8px;font:600 18px/1.25 Archivo,sans-serif;color:#2A1D0E !important;caret-color:#7A4508}
 #mmap-top .campo input::placeholder{color:#7A5B33 !important;font-weight:500}
-#mmap-top .campo:focus-within{border-bottom-color:#9C5F14}
+#mmap-top .campo:focus-within{border-bottom-color:#7A4508}
 #mmap-top .res{margin-top:10px;max-height:min(260px,40dvh);overflow-y:auto;background:#FBF6E8;box-shadow:0 8px 20px rgba(70,46,16,.25)}
 #mmap-top .res .f{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;padding:13px 14px;border-bottom:1px dashed rgba(74,50,24,.35);font:600 15px/1.35 Archivo,sans-serif;color:#2A1D0E}
 #mmap-top .res .f:last-child{border-bottom:0}
@@ -1232,7 +1234,7 @@ body.kb-open #app{padding-bottom:0}
    único brillo es una línea de canto de un píxel, que es lo que hace que se lea como un
    corte con filo y no como un hueco. */
 .sw-cut{display:flex;gap:5px;align-items:stretch;flex-shrink:0;pointer-events:none;height:100%}
-.sw-cut i{display:block;width:7px;background:var(--sw-bg,#12150F);
+.sw-cut i{display:block;width:7px;background:var(--sw-bg,#17130E);
   transform:skewX(-16deg);box-shadow:1px 0 0 rgba(233,201,138,.5),-1px 0 0 rgba(0,0,0,.35)}
 /* ── LOS HERMANOS COMO ELEMENTO DE INTERFAZ (2026-09-10) ──────────────────────
    `img/sando.png` e `img/wicho.png` son las DOS MITADES del logo del dueño, partido por
@@ -1332,8 +1334,8 @@ body.kb-open #app{padding-bottom:0}
 .f01 .quita{margin-top:14px}
 .f01 .quita em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.22em;color:#5A6A52;text-transform:uppercase}
 .f01 .quita .ops{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.f01 .quita button{all:unset;box-sizing:border-box;cursor:pointer;min-height:36px;padding:0 13px;display:inline-flex;align-items:center;border:1px solid #1E2B22;border-radius:999px;font-family:'EB Garamond',serif;font-size:15px;color:#1E2B22}
-.f01 .quita button.off{background:#1E2B22;color:#EFE6D4}
+.f01 .quita button{all:unset;box-sizing:border-box;cursor:pointer;min-height:36px;padding:0 13px;display:inline-flex;align-items:center;border:1px solid #241B12;border-radius:999px;font-family:'EB Garamond',serif;font-size:15px;color:#241B12}
+.f01 .quita button.off{background:#241B12;color:#EFE6D4}
 .f01 .quita button:focus-visible{outline:2px solid #D8823C;outline-offset:2px}
 .f01 .pie .p s{display:block;text-decoration:none;font:500 11px/1 'IBM Plex Mono',monospace;color:#C9BFA8;margin-top:6px;letter-spacing:.04em}
 /* EL GRUPO A LA VISTA (maquetas aprobadas grupo-3 y grupo-4, 2026-09-30). */
@@ -1370,12 +1372,12 @@ body.kb-open #app{padding-bottom:0}
 .mcu .cifras{display:flex;gap:26px;margin-top:14px}
 .mcu .cifras>*{all:unset;box-sizing:border-box;display:block}
 .mcu .cifras button{cursor:pointer}
-.mcu .cifras button:focus-visible{outline:2px solid #9C5F14;outline-offset:3px}
+.mcu .cifras button:focus-visible{outline:2px solid #7A4508;outline-offset:3px}
 .mcu .cifras em{display:block;font:700 11px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#4A3218;text-transform:uppercase;font-style:normal}
 .mcu .cifras b{display:block;margin-top:8px;font:700 22px/1 Archivo,sans-serif;color:#2A1D0E}
 .mcu .cifras button b{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px}
 .mcu .lis{margin-top:40px}
-.mcu .r .fl{color:#9C5F14;font-size:18px}
+.mcu .r .fl{color:#7A4508;font-size:18px}
 .mcu .r.dato{cursor:default}
 .mcu .r.dato s{margin:0 0 6px}
 .mcu .salir{all:unset;box-sizing:border-box;cursor:pointer;display:flex;width:100%;justify-content:space-between;align-items:baseline;padding:14px 0}
@@ -1383,21 +1385,21 @@ body.kb-open #app{padding-bottom:0}
 .mcu .salir b{font:700 15px/1 Archivo,sans-serif;letter-spacing:.06em;color:#33230F;text-transform:uppercase}
 .mcu .salir s{text-decoration:none;font:500 13px/1.3 Archivo,sans-serif;color:#4A3218;text-align:right}
 .mcu .salir.borrar b{color:#8E2A18}
-.mcu .salir:focus-visible{outline:2px solid #9C5F14;outline-offset:2px}
+.mcu .salir:focus-visible{outline:2px solid #7A4508;outline-offset:2px}
 /* TUS PEDIDOS · LOS SELLOS (maqueta aprobada tus-pedidos-los-sellos.png). */
-.msl{position:relative;min-height:100dvh;background:#EFE6D4;color:#1E2B22;margin-bottom:calc(-1 * var(--sw-barra,0px))}
+.msl{position:relative;min-height:100dvh;background:#EFE6D4;color:#241B12;margin-bottom:calc(-1 * var(--sw-barra,0px))}
 .msl .sal{all:unset;cursor:pointer;position:absolute;top:10px;left:14px;z-index:4;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.7)}
 .msl.vacio,.msl .cargando{padding:70px 26px 40px}
-.msl.vacio .sal{color:#1E2B22;text-shadow:none}
-.msl .ir{all:unset;cursor:pointer;margin-top:18px;background:#1E2B22;color:#EFE6D4;padding:13px 22px;font:700 13px/1 Archivo,sans-serif;letter-spacing:.14em;text-transform:uppercase}
-.msl .ultimo{position:relative;height:282px;overflow:hidden;background:#1E2B22}
+.msl.vacio .sal{color:#241B12;text-shadow:none}
+.msl .ir{all:unset;cursor:pointer;margin-top:18px;background:#241B12;color:#EFE6D4;padding:13px 22px;font:700 13px/1 Archivo,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.msl .ultimo{position:relative;height:282px;overflow:hidden;background:#241B12}
 .msl .ultimo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .msl .ultimo .velo{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,transparent 35%,rgba(10,14,10,.85) 100%)}
 .msl .ultimo .tx{all:unset;cursor:pointer;position:absolute;left:24px;right:24px;bottom:18px;z-index:2}
 .msl .ultimo em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#8CC8EC;text-transform:uppercase;font-style:normal}
 .msl .ultimo b{display:block;margin-top:8px;font:800 22px/1.1 Archivo,sans-serif;color:#fff}
 .msl .ultimo s{display:block;margin-top:8px;text-decoration:none;font:500 9px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:rgba(255,255,255,.8);text-transform:uppercase}
-.msl .repetir{all:unset;box-sizing:border-box;cursor:pointer;display:flex;width:100%;justify-content:space-between;align-items:center;padding:20px 24px;background:#1E2B22;color:#EFE6D4}
+.msl .repetir{all:unset;box-sizing:border-box;cursor:pointer;display:flex;width:100%;justify-content:space-between;align-items:center;padding:20px 24px;background:#241B12;color:#EFE6D4}
 .msl .repetir span{font:800 13px/1 Archivo,sans-serif;letter-spacing:.18em;text-transform:uppercase}
 .msl .repetir b{font:500 13px/1 'IBM Plex Mono',monospace;color:#CBA258}
 .msl .repetir:focus-visible,.msl .sello:focus-visible,.msl .ultimo .tx:focus-visible{outline:2px solid #D8823C;outline-offset:3px}
@@ -1409,7 +1411,7 @@ body.kb-open #app{padding-bottom:0}
 .msl .sello{all:unset;box-sizing:border-box;cursor:pointer;aspect-ratio:1/1;border:1px solid rgba(30,43,34,.25);background:#F6EFE0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
 .msl .sello em{font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.14em;color:#6C7C64;text-transform:uppercase;font-style:normal}
 .msl .sello b{font:700 15px/1 'IBM Plex Mono',monospace}
-.msl .sello.on{background:#1E2B22;color:#EFE6D4;border-color:#1E2B22}
+.msl .sello.on{background:#241B12;color:#EFE6D4;border-color:#241B12}
 .msl .sello.on em{color:#CBA258}
 .msl .sello.x{opacity:.45}
 .msl .pie{margin-top:40px;font:500 11px/1.8 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#5A6A52;text-transform:uppercase}
@@ -1532,7 +1534,7 @@ body.kb-open #app{padding-bottom:0}
 .mod .ac{all:unset;box-sizing:border-box;cursor:pointer;display:flex;width:100%;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 0;border-top:1px dashed rgba(74,50,24,.4)}
 .mod .ac span{font:700 13px/1 Archivo,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#4A3218}
 .mod .ac s{text-decoration:none;font:500 9px/1.3 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:#5E4526;text-align:right}
-.mod .ac:focus-visible{outline:2px solid #9C5F14;outline-offset:2px}
+.mod .ac:focus-visible{outline:2px solid #7A4508;outline-offset:2px}
 .mod .calif:not(:empty){margin-top:22px;border-radius:12px;overflow:hidden}
 @media print{
   body *{visibility:hidden}
@@ -1551,17 +1553,17 @@ body.kb-open #app{padding-bottom:0}
 .mdir .form>em{display:block;margin-bottom:18px;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#5E4526;text-transform:uppercase;font-style:normal}
 .mdir .campo{display:block;border-bottom:2px solid #33230F;padding-bottom:10px;margin-bottom:18px}
 .mdir .campo s{display:block;text-decoration:none;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.22em;color:#5E4526;text-transform:uppercase}
-.mdir .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:15px;color:#33230F !important;caret-color:#9C5F14}
+.mdir .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:15px;color:#33230F !important;caret-color:#7A4508}
 .mdir .campo input::placeholder{color:#7A5B33 !important}
-.mdir .campo:focus-within{border-bottom-color:#9C5F14}
+.mdir .campo:focus-within{border-bottom-color:#7A4508}
 .mdir .ubicar{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin:-6px 0 18px;padding:12px 14px;border:2px solid #33230F;font:700 13px/1 Archivo,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#33230F;text-align:center}
 .mdir .ubicar.ok{border-style:dashed;color:#3A5A20;border-color:#3A5A20}
-.mdir .ubicar:focus-visible{outline:2px solid #9C5F14;outline-offset:2px}
+.mdir .ubicar:focus-visible{outline:2px solid #7A4508;outline-offset:2px}
 .mdir .r .sinpin{color:#8E2A18}
 .mdir .err{min-height:15px;font:500 11px/1.3 'IBM Plex Mono',monospace;color:#7A2E2E}
 .mdir .guardar{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin:8px 0 12px;padding:16px 0;text-align:center;background:#2A1D0E;color:#F2E4CA;font:700 13px/1 Archivo,sans-serif;letter-spacing:.14em;text-transform:uppercase}
 .mdir .cancelar{all:unset;cursor:pointer;display:block;margin:0 auto 12px;padding:8px;font:500 11px/1 'IBM Plex Mono',monospace;color:#5E4526;text-decoration:underline}
-.mdir button:focus-visible{outline:2px solid #9C5F14;outline-offset:2px}
+.mdir button:focus-visible{outline:2px solid #7A4508;outline-offset:2px}
 /* LO LEGAL, EN CRIOLLO (maqueta aprobada lo-legal.png): el índice de los textos legales. */
 .mll{position:relative;min-height:100dvh;box-sizing:border-box;padding:18px max(26px,calc(50% - 300px)) 40px;background:#F2EEE6;color:#22201C}
 .mll .sal{all:unset;cursor:pointer;font-size:18px;color:#22201C;padding:6px 8px 6px 0}
@@ -1575,7 +1577,7 @@ body.kb-open #app{padding-bottom:0}
 .mll .doc:focus-visible{outline:2px solid #8A4A10;outline-offset:2px}
 .mll .biz{margin:30px 0 0;padding-top:20px;border-top:1px solid rgba(34,32,28,.2);font:500 9px/1.8 'IBM Plex Mono',monospace;color:#5E5A52;text-transform:uppercase}
 /* Los textos legales (2026-10-01): fondo oscuro de siempre, cabecera de «Lo legal». */
-.mlt{position:relative;min-height:100dvh;box-sizing:border-box;background:#12150F;padding:18px max(0px,calc(50% - 320px)) 0;display:flex;flex-direction:column}
+.mlt{position:relative;min-height:100dvh;box-sizing:border-box;background:#17130E;padding:18px max(0px,calc(50% - 320px)) 0;display:flex;flex-direction:column}
 .mlt .sal{all:unset;cursor:pointer;font-size:18px;color:#EFEDE4;padding:6px 20px}
 .mlt .cab{padding:22px 20px 6px}
 .mlt .cab em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;color:#CBA258;text-transform:uppercase;font-style:normal}
@@ -1671,7 +1673,7 @@ body.kb-open #app{padding-bottom:0}
   /* MUNDO SANDO: la foto a la izquierda (la vertical, que cabe entera) y la ficha a la derecha. */
   .m15 .plato{justify-content:center;padding:0 max(56px,calc(50% - 620px)) 0 calc(50% + 72px)}
   .m15 .foto{right:50%;height:100%}
-  .m15 .foto .baja{background:linear-gradient(90deg,transparent 80%,#101B15 100%),linear-gradient(180deg,rgba(9,16,12,.5) 0%,transparent 14%)}
+  .m15 .foto .baja{background:linear-gradient(90deg,transparent 80%,#17130E 100%),linear-gradient(180deg,rgba(9,16,12,.5) 0%,transparent 14%)}
   .m15 .sirve{right:auto;left:calc(50% - 76px);top:auto;bottom:36px;width:152px}
   .m15 h1{font-size:56px}
   .m15 .pitch{font-size:15px;max-width:40ch}
@@ -4157,7 +4159,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '048f9b6ee3';
+var APP_BUILD = '8e32f2f87e';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -4472,7 +4474,7 @@ function renderOverlays() {
         // teclado ni se anunciaban como controles.
         var drawerRow = function (icn, label, action) { return '<button type="button" onclick="adminToolsDrawerOpen=false;' + action + '" style="all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:12px;padding:12px 4px;min-height:44px;cursor:pointer;border-bottom:1px solid var(--sw-border-soft,#1c1c1c)">' + icon(icn, 17) + '<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">' + label + '</span></button>'; };
         html += '<div onclick="toggleAdminToolsDrawer()" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:430" class="fi"></div>'
-            + '<div role="dialog" aria-modal="true" aria-label="Herramientas de administración" style="position:fixed;top:0;right:0;bottom:0;width:82%;max-width:340px;background:var(--sw-bg,#12150F);border-left:1px solid var(--sw-border,#2C3228);z-index:431;overflow-y:auto;padding:20px" class="fi">'
+            + '<div role="dialog" aria-modal="true" aria-label="Herramientas de administración" style="position:fixed;top:0;right:0;bottom:0;width:82%;max-width:340px;background:var(--sw-bg,#17130E);border-left:1px solid var(--sw-border,#2C3228);z-index:431;overflow-y:auto;padding:20px" class="fi">'
             + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">Herramientas<span style="color:' + GOLD + '"> //</span></div><button onclick="toggleAdminToolsDrawer()" aria-label="Cerrar" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#9DA096);font-size:18px;padding:4px">&#10005;</button></div>'
             + drawerRow('refresh', 'Cola de pedidos', 'loadAdmin()')
             + drawerRow('reportes', 'Panel de negocio', 'loadDashboard()')
@@ -5302,10 +5304,12 @@ function HERMANO_DICE(estado, titulo, texto, tono) {
 }
 function VACIO(titulo, texto, cta, estado) {
     var quien = ladoActual();
+    // Del lado WICHO el fondo es celeste: el dorado y el gris de fondo oscuro quedaban a 1.3:1.
+    var tinta = quien === 'wicho' ? '#0E2430' : ACC(), suave = quien === 'wicho' ? '#2E4A58' : 'var(--sw-text-muted,#9DA096)';
     return '<div style="text-align:center;padding:34px 10px 10px">'
         + '<img src="' + broPose(quien, estado) + '" alt="" aria-hidden="true" loading="lazy" style="height:150px;width:auto;opacity:.85;margin-bottom:14px">'
-        + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + ACC() + ';letter-spacing:.2em">' + esc(titulo) + ' //</div>'
-        + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin:10px auto 0;max-width:280px;line-height:1.55">' + texto + '</p>'
+        + '<div class="vacio-t" style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:' + tinta + ';letter-spacing:.2em">' + esc(titulo) + ' //</div>'
+        + '<p class="vacio-p" style="font-family:\'EB Garamond\',serif;font-size:13px;color:' + suave + ';margin:10px auto 0;max-width:280px;line-height:1.55">' + texto + '</p>'
         + (cta || '')
         + '</div>';
 }
@@ -5363,7 +5367,7 @@ function SZTOG() {
     // venta del producto más caro. La diferencia real es física y no necesita adorno: 30CM es el
     // doble de pan y el doble de relleno. Eso se dice, y el resto lo dice el precio.
     // (Antes de eso fueron "Individual"/"Clásico", que tampoco comunicaban el tamaño real.)
-    return ST('00', 'Tamaño', 'Elige antes de continuar.') + '<div style="display:flex;gap:8px;margin-bottom:6px">' + opt('15', '15CM', 'El de siempre') + opt('30', '30CM', 'El doble de todo') + '</div><div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
+    return ST('00', 'Tamaño', 'Elige antes de continuar.') + '<div style="display:flex;gap:8px;margin-bottom:6px">' + opt('15', '15CM', 'El de siempre') + opt('30', '30CM', 'El doble de todo') + '</div><div style="height:1px;background:var(--sw-bg,#17130E);margin:20px 0"></div>';
 }
 function today() { return new Date().toLocaleDateString('es-PE', { timeZone: 'America/Lima' }); }
 // La parte de tiempo es solo para que sea legible/ordenable — la parte random es la que
@@ -5447,7 +5451,7 @@ function NAV() {
 // repetir el mismo bloque en cada pantalla de la app.
 function contactFooterHTML() {
     var igIcon = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>';
-    return '<div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--sw-bg,#12150F)">'
+    return '<div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--sw-bg,#17130E)">'
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:12px">Contacto //</div>'
         + '<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:2.1">'
         + '<div style="display:flex;align-items:center;gap:7px">' + icon('direccion', 13, '#9DA096') + 'Delivery — ' + BIZ_CITY + '</div>'
@@ -5488,8 +5492,10 @@ function legalFooterLink(label, screen, extra) {
 }
 function legalLinksHTML(backTo) {
     function lnk(label, screen, extra) {
-        return '<button type="button" onclick="bkTo=\'' + backTo + '\';sndScreen=\'' + screen + '\';' + (extra || '') + 'render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#9DA096);letter-spacing:.06em;text-decoration:underline;padding:6px 2px;min-height:24px;display:inline-flex;align-items:center">' + label + ' <span class="cut-sep" style="color:' + GOLD + '">//</span></button>';
+        return '<button type="button" onclick="bkTo=\'' + backTo + '\';sndScreen=\'' + screen + '\';' + (extra || '') + 'render()" style="all:unset;cursor:pointer;font-family:Archivo,sans-serif;font-weight:700;font-size:11px;color:inherit;text-decoration:underline;text-underline-offset:3px;padding:6px 0">' + label + ' <span class="cut-sep" style="color:' + GOLD + '">//</span></button>';
     }
+    // Color heredado del fondo donde se pinta (losa clara, kraft, lado WICHO): un gris fijo
+    // pensado para fondo oscuro dejaba el Libro de Reclamaciones a 2:1 sobre la losa (2026-10-01).
     return '<div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:14px;justify-content:center">'
         + lnk('Cambios y devoluciones', 'p_returns')
         + lnk('Libro de reclamaciones', 'p_complaints', 'cmplStep=\'form\';')
@@ -5518,7 +5524,7 @@ function AB(t, can, bk, nfn, nl, hint) {
     // Hint bajo la barra cuando el botón está deshabilitado — explica QUÉ falta en vez de
     // dejar un botón gris sin razón visible (hallazgo de auditoría UX, severidad BAJA).
     var hintRow = (!can && hint) ? '<div style="position:fixed;bottom:66px;left:50%;transform:translateX(-50%);width:100%;max-width:480px;padding:0 20px;text-align:right;pointer-events:none"><span style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);background:rgba(11,11,11,.9);padding:4px 10px;border-radius:8px">' + esc(hint) + '</span></div>' : '';
-    return hintRow + '<div class="sw-barra" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 20px;display:flex;gap:10px;align-items:center;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100"><div style="flex:1">' + tt + '</div>' + bb + '<button onclick="' + (can ? nfn : '') + '" ' + (can ? '' : 'disabled') + ' style="all:unset;cursor:' + (can ? 'pointer' : 'not-allowed') + ';background:' + (can ? GOLD : '#12150F') + ';color:' + (can ? 'var(--sw-on-gold,#241a08)' : '#73776C') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.05em;padding:13px 0;border-radius:8px;text-align:center;flex:1">' + (nl || 'Continuar //') + '</button></div>';
+    return hintRow + '<div class="sw-barra" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 20px;display:flex;gap:10px;align-items:center;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100"><div style="flex:1">' + tt + '</div>' + bb + '<button onclick="' + (can ? nfn : '') + '" ' + (can ? '' : 'disabled') + ' style="all:unset;cursor:' + (can ? 'pointer' : 'not-allowed') + ';background:' + (can ? GOLD : 'var(--sw-bg,#17130E)') + ';color:' + (can ? 'var(--sw-on-gold,#241a08)' : '#73776C') + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.05em;padding:13px 0;border-radius:8px;text-align:center;flex:1">' + (nl || 'Continuar //') + '</button></div>';
 }
 // PÍLDORA DE VIDRIO — el rótulo que se puede poner ENCIMA DE UNA FOTO.
 // Nace con el tratamiento a sangre: cuando la foto es la tarjeta, un rótulo con fondo de
@@ -5681,7 +5687,7 @@ function BTN(l, fn, out) { return '<button onclick="' + fn + '" style="all:unset
 // eso: la pieza estaba construida y sin enchufar. Una espiral que gira es literalmente
 // lo que ya significa en la marca, así que no hay nada que aprender.
 function LOAD(msg) {
-    return '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--sw-bg,#12150F)">'
+    return '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--sw-bg,#17130E)">'
         + '<div style="margin-bottom:14px">' + SPIRAL(34, 'var(--sw-spiral,#C3A6D2)', true) + '</div>'
         + '<div style="margin-bottom:14px">' + WORDMARK(30, true) + '</div>'
         + '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.25em">' + (msg || 'CARGANDO //') + '</div></div>';
@@ -7613,7 +7619,7 @@ function sigPreviewOverlayHTML() {
             + (sigBadge(s) ? '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:' + GOLD + ';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block">' + sigBadge(s) + '</span>' : '')
             + '</div>';
     return '<div onclick="closeSigPreview()" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;justify-content:center" class="fi">'
-        + '<div onclick="event.stopPropagation()" style="background:var(--sw-bg,#12150F);border-radius:12px 14px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto">'
+        + '<div onclick="event.stopPropagation()" style="background:var(--sw-bg,#17130E);border-radius:12px 14px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto">'
         + hero
         + '<div style="padding:20px">'
         + '<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);line-height:1.6;margin-bottom:16px">' + esc(s.pitch || '') + '</p>'
@@ -8198,7 +8204,7 @@ function sOItemConfirm() {
             + '<img src="' + heroImg + '" alt="' + esc(mode === 'sig' && sig ? sig.n : '') + '" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">'
             // El degradado cierra contra el fondo de la app (no contra negro) para que la foto
             // no termine en un corte duro: se funde con la pantalla en vez de estar pegada.
-            + '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25) 0%,rgba(0,0,0,.05) 30%,rgba(0,0,0,.55) 70%,var(--sw-bg,#12150F) 100%)"></div>'
+            + '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.25) 0%,rgba(0,0,0,.05) 30%,rgba(0,0,0,.55) 70%,var(--sw-bg,#17130E) 100%)"></div>'
             + '<div style="position:absolute;left:20px;right:20px;bottom:12px">'
             + PILL(heroSub, false) + '<span style="margin-left:6px">' + PILL(szLabel(size), true) + '</span>'
             + '<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:#fff;letter-spacing:.02em;line-height:1.12;margin-top:7px;text-shadow:0 2px 8px rgba(0,0,0,.75)">' + heroTitulo + '</div>'
@@ -8682,7 +8688,7 @@ function deliveryZonePickerHTML() {
             : 'Confirma tu ubicación en el mapa y calculamos el envío al instante. Se cobra por distancia real, ' + SOLES_TXT + pz(DELIVERY_KM_RATE) + ' por kilómetro.')
         + '</div>'
         + '<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:4px">Solo la primera vez por dirección: después queda guardada.</div>'
-        + '<button onclick="abrirUbicacion()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;background:' + GOLD + ';color:#12150F;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.05em;padding:10px;border-radius:8px;text-align:center">Confirmar mi ubicación //</button>'
+        + '<button onclick="abrirUbicacion()" style="all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;margin-top:10px;background:' + GOLD + ';color:var(--sw-bg,#17130E);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.05em;padding:10px;border-radius:8px;text-align:center">Confirmar mi ubicación //</button>'
         + '</div></div>';
 }
 function checkoutExtrasHTML() {
@@ -11209,7 +11215,7 @@ function sWelcome() {
     var nm = cust ? cust.name.split(' ')[0] : '';
     var rwd = RWDS.slice().reverse().find(function (r) { return pts >= r.pts; });
     var next = RWDS.find(function (r) { return r.pts > pts; });
-    return '<div onclick="sndScreen=\'p_home\';render()" style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--sw-bg,#12150F);padding:48px 24px;position:relative;overflow:hidden">'
+    return '<div onclick="sndScreen=\'p_home\';render()" style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--sw-bg,#17130E);padding:48px 24px;position:relative;overflow:hidden">'
         + '<div style="position:absolute;top:-80px;right:-80px;width:300px;height:300px;border-radius:50%;background:rgba(203,162,88,.06)"></div>'
         + '<div style="position:absolute;bottom:-60px;left:-60px;width:220px;height:220px;border-radius:50%;background:rgba(203,162,88,.04)"></div>'
         + '<div style="text-align:center;position:relative;z-index:1;width:100%">'
@@ -12059,7 +12065,7 @@ function sPComplaints() {
         + INP('cq-email', 'Correo electrónico', 'email', cust ? cust.email : undefined, 'mail')
         + minorBlock
         + '</div>'
-        + '<div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>'
+        + '<div style="height:1px;background:var(--sw-bg,#17130E);margin:20px 0"></div>'
         + ST('02', 'El ' + (cmplKind === 'queja' ? 'malestar' : 'pedido'), '')
         + '<div style="display:flex;flex-direction:column;gap:10px">'
         + INP('cq-ref', 'Referencia del pedido // opcional (ej: SND-1234)', 'text')
@@ -12973,7 +12979,7 @@ function printTicket(ordId) {
 function sDeliveryConfirm() {
     var d = deliveryConfirmState || {};
     var caja = function (inner) {
-        return '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--sw-bg,#12150F)">'
+        return '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--sw-bg,#17130E)">'
             + '<div style="max-width:360px;width:100%;text-align:center">' + inner + '</div></div>';
     };
     if (d.loading) {
@@ -13555,7 +13561,7 @@ function render() {
             reportarError('pantalla:' + String(sndScreen), e);
             var appEl = document.getElementById('app');
             if (appEl) {
-                appEl.innerHTML = '<div style="min-height:100vh;background:#12150F;padding:28px 22px;font-family:\'EB Garamond\',serif;color:#EFEDE4">'
+                appEl.innerHTML = '<div style="min-height:100vh;background:#17130E;padding:28px 22px;font-family:\'EB Garamond\',serif;color:#EFEDE4">'
                     + '<div style="font-family:\'Bodoni Moda\',serif;font-size:22px;font-weight:640;color:#fff;margin-bottom:10px">Algo se rompió al abrir esta pantalla</div>'
                     + '<p style="font-size:15px;line-height:1.55;color:#9DA096;margin-bottom:18px">No es culpa tuya. Toca el botón de abajo para recargar la app con la última versión; si vuelve a pasar, mándanos esta pantalla completa.</p>'
                     + '<div style="background:#171A14;border:1px solid #2C3228;border-radius:8px;padding:14px 16px;font-size:13px;line-height:1.6;word-break:break-word;margin-bottom:20px">'
@@ -13585,7 +13591,7 @@ function renderScreen() {
         // "CARGANDO //"), borrando todo el contexto previo, cuando ya existe skeletonCards()
         // para esto mismo del lado cliente (hallazgo de auditoría de diseño admin, ALTO).
         if (sndScreen.indexOf('admin') === 0) {
-            appElBusy.innerHTML = '<div style="min-height:100vh;background:var(--sw-bg,#12150F);padding:20px" class="fi ' + (adminLightMode ? 'admin-light' : 'admin-dark') + '">' + skeletonCards(4, 64) + '</div>';
+            appElBusy.innerHTML = '<div style="min-height:100vh;background:var(--sw-bg,#17130E);padding:20px" class="fi ' + (adminLightMode ? 'admin-light' : 'admin-dark') + '">' + skeletonCards(4, 64) + '</div>';
         }
         // Las pantallas de LISTA del cliente reciben el mismo trato que ya tenía el admin: el
         // armazón con bloques del tamaño real en vez del splash de pantalla completa. El splash
@@ -13593,7 +13599,7 @@ function renderScreen() {
         // dice qué viene. Solo aplica donde lo que llega ES una lista de tarjetas — en un cobro
         // o un login no hay armazón que anticipar y el splash sigue siendo lo correcto.
         else if (LIST_SCREENS[sndScreen]) {
-            appElBusy.innerHTML = '<div style="min-height:100vh;background:var(--sw-bg,#12150F);padding:20px" class="fi">' + skeletonCards(LIST_SCREENS[sndScreen], 64) + '</div>';
+            appElBusy.innerHTML = '<div style="min-height:100vh;background:var(--sw-bg,#17130E);padding:20px" class="fi">' + skeletonCards(LIST_SCREENS[sndScreen], 64) + '</div>';
         }
         else {
             appElBusy.innerHTML = LOAD(busyMsg);
@@ -13774,7 +13780,7 @@ function renderScreen() {
     // miden 100dvh, así que el contenedor quedaba más alto que ellas y la puerta se podía subir
     // dejando ver una franja verde abajo (dueño, 2026-10-01, captura del celular). 100vh queda
     // solo como respaldo para navegadores sin dvh. Lo vigila tests/puerta-sin-scroll.spec.ts.
-    document.getElementById('app').innerHTML = '<div class="' + (adminScope ? (adminLight ? 'admin-light' : 'admin-dark') : '') + '" style="min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;background:var(--sw-bg,#12150F)">' + offlineBanner + updateBanner + h + '</div>';
+    document.getElementById('app').innerHTML = '<div class="' + (adminScope ? (adminLight ? 'admin-light' : 'admin-dark') : '') + '" style="min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;background:var(--sw-bg,#17130E)">' + offlineBanner + updateBanner + h + '</div>';
     if (nueva)
         nueva.pintar(document.getElementById('pantalla-nueva'));
     window.scrollTo(0, sameScreen ? scrollY : 0);

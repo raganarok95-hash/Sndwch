@@ -81,7 +81,7 @@ function renderOverlays(){
     // teclado ni se anunciaban como controles.
     var drawerRow=function(icn,label,action){return'<button type="button" onclick="adminToolsDrawerOpen=false;'+action+'" style="all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:12px;padding:12px 4px;min-height:44px;cursor:pointer;border-bottom:1px solid var(--sw-border-soft,#1c1c1c)">'+icon(icn,17)+'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+label+'</span></button>';};
     html+='<div onclick="toggleAdminToolsDrawer()" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:430" class="fi"></div>'
-      +'<div role="dialog" aria-modal="true" aria-label="Herramientas de administración" style="position:fixed;top:0;right:0;bottom:0;width:82%;max-width:340px;background:var(--sw-bg,#12150F);border-left:1px solid var(--sw-border,#2C3228);z-index:431;overflow-y:auto;padding:20px" class="fi">'
+      +'<div role="dialog" aria-modal="true" aria-label="Herramientas de administración" style="position:fixed;top:0;right:0;bottom:0;width:82%;max-width:340px;background:var(--sw-bg,#17130E);border-left:1px solid var(--sw-border,#2C3228);z-index:431;overflow-y:auto;padding:20px" class="fi">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">Herramientas<span style="color:'+GOLD+'"> //</span></div><button onclick="toggleAdminToolsDrawer()" aria-label="Cerrar" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#9DA096);font-size:18px;padding:4px">&#10005;</button></div>'
       +drawerRow('refresh','Cola de pedidos','loadAdmin()')
       +drawerRow('reportes','Panel de negocio','loadDashboard()')
@@ -810,10 +810,12 @@ function HERMANO_DICE(estado,titulo,texto,tono?){
 }
 function VACIO(titulo,texto,cta?,estado?){
   var quien=ladoActual();
+  // Del lado WICHO el fondo es celeste: el dorado y el gris de fondo oscuro quedaban a 1.3:1.
+  var tinta=quien==='wicho'?'#0E2430':ACC(),suave=quien==='wicho'?'#2E4A58':'var(--sw-text-muted,#9DA096)';
   return'<div style="text-align:center;padding:34px 10px 10px">'
     +'<img src="'+broPose(quien,estado)+'" alt="" aria-hidden="true" loading="lazy" style="height:150px;width:auto;opacity:.85;margin-bottom:14px">'
-    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+ACC()+';letter-spacing:.2em">'+esc(titulo)+' //</div>'
-    +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin:10px auto 0;max-width:280px;line-height:1.55">'+texto+'</p>'
+    +'<div class="vacio-t" style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+tinta+';letter-spacing:.2em">'+esc(titulo)+' //</div>'
+    +'<p class="vacio-p" style="font-family:\'EB Garamond\',serif;font-size:13px;color:'+suave+';margin:10px auto 0;max-width:280px;line-height:1.55">'+texto+'</p>'
     +(cta||'')
     +'</div>';
 }
@@ -871,7 +873,7 @@ function SZTOG(){
   // venta del producto más caro. La diferencia real es física y no necesita adorno: 30CM es el
   // doble de pan y el doble de relleno. Eso se dice, y el resto lo dice el precio.
   // (Antes de eso fueron "Individual"/"Clásico", que tampoco comunicaban el tamaño real.)
-  return ST('00','Tamaño','Elige antes de continuar.')+'<div style="display:flex;gap:8px;margin-bottom:6px">'+opt('15','15CM','El de siempre')+opt('30','30CM','El doble de todo')+'</div><div style="height:1px;background:var(--sw-bg,#12150F);margin:20px 0"></div>';
+  return ST('00','Tamaño','Elige antes de continuar.')+'<div style="display:flex;gap:8px;margin-bottom:6px">'+opt('15','15CM','El de siempre')+opt('30','30CM','El doble de todo')+'</div><div style="height:1px;background:var(--sw-bg,#17130E);margin:20px 0"></div>';
 }
 function today(){return new Date().toLocaleDateString('es-PE',{timeZone:'America/Lima'});}
 // La parte de tiempo es solo para que sea legible/ordenable — la parte random es la que
