@@ -23,7 +23,7 @@ test('la cuenta es la nueva: ficha con cifras reales y sin la barra vieja', asyn
   await expect(ficha).toContainText(credito);
 });
 
-for (const [fila, destino] of [['Tus datos', '.mcu h1:has-text("DATOS")'], ['Cómo pagas', 'text=CÓMO'], ['Avisos', 'text=AVISOS'], ['Términos y privacidad', 'text=Términos']] as const) {
+for (const [fila, destino] of [['Tus datos', '.mcu h1:has-text("DATOS")'], ['Cómo pagas', 'text=CÓMO'], ['Avisos', 'text=AVISOS'], ['Lo legal', '.mll']] as const) {
   test(`«${fila}» lleva a su pantalla y se vuelve a la cuenta`, async ({ page }) => {
     await aLaCuenta(page);
     await page.locator('.mcu .r', { hasText: fila }).click();

@@ -567,6 +567,7 @@ function renderScreen(){
     case'p_welcome':   h=sWelcome();break;
     case'p_recover':   h=sPRecover();break;
     case'p_legal':     h=sPLegal();break;
+    case'p_lo_legal':  h=sPLoLegal();break;
     case'p_returns':   h=sPReturns();break;
     case'p_complaints':h=sPComplaints();break;
     case'p_home':      h=sPHome();break;
