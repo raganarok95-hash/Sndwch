@@ -27,7 +27,18 @@ jobs:
       - run: npm run typecheck:api
       # Y las pruebas de comportamiento de la lógica de dinero: el type-check no las cubre.
       - run: npm run test:api
-      - uses: supabase/setup-cli@v1
+      # «latest» se resuelve contra la API de GitHub, que a veces responde «rate limit exceeded»
+      # (2026-10-01: un despliegue entero se cayó por eso, sin tocar el código). Se reintenta una
+      # vez tras una pausa en vez de fijar una versión que habría que acordarse de actualizar.
+      - id: cli1
+        uses: supabase/setup-cli@v1
+        continue-on-error: true
+        with:
+          version: latest
+      - if: steps.cli1.outcome == 'failure'
+        run: sleep 30
+      - if: steps.cli1.outcome == 'failure'
+        uses: supabase/setup-cli@v1
         with:
           version: latest
       - run: supabase functions deploy api --project-ref rjosezuoyngiadunfzyn --no-verify-jwt
