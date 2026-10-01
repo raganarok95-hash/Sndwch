@@ -1513,54 +1513,71 @@ function abrirPlato(idx:number){
     if(s&&pistas)pistas.scrollTop=s.offsetTop;
   },0);
 }
-// Primer toque: levanta la carta y dice cuál es. Segundo toque (o el botón): abre su plato. Se
-// hace sin render() para que el abanico no vuelva a abrirse desde cero en cada toque.
+// Primer toque: levanta la carta y marca su fila en la lista de abajo. Segundo toque: abre su
+// plato. Se hace sin render() para que el abanico no vuelva a abrirse desde cero en cada toque.
 function tocarCarta(btn:HTMLElement){
   if(btn.classList.contains('sel')){abrirPlato(Number(btn.getAttribute('data-plato')));return;}
-  document.querySelectorAll('.mtarot .k.sel').forEach(function(k){k.classList.remove('sel');k.setAttribute('aria-pressed','false');});
-  btn.classList.add('sel');btn.setAttribute('aria-pressed','true');
-  var el=document.querySelector('.mtarot .elegida');
-  if(el)el.innerHTML=elegidaHTML(btn);
+  marcarCarta(Number(btn.getAttribute('data-plato')));
 }
-function elegidaHTML(btn:HTMLElement):string{
-  return'<b>'+esc(btn.getAttribute('data-nombre')||'')+'</b><s>'+esc(btn.getAttribute('data-sub')||'')+'</s>'
-    +'<button onclick="abrirPlato('+Number(btn.getAttribute('data-plato'))+')">'+esc(btn.getAttribute('data-ir')||'Verlo')+' →</button>';
+function marcarCarta(plato:number){
+  document.querySelectorAll('.mtarot .k').forEach(function(k){
+    var on=Number(k.getAttribute('data-plato'))===plato;
+    k.classList.toggle('sel',on);k.setAttribute('aria-pressed',String(on));
+  });
+  document.querySelectorAll('.mtarot .lista .fila').forEach(function(f){
+    f.classList.toggle('on',Number(f.getAttribute('data-plato'))===plato);
+  });
 }
 var NUM_PALABRA=['Ninguna','Una','Dos','Tres','Cuatro','Cinco','Seis','Siete','Ocho','Nueve','Diez'];
+// LA CARTA VENDE (dueño, 2026-10-01: «si bien el concepto es hermoso debemos hacer que venda
+// también»): arriba el abanico, numerado como un tarot; abajo la lista con el MISMO número, lo
+// que lleva cada uno dicho para antojar (el pitch de la carta) y su precio. Tocar una fila abre
+// el plato directo: quien leyó la descripción ya sabe qué está eligiendo.
 function sCartaTarot(visibles:any[],secreto:any){
   var total=visibles.length+(secreto?1:0);
   var mitad=(total-1)/2;
   var n=cart.reduce(function(a,it){return a+(it.qty||1);},0);
   // El índice del plato: el primero, después el del pedido en grupo, después el resto (ver
   // sMundoSando). El secreto es el último.
+  var platoDe=function(i:number){return i===0?0:i+1;};
   var estrella=Math.max(0,visibles.findIndex(function(s:any){return s.recommended;}));
   var cartas=visibles.map(function(s:any,i:number){
-    var idx=i===0?0:i+1;
     var sel=i===estrella;
     return'<button class="k'+(s.recommended?' e':'')+(sel?' sel':'')+'" style="--o:'+(i-mitad)+';--d:'+(i*60)+'ms" onclick="tocarCarta(this)" aria-pressed="'+sel+'"'
-      +' data-plato="'+idx+'" data-nombre="'+esc(s.n)+'" data-sub="'+(s.recommended?'★ La estrella · ':'')+'desde '+SOLES_TXT+pz(s.p15)+'" data-ir="Ver '+esc(s.n)+'" aria-label="'+esc(s.n)+', '+SOLES_TXT+pz(s.p15)+'">'
+      +' data-plato="'+platoDe(i)+'" aria-label="Carta '+romano(i+1)+': '+esc(s.n)+', '+SOLES_TXT+pz(s.p15)+'">'
+      +'<u>'+romano(i+1)+'</u>'
       +(fotoDelPlato(s.id)?'<img src="'+(SIG_IMG[s.id]||fotoDelPlato(s.id))+'" alt="">':'<span class="sinfoto"></span>')
       +'<b>'+esc(s.n)+'</b><s>'+SOLES_TXT+pz(s.p15)+'</s>'+(s.recommended?'<i>★</i>':'')+'</button>';
+  }).join('');
+  var filas=visibles.map(function(s:any,i:number){
+    var sel=i===estrella;
+    return'<button class="fila'+(sel?' on':'')+'" data-plato="'+platoDe(i)+'" onclick="abrirPlato('+platoDe(i)+')">'
+      +'<u>'+romano(i+1)+'</u><span class="t"><b>'+esc(s.n)+(s.recommended?' <em>★ La estrella</em>':'')+'</b>'
+      +'<span class="d">'+esc(s.pitch||'')+'</span>'
+      +'<span class="p">'+SOLES_TXT+pz(s.p15)+' · 30CM '+SOLES_TXT+pz(s.p30)+'</span></span><span class="ir" aria-hidden="true">→</span></button>';
   }).join('');
   if(secreto){
     var myTotal=cust?(cust.total_orders||0):0;
     var falta=Math.max(0,secreto.minOrders-myTotal);
     var abierto=!!cust&&falta===0;
-    var sub=abierto?'Ya es tuya':'Se da vuelta en tu pedido número '+secreto.minOrders;
+    var pSec=visibles.length+1;
     cartas+='<button class="k x" style="--o:'+(total-1-mitad)+';--d:'+(visibles.length*60)+'ms" onclick="tocarCarta(this)" aria-pressed="false"'
-      +' data-plato="'+(visibles.length+1)+'" data-nombre="El sándwich secreto" data-sub="'+esc(sub)+'" data-ir="'+(abierto?'Abrir el secreto':'Ver cuánto falta')+'" aria-label="El sándwich secreto, '+(abierto?'abierto':'boca abajo')+'"><span class="luna" aria-hidden="true">☾</span><em>'+(abierto?'Ya es tuya':'Boca abajo')+'</em></button>';
+      +' data-plato="'+pSec+'" aria-label="Carta '+romano(total)+': el sándwich secreto, '+(abierto?'abierto':'boca abajo')+'"><u>'+romano(total)+'</u><span class="luna" aria-hidden="true">☾</span><em>'+(abierto?'Ya es tuya':'Boca abajo')+'</em></button>';
+    filas+='<button class="fila x" data-plato="'+pSec+'" onclick="abrirPlato('+pSec+')">'
+      +'<u>'+romano(total)+'</u><span class="t"><b>El sándwich secreto</b>'
+      +'<span class="d">No está en la carta y cambia cada mes. No se dice qué lleva: se revela cuando lo pides.</span>'
+      +'<span class="p">'+(abierto?'Ya es tuyo · '+SOLES_TXT+pz(secreto.p15):'Se da vuelta en tu pedido número '+secreto.minOrders+(cust?' · te '+(falta===1?'falta 1':'faltan '+falta):''))+'</span></span><span class="ir" aria-hidden="true">→</span></button>';
   }
   var cuantas=NUM_PALABRA[visibles.length]||String(visibles.length);
-  var s0=visibles[estrella];
-  var elegida=s0?'<b>'+esc(s0.n)+'</b><s>'+(s0.recommended?'★ La estrella · ':'')+'desde '+SOLES_TXT+pz(s0.p15)+'</s><button onclick="abrirPlato('+(estrella===0?0:estrella+1)+')">Ver '+esc(s0.n)+' →</button>':'';
   return'<div class="mtarot fi">'
     +'<div class="riel"><button class="x" onclick="volverALaPuerta()" aria-label="Cambiar de lado">&#10005;</button>'
     +'<span class="wm">SND<span class="wm-mark" aria-hidden="true"><i></i><i></i></span>WCH</span>'
     +(n?'<button class="c" onclick="go(\'o_cart\')" aria-label="Tu pedido, '+n+(n===1?' cosa':' cosas')+'"><span>'+n+'</span></button>':'<span class="vacio"></span>')
     +'</div>'
     +'<div class="cab"><h1>Elige tu carta</h1><p>'+cuantas+' a la vista.'+(secreto?' La '+(total===7?'séptima':'última')+', boca abajo.':'')+'</p></div>'
-    +'<div class="elegida" aria-live="polite">'+elegida+'</div>'
     +'<div class="mano">'+cartas+'</div>'
+    +'<p class="pista">Toca una carta para levantarla; otra vez, y es tuya.</p>'
+    +'<div class="lista"><h2>Lo que dice cada carta</h2>'+filas+'</div>'
     +'</div>';
 }
 function sMundoSando(){

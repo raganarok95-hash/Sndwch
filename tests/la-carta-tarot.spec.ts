@@ -34,8 +34,9 @@ test('cada carta abre SU plato, y la ✕ del plato vuelve a las cartas', async (
       await carta.dispatchEvent('click');
       // El primer toque NO abre: levanta la carta y dice cuál es.
       await expect(page.locator('.mtarot')).toBeVisible();
-      await expect(page.locator('.mtarot .elegida')).toContainText(n);
       await expect(carta).toHaveAttribute('aria-pressed', 'true');
+      // …y su fila de la lista se marca: la carta y la fila son el mismo número.
+      await expect(page.locator('.mtarot .lista .fila.on')).toContainText(n);
     }
     await carta.dispatchEvent('click');
     await page.locator('.m15').waitFor();
@@ -55,8 +56,8 @@ test('cada carta abre SU plato, y la ✕ del plato vuelve a las cartas', async (
 test('la carta boca abajo abre el plato del secreto', async ({ page }) => {
   await alTarot(page);
   await page.locator('.mtarot .k.x').dispatchEvent('click');
-  await expect(page.locator('.mtarot .elegida')).toContainText('secreto');
-  await page.locator('.mtarot .elegida button').click();
+  await expect(page.locator('.mtarot .lista .fila.on')).toContainText('secreto');
+  await page.locator('.mtarot .k.x').dispatchEvent('click');
   await page.locator('.m15').waitFor();
   await page.waitForTimeout(150);
   const label = await page.evaluate(() => {
@@ -73,5 +74,34 @@ test('la estrella llega levantada: un solo toque y ya se abre', async ({ page })
   const estrella = await page.evaluate(() => { const w = window as any; const s = w.SIGS.find((x: any) => x.recommended && !x.secret); return s ? s.n : null; });
   test.skip(!estrella, 'la carta no tiene estrella');
   await expect(page.locator('.mtarot .k.sel')).toContainText(estrella!);
-  await expect(page.locator('.mtarot .elegida button')).toContainText(estrella!);
+  await expect(page.locator('.mtarot .lista .fila.on')).toContainText(estrella!);
+});
+
+test('la lista vende: cada fila lleva el número de su carta, lo que lleva y el precio, y abre su plato', async ({ page }) => {
+  await alTarot(page);
+  const datos = await page.evaluate(() => {
+    const w = window as any;
+    return w.sigsEnOrden(w.SIGS.filter((x: any) => !x.secret && w.sigAvailable(x))).map((s: any) => ({ n: s.n, pitch: s.pitch, p15: w.SOLES_TXT + w.pz(s.p15) }));
+  });
+  const filas = page.locator('.mtarot .lista .fila:not(.x)');
+  await expect(filas).toHaveCount(datos.length);
+  for (let i = 0; i < datos.length; i++) {
+    const fila = filas.nth(i);
+    const num = (await fila.locator('u').innerText()).trim();
+    // La carta con ese mismo número es la de ese sándwich.
+    await expect(page.locator('.mtarot .k', { has: page.locator(`u:text-is("${num}")`) })).toContainText(datos[i].n);
+    await expect(fila).toContainText(datos[i].n);
+    if (datos[i].pitch) await expect(fila).toContainText(datos[i].pitch.slice(0, 30));
+    await expect(fila).toContainText(datos[i].p15);
+  }
+  await filas.nth(datos.length - 1).click();
+  await page.locator('.m15').waitFor();
+  await page.waitForTimeout(150);
+  const label = await page.evaluate(() => {
+    const p = document.querySelector('.m15 .pistas') as HTMLElement;
+    const s = Array.from(document.querySelectorAll('.m15 .pistas > section')) as HTMLElement[];
+    const a = s.find((x) => Math.abs(x.offsetTop - p.scrollTop) < 4);
+    return a ? a.getAttribute('aria-label') : null;
+  });
+  expect(label).toBe(datos[datos.length - 1].n);
 });

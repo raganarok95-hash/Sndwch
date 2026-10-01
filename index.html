@@ -1441,15 +1441,15 @@ body.kb-open #app{padding-bottom:0}
    overflow:clip y no hidden: con hidden, enfocar o tocar una carta girada que se sale del borde
    desplaza el contenedor para mostrarla, y las cartas se corren. */
 .mtarot{--paso:2.5deg;--ancho:clamp(150px,42vw,190px);--origen:50% 300%;
-  position:relative;height:100dvh;min-height:600px;margin-bottom:calc(-1 * var(--sw-barra,0px));overflow:clip;
-  background:radial-gradient(circle at 50% 30%,#3a2a4a,#120c18);color:#E9DFC6;text-align:center;font-family:'EB Garamond',serif}
+  position:relative;min-height:100dvh;margin-bottom:calc(-1 * var(--sw-barra,0px));overflow-x:clip;padding-bottom:40px;box-sizing:border-box;
+  background:radial-gradient(circle at 50% 18%,#3a2a4a,#120c18 70%);background-color:#120c18;color:#E9DFC6;text-align:center;font-family:'EB Garamond',serif}
 @media (min-width:700px){.mtarot{--paso:6deg;--ancho:clamp(150px,16vw,200px);--origen:50% 240%}}
 .mtarot .riel{position:absolute;top:0;left:0;right:0;z-index:7;display:flex;align-items:center;justify-content:space-between;padding:5px 8px 0 12px}
 .mtarot .riel .x,.mtarot .riel .c{all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#E9DFC6}
 .mtarot .riel .c span{min-width:22px;height:22px;border-radius:999px;background:#CBA258;color:#120c18;font:700 11px/22px Archivo,sans-serif}
 .mtarot .riel .vacio{width:44px}
 .mtarot .riel .wm{font:700 13px/1 Archivo,sans-serif;color:#E9DFC6;display:flex;align-items:center;gap:5px}
-.mtarot .cab{padding-top:60px}
+.mtarot .cab{padding-top:56px}
 .mtarot h1{margin:0;font-family:'Bodoni Moda',serif;font-style:italic;font-weight:500;font-size:40px;line-height:1;color:#E9DFC6}
 .mtarot .cab p{margin:8px 0 0;font-style:italic;font-size:18px;color:#BBB0A0}
 .mtarot .elegida{position:relative;z-index:8;margin:22px auto 0;max-width:320px;padding:0 20px;min-height:96px}
@@ -1457,8 +1457,27 @@ body.kb-open #app{padding-bottom:0}
 .mtarot .elegida s{display:block;text-decoration:none;margin-top:6px;font:500 13px/1 'IBM Plex Mono',monospace;color:#C9A85C}
 .mtarot .elegida button{all:unset;box-sizing:border-box;cursor:pointer;margin-top:14px;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 22px;border-radius:999px;background:#C9A85C;color:#120c18;font:700 13px/1 Archivo,sans-serif;letter-spacing:.04em}
 .mtarot .elegida button:focus-visible{outline:3px solid #8CC8EC;outline-offset:3px}
-.mtarot .mano{position:absolute;left:0;right:0;bottom:0;height:55%}
-.mtarot .k{all:unset;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;cursor:pointer;position:absolute;left:50%;bottom:10%;
+.mtarot .mano{position:relative;height:calc(var(--ancho) * 5 / 3 * 1.38 + 16px);margin-top:4px}
+.mtarot .k u,.mtarot .fila u{text-decoration:none;font:500 11px/1 'Bodoni Moda',serif;letter-spacing:.06em}
+.mtarot .k u{position:absolute;top:6px;left:7px;z-index:1;background:#F3E9D2;color:#2a1d0e;padding:3px 6px;border-radius:4px}
+.mtarot .k.x u{background:transparent;color:#BBB0A0}
+.mtarot .pista{margin:6px 20px 0;font-style:italic;font-size:15px;color:#BBB0A0}
+.mtarot .lista{max-width:560px;margin:22px auto 0;padding:0 16px;text-align:left}
+.mtarot .lista h2{margin:0 0 6px;font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.26em;text-transform:uppercase;color:#C9A85C}
+.mtarot .fila{all:unset;box-sizing:border-box;cursor:pointer;display:flex;gap:12px;align-items:flex-start;width:100%;padding:14px 10px;border-top:1px solid rgba(233,223,198,.14);border-radius:8px}
+.mtarot .fila u{flex:0 0 34px;height:34px;border:1.5px solid #C9A85C;border-radius:999px;display:flex;align-items:center;justify-content:center;color:#E9DFC6;margin-top:2px}
+.mtarot .fila .t{flex:1;min-width:0}
+.mtarot .fila b{display:block;font:500 18px/1.2 'Bodoni Moda',serif;color:#F3E9D2}
+.mtarot .fila b em{font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.14em;color:#C9A85C;margin-left:6px;vertical-align:middle;text-transform:uppercase}
+.mtarot .fila .d{display:block;margin-top:5px;font-size:15px;line-height:1.4;color:#D9CFBA}
+.mtarot .fila .p{display:block;margin-top:7px;font:500 11px/1 'IBM Plex Mono',monospace;color:#C9A85C}
+.mtarot .fila .ir{flex:0 0 auto;align-self:center;font-size:18px;color:#C9A85C}
+.mtarot .fila.on{background:rgba(201,168,92,.12)}
+.mtarot .fila.on u{background:#C9A85C;color:#120c18}
+.mtarot .fila.x u{border-color:#7B5EA0;color:#8CC8EC}
+.mtarot .fila.x .d{color:#BBB0A0}
+.mtarot .fila:focus-visible{outline:3px solid #8CC8EC;outline-offset:2px}
+.mtarot .k{all:unset;box-sizing:border-box;display:flex;flex-direction:column;justify-content:flex-start;cursor:pointer;position:absolute;left:50%;bottom:8px;
   width:var(--ancho);aspect-ratio:3/5;margin-left:calc(var(--ancho) / -2);
   background:#F3E9D2;border:3px solid #C9A85C;border-radius:10px;overflow:hidden;color:#2a1d0e;text-align:left;
   transform-origin:var(--origen);transform:rotate(calc(var(--o) * var(--paso)));box-shadow:0 10px 24px rgba(0,0,0,.45);
@@ -1475,6 +1494,7 @@ body.kb-open #app{padding-bottom:0}
 .mtarot .k:focus-visible{outline:3px solid #8CC8EC;outline-offset:3px}
 @keyframes abanico{from{transform:rotate(0deg) translateY(40px);opacity:0}to{transform:rotate(calc(var(--o) * var(--paso)));opacity:1}}
 @media (prefers-reduced-motion:reduce){.mtarot .k{animation:none;transition:none}}
+@media (min-width:700px){.mtarot .mano{height:calc(var(--ancho) * 5 / 3 * 1.42 + 40px)}.mtarot .k{bottom:60px}}
 /* ── LA APP EN PC Y LAPTOP (2026-09-30) ─────────────────────────────────────────────────
    El dueño: «para pc y laptop básicamente el app visualmente no sirve, sale recortada como si
    fuera en cel» — y pidió que NO sea otra maqueta: «debe ser pantalla adaptable». Hasta acá
@@ -3986,7 +4006,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'e68a8ff36d';
+var APP_BUILD = '1cd9dd6f09';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6937,59 +6957,75 @@ function abrirPlato(idx) {
             pistas.scrollTop = s.offsetTop;
     }, 0);
 }
-// Primer toque: levanta la carta y dice cuál es. Segundo toque (o el botón): abre su plato. Se
-// hace sin render() para que el abanico no vuelva a abrirse desde cero en cada toque.
+// Primer toque: levanta la carta y marca su fila en la lista de abajo. Segundo toque: abre su
+// plato. Se hace sin render() para que el abanico no vuelva a abrirse desde cero en cada toque.
 function tocarCarta(btn) {
     if (btn.classList.contains('sel')) {
         abrirPlato(Number(btn.getAttribute('data-plato')));
         return;
     }
-    document.querySelectorAll('.mtarot .k.sel').forEach(function (k) { k.classList.remove('sel'); k.setAttribute('aria-pressed', 'false'); });
-    btn.classList.add('sel');
-    btn.setAttribute('aria-pressed', 'true');
-    var el = document.querySelector('.mtarot .elegida');
-    if (el)
-        el.innerHTML = elegidaHTML(btn);
+    marcarCarta(Number(btn.getAttribute('data-plato')));
 }
-function elegidaHTML(btn) {
-    return '<b>' + esc(btn.getAttribute('data-nombre') || '') + '</b><s>' + esc(btn.getAttribute('data-sub') || '') + '</s>'
-        + '<button onclick="abrirPlato(' + Number(btn.getAttribute('data-plato')) + ')">' + esc(btn.getAttribute('data-ir') || 'Verlo') + ' →</button>';
+function marcarCarta(plato) {
+    document.querySelectorAll('.mtarot .k').forEach(function (k) {
+        var on = Number(k.getAttribute('data-plato')) === plato;
+        k.classList.toggle('sel', on);
+        k.setAttribute('aria-pressed', String(on));
+    });
+    document.querySelectorAll('.mtarot .lista .fila').forEach(function (f) {
+        f.classList.toggle('on', Number(f.getAttribute('data-plato')) === plato);
+    });
 }
 var NUM_PALABRA = ['Ninguna', 'Una', 'Dos', 'Tres', 'Cuatro', 'Cinco', 'Seis', 'Siete', 'Ocho', 'Nueve', 'Diez'];
+// LA CARTA VENDE (dueño, 2026-10-01: «si bien el concepto es hermoso debemos hacer que venda
+// también»): arriba el abanico, numerado como un tarot; abajo la lista con el MISMO número, lo
+// que lleva cada uno dicho para antojar (el pitch de la carta) y su precio. Tocar una fila abre
+// el plato directo: quien leyó la descripción ya sabe qué está eligiendo.
 function sCartaTarot(visibles, secreto) {
     var total = visibles.length + (secreto ? 1 : 0);
     var mitad = (total - 1) / 2;
     var n = cart.reduce(function (a, it) { return a + (it.qty || 1); }, 0);
     // El índice del plato: el primero, después el del pedido en grupo, después el resto (ver
     // sMundoSando). El secreto es el último.
+    var platoDe = function (i) { return i === 0 ? 0 : i + 1; };
     var estrella = Math.max(0, visibles.findIndex(function (s) { return s.recommended; }));
     var cartas = visibles.map(function (s, i) {
-        var idx = i === 0 ? 0 : i + 1;
         var sel = i === estrella;
         return '<button class="k' + (s.recommended ? ' e' : '') + (sel ? ' sel' : '') + '" style="--o:' + (i - mitad) + ';--d:' + (i * 60) + 'ms" onclick="tocarCarta(this)" aria-pressed="' + sel + '"'
-            + ' data-plato="' + idx + '" data-nombre="' + esc(s.n) + '" data-sub="' + (s.recommended ? '★ La estrella · ' : '') + 'desde ' + SOLES_TXT + pz(s.p15) + '" data-ir="Ver ' + esc(s.n) + '" aria-label="' + esc(s.n) + ', ' + SOLES_TXT + pz(s.p15) + '">'
+            + ' data-plato="' + platoDe(i) + '" aria-label="Carta ' + romano(i + 1) + ': ' + esc(s.n) + ', ' + SOLES_TXT + pz(s.p15) + '">'
+            + '<u>' + romano(i + 1) + '</u>'
             + (fotoDelPlato(s.id) ? '<img src="' + (SIG_IMG[s.id] || fotoDelPlato(s.id)) + '" alt="">' : '<span class="sinfoto"></span>')
             + '<b>' + esc(s.n) + '</b><s>' + SOLES_TXT + pz(s.p15) + '</s>' + (s.recommended ? '<i>★</i>' : '') + '</button>';
+    }).join('');
+    var filas = visibles.map(function (s, i) {
+        var sel = i === estrella;
+        return '<button class="fila' + (sel ? ' on' : '') + '" data-plato="' + platoDe(i) + '" onclick="abrirPlato(' + platoDe(i) + ')">'
+            + '<u>' + romano(i + 1) + '</u><span class="t"><b>' + esc(s.n) + (s.recommended ? ' <em>★ La estrella</em>' : '') + '</b>'
+            + '<span class="d">' + esc(s.pitch || '') + '</span>'
+            + '<span class="p">' + SOLES_TXT + pz(s.p15) + ' · 30CM ' + SOLES_TXT + pz(s.p30) + '</span></span><span class="ir" aria-hidden="true">→</span></button>';
     }).join('');
     if (secreto) {
         var myTotal = cust ? (cust.total_orders || 0) : 0;
         var falta = Math.max(0, secreto.minOrders - myTotal);
         var abierto = !!cust && falta === 0;
-        var sub = abierto ? 'Ya es tuya' : 'Se da vuelta en tu pedido número ' + secreto.minOrders;
+        var pSec = visibles.length + 1;
         cartas += '<button class="k x" style="--o:' + (total - 1 - mitad) + ';--d:' + (visibles.length * 60) + 'ms" onclick="tocarCarta(this)" aria-pressed="false"'
-            + ' data-plato="' + (visibles.length + 1) + '" data-nombre="El sándwich secreto" data-sub="' + esc(sub) + '" data-ir="' + (abierto ? 'Abrir el secreto' : 'Ver cuánto falta') + '" aria-label="El sándwich secreto, ' + (abierto ? 'abierto' : 'boca abajo') + '"><span class="luna" aria-hidden="true">☾</span><em>' + (abierto ? 'Ya es tuya' : 'Boca abajo') + '</em></button>';
+            + ' data-plato="' + pSec + '" aria-label="Carta ' + romano(total) + ': el sándwich secreto, ' + (abierto ? 'abierto' : 'boca abajo') + '"><u>' + romano(total) + '</u><span class="luna" aria-hidden="true">☾</span><em>' + (abierto ? 'Ya es tuya' : 'Boca abajo') + '</em></button>';
+        filas += '<button class="fila x" data-plato="' + pSec + '" onclick="abrirPlato(' + pSec + ')">'
+            + '<u>' + romano(total) + '</u><span class="t"><b>El sándwich secreto</b>'
+            + '<span class="d">No está en la carta y cambia cada mes. No se dice qué lleva: se revela cuando lo pides.</span>'
+            + '<span class="p">' + (abierto ? 'Ya es tuyo · ' + SOLES_TXT + pz(secreto.p15) : 'Se da vuelta en tu pedido número ' + secreto.minOrders + (cust ? ' · te ' + (falta === 1 ? 'falta 1' : 'faltan ' + falta) : '')) + '</span></span><span class="ir" aria-hidden="true">→</span></button>';
     }
     var cuantas = NUM_PALABRA[visibles.length] || String(visibles.length);
-    var s0 = visibles[estrella];
-    var elegida = s0 ? '<b>' + esc(s0.n) + '</b><s>' + (s0.recommended ? '★ La estrella · ' : '') + 'desde ' + SOLES_TXT + pz(s0.p15) + '</s><button onclick="abrirPlato(' + (estrella === 0 ? 0 : estrella + 1) + ')">Ver ' + esc(s0.n) + ' →</button>' : '';
     return '<div class="mtarot fi">'
         + '<div class="riel"><button class="x" onclick="volverALaPuerta()" aria-label="Cambiar de lado">&#10005;</button>'
         + '<span class="wm">SND<span class="wm-mark" aria-hidden="true"><i></i><i></i></span>WCH</span>'
         + (n ? '<button class="c" onclick="go(\'o_cart\')" aria-label="Tu pedido, ' + n + (n === 1 ? ' cosa' : ' cosas') + '"><span>' + n + '</span></button>' : '<span class="vacio"></span>')
         + '</div>'
         + '<div class="cab"><h1>Elige tu carta</h1><p>' + cuantas + ' a la vista.' + (secreto ? ' La ' + (total === 7 ? 'séptima' : 'última') + ', boca abajo.' : '') + '</p></div>'
-        + '<div class="elegida" aria-live="polite">' + elegida + '</div>'
         + '<div class="mano">' + cartas + '</div>'
+        + '<p class="pista">Toca una carta para levantarla; otra vez, y es tuya.</p>'
+        + '<div class="lista"><h2>Lo que dice cada carta</h2>' + filas + '</div>'
         + '</div>';
 }
 function sMundoSando() {
