@@ -23,21 +23,23 @@ analisis-6-meses.html
 propuesta-negocio.html
 
 # Modelo financiero, recetas detalladas, documentación y material de marca.
-modelo/
-recetas/
-docs/
-marca/
+# ⚠ Anclados a la raíz con «/». Sin la barra, `marca/` excluía TAMBIÉN `img/marca/` y el logo de
+# la cuenta no cargaba en producción (2026-10-01). Lo vigila `npm run check:publicado`.
+/modelo/
+/recetas/
+/docs/
+/marca/
 
 # Código fuente y backend. `index.html` es el único artefacto servido; `src/` es de
 # dónde se compila, y `supabase/` incluye las migraciones y las edge functions.
-src/
-supabase/
-scripts/
+/src/
+/supabase/
+/scripts/
 
 # Pruebas y sus resultados.
-tests/
-tests-api/
-test-results/
+/tests/
+/tests-api/
+/test-results/
 playwright.config.ts
 
 # Configuración de build y dependencias: nada de esto se sirve.

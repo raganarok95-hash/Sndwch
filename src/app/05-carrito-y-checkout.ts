@@ -773,13 +773,20 @@ function sOCart(){
   var d=cartDesglose();
   var envio=deliveryFeeAmount();
   var dirOk=direccionLista(),recOk=recibeListo();
+  // El combo se ve EN la bebida: precio de carta tachado y al lado lo que se cobra (dueño,
+  // 2026-10-01). Los pares se reparten entre las bebidas en orden; la suma es exactamente d.combo,
+  // que es lo que cobra el servidor, así que el total no cambia.
+  var paresCombo=COMBO_DISCOUNT_PER_PAIR>0?Math.round(d.combo/COMBO_DISCOUNT_PER_PAIR):0;
   var lineas=cart.map(function(it,i){
+    var total=itemLineTotal(it),desc=0;
+    if(it.type==='side'&&paresCombo>0){var u=Math.min(it.qty||1,paresCombo);paresCombo-=u;desc=u*COMBO_DISCOUNT_PER_PAIR;}
+    var det=lineaDetalle(it);
+    if(desc>0)det=(det?det+' · ':'')+'en combo';
     return'<button class="li" onclick="hojaLinea='+i+';hoja30=\'linea\';render()"><i>'+String(i+1).padStart(2,'0')+'</i>'
-      +'<span class="q"><b>'+esc(lineaNombre(it))+'</b>'+(lineaDetalle(it)?'<s>'+esc(lineaDetalle(it))+'</s>':'')+'</span>'
-      +'<p>'+pz(itemLineTotal(it))+'</p></button>';
+      +'<span class="q"><b>'+esc(lineaNombre(it))+'</b>'+(det?'<s>'+esc(det)+'</s>':'')+'</span>'
+      +'<p>'+(desc>0?'<del>'+pz(total)+'</del> '+pz(total-desc):pz(total))+'</p></button>';
   }).join('');
   var ex='';
-  if(d.combo>0)ex+='<div class="ex"><span>Combo sándwich + bebida</span><span>−'+pz(d.combo)+'</span></div>';
   if(d.organizador.monto>0)ex+='<div class="ex"><span>Sándwich del organizador</span><span>−'+pz(d.organizador.monto)+'</span></div>';
   if(appliedReward){var rw=RWDS.find(function(x){return x.id===appliedReward;});var ra=rewardWaiverAmount(appliedReward,findRewardTargetIndex(appliedReward));if(ra>0)ex+='<div class="ex"><span>'+esc(rw?rw.n:'Recompensa')+'</span><span>−'+pz(ra)+'</span></div>';}
   if(appliedPromo)ex+='<div class="ex"><span>Código '+esc(appliedPromo.code)+'</span><span>−'+pz(appliedPromo.discount)+'</span></div>';
@@ -1943,7 +1950,8 @@ function openMap(lat,lon,approx){
   loadGoogleMaps().then(function(){
     var g=(window as any).google;
     if(!_lmap){
-      _lmap=new g.maps.Map(document.getElementById('lmap'),{
+      var MapaG=gClase('maps','Map');
+      _lmap=new MapaG(document.getElementById('lmap'),{
         center:{lat:lat,lng:lon},zoom:17,
         disableDefaultUI:true,zoomControl:true,clickableIcons:false,
         // 'greedy': un dedo arrastra el mapa. Con el valor por defecto, en el celular pide dos
@@ -1965,8 +1973,17 @@ function openMap(lat,lon,approx){
   });
 }
 var _revUlt='';
+// La mitad celeste de la barra: el envío al punto donde está el pin, con la MISMA cuenta que
+// cobra el checkout (envioADireccion). Así el cliente ve el costo antes de confirmar.
+function pintarEnvioMapa(lat,lon){
+  var km=kmADireccion({lat:lat,lon:lon}),fee=envioADireccion({lat:lat,lon:lon});
+  var e=document.getElementById('mmap-envio'),k=document.getElementById('mmap-km');
+  if(e)e.textContent=fee==null?'Envío':'Envío '+SOLES_TXT+pz(fee);
+  if(k)k.textContent=km==null?'':(Math.round(km*10)/10).toFixed(1)+' km';
+}
 function revGeo(lat,lon){
   window._mLat=lat;window._mLon=lon;
+  pintarEnvioMapa(lat,lon);
   var k=Number(lat).toFixed(6)+','+Number(lon).toFixed(6);
   if(k===_revUlt)return;
   _revUlt=k;
@@ -1981,8 +1998,9 @@ function revGeo(lat,lon){
 // restricción a la key la dejaría usable por cualquiera que la copie del HTML.
 async function revGeoGoogle(lat,lon){
   await loadGoogleMaps();
-  var g=(window as any).google;
-  var res=await new g.maps.Geocoder().geocode({location:{lat:lat,lng:lon},language:'es'});
+  var Geo=gClase('geocoding','Geocoder');
+  if(!Geo)throw new Error('Google cargó sin el geocodificador');
+  var res=await new Geo().geocode({location:{lat:lat,lng:lon},language:'es'});
   var r=(res&&res.results&&res.results[0]);
   // Sin resultados no es una falla (un descampado): no hay referencia, y se dice.
   if(!r){window._mDistrict='';pintarReferenciaMapa('');return;}
@@ -2007,7 +2025,13 @@ async function revGeoGoogle(lat,lon){
 // empezar a escribir y se DESCARTA al elegir un resultado: reusarlo invalida la sesión y
 // Google pasa a cobrar tecla por tecla.
 var _addrTimer:any=null,_addrBusy=false,_addrLast='';
-var _gmapsPromise:any=null,_gSessionToken:any=null;
+var _gmapsPromise:any=null,_gSessionToken:any=null,_gLibs:any=null;
+// Las clases de Google, de donde estén: lo que devolvió importLibrary o el namespace global
+// (las pruebas inyectan un `google` falso sin importLibrary).
+function gClase(lib,nombre){
+  var g=(window as any).google;
+  return (_gLibs&&_gLibs[lib]&&_gLibs[lib][nombre])||(g&&g.maps&&((lib==='places'?g.maps.places:g.maps)||{})[nombre]);
+}
 // La key llega en get-store-hours. Si el cliente abre el mapa antes de que esa respuesta
 // llegue, se la espera una vez en vez de dar el mapa por perdido.
 async function keyDeGoogle(){
@@ -2041,28 +2065,32 @@ function loadGoogleMaps(){
     }
     // Con `loading=async` las librerías NO están al terminar el script: se piden. Este era el
     // defecto que mandaba todo al motor anterior.
+    // Se guarda lo que DEVUELVE importLibrary, no se lo busca después en `google.maps.places`:
+    // el 2026-10-01 un teléfono real reportó «cargó sin Places» con el namespace aún vacío,
+    // y ese chequeo tumbaba también el mapa, que no necesita Places.
     if(g&&g.maps&&g.maps.importLibrary){
-      await Promise.all([g.maps.importLibrary('maps'),g.maps.importLibrary('places'),g.maps.importLibrary('geocoding')]);
+      var libs=await Promise.all([g.maps.importLibrary('maps'),g.maps.importLibrary('places'),g.maps.importLibrary('geocoding')]);
+      _gLibs={maps:libs[0],places:libs[1],geocoding:libs[2]};
+    }else{
+      _gLibs={maps:g&&g.maps,places:g&&g.maps&&g.maps.places,geocoding:g&&g.maps};
     }
-    if(!googleListo())throw new Error('Google Maps cargó sin Places');
+    if(!_gLibs.maps||!_gLibs.maps.Map)throw new Error('Google Maps cargó sin el mapa');
   })();
   _gmapsPromise.catch(function(){_gmapsPromise=null;});
   return _gmapsPromise;
 }
-function googleListo(){
-  var g=(window as any).google;
-  return !!(g&&g.maps&&g.maps.places&&g.maps.places.AutocompleteSuggestion);
-}
+function googleListo(){return !!gClase('places','AutocompleteSuggestion');}
 // Un token por sesión de búsqueda. Se pide una sola vez y se suelta al elegir.
 function gSessionToken(){
-  var g=(window as any).google;
-  if(!_gSessionToken&&g&&g.maps&&g.maps.places)_gSessionToken=new g.maps.places.AutocompleteSessionToken();
+  var T=gClase('places','AutocompleteSessionToken');
+  if(!_gSessionToken&&T)_gSessionToken=new T();
   return _gSessionToken;
 }
 async function buscarConGoogle(q){
   await loadGoogleMaps();
-  var g=(window as any).google;
-  var r=await g.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+  var AS=gClase('places','AutocompleteSuggestion');
+  if(!AS)throw new Error('Google cargó sin el buscador (Places)');
+  var r=await AS.fetchAutocompleteSuggestions({
     input:q,
     sessionToken:gSessionToken(),
     // Acotado a Perú y sesgado a Trujillo: el círculo NO excluye, solo ordena — excluir daría
@@ -2089,9 +2117,7 @@ async function buscarConGoogle(q){
 function pintarReferenciaMapa(hint){
   var h=(document.getElementById('maddr-hint') as HTMLElement | null);
   if(!h)return;
-  h.innerHTML=hint
-    ?esc(hint)
-    :'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-weight:400;color:var(--sw-text-muted,#9DA096)">Arrastra el mapa hasta el punto exacto</span>';
+  h.innerHTML=hint?esc(hint):'<i>Arrastra el mapa hasta tu puerta</i>';
 }
 function addrResultsEl(){return(document.getElementById('maddr-results') as HTMLElement | null);}
 function addrSearchTyped(){
@@ -2108,26 +2134,23 @@ function addrSearchNow(){
   if(_addrBusy||q===_addrLast)return;
   _addrBusy=true;_addrLast=q;
   box.style.display='block';
-  box.innerHTML='<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#9DA096">Buscando...</div>';
+  box.innerHTML='<div class="n">Buscando…</div>';
   buscarConGoogle(q).then(function(hits){
     _addrBusy=false;
     if(!hits.length){pintarSinResultados(box);return;}
     (window as any)._addrHits=hits;
     box.innerHTML=hits.map(function(h,i){
-      return'<div onclick="addrPick('+i+')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid #1B1F18;'
-        +'font-family:\'EB Garamond\',serif;font-size:13px;color:#EFEDE4;line-height:1.4">'+esc(h.texto)+'</div>';
+      return'<button class="f" onclick="addrPick('+i+')">'+esc(h.texto)+'</button>';
     }).join('');
   }).catch(function(e){
     // Nunca cae a otro motor: se dice, y al dueño le llega.
     _addrBusy=false;_addrLast='';
     falloGoogle('buscador',e);
-    box.innerHTML='<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:var(--sw-warn,#ffa500)">'
-      +'No pudimos buscar ahora. Intenta de nuevo en un momento, o arrastra el mapa hasta tu puerta.</div>';
+    box.innerHTML='<div class="n mal">No pudimos buscar ahora. Intenta de nuevo en un momento, o arrastra el mapa hasta tu puerta.</div>';
   });
 }
 function pintarSinResultados(box){
-  box.innerHTML='<div style="padding:10px 12px;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:#9DA096">'
-    +'No encontramos esa dirección. Prueba con la calle y el número, o arrastra el mapa hasta tu puerta.</div>';
+  box.innerHTML='<div class="n">No encontramos esa dirección. Prueba con la calle y el número, o arrastra el mapa hasta tu puerta.</div>';
 }
 // Elegir un resultado mueve el pin, pero NO cierra el mapa ni confirma: la persona mira que
 // el pin quedó en su puerta y recién confirma.

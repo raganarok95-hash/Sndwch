@@ -90,9 +90,9 @@ Proteínas que existen pero NO se eligen acá: Pollo // Cajun (solo menú secret
 
 Por cada par sándwich + bebida el pedido cuesta S/1 menos (el combo).
 
-- **The Bloom // Hibiscus** — S/6 sola · en combo el par ahorra S/1. Flor de jamaica en infusión con un toque de canela, servida helada. Ácida, floral y sin una gota de jugo.
-- **The Midnight // Brew** — S/5 sola · en combo el par ahorra S/1. Té negro reposado en frío toda la noche. Suave, sin amargor, con el punch justo de cafeína.
-- **The Cool // Mint** — S/6 sola · en combo el par ahorra S/1. Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.
+- **The Bloom // Hibiscus** — S/6 sola · en combo el par ahorra S/1. Flor de jamaica en infusión con un toque de canela, bien helada. Ácida y floral: limpia el paladar entre bocado y bocado, así el último sabe como el primero. La pareja de los sándwiches calientes.
+- **The Midnight // Brew** — S/5 sola · en combo el par ahorra S/1. Té negro reposado en frío toda la noche: suave, sin nada de amargor y con el punch justo de cafeína. Para el almuerzo que no puede terminar en siesta.
+- **The Cool // Mint** — S/6 sola · en combo el par ahorra S/1. Hierba luisa y menta fresca en infusión helada. Ligera y aromática: refresca sin empalagar y deja la boca lista para el siguiente bocado. La que más pide un día de calor.
 
 ## Recompensas (se canjean con puntos)
 
@@ -228,9 +228,9 @@ Proteínas que existen pero NO se eligen acá: Pollo // Cajun (solo menú secret
 
 Por cada par sándwich + bebida el pedido cuesta S/1 menos (el combo).
 
-- **The Bloom // Hibiscus** — S/6 sola · en combo el par ahorra S/1. Flor de jamaica en infusión con un toque de canela, servida helada. Ácida, floral y sin una gota de jugo.
-- **The Midnight // Brew** — S/5 sola · en combo el par ahorra S/1. Té negro reposado en frío toda la noche. Suave, sin amargor, con el punch justo de cafeína.
-- **The Cool // Mint** — S/6 sola · en combo el par ahorra S/1. Hierba luisa y menta fresca en infusión helada. Ligera, aromática, el break perfecto entre bocado y bocado.
+- **The Bloom // Hibiscus** — S/6 sola · en combo el par ahorra S/1. Flor de jamaica en infusión con un toque de canela, bien helada. Ácida y floral: limpia el paladar entre bocado y bocado, así el último sabe como el primero. La pareja de los sándwiches calientes.
+- **The Midnight // Brew** — S/5 sola · en combo el par ahorra S/1. Té negro reposado en frío toda la noche: suave, sin nada de amargor y con el punch justo de cafeína. Para el almuerzo que no puede terminar en siesta.
+- **The Cool // Mint** — S/6 sola · en combo el par ahorra S/1. Hierba luisa y menta fresca en infusión helada. Ligera y aromática: refresca sin empalagar y deja la boca lista para el siguiente bocado. La que más pide un día de calor.
 
 ## Recompensas (se canjean con puntos)
 
