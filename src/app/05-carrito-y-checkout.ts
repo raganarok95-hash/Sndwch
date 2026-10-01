@@ -1551,13 +1551,16 @@ function sEntrar(){
   var err='<div class="err" id="'+(p==='google'?'gauth-err':'auth-err')+'" role="alert">'+esc(aErr||'')+'</div>';
   var legal='<button onclick="event.stopPropagation();sndScreen=\'p_legal\';render()">Términos y Política de Privacidad</button>';
   if(p==='correo'){
-    cuerpo=entrarCampo('l-email','Tu correo','email',authEmail,{ph:'tu@correo.com',ac:'email',im:'email'})
+    // «¿Quién llegó?» se queda (dueño, 2026-10-01: «está súper bien»), pero tiene que verse que
+    // aquí también se CREA la cuenta: se leía como un login solo para quien ya la tenía.
+    cuerpo='<p class="doble">Ingresa o crea tu cuenta</p>'
+      +entrarCampo('l-email','Tu correo','email',authEmail,{ph:'tu@correo.com',ac:'email',im:'email'})
+      +'<p class="primera">¿Primera vez? Es igual: te mandamos un código y después solo tu nombre y DNI.'+(g?' Con Google, ni el DNI.':'')+'</p>'
       +err
       +(g?'<div class="goo" id="google-btn-mount" data-tema="outline"></div>':'')
-      +'<div class="nota">Te mandamos un código de 6 dígitos, no hay contraseña.<br>Si es tu primera vez te pedimos nombre y DNI.'
-      +(g?'<br>Con Google no pedimos DNI.':'')
+      +'<div class="nota">No hay contraseña: entras siempre con un código de 6 dígitos.'
       +'<br><button onclick="authPinFallback=true;aErr=\'\';render()">Entrar con teléfono y PIN</button></div>';
-    pie='<button class="oro" onclick="doPedirCodigo()">Seguir</button>'+(g?'<button class="cel" onclick="tocarGoogle()">Con Google</button>':'');
+    pie='<button class="oro" data-accion="pedir-codigo" onclick="doPedirCodigo()">Mandarme el código</button>'+(g?'<button class="cel" data-accion="con-google" onclick="tocarGoogle()">Con Google</button>':'');
   }else if(p==='codigo'){
     em='Revisa tu correo';titulo='SEIS NÚMEROS';
     cuerpo=entrarCampo('l-code','El código','tel','',{clase:'codigo',ac:'one-time-code',im:'numeric',max:6,ph:'••••••'})
@@ -1565,7 +1568,7 @@ function sEntrar(){
       +'<div class="hecho">Lo mandamos a <b>'+esc(authMasked||authEmail)+'</b>. Vence en unos minutos y sirve una sola vez.</div>'
       +'<div class="nota"><button onclick="doPedirCodigo()">No me llegó · mandar otro</button><br>'
       +'<button onclick="authPaso=\'correo\';aErr=\'\';render()">Era otro correo · cambiar</button></div>';
-    pie='<button class="oro" onclick="doVerificarCodigo()">Entrar</button>';
+    pie='<button class="oro" data-accion="verificar-codigo" onclick="doVerificarCodigo()">Entrar</button>';
   }else if(p==='primera'){
     em='Primera vez';titulo='¿CÓMO TE LLAMAS?';
     cuerpo='<div class="hecho">✓ <b>'+esc(authEmail)+'</b>. Vas a entrar siempre con ese correo y un código.</div>'
@@ -1577,7 +1580,7 @@ function sEntrar(){
         :'<div class="nota"><button onclick="entrarVerRef=true;render()">¿Te invitó alguien? · su código</button></div>')
       +err
       +'<div class="nota">Al entrar te damos +'+WELCOME_BONUS_POINTS+' puntos de bienvenida.<br>Al crear tu cuenta aceptas los '+legal+'.</div>';
-    pie='<button class="oro" onclick="doReg()">Crear cuenta</button>';
+    pie='<button class="oro" data-accion="crear-cuenta" onclick="doReg()">Crear cuenta</button>';
   }else if(p==='pin'){
     em='Cuenta de antes';titulo='TELÉFONO Y PIN';
     cuerpo=entrarCampo('l-phone','Tu teléfono','tel',savedPh||'',{ac:'tel',im:'tel'})
@@ -1585,7 +1588,7 @@ function sEntrar(){
       +err
       +'<div class="nota">'
       +'<button onclick="authPinFallback=false;aErr=\'\';render()">Prefiero entrar con mi correo</button></div>';
-    pie='<button class="oro" onclick="doLogin()">Entrar</button>';
+    pie='<button class="oro" data-accion="entrar-con-pin" onclick="doLogin()">Entrar</button>';
   }else{
     var nombre=String(window._lastGuestName||'').trim().split(/\s+/)[0];
     em=nombre?'Hola, '+nombre:'Hola';titulo='UN NÚMERO Y LISTO';

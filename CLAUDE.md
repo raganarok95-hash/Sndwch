@@ -99,6 +99,12 @@ relatos están en `docs/MANUAL_DETALLADO.md`** (copia íntegra del archivo anter
   acceso** (dueño, 2026-10-01). Lo visual se revisa en el celular y en `scripts/sitio-real.mjs`
   (corre en GitHub contra sndwch.app tras cada publicación); no se fija con una prueba por error.
 - **El modo de fallo que importa es el SILENCIO.**
+- **Una prueba busca por FUNCIÓN, nunca por texto**: `data-accion="…"` en el botón, id del campo
+  o rol sin nombre; afirma el EFECTO (la llamada, el estado, la pantalla siguiente), no el copy;
+  nunca `waitForTimeout`. Trinquete: `check:pruebas-por-funcion` (lo heredado solo baja; al tocar
+  una prueba vieja, se migra). Si se rompe por un texto, se arregla el selector, no el texto.
+- **Cada prueba abre con su promesa y su modo de fallo**; un error que reporta el dueño se
+  REPRODUCE antes de arreglarlo. Detalle y lista completa: `docs/COMO_PROBAR.md`.
 - **El dueño NO reparte**: lo hace un tercero (50+ motorizados) avisado en un grupo de WhatsApp
   (`docs/NEGOCIO.md`). No se le pregunta otra vez: se lee antes de diseñar entrega o cocina.
 

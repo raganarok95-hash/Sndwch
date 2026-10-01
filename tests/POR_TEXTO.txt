@@ -1,0 +1,25 @@
+# Selectores por texto y esperas fijas que quedan (solo puede bajar). Ver docs/COMO_PROBAR.md
+algo-salio-mal.spec.ts texto=10 espera=0
+armador-riel.spec.ts texto=2 espera=0
+bebida-sola.spec.ts texto=3 espera=0
+bebidas-combo.spec.ts texto=1 espera=0
+cancel-order.spec.ts texto=3 espera=0
+catalog-items-dinamico.spec.ts texto=5 espera=0
+complaint.spec.ts texto=4 espera=0
+direccion-guardada-sin-pin.spec.ts texto=1 espera=0
+entrada-al-panel.spec.ts texto=1 espera=0
+entrega-y-caja.spec.ts texto=9 espera=0
+google-en-segundos.spec.ts texto=2 espera=1
+group-order.spec.ts texto=8 espera=0
+group-organizer-free.spec.ts texto=9 espera=0
+group-vencido-se-paga.spec.ts texto=8 espera=0
+grupal-cada-uno.spec.ts texto=22 espera=0
+helpers.ts texto=6 espera=0
+la-cuenta-del-armador.spec.ts texto=0 espera=3
+links-legales.spec.ts texto=8 espera=1
+puerta-entrar-aviso.spec.ts texto=3 espera=0
+puntos-prometidos.spec.ts texto=0 espera=3
+smoke.spec.ts texto=2 espera=0
+third-party-globals.spec.ts texto=6 espera=0
+total-de-la-barra.spec.ts texto=0 espera=5
+yape-por-defecto.spec.ts texto=2 espera=0
