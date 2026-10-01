@@ -55,6 +55,11 @@ const CAMPOS_DEL_PEDIDO = {
 /** Lo único que manda pg_cron: el secreto que verifyCronSecret compara. */
 const CAMPOS_CRON = { token, cronSecret: e.textoOpcional(500) };
 
+/** El panel, mientras sus tipos no se endurezcan: pasa el dato tal cual y con el tipo que el
+ *  código del panel ya asumía (`any`). Igual entra al contrato: lo no declarado se descarta. */
+// deno-lint-ignore no-explicit-any
+const crudo = e.sinRevisar() as e.Esquema<any>;
+
 function accion<S>() {
   return <E extends e.Esquema<unknown>>(entrada: E) => ({ entrada, salida: undefined as unknown as S });
 }
@@ -275,6 +280,80 @@ export const CONTRATO = {
   'remind-never-ordered': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
   'bounce-back-first-order': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
   'expire-group-shares': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
+
+  // ── EL PANEL (2026-10-01). Solo un admin las llama (requireAdmin). Los campos pasan tal como
+  // llegan (sinRevisar): el contrato descarta lo no declarado y check:contrato-campos asegura que
+  // no falte nada. Endurecer los tipos de cada una queda pendiente, empezando por las que tocan dinero.
+  'admin-orders': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-receipt-ocr': accion<Record<string, unknown>>()(e.objeto({ token, ref: crudo, text: crudo })),
+  'admin-update-status': accion<Record<string, unknown>>()(e.objeto({ token, orderId: crudo, status: crudo, etaMinutes: crudo })),
+  'admin-bulk-update-status': accion<Record<string, unknown>>()(e.objeto({ token, orderIds: crudo, status: crudo, etaMinutes: crudo })),
+  'admin-confirm-payment': accion<Record<string, unknown>>()(e.objeto({ token, orderId: crudo })),
+  'admin-cancel-order': accion<Record<string, unknown>>()(e.objeto({ token, orderId: crudo, acknowledgeRefund: crudo, reason: crudo })),
+  'admin-receipt-url': accion<Record<string, unknown>>()(e.objeto({ token, orderId: crudo })),
+  'admin-manual-points': accion<Record<string, unknown>>()(e.objeto({ token, phone: crudo, pts: crudo })),
+  'admin-manual-credit': accion<Record<string, unknown>>()(e.objeto({ token, phone: crudo, delta: crudo })),
+  'admin-accounts-list': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-accounts-add': accion<Record<string, unknown>>()(e.objeto({ token, pin: crudo, phone: crudo, name: crudo })),
+  'admin-accounts-delete': accion<Record<string, unknown>>()(e.objeto({ token, pin: crudo, phone: crudo })),
+  'admin-inventory-toggle': accion<Record<string, unknown>>()(e.objeto({ token, code: crudo, name: crudo, inStock: crudo })),
+  'admin-inventory-set-stock': accion<Record<string, unknown>>()(e.objeto({ token, code: crudo, name: crudo, qty: crudo })),
+  'admin-inventory-restock': accion<Record<string, unknown>>()(e.objeto({ token, items: crudo })),
+  'admin-inventory-batches': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-inventory-set-shelf-life': accion<Record<string, unknown>>()(e.objeto({ token, code: crudo, days: crudo })),
+  'admin-health': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-batch-plan': accion<Record<string, unknown>>()(e.objeto({ token, coverDays: crudo })),
+  'admin-cash-close': accion<Record<string, unknown>>()(e.objeto({ token, since: crudo, until: crudo })),
+  'admin-purchases': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-purchase-add': accion<Record<string, unknown>>()(e.objeto({ token, productCode: crudo, qty: crudo, totalPaid: crudo, unit: crudo, supplier: crudo, purchasedAt: crudo, notes: crudo })),
+  'admin-culqi-report': accion<Record<string, unknown>>()(e.objeto({ token, since: crudo, until: crudo })),
+  'admin-tech-health': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-cac-brake': accion<Record<string, unknown>>()(e.objeto({ token, dias: crudo })),
+  'admin-ad-spend-set': accion<Record<string, unknown>>()(e.objeto({ token, spendDate: crudo, amount: crudo, platform: crudo, note: crudo })),
+  'admin-kill-promos': accion<Record<string, unknown>>()(e.objeto({ token, kill: crudo })),
+  'admin-retention-report': accion<Record<string, unknown>>()(e.objeto({ token, months: crudo })),
+  'admin-compliance': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-recipes': accion<Record<string, unknown>>()(e.objeto({ token, targetPortions: crudo })),
+  'admin-recipe-set': accion<Record<string, unknown>>()(e.objeto({ token, recipeCode: crudo, name: crudo, yieldPortions: crudo, ingredients: crudo, steps: crudo, portionGrams: crudo, notes: crudo, active: crudo })),
+  'admin-catalog-set-price': accion<Record<string, unknown>>()(e.objeto({ token, code: crudo, category: crudo, values: crudo })),
+  'admin-catalog-items-get': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-catalog-items-set': accion<Record<string, unknown>>()(e.objeto({ token, itemId: crudo, name: crudo, subtitle: crudo, badge: crudo, pitch: crudo, base: crudo, proteinId: crudo, tops: crudo, sauces: crudo, fixedCheese: crudo, price15: crudo, price30: crudo, imagePath: crudo, active: crudo, cheeseOptional: crudo })),
+  'admin-secret-signature-get': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-secret-signature-set': accion<Record<string, unknown>>()(e.objeto({ token, name: crudo, base: crudo, proteinId: crudo, tops: crudo, sauces: crudo, price15: crudo, price30: crudo, minOrders: crudo, vaultOnlyIds: crudo, imagePath: crudo, endsAt: crudo, hints: crudo, blurb: crudo, announce: crudo })),
+  'admin-customer-detail': accion<Record<string, unknown>>()(e.objeto({ token, phone: crudo })),
+  'admin-search-orders': accion<Record<string, unknown>>()(e.objeto({ token, q: crudo, status: crudo, dateFrom: crudo, dateTo: crudo })),
+  'admin-audit-log': accion<Record<string, unknown>>()(e.objeto({ token, limit: crudo, actorPhone: crudo })),
+  'admin-range-report': accion<Record<string, unknown>>()(e.objeto({ token, from: crudo, to: crudo })),
+  'admin-ratings-list': accion<Record<string, unknown>>()(e.objeto({ token, limit: crudo, minStars: crudo, onlyWithComments: crudo, onlyConsented: crudo })),
+  'admin-at-risk-customers': accion<Record<string, unknown>>()(e.objeto({ token, riskScore: crudo })),
+  'admin-prep-list': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-time-window-report': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-problem-addresses': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-marketing-content': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-campaign-performance': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-promo-list': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-promo-create': accion<Record<string, unknown>>()(e.objeto({ token, code: crudo, discountType: crudo, value: crudo, maxDiscount: crudo, maxUses: crudo, minOrderTotal: crudo, validFrom: crudo, validUntil: crudo, campaignTag: crudo })),
+  'admin-promo-toggle': accion<Record<string, unknown>>()(e.objeto({ token, id: crudo, active: crudo })),
+  'admin-calendar-list': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-calendar-create': accion<Record<string, unknown>>()(e.objeto({ token, scheduledDate: crudo, channel: crudo, title: crudo, status: crudo, captionText: crudo, whatsappText: crudo, photoIdea: crudo, videoIdea: crudo, campaignTag: crudo })),
+  'admin-calendar-update': accion<Record<string, unknown>>()(e.objeto({ token, id: crudo, scheduledDate: crudo, channel: crudo, title: crudo, captionText: crudo, whatsappText: crudo, photoIdea: crudo, videoIdea: crudo, campaignTag: crudo, status: crudo })),
+  'admin-calendar-delete': accion<Record<string, unknown>>()(e.objeto({ token, id: crudo })),
+  'admin-calendar-generate': accion<Record<string, unknown>>()(e.objeto({ token, weeks: crudo })),
+  'admin-waitlist-list': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-calendar-upload-image': accion<Record<string, unknown>>()(e.objeto({ token, id: crudo, mime: crudo, imageBase64: crudo })),
+  'admin-upload-raw-video': accion<Record<string, unknown>>()(e.objeto({ token, mime: crudo, videoBase64: crudo, notes: crudo })),
+  'admin-list-raw-uploads': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-publish-social': accion<Record<string, unknown>>()(e.objeto({ token, id: crudo })),
+  'admin-video-script': accion<Record<string, unknown>>()(e.objeto({ token, sigId: crudo, angle: crudo, formato: crudo })),
+  'admin-set-store-hours': accion<Record<string, unknown>>()(e.objeto({ token, days: crudo })),
+  'admin-set-business-launched': accion<Record<string, unknown>>()(e.objeto({ token, launched: crudo })),
+  'admin-pause-store': accion<Record<string, unknown>>()(e.objeto({ token, minutes: crudo })),
+  'admin-list-complaints': accion<Record<string, unknown>>()(e.objeto({ token, status: crudo })),
+  'admin-respond-complaint': accion<Record<string, unknown>>()(e.objeto({ token, id: crudo, response: crudo })),
+  'admin-order-problems': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-resolve-order-problem': accion<Record<string, unknown>>()(e.objeto({ token, id: crudo, solucion: crudo, nota: crudo })),
+  'admin-zone-waitlist': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-notify-zone': accion<Record<string, unknown>>()(e.objeto({ token, district: crudo, districtLabel: crudo })),
 
   'recurring-skip': accion<{ success: true; skipOn: string | null }>()(
     e.objeto({ token, id: e.uuid('Falta el pedido fijo.'), deshacer: e.bandera() }),

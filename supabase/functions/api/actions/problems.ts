@@ -112,14 +112,14 @@ export async function actReportOrderProblem(b: Entrada<"report-order-problem"> &
   return { success: true, yaReportado: false, respondeAntesDe: respondBy };
 }
 
-export async function actAdminOrderProblems(b: any) {
+export async function actAdminOrderProblems(b: Entrada<"admin-order-problems"> & { _ip?: string }) {
   await requireAdmin(b.token);
   return {
     problems: await sbGet("order_problems", "order=resolved_at.desc.nullsfirst,created_at.asc&limit=100"),
   };
 }
 
-export async function actAdminResolveOrderProblem(b: any) {
+export async function actAdminResolveOrderProblem(b: Entrada<"admin-resolve-order-problem"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const id = String(b.id || "").trim();
   const solucion = String(b.solucion || "").trim();

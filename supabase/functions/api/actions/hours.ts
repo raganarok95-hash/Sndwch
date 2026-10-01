@@ -128,7 +128,7 @@ async function capacidad(): Promise<{ fullHours: string[]; cargaPorHora: Record<
   return base;
 }
 
-export async function actAdminSetBusinessLaunched(b: any) {
+export async function actAdminSetBusinessLaunched(b: Entrada<"admin-set-business-launched"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const launched = b.launched === true;
   await sbUpdate("app_settings", "id=eq.true", { business_launched: launched, updated_at: new Date().toISOString() });
@@ -136,7 +136,7 @@ export async function actAdminSetBusinessLaunched(b: any) {
   return { success: true, launched };
 }
 
-export async function actAdminPauseStore(b: any) {
+export async function actAdminPauseStore(b: Entrada<"admin-pause-store"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   // minutes = 0 (o ausente) significa reanudar ahora mismo.
   const minutes = Number(b.minutes) || 0;
@@ -147,7 +147,7 @@ export async function actAdminPauseStore(b: any) {
   return { success: true, pausedUntil: until };
 }
 
-export async function actAdminSetStoreHours(b: any) {
+export async function actAdminSetStoreHours(b: Entrada<"admin-set-store-hours"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const days = Array.isArray(b.days) ? b.days : [];
   if (days.length !== 7) throw new ApiError("Debes enviar el horario de los 7 días.", 400);

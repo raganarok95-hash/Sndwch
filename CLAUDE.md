@@ -72,8 +72,10 @@ relatos están en `docs/MANUAL_DETALLADO.md`** (copia íntegra del archivo anter
 - **El menú se edita desde el panel**: Signatures en `catalog_items`, SIG05 en `secret_signature`,
   precios en `catalog_prices`. `_shared/carta.ts` es la semilla y la ÚNICA carta (cliente,
   servidor, modelo vía `check:carta`); la lógica pregunta por propiedades, nunca por códigos.
-- **Registrar una acción es un paso aparte de importarla** (`check:acciones`). Una acción nueva o
-  tocada se declara en `_shared/contrato.ts` y lee con `leer()` (db.ts).
+- **Registrar una acción es un paso aparte de importarla** (`check:acciones`). TODA acción tiene
+  contrato en `_shared/contrato.ts` (las 155 desde el 2026-10-01; lo exige `test:api`) y declara
+  cada campo que lee, incluidos los de sus auxiliares (`check:contrato-campos`): lo no declarado
+  llega vacío. Lee la base con `leer()` (db.ts). El panel usa `crudo`: endurecerlo es pendiente.
 - **Toda RPC `security definer` lleva su `revoke execute ... from public, anon, authenticated`**
   (`check:rpc`).
 - **No se nombra un mecanismo apagado** (`offpeakActiva()`), ni se usa `rankName()` para el menú

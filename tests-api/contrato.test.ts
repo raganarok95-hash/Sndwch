@@ -69,9 +69,15 @@ Deno.test("sin token NO es un 400: pasa vacío para que la sesión responda 401 
   assertEquals(validarEntrada("recurring-list", {}, "x"), { token: "", _ip: "x" });
 });
 
-Deno.test("una acción todavía sin contrato recibe el cuerpo tal cual, más la IP del servidor", () => {
-  const r = validarEntrada("admin-orders", { algo: 1, _ip: "falsa" }, "1.2.3.4");
-  assertEquals(r, { algo: 1, _ip: "1.2.3.4" });
+// Desde el 2026-10-01 TODA acción registrada tiene contrato: la frontera valida la forma y
+// descarta lo no declarado en las 155. Una acción nueva sin contrato recibiría el cuerpo crudo
+// (validarEntrada lo deja pasar), así que esto la caza antes de salir.
+Deno.test("toda acción registrada en el servidor tiene contrato", async () => {
+  const idx = await Deno.readTextFile(new URL("../supabase/functions/api/index.ts", import.meta.url));
+  const registradas = [...idx.matchAll(/^\s*"([a-z0-9-]+)":\s*act\w+/gm)].map((m) => m[1]);
+  const sin = registradas.filter((a) => !Object.prototype.hasOwnProperty.call(CONTRATO, a));
+  assertEquals(sin, []);
+  assertEquals(registradas.length > 100, true);
 });
 
 Deno.test("todo esquema del contrato es un objeto que exige su token", () => {

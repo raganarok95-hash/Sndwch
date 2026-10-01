@@ -91,7 +91,7 @@ async function notifyRestockedSignatures(restockedCode: string): Promise<void> {
   }
 }
 
-export async function actAdminManualPoints(b: any) {
+export async function actAdminManualPoints(b: Entrada<"admin-manual-points"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const phone = String(b.phone || "").trim();
   const pts = parseInt(b.pts, 10);
@@ -120,7 +120,7 @@ export async function actAdminManualPoints(b: any) {
 // código, ALTO). Acepta delta positivo o negativo (a diferencia de los puntos
 // manuales, que solo suman) porque también sirve para corregir un exceso otorgado por
 // error, no solo para dar de más.
-export async function actAdminManualCredit(b: any) {
+export async function actAdminManualCredit(b: Entrada<"admin-manual-credit"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const phone = String(b.phone || "").trim();
   const delta = Number(b.delta);
@@ -145,7 +145,7 @@ export async function actAdminManualCredit(b: any) {
   return { success: true, name: rows[0].name, newBalance: updated.credit_balance };
 }
 
-export async function actAdminAccountsList(b: any) {
+export async function actAdminAccountsList(b: Entrada<"admin-accounts-list"> & { _ip?: string }) {
   await requireAdmin(b.token);
   return { accounts: await sbGet("admin_accounts", "order=created_at.asc&limit=200") };
 }
@@ -154,7 +154,7 @@ export async function actAdminAccountsList(b: any) {
 // el PIN de quien lo hace, a diferencia de actAdminAccountsDelete que sí lo pide desde
 // hace tiempo. Con una sesión admin robada, esto era un backdoor de un solo request que
 // sobrevivía a logout-everywhere (hallazgo de auditoría de seguridad, MEDIO).
-export async function actAdminAccountsAdd(b: any) {
+export async function actAdminAccountsAdd(b: Entrada<"admin-accounts-add"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const pin = String(b.pin || "").trim();
   if (!pin) throw new ApiError("Ingresa tu PIN para confirmar.", 400);
@@ -172,7 +172,7 @@ export async function actAdminAccountsAdd(b: any) {
 // panel a media jornada) — antes esta acción pedía MENOS fricción que borrar la propia
 // cuenta de cliente (esa sí exige reingresar el PIN, ver actDeleteAccount). Ahora exige
 // el PIN de quien ejecuta la acción, igual criterio que ahí (hallazgo de auditoría UX).
-export async function actAdminAccountsDelete(b: any) {
+export async function actAdminAccountsDelete(b: Entrada<"admin-accounts-delete"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const pin = String(b.pin || "").trim();
   if (!pin) throw new ApiError("Ingresa tu PIN para confirmar.", 400);
@@ -186,7 +186,7 @@ export async function actAdminAccountsDelete(b: any) {
   return { success: true };
 }
 
-export async function actAdminInventoryToggle(b: any) {
+export async function actAdminInventoryToggle(b: Entrada<"admin-inventory-toggle"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const code = String(b.code || "").trim();
   const name = String(b.name || "").trim();
@@ -205,7 +205,7 @@ export async function actAdminInventoryToggle(b: any) {
   return { success: true };
 }
 
-export async function actAdminInventorySetStock(b: any) {
+export async function actAdminInventorySetStock(b: Entrada<"admin-inventory-set-stock"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const code = String(b.code || "").trim();
   const name = String(b.name || "").trim();
@@ -229,7 +229,7 @@ export async function actAdminInventorySetStock(b: any) {
 // Va por una acción propia de admin y no dentro de `get-catalog` a propósito: get-catalog es
 // PÚBLICO, y las fechas de producción de la cocina no tienen por qué viajar a cualquiera que
 // abra la app.
-export async function actAdminInventoryBatches(b: any) {
+export async function actAdminInventoryBatches(b: Entrada<"admin-inventory-batches"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const rows = await sbGet(
     "inventory",
@@ -256,7 +256,7 @@ export async function actAdminInventoryBatches(b: any) {
 // convertiría la alerta en ruido permanente — la forma en que una alarma deja de mirarse.
 const SHELF_LIFE_MAX_DAYS = 90;
 
-export async function actAdminInventorySetShelfLife(b: any) {
+export async function actAdminInventorySetShelfLife(b: Entrada<"admin-inventory-set-shelf-life"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const code = String(b.code || "").trim();
   if (!code) throw new ApiError("Falta el producto.");
@@ -359,7 +359,7 @@ export async function actAlertSystemHealth(b: Entrada<"alert-system-health"> & {
 }
 
 const RESTOCK_MAX_ITEMS = 100;
-export async function actAdminInventoryRestock(b: any) {
+export async function actAdminInventoryRestock(b: Entrada<"admin-inventory-restock"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const raw = Array.isArray(b.items) ? b.items : [];
   if (!raw.length) throw new ApiError("No hay insumos que reponer.");
@@ -646,7 +646,7 @@ export async function actDashboardStats(b: Entrada<"dashboard-stats"> & { _ip?: 
 // pedido dos veces a la misma campaña).
 const CAMPAIGN_CONVERSION_WINDOW_DAYS = 7;
 const CAMPAIGN_LOOKBACK_DAYS = 60;
-export async function actAdminCampaignPerformance(b: any) {
+export async function actAdminCampaignPerformance(b: Entrada<"admin-campaign-performance"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const since = new Date(Date.now() - CAMPAIGN_LOOKBACK_DAYS * 86400000).toISOString();
   const touches = await sbGet(
@@ -710,14 +710,14 @@ export async function actAdminCampaignPerformance(b: any) {
 // computePromoDiscount/redeemPromoBestEffort en orders.ts, que son quienes de verdad
 // aplican/redimen el descuento — estas 3 acciones son solo el CRUD admin).
 const PROMO_LIST_LIMIT = 100;
-export async function actAdminPromoList(b: any) {
+export async function actAdminPromoList(b: Entrada<"admin-promo-list"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const rows = await sbGet("promo_codes", `select=*&order=created_at.desc&limit=${PROMO_LIST_LIMIT}`);
   return { promoCodes: rows };
 }
 
 const PROMO_DISCOUNT_TYPES = new Set(["percent", "fixed"]);
-export async function actAdminPromoCreate(b: any) {
+export async function actAdminPromoCreate(b: Entrada<"admin-promo-create"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const code = String(b.code || "").trim().toUpperCase();
   const discountType = String(b.discountType || "");
@@ -755,7 +755,7 @@ export async function actAdminPromoCreate(b: any) {
   return { success: true, promoCode: row };
 }
 
-export async function actAdminPromoToggle(b: any) {
+export async function actAdminPromoToggle(b: Entrada<"admin-promo-toggle"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const id = String(b.id || "").trim();
   const active = !!b.active;
@@ -770,7 +770,7 @@ export async function actAdminPromoToggle(b: any) {
 // (pedidos, puntos, admin_action_log) o consultar la DB a mano — esto lo junta en una
 // sola llamada para la ficha de cliente del panel admin.
 const CUSTOMER_DETAIL_LIMIT = 30;
-export async function actAdminCustomerDetail(b: any) {
+export async function actAdminCustomerDetail(b: Entrada<"admin-customer-detail"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const phone = String(b.phone || "").trim();
   if (!phone) throw new ApiError("Falta el teléfono.", 400);
@@ -800,7 +800,7 @@ const RANK_RISK_WEIGHT: Record<string, number> = {
   "CÍRCULO INTERNO": 3,
   "MESA FUNDADORA": 4,
 };
-export async function actAdminAtRiskCustomers(b: any) {
+export async function actAdminAtRiskCustomers(b: Entrada<"admin-at-risk-customers"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const [customers, orders] = await Promise.all([
     sbGet("customers", "total_orders=gt.0&select=phone,name,total_orders&limit=5000"),
@@ -841,7 +841,7 @@ export async function actAdminAtRiskCustomers(b: any) {
 // activos (actAdminOrders), sin forma de encontrar uno viejo/entregado salvo el link de
 // seguimiento del propio cliente. `q` busca por ref, teléfono o nombre a la vez.
 const SEARCH_ORDERS_LIMIT = 50;
-export async function actAdminSearchOrders(b: any) {
+export async function actAdminSearchOrders(b: Entrada<"admin-search-orders"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const q = String(b.q || "").trim().slice(0, 60);
   const status = b.status ? String(b.status) : null;
@@ -868,7 +868,7 @@ export async function actAdminSearchOrders(b: any) {
 // Visor del registro de auditoría (admin_action_log) — hasta ahora esa tabla solo se
 // podía revisar directo desde el dashboard de Supabase, no desde el panel del negocio.
 const AUDIT_LOG_LIMIT = 100;
-export async function actAdminAuditLog(b: any) {
+export async function actAdminAuditLog(b: Entrada<"admin-audit-log"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const limit = Math.min(AUDIT_LOG_LIMIT, Math.max(1, parseInt(b.limit, 10) || 50));
   const actorPhone = b.actorPhone ? String(b.actorPhone).trim() : null;
@@ -882,7 +882,7 @@ export async function actAdminAuditLog(b: any) {
 // hoy/semana/mes fijos; esto deja al dueño elegir cualquier rango (ej. para comparar un
 // fin de semana largo contra uno normal).
 const RANGE_REPORT_ORDER_LIMIT = 5000;
-export async function actAdminRangeReport(b: any) {
+export async function actAdminRangeReport(b: Entrada<"admin-range-report"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const from = b.from ? new Date(String(b.from)) : null;
   const to = b.to ? new Date(String(b.to)) : null;
@@ -938,7 +938,7 @@ export async function actAdminRangeReport(b: any) {
 // el dashboard — esto expone el listado completo con filtros para revisar reclamos o
 // buscar sándwiches con mala nota de forma sistemática.
 const RATINGS_LIST_LIMIT = 200;
-export async function actAdminRatingsList(b: any) {
+export async function actAdminRatingsList(b: Entrada<"admin-ratings-list"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const limit = Math.min(RATINGS_LIST_LIMIT, Math.max(1, parseInt(b.limit, 10) || 50));
   const minStars = b.minStars ? Math.max(1, Math.min(5, parseInt(b.minStars, 10) || 1)) : null;
@@ -957,7 +957,7 @@ export async function actAdminRatingsList(b: any) {
 // prepare antes de que entren en cola. Antes cada pedido programado se preparaba recién
 // cuando llegaba su hora, sin ninguna vista agregada de cuánto se viene.
 const PREP_LIST_WINDOW_HOURS = 24;
-export async function actAdminPrepList(b: any) {
+export async function actAdminPrepList(b: Entrada<"admin-prep-list"> & { _ip?: string }) {
   await requireAdmin(b.token);
   await loadCatalogPrices();
   const nowIso = new Date().toISOString();
@@ -1184,7 +1184,7 @@ export async function actAlertCardDeclines(b: Entrada<"alert-card-declines"> & {
 // para detectar si hay una franja con más cancelaciones o entregas más lentas que otras,
 // sin importar quién esté atendiendo.
 const TIME_WINDOW_REPORT_DAYS = 30;
-export async function actAdminTimeWindowReport(b: any) {
+export async function actAdminTimeWindowReport(b: Entrada<"admin-time-window-report"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const sinceIso = new Date(Date.now() - TIME_WINDOW_REPORT_DAYS * 86400000).toISOString();
   const rows = await sbGet("orders", `created_at=gte.${encodeURIComponent(sinceIso)}&select=created_at,status,delivered_at&limit=5000`);
@@ -1221,7 +1221,7 @@ export async function actAdminTimeWindowReport(b: any) {
 // próximo pedido a ese mismo lugar en vez de descubrir el patrón recién a la tercera vez.
 const PROBLEM_ADDRESS_MIN_CANCELS = 2;
 const PROBLEM_ADDRESS_SCAN_LIMIT = 2000;
-export async function actAdminProblemAddresses(b: any) {
+export async function actAdminProblemAddresses(b: Entrada<"admin-problem-addresses"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const rows = await sbGet(
     "orders",
@@ -1398,7 +1398,7 @@ function marketingWeekIndex(offset = 0): number {
   const n = marketingContent().length;
   return ((weekNumber % n) + n) % n;
 }
-export async function actAdminMarketingContent(b: any) {
+export async function actAdminMarketingContent(b: Entrada<"admin-marketing-content"> & { _ip?: string }) {
   await requireAdmin(b.token);
   // Sin esto, SIG_GATES[ID_SECRETO].minOrders sería la semilla del código y no el umbral que el
   // dueño tenga puesto hoy en el panel — justo el número que este texto promete en público.
@@ -1496,7 +1496,7 @@ async function generarBorradores(semanas: number, creadoPor: string): Promise<{ 
   return { creados: nuevas.length, fechas: nuevas.map((e) => e.scheduled_date) };
 }
 
-export async function actAdminCalendarGenerate(b: any) {
+export async function actAdminCalendarGenerate(b: Entrada<"admin-calendar-generate"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const semanas = Number(b.weeks) > 0 ? Number(b.weeks) : CALENDAR_GENERATE_WEEKS;
   const res = await generarBorradores(semanas, s.phone);
@@ -1541,13 +1541,13 @@ const CALENDAR_CHANNELS = new Set(["instagram", "tiktok", "whatsapp", "facebook"
 const CALENDAR_STATUSES = new Set(["draft", "scheduled", "posted"]);
 const CALENDAR_LIST_LIMIT = 200;
 
-export async function actAdminCalendarList(b: any) {
+export async function actAdminCalendarList(b: Entrada<"admin-calendar-list"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const rows = await sbGet("marketing_calendar", `select=*&order=scheduled_date.asc&limit=${CALENDAR_LIST_LIMIT}`);
   return { entries: rows };
 }
 
-export async function actAdminCalendarCreate(b: any) {
+export async function actAdminCalendarCreate(b: Entrada<"admin-calendar-create"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const scheduledDate = String(b.scheduledDate || "").trim();
   const channel = String(b.channel || "").trim();
@@ -1576,7 +1576,7 @@ export async function actAdminCalendarCreate(b: any) {
   return { success: true, entry: row };
 }
 
-export async function actAdminCalendarUpdate(b: any) {
+export async function actAdminCalendarUpdate(b: Entrada<"admin-calendar-update"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const id = String(b.id || "").trim();
   if (!id) throw new ApiError("Falta el id.", 400);
@@ -1610,7 +1610,7 @@ export async function actAdminCalendarUpdate(b: any) {
   return { success: true, entry: rows[0] };
 }
 
-export async function actAdminCalendarDelete(b: any) {
+export async function actAdminCalendarDelete(b: Entrada<"admin-calendar-delete"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const id = String(b.id || "").trim();
   if (!id) throw new ApiError("Falta el id.", 400);
@@ -1624,7 +1624,7 @@ export async function actAdminCalendarDelete(b: any) {
 // Lista de espera pre-lanzamiento (waitlist_signups) — ver actWaitlistJoin en customer.ts
 // para el lado público. Esto es solo la vista/export admin.
 const WAITLIST_LIST_LIMIT = 1000;
-export async function actAdminWaitlistList(b: any) {
+export async function actAdminWaitlistList(b: Entrada<"admin-waitlist-list"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const rows = await sbGet("waitlist_signups", `select=*&order=created_at.desc&limit=${WAITLIST_LIST_LIMIT}`);
   return { waitlist: rows };
@@ -1636,12 +1636,12 @@ export async function actAdminWaitlistList(b: any) {
 // historial de sándwiches secretos anteriores queda gratis para revisión/marketing
 // futura, sin una tabla de auditoría aparte.
 const SECRET_SIGNATURE_HISTORY_LIMIT = 12;
-export async function actAdminSecretSignatureGet(b: any) {
+export async function actAdminSecretSignatureGet(b: Entrada<"admin-secret-signature-get"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const rows = await sbGet("secret_signature", `select=*&order=id.desc&limit=${SECRET_SIGNATURE_HISTORY_LIMIT}`);
   return { current: rows[0] || null, history: rows.slice(1) };
 }
-export async function actAdminSecretSignatureSet(b: any) {
+export async function actAdminSecretSignatureSet(b: Entrada<"admin-secret-signature-set"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const name = String(b.name || "").trim();
   if (!name) throw new ApiError("Falta el nombre del sándwich del mes.", 400);
@@ -2018,7 +2018,7 @@ export function culqiReconciliation(
   };
 }
 
-export async function actAdminCulqiReport(b: any) {
+export async function actAdminCulqiReport(b: Entrada<"admin-culqi-report"> & { _ip?: string }) {
   await requireAdmin(b.token);
   // Por defecto el MES en curso en hora Lima: la comisión se mira contra la liquidación
   // mensual, no día a día.
@@ -2351,7 +2351,7 @@ export function latencyStats(
 // Una sola pantalla para todo el bloque técnico: el dueño no va a entrar a seis pantallas
 // distintas a revisar salud. Las señales de negocio (#77, #78, #86) van aparte porque se
 // miran en otro momento y con otra cabeza.
-export async function actAdminTechHealth(b: any) {
+export async function actAdminTechHealth(b: Entrada<"admin-tech-health"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const desde = new Date(Date.now() - 7 * 86400000).toISOString();
   const [size, tablas, admins, lat] = await Promise.all([
@@ -2372,7 +2372,7 @@ export async function actAdminTechHealth(b: any) {
 
 // #78 / #77 / #86 — Las tres señales de cumplimiento y promesa, en una sola lectura.
 const COMPLIANCE_WINDOW_DAYS = 90;
-export async function actAdminCompliance(b: any) {
+export async function actAdminCompliance(b: Entrada<"admin-compliance"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const desde = new Date(Date.now() - COMPLIANCE_WINDOW_DAYS * 86400000).toISOString();
   const [entregados, quejas] = await Promise.all([
@@ -2535,7 +2535,7 @@ export function recipeCost(
 
 const PURCHASES_LIST_LIMIT = 500;
 
-export async function actAdminPurchases(b: any) {
+export async function actAdminPurchases(b: Entrada<"admin-purchases"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const [compras, recetas] = await Promise.all([
     sbGet("ingredient_purchases", `select=*&order=purchased_at.desc,id.desc&limit=${PURCHASES_LIST_LIMIT}`),
@@ -2556,7 +2556,7 @@ export async function actAdminPurchases(b: any) {
   };
 }
 
-export async function actAdminPurchaseAdd(b: any) {
+export async function actAdminPurchaseAdd(b: Entrada<"admin-purchase-add"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const code = String(b.productCode || "").trim().toUpperCase().slice(0, 20);
   const qty = Number(b.qty);
@@ -2730,7 +2730,7 @@ export function cashClose(
   };
 }
 
-export async function actAdminCashClose(b: any) {
+export async function actAdminCashClose(b: Entrada<"admin-cash-close"> & { _ip?: string }) {
   await requireAdmin(b.token);
   // Por defecto el día en curso en hora de Lima, que es lo que significa "cerrar la caja".
   const desde = typeof b.since === "string" && b.since ? b.since : limaDayStartIso(new Date());
@@ -2853,7 +2853,7 @@ export function batchLabels(
 }
 
 // Solo la fila vigente de cada receta: append-only significa que hay varias por código.
-export async function actAdminRecipes(b: any) {
+export async function actAdminRecipes(b: Entrada<"admin-recipes"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const rows = await sbGet("production_recipes", "select=*&order=id.desc&limit=500");
   const vigentes = new Map<string, any>();
@@ -2889,7 +2889,7 @@ export async function actAdminRecipes(b: any) {
 // uno quiere poder mirar.
 const RECIPE_MAX_INGREDIENTS = 60;
 const RECIPE_MAX_STEPS = 40;
-export async function actAdminRecipeSet(b: any) {
+export async function actAdminRecipeSet(b: Entrada<"admin-recipe-set"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const code = String(b.recipeCode || "").trim().toUpperCase().slice(0, 20);
   const name = String(b.name || "").trim().slice(0, 120);
@@ -3065,7 +3065,7 @@ async function computeBatchPlan(coverDays: number) {
   };
 }
 
-export async function actAdminBatchPlan(b: any) {
+export async function actAdminBatchPlan(b: Entrada<"admin-batch-plan"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const coverDays = Number.isInteger(b.coverDays) && b.coverDays > 0 && b.coverDays <= 14
     ? b.coverDays
@@ -3087,7 +3087,7 @@ export async function actAdminBatchPlan(b: any) {
 // son para sentarse a pensar, no para actuar en el momento, y mezclarlas haría que esta
 // pantalla se lea como "informe" y deje de mirarse a diario.
 const HEALTH_STUCK_MINUTES = 45;
-export async function actAdminHealth(b: any) {
+export async function actAdminHealth(b: Entrada<"admin-health"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const now = Date.now();
   const stuckCutoff = new Date(now - HEALTH_STUCK_MINUTES * 60000).toISOString();
@@ -3241,7 +3241,7 @@ const RETENTION_COHORT_MONTHS = 6;
 // vuelven — el panel lo marca en rojo. El umbral es un punto de referencia de la
 // categoría, no una ley: revisarlo cuando haya varios meses de historial real propio.
 const RETENTION_ALARM_PCT = 25;
-export async function actAdminRetentionReport(b: any) {
+export async function actAdminRetentionReport(b: Entrada<"admin-retention-report"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const months = Number.isInteger(b.months) && b.months > 0 && b.months <= 24 ? b.months : RETENTION_COHORT_MONTHS;
   const report = await rpc("retention_report", { p_cohort_months: months });
@@ -3643,7 +3643,7 @@ export function gastoDesactualizado(input: { fechas: string[]; hoyDia: string })
   return { ultimoDia, diasSinCargar, desactualizado: diasSinCargar >= GASTO_DIAS_TOLERADOS };
 }
 
-export async function actAdminCacBrake(b: any) {
+export async function actAdminCacBrake(b: Entrada<"admin-cac-brake"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const dias = Math.min(180, Math.max(7, Math.round(Number(b.dias) || CAC_DIAS_POR_DEFECTO)));
   const desde = new Date(Date.now() - dias * 86400000);
@@ -3693,7 +3693,7 @@ export async function actAdminCacBrake(b: any) {
   };
 }
 
-export async function actAdminAdSpendSet(b: any) {
+export async function actAdminAdSpendSet(b: Entrada<"admin-ad-spend-set"> & { _ip?: string }) {
   const admin = await requireAdmin(b.token);
   const fecha = String(b.spendDate || "").slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) throw new ApiError("Fecha inválida.", 400);
@@ -3817,7 +3817,7 @@ export async function actAlertCacBrake(b: Entrada<"alert-cac-brake"> & { _ip?: s
 
 // El interruptor, desde el panel. Guarda QUIÉN lo tocó: si un día las promociones llevan una
 // semana apagadas, la primera pregunta es quién y cuándo.
-export async function actAdminKillPromos(b: any) {
+export async function actAdminKillPromos(b: Entrada<"admin-kill-promos"> & { _ip?: string }) {
   const admin = await requireAdmin(b.token);
   const apagar = b.kill === true;
   await sbUpdate("app_settings", "id=eq.true", {

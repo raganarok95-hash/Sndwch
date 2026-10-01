@@ -39,7 +39,7 @@ export async function actZoneWaitlistJoin(b: Entrada<"zone-waitlist-join"> & { _
 }
 
 // Para decidir qué zona abrir: cuántos esperan en cada una.
-export async function actAdminZoneWaitlist(b: any) {
+export async function actAdminZoneWaitlist(b: Entrada<"admin-zone-waitlist"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const rows = await sbGet("zone_waitlist", "notified_at=is.null&select=district,created_at&limit=5000");
   const porZona = new Map<string, { district: string; count: number; desde: string }>();
@@ -61,7 +61,7 @@ export function zonaSigueCerrada(district: string): boolean {
 // «Ya llegamos a tu zona»: un aviso a cada persona que esperaba, y se marca para no repetir.
 // Se niega mientras la zona siga excluida: avisar «ya puedes pedir» y que el pedido rebote
 // sería la peor promesa rota posible, la que llega por push.
-export async function actAdminNotifyZone(b: any) {
+export async function actAdminNotifyZone(b: Entrada<"admin-notify-zone"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const district = distritoValido(b.district);
   if (!district) throw new ApiError("Falta el distrito.");

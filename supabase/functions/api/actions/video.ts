@@ -17,6 +17,7 @@
 //
 // Lo que sí se automatiza es lo que él SÍ usa: el prompt de Flow ahora viaja dentro del
 // borrador semanal del calendario, para que no tenga ni que abrir esta pantalla.
+import type { Entrada } from "../../_shared/contrato.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin } from "../session.ts";
 import { loadCatalogPrices, SIG_DATA, SIG_GATES, SIG_LABEL, PROT_LABEL, TOP_LABEL, SAUCE_LABEL, BASE_LABEL } from "../catalog.ts";
@@ -214,7 +215,7 @@ export function flowPromptSemanal(videoIdea: string, semana: number): string {
   return buildFlowPrompt(sigId, fmt, angle);
 }
 
-export async function actAdminVideoScript(b: any) {
+export async function actAdminVideoScript(b: Entrada<"admin-video-script"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   await loadCatalogPrices();
   const sigId = String(b.sigId || "").trim();

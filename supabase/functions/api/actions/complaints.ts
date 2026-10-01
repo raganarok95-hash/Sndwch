@@ -76,7 +76,7 @@ export async function actSubmitComplaint(b: Entrada<"submit-complaint"> & { _ip?
   return { success: true, claimCode };
 }
 
-export async function actAdminListComplaints(b: any) {
+export async function actAdminListComplaints(b: Entrada<"admin-list-complaints"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const status = b.status ? String(b.status) : null;
   const query = status
@@ -85,7 +85,7 @@ export async function actAdminListComplaints(b: any) {
   return { complaints: await sbGet("complaints", query) };
 }
 
-export async function actAdminRespondComplaint(b: any) {
+export async function actAdminRespondComplaint(b: Entrada<"admin-respond-complaint"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const id = String(b.id || "");
   const response = String(b.response || "").trim();
