@@ -318,7 +318,7 @@ function sOCart(){
     if(it.type==='side'&&paresCombo>0){var u=Math.min(it.qty||1,paresCombo);paresCombo-=u;desc=u*COMBO_DISCOUNT_PER_PAIR;}
     var det=lineaDetalle(it);
     if(desc>0)det=(det?det+' · ':'')+'en combo';
-    return'<button class="li" onclick="hojaLinea='+i+';hoja30=\'linea\';render()"><i>'+String(i+1).padStart(2,'0')+'</i>'
+    return'<button class="li" onclick="hojaLinea='+i+';hoja30=\'linea\';favMsg=\'\';render()"><i>'+String(i+1).padStart(2,'0')+'</i>'
       +'<span class="q"><b>'+esc(lineaNombre(it))+'</b>'+(det?'<s>'+esc(det)+'</s>':'')+'</span>'
       +'<p>'+(desc>0?'<del>'+pz(total)+'</del> '+pz(total-desc):pz(total))+'</p></button>';
   }).join('');
@@ -364,7 +364,7 @@ function sOCart(){
   return h;
 }
 function hojaBoton(){return hoja30==='codigo'?'Aplicar':hoja30==='linea'?'Listo':'Listo';}
-function cerrarHoja(){hoja30=null;hojaLinea=-1;hojaErr='';render();}
+function cerrarHoja(){hoja30=null;hojaLinea=-1;hojaErr='';favMsg='';render();}
 function hoja30HTML(){
   if(!hoja30)return'';
   var cuerpo='';
@@ -400,9 +400,25 @@ function hoja30HTML(){
       +'<div class="cant"><button onclick="cambiarCantidad('+hojaLinea+',-1)" aria-label="Uno menos">−</button><b>'+it.qty+'</b><button onclick="cambiarCantidad('+hojaLinea+',1)" aria-label="Uno más">+</button></div>'
       +(it.type!=='side'?'<button class="op" onclick="hoja30=null;editCartItem('+hojaLinea+')"><span>Cambiarle algo</span><u>Editar</u></button>'
         +'<button class="op" onclick="editItemNote('+hojaLinea+')"><span>'+esc(it.note?'Nota: '+it.note:'Una nota para la cocina')+'</span><u>'+(it.note?'Cambiar':'Poner')+'</u></button>':'')
+      // Guardar en favoritos (dueño, 2026-10-02: «decídelo en lo más óptimo»): acá, cuando el
+      // cliente ya decidió qué le gusta. Sirve igual para un Signature que para un armado.
+      +(cust&&it.type!=='side'?'<button class="op" data-accion="guardar-favorito" onclick="guardarFavoritoDeLinea('+hojaLinea+')"><span>'+esc(favMsg||'Guardarlo para la próxima')+'</span><u>Favorito</u></button>':'')
       +'<button class="op" data-accion="quitar-linea" onclick="quitarLinea('+hojaLinea+')"><span>Sacarla del pedido</span><u>Quitar</u></button>';
   }
   return'<div class="hvelo" onclick="cerrarHoja()"></div><div class="hoja" role="dialog" aria-modal="true">'+cuerpo+'</div>';
+}
+var _guardandoFav=false;
+async function guardarFavoritoDeLinea(i:number){
+  var it:any=cart[i];
+  if(!it||it.type==='side'||!cust||_guardandoFav)return;
+  _guardandoFav=true;favMsg='Guardando…';render();
+  try{
+    await api('favorites-add',{token:token,name:lineaNombre(Object.assign({},it,{qty:1})).slice(0,40),mode:it.type,sigId:it.sigId,size:it.size,
+      base:it.base,prot:it.prot,doubleProt:it.doubleProt,cheese:it.cheese,tops:it.tops,sauces:it.sauces,extraSauce:it.extraSauce});
+    favMsg='Guardado en Tus favoritos';
+    loadUserExtras();
+  }catch(e:any){favMsg=(e&&e.message)||'No se pudo guardar.';}
+  _guardandoFav=false;render();
 }
 function cambiarCantidad(i:number,delta:number){
   var it=cart[i];if(!it)return;

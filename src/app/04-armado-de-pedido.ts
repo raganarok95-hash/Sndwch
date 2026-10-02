@@ -444,20 +444,6 @@ function FICHA(etiqueta,sel,fn){
   return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" onclick="'+fn+'" style="all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:5px;background:'+(sel?ACC():'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:999px;padding:10px 16px;cursor:pointer;transition:all .15s;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:'+(sel?'var(--sw-on-gold,#241a08)':'var(--sw-text,#fff)')+'">'+etiqueta+'</button>';
 }
 
-async function doSaveFavorite(){
-  var nameEl=(document.getElementById('o-favname') as HTMLInputElement | null);
-  var typed=nameEl?nameEl.value.trim():'';
-  // El nombre es opcional — si no escribe uno, usamos el nombre del propio sándwich
-  // (el signature, o proteína+tamaño para build-your-own) en vez de bloquear el guardado.
-  var sigForName=mode==='sig'?SIGS.find(function(x){return x.id===sigId;}):null;
-  var defaultName=sigForName?(sigForName.n+' '+szLabel(size)):(fn(PROTS,prot)+' '+szLabel(size));
-  var name=typed||defaultName;
-  try{
-    await api('favorites-add',{token:token,name:name,mode:mode,sigId:sigId,base:base,prot:prot,tops:tops,cheese:cheese,sauces:sauces,size:size,doubleProt:doubleProt,extraSauce:extraSauce});
-    favMsg='¡Guardado!';
-    loadUserExtras();
-  }catch(e){favMsg=e.message;render();}
-}
 
 // La fila de bebida de la app anterior (drinkRowHTML) vivia aca: miniatura de 48px,
 // nombre, precio y un boton Agregar — o sea el mismo componente que un item del carrito,

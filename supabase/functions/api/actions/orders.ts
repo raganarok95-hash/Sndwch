@@ -2139,46 +2139,10 @@ export async function actAdminUpdateStatus(b: Entrada<"admin-update-status"> & {
   const status = String(b.status || "");
   if (!orderId || !status) throw new ApiError("Faltan datos.");
   const order = await applyOrderStatusUpdate(orderId, status, b.etaMinutes);
-  // Antes solo su hermana actAdminBulkUpdateStatus quedaba registrada acá — la acción
-  // admin más usada del día a día (avanzar UN pedido de estado) no dejaba ningún rastro
+  // Sin esto la acción admin más usada del día (avanzar UN pedido de estado) no dejaba rastro
   // en admin_action_log (hallazgo de auditoría de código, ALTO).
   await logAdminAction(s.phone, "update-status", orderId, { status });
   return { success: true, order };
-}
-
-// Acción para pasar varios pedidos al mismo estado de un solo tap (ej. marcar "EN CAMINO"
-// toda una tanda que sale junta en el mismo repartidor) — cada pedido se procesa por
-// separado y un fallo en uno (pago Yape/Plin sin confirmar, id inexistente) no aborta el
-// resto del lote, para que el operador no tenga que repetir los que sí eran válidos.
-const MAX_BULK_STATUS_ORDERS = 30;
-export async function actAdminBulkUpdateStatus(b: Entrada<"admin-bulk-update-status"> & { _ip?: string }) {
-  const s = await requireAdmin(b.token);
-  const orderIds: string[] = Array.isArray(b.orderIds)
-    ? Array.from(new Set(b.orderIds.map((x: any) => String(x)).filter(Boolean)))
-    : [];
-  const status = String(b.status || "");
-  if (!orderIds.length || !status) throw new ApiError("Faltan datos.");
-  if (!VALID_ORDER_STATUSES.has(status)) throw new ApiError("Estado de pedido inválido.", 400);
-  if (orderIds.length > MAX_BULK_STATUS_ORDERS) {
-    throw new ApiError("Demasiados pedidos a la vez (máximo " + MAX_BULK_STATUS_ORDERS + ").", 400);
-  }
-
-  const updated: any[] = [];
-  const failed: { orderId: string; error: string }[] = [];
-  for (const orderId of orderIds) {
-    try {
-      // etaMinutes ahora se pasa también acá (antes solo actAdminUpdateStatus, el flujo de
-      // UN pedido, lo recibía) — sin esto, avanzar un lote a EN CAMINO nunca cargaba ETA y
-      // el cliente recibía el push genérico "va en camino" en vez de la ventana de hora
-      // real que sí ve quien avanza su pedido uno por uno (hallazgo de auditoría operativa,
-      // ALTO).
-      updated.push(await applyOrderStatusUpdate(orderId, status, b.etaMinutes));
-    } catch (e) {
-      failed.push({ orderId, error: e instanceof ApiError ? e.message : "Error interno." });
-    }
-  }
-  await logAdminAction(s.phone, "bulk-update-status", orderIds.join(",") + " -> " + status);
-  return { success: true, updated, failed };
 }
 
 // El operador revisa su propia app de Yape/Plin y confirma aquí que el dinero llegó

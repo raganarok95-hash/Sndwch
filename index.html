@@ -4141,7 +4141,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '9f1de49218';
+var APP_BUILD = 'da4c0e74d9';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -7366,67 +7366,6 @@ function cancelarEdicionFicha() {
     mode = null;
     go('o_cart');
 }
-// «Arma uno parecido» (#65): hoy sin botón — lo llamaba la vista previa vieja de un Signature.
-// Se conserva hasta que el dueño decida dónde vive en la ficha nueva (2026-10-02).
-// Igual que startOrder('sig') pero deja el Signature tocado en la lista del home
-// ya preseleccionado en sOSig — evita el paso extra de buscarlo de nuevo en la lista
-// completa cuando el cliente ya sabe justo cuál quiere.
-// «Arma uno parecido» (ficha versión WICHO): el armador arranca con la receta de un
-// Signature ya puesta, para cambiarle lo que el cliente quiera. Solo entra lo que ARMA EL
-// TUYO ofrece: una proteína, un vegetal o una salsa exclusiva del Signature (sigOnly) o del
-// menú secreto (vaultOnly) se deja fuera y SE DICE, en vez de colarla por la puerta de
-// atrás a un precio que el armador no cobra.
-function piezasDelParecido(s) {
-    var libre = function (lista, id) { var x = lista.find(function (y) { return y.id === id; }); return !!x && !x.sigOnly && !x.vaultOnly; };
-    var fuera = [];
-    var p = libre(PROTS, s.prot) ? s.prot : null;
-    if (!p) {
-        var px = PROTS.find(function (y) { return y.id === s.prot; });
-        if (px)
-            fuera.push(px.l + ' ' + px.s.toLowerCase());
-    }
-    var t = (s.tops || []).filter(function (id) { var ok = libre(TOPS, id); if (!ok) {
-        var tx = TOPS.find(function (y) { return y.id === id; });
-        if (tx)
-            fuera.push(tx.l.toLowerCase());
-    } return ok; });
-    var sa = (s.sauces || []).filter(function (id) { var ok = libre(SAUCES, id); if (!ok) {
-        var sx = SAUCES.find(function (y) { return y.id === id; });
-        if (sx)
-            fuera.push(sx.l.toLowerCase());
-    } return ok; });
-    return { base: s.base || null, prot: p, tops: t, sauces: sa, cheese: s.fixedCheese || null, fuera: fuera };
-}
-function parecidoPrecargable(s) {
-    if (!s || s.secret)
-        return false;
-    var pz = piezasDelParecido(s);
-    return !!(pz.base || pz.prot || pz.tops.length || pz.sauces.length);
-}
-function armaParecido(id) {
-    var s = SIGS.find(function (x) { return x.id === id; });
-    if (!s)
-        return;
-    var pz = piezasDelParecido(s);
-    var tam = size;
-    resetBuilder();
-    mode = 'byo';
-    size = tam;
-    base = pz.base;
-    prot = pz.prot;
-    tops = pz.tops;
-    sauces = pz.sauces;
-    cheese = pz.cheese;
-    // Arranca en el primer paso que falta: sin tamaño, el tamaño; sin proteína libre, la
-    // proteína. Con todo puesto, en el tamaño, para que vea desde el principio qué lleva.
-    byoStep = !size ? 0 : !prot ? 2 : 0;
-    homeTab = 'byo';
-    sndScreen = 'o_build';
-    render();
-    showToast(pz.fuera.length
-        ? 'Te lo dejé como ' + s.n + '. ' + pz.fuera.join(', ') + ' es solo del Signature: elige qué va en su lugar.'
-        : 'Te lo dejé como ' + s.n + '. Cámbiale lo que quieras.', 'success');
-}
 // ORDER BUILD
 // Antes las 5 categorías (pan, proteína, toppings, queso, salsas — 13 salsas en total)
 // vivían en un solo scroll continuo de ~3 pantallas de largo, todas con la misma
@@ -7917,24 +7856,6 @@ function FICHA(etiqueta, sel, fn) {
     // `aria-pressed` porque son interruptores, no enlaces: dicen si están puestas o no.
     return '<button type="button" aria-pressed="' + (sel ? 'true' : 'false') + '" onclick="' + fn + '" style="all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:5px;background:' + (sel ? ACC() : 'var(--sw-card,#1B1F18)') + ';border:1px solid ' + (sel ? ACC() : 'var(--sw-border,#2C3228)') + ';border-radius:999px;padding:10px 16px;cursor:pointer;transition:all .15s;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:' + (sel ? 'var(--sw-on-gold,#241a08)' : 'var(--sw-text,#fff)') + '">' + etiqueta + '</button>';
 }
-async function doSaveFavorite() {
-    var nameEl = document.getElementById('o-favname');
-    var typed = nameEl ? nameEl.value.trim() : '';
-    // El nombre es opcional — si no escribe uno, usamos el nombre del propio sándwich
-    // (el signature, o proteína+tamaño para build-your-own) en vez de bloquear el guardado.
-    var sigForName = mode === 'sig' ? SIGS.find(function (x) { return x.id === sigId; }) : null;
-    var defaultName = sigForName ? (sigForName.n + ' ' + szLabel(size)) : (fn(PROTS, prot) + ' ' + szLabel(size));
-    var name = typed || defaultName;
-    try {
-        await api('favorites-add', { token: token, name: name, mode: mode, sigId: sigId, base: base, prot: prot, tops: tops, cheese: cheese, sauces: sauces, size: size, doubleProt: doubleProt, extraSauce: extraSauce });
-        favMsg = '¡Guardado!';
-        loadUserExtras();
-    }
-    catch (e) {
-        favMsg = e.message;
-        render();
-    }
-}
 // La fila de bebida de la app anterior (drinkRowHTML) vivia aca: miniatura de 48px,
 // nombre, precio y un boton Agregar — o sea el mismo componente que un item del carrito,
 // para el producto de mejor margen del catalogo. Se fue entera con la pantalla nueva
@@ -8350,7 +8271,7 @@ function sOCart() {
         var det = lineaDetalle(it);
         if (desc > 0)
             det = (det ? det + ' · ' : '') + 'en combo';
-        return '<button class="li" onclick="hojaLinea=' + i + ';hoja30=\'linea\';render()"><i>' + String(i + 1).padStart(2, '0') + '</i>'
+        return '<button class="li" onclick="hojaLinea=' + i + ';hoja30=\'linea\';favMsg=\'\';render()"><i>' + String(i + 1).padStart(2, '0') + '</i>'
             + '<span class="q"><b>' + esc(lineaNombre(it)) + '</b>' + (det ? '<s>' + esc(det) + '</s>' : '') + '</span>'
             + '<p>' + (desc > 0 ? '<del>' + pz(total) + '</del> ' + pz(total - desc) : pz(total)) + '</p></button>';
     }).join('');
@@ -8403,7 +8324,7 @@ function sOCart() {
     return h;
 }
 function hojaBoton() { return hoja30 === 'codigo' ? 'Aplicar' : hoja30 === 'linea' ? 'Listo' : 'Listo'; }
-function cerrarHoja() { hoja30 = null; hojaLinea = -1; hojaErr = ''; render(); }
+function cerrarHoja() { hoja30 = null; hojaLinea = -1; hojaErr = ''; favMsg = ''; render(); }
 function hoja30HTML() {
     if (!hoja30)
         return '';
@@ -8446,9 +8367,32 @@ function hoja30HTML() {
             + '<div class="cant"><button onclick="cambiarCantidad(' + hojaLinea + ',-1)" aria-label="Uno menos">−</button><b>' + it.qty + '</b><button onclick="cambiarCantidad(' + hojaLinea + ',1)" aria-label="Uno más">+</button></div>'
             + (it.type !== 'side' ? '<button class="op" onclick="hoja30=null;editCartItem(' + hojaLinea + ')"><span>Cambiarle algo</span><u>Editar</u></button>'
                 + '<button class="op" onclick="editItemNote(' + hojaLinea + ')"><span>' + esc(it.note ? 'Nota: ' + it.note : 'Una nota para la cocina') + '</span><u>' + (it.note ? 'Cambiar' : 'Poner') + '</u></button>' : '')
+            // Guardar en favoritos (dueño, 2026-10-02: «decídelo en lo más óptimo»): acá, cuando el
+            // cliente ya decidió qué le gusta. Sirve igual para un Signature que para un armado.
+            + (cust && it.type !== 'side' ? '<button class="op" data-accion="guardar-favorito" onclick="guardarFavoritoDeLinea(' + hojaLinea + ')"><span>' + esc(favMsg || 'Guardarlo para la próxima') + '</span><u>Favorito</u></button>' : '')
             + '<button class="op" data-accion="quitar-linea" onclick="quitarLinea(' + hojaLinea + ')"><span>Sacarla del pedido</span><u>Quitar</u></button>';
     }
     return '<div class="hvelo" onclick="cerrarHoja()"></div><div class="hoja" role="dialog" aria-modal="true">' + cuerpo + '</div>';
+}
+var _guardandoFav = false;
+async function guardarFavoritoDeLinea(i) {
+    var it = cart[i];
+    if (!it || it.type === 'side' || !cust || _guardandoFav)
+        return;
+    _guardandoFav = true;
+    favMsg = 'Guardando…';
+    render();
+    try {
+        await api('favorites-add', { token: token, name: lineaNombre(Object.assign({}, it, { qty: 1 })).slice(0, 40), mode: it.type, sigId: it.sigId, size: it.size,
+            base: it.base, prot: it.prot, doubleProt: it.doubleProt, cheese: it.cheese, tops: it.tops, sauces: it.sauces, extraSauce: it.extraSauce });
+        favMsg = 'Guardado en Tus favoritos';
+        loadUserExtras();
+    }
+    catch (e) {
+        favMsg = (e && e.message) || 'No se pudo guardar.';
+    }
+    _guardandoFav = false;
+    render();
 }
 function cambiarCantidad(i, delta) {
     var it = cart[i];
@@ -12071,96 +12015,6 @@ async function cancelOrder(ordId) {
         _adminOrderActionInProgress = false;
         showToast(e.message);
     }
-}
-function toggleBulkSelect(ordId) {
-    if (bulkSelected[ordId])
-        delete bulkSelected[ordId];
-    else
-        bulkSelected[ordId] = true;
-    render();
-}
-// Confirma el pago Yape/Plin de todos los pedidos seleccionados que lo tengan pendiente
-// de un solo tap — antes había que confirmar uno por uno (ver confirmOrderPayment),
-// friccioso durante una tanda de varios pedidos simultáneos en hora pico (hallazgo de la
-// auditoría del panel admin).
-async function bulkConfirmPayments() {
-    var ids = Object.keys(bulkSelected).filter(function (k) { return bulkSelected[k]; });
-    var targets = ids.filter(function (id) {
-        var o = (adminOrders || []).find(function (x) { return x.id === id; });
-        return o && (o.payment_method === 'yape' || o.payment_method === 'plin') && o.payment_status !== 'paid';
-    });
-    if (!targets.length) {
-        showToast('Ningún pedido seleccionado tiene un pago pendiente de confirmar.');
-        return;
-    }
-    if (!(await showConfirm('¿Confirmar el pago de ' + targets.length + ' pedido(s)?')))
-        return;
-    busy = true;
-    busyMsg = 'Confirmando pagos...';
-    render();
-    var okCount = 0, errs = [];
-    for (var i = 0; i < targets.length; i++) {
-        try {
-            var r = await api('admin-confirm-payment', { token: token, orderId: targets[i] });
-            adminOrders = adminOrders.map(function (o) { return o.id === targets[i] ? r.order : o; });
-            okCount++;
-        }
-        catch (e) {
-            errs.push(e.message);
-        }
-    }
-    bulkSelected = {};
-    busy = false;
-    // Antes solo mostraba un conteo genérico ("N fallaron") — el operador tenía que revisar
-    // manualmente cuál pedido falló y por qué, en medio de una tanda (hallazgo de auditoría
-    // operativa, ALTO). Ahora muestra el motivo real (ej. "Confirma que el pago llegó...").
-    if (errs.length)
-        showToast(okCount + ' confirmado(s), ' + errs.length + ' fallaron: ' + errs.join(' · '));
-    render();
-}
-// Avanza todos los pedidos seleccionados al mismo estado de un solo tap (ver #113 y
-// actAdminBulkUpdateStatus) — cada pedido se procesa por separado en el servidor, así que
-// un pago Yape/Plin sin confirmar en uno de ellos no bloquea al resto del lote.
-async function bulkAdvanceStatus(status) {
-    var ids = Object.keys(bulkSelected).filter(function (k) { return bulkSelected[k]; });
-    if (!ids.length)
-        return;
-    // Mismo ETA que ya se pide al avanzar UN pedido a EN CAMINO (updateStatus) — antes el
-    // lote nunca lo pedía, así que el cliente recibía el push genérico en vez de la ventana
-    // de hora real (hallazgo de auditoría operativa, ALTO).
-    var eta = null;
-    if (status === 'EN CAMINO') {
-        var etaStr = await showPrompt('¿Tiempo estimado de entrega en minutos (para los ' + ids.length + ' pedidos)?', '20', 'number');
-        if (etaStr === null)
-            return;
-        eta = parseInt(etaStr, 10);
-        if (!eta || eta <= 0)
-            eta = 20;
-    }
-    if (!(await showConfirm('¿Marcar ' + ids.length + ' pedido(s) como ' + status + '?')))
-        return;
-    busy = true;
-    busyMsg = 'Actualizando pedidos...';
-    render();
-    try {
-        var r = await api('admin-bulk-update-status', { token: token, orderIds: ids, status: status, etaMinutes: eta });
-        var updatedIds = {};
-        (r.updated || []).forEach(function (o) { updatedIds[o.id] = o; });
-        adminOrders = adminOrders.map(function (o) { return updatedIds[o.id] ? updatedIds[o.id] : o; });
-        if (status === 'ENTREGADO')
-            adminOrders = adminOrders.filter(function (o) { return !updatedIds[o.id]; });
-        bulkSelected = {};
-        // Antes solo mostraba un conteo genérico — el operador tenía que adivinar cuál pedido
-        // falló y por qué (hallazgo de auditoría operativa, ALTO). El backend ya devuelve el
-        // motivo real por pedido (r.failed[].error), solo faltaba mostrarlo.
-        if (r.failed && r.failed.length)
-            showToast(r.failed.length + ' pedido(s) no se pudieron actualizar: ' + r.failed.map(function (f) { return f.error; }).join(' · '));
-    }
-    catch (e) {
-        showToast('Error: ' + e.message);
-    }
-    busy = false;
-    render();
 }
 // Ticket de cocina imprimible (#114) — abre una ventana aparte con solo lo que cocina
 // necesita ver (sin datos de cliente/entrega que no aportan al armado del pedido) y

@@ -22,7 +22,7 @@ import {
 } from "./actions/auth.ts";
 import {
   actPrepareOrder, actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actConfirmDelivery, actAdminReceiptOcr, actAdminUpdateStatus,
-  actAdminBulkUpdateStatus, actAdminConfirmPayment, actAdminCancelOrder, actCancelMyOrder,
+  actAdminConfirmPayment, actAdminCancelOrder, actCancelMyOrder,
   actExpireStaleManualPayments, actAlertStuckOrders, actExpirePendingCharges,
   actAlertScheduledOrders, actReconcileCulqiCharges, actRemindLowStock, actAlertBatchExpiry,
   actUploadReceipt, actAdminReceiptUrl, actValidatePromoCode,
@@ -133,7 +133,6 @@ const ACTIONS: ConContrato & SinContrato = {
   "confirm-delivery": actConfirmDelivery,
   "admin-receipt-ocr": actAdminReceiptOcr,
   "admin-update-status": actAdminUpdateStatus,
-  "admin-bulk-update-status": actAdminBulkUpdateStatus,
   "admin-confirm-payment": actAdminConfirmPayment,
   "admin-cancel-order": actAdminCancelOrder,
   "cancel-my-order": actCancelMyOrder,
