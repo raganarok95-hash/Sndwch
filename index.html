@@ -831,10 +831,14 @@ body.kb-open #app{padding-bottom:0}
 .m31 .visor .c{bottom:-13px;left:-13px;border-bottom:2px solid #CBA258;border-left:2px solid #CBA258}
 .m31 .visor .d{bottom:-13px;right:-13px;border-bottom:2px solid #8CC8EC;border-right:2px solid #8CC8EC}
 .m31 .esc{position:absolute;left:24px;right:24px;top:444px;z-index:6;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:#D9B0EC;letter-spacing:.14em;text-transform:uppercase}
-.m31 .alt{all:unset;cursor:pointer;position:absolute;left:50%;transform:translateX(-50%);width:144px;top:486px;z-index:6;text-align:center;border-top:1px solid rgba(255,255,255,.18);padding-top:16px}
+/* El número para yapear, a la vista y copiable (dueño, 2026-10-02: «¿por qué no incluye el número?») */
+.m31 button.esc{all:unset;cursor:pointer;position:absolute;left:24px;right:24px;top:436px;z-index:6;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#D9B0EC;letter-spacing:.14em;text-transform:uppercase}
+.m31 .esc b{display:block;margin-top:6px;font:800 18px/1 Archivo,sans-serif;letter-spacing:.06em;color:#fff;text-transform:none}
+.m31 .esc u{display:block;margin-top:6px;text-decoration:none;font-size:9px;color:#CBA258;letter-spacing:.2em}
+.m31 .alt{all:unset;cursor:pointer;position:absolute;left:50%;transform:translateX(-50%);width:144px;top:516px;z-index:6;text-align:center;border-top:1px solid rgba(255,255,255,.18);padding-top:16px}
 .m31 .alt n{display:block;font:800 15px/1 Archivo,sans-serif;color:rgba(255,255,255,.62)}
 .m31 .alt s{display:block;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.42);margin-top:6px;text-transform:uppercase}
-.m31.y .fr{position:absolute;left:50%;transform:translateX(-50%);width:182px;top:566px;z-index:6;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.55);line-height:1.8;text-transform:uppercase}
+.m31.y .fr{position:absolute;left:50%;transform:translateX(-50%);width:182px;top:596px;z-index:6;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,.55);line-height:1.8;text-transform:uppercase}
 .m31 .h{position:absolute;z-index:38}
 .m31.t{background:#191C21;background-image:linear-gradient(160deg,#252A33 0%,#14171B 58%,#1F232A 100%)}
 .m31.t .cab em{color:#9BA3AE}.m31.t .cab u{color:#6B7280}
@@ -4201,7 +4205,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'f2e10beb3f';
+var APP_BUILD = 'a731c75e8f';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -9128,6 +9132,16 @@ function manualPayInstructionsHTML(t) {
         + '<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:12px;opacity:.85;display:flex;align-items:center;gap:5px">' + icon('lock', 12, '#9DA096') + '<span>Nunca te pediremos tu clave, tu PIN ni un código que te llegue por SMS.</span></div>'
         + '</div>';
 }
+function copiarNumeroYape() {
+    var u = document.getElementById('yape-copiado');
+    var listo = function () { if (u)
+        u.textContent = 'Copiado: pégalo en Yape'; };
+    if (navigator.clipboard && navigator.clipboard.writeText)
+        navigator.clipboard.writeText(YAPE_PLIN_PHONE).then(listo).catch(function () { if (u)
+            u.textContent = YAPE_PLIN_PHONE; });
+    else if (u)
+        u.textContent = YAPE_PLIN_PHONE;
+}
 function copyYapePlinPhone() {
     var m = document.getElementById('ypc-msg');
     // Devuelve el verde: `yapeOpenFailed()` deja el renglón en ámbar, y sin esto un segundo
@@ -9622,7 +9636,7 @@ function sOPagar() {
             + '<div class="cab"><em>Pagar con Yape</em><u></u></div>'
             + '<div class="mt"><b>' + montoPartido(t) + '</b><s>' + (envio > 0 ? 'Envío ' + SOLES_TXT + pz(envio) + ' incluido<br>' : '') + 'No se suma nada más</s></div>'
             + '<div class="visor"><img src="img/yape-qr.png" alt="Código QR de Yape para pagar a ' + esc(YAPE_PLIN_HOLDER || '') + '"><b class="a"></b><b class="b"></b><b class="c"></b><b class="d"></b></div>'
-            + '<div class="esc">Escanea desde Yape</div>'
+            + '<button class="esc" data-accion="copiar-yape" onclick="copiarNumeroYape()">Escanea o yapea al<b>' + esc(YAPE_PLIN_PHONE.replace(/(\d{3})(?=\d)/g, '$1 ')) + '</b><u id="yape-copiado">Tocar para copiar</u></button>'
             + '<button class="alt" onclick="selectPayMethod(\'culqi\');render()"><n>Prefiero tarjeta</n><s>Son ' + SOLES_TXT + pz(money(conTarjeta - t)) + ' más</s></button>'
             + '<div class="fr">Apenas confirmes,<br>el pedido entra a la cocina</div>'
             + '<img class="h" style="left:-14px;bottom:68px;width:112px" src="' + broPose('sando', 'cuerpo') + '" alt="" aria-hidden="true">'

@@ -667,6 +667,12 @@ function manualPayInstructionsHTML(t){
     +'<div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:12px;opacity:.85;display:flex;align-items:center;gap:5px">'+icon('lock',12,'#9DA096')+'<span>Nunca te pediremos tu clave, tu PIN ni un código que te llegue por SMS.</span></div>'
     +'</div>';
 }
+function copiarNumeroYape(){
+  var u=document.getElementById('yape-copiado');
+  var listo=function(){if(u)u.textContent='Copiado: pégalo en Yape';};
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(YAPE_PLIN_PHONE).then(listo).catch(function(){if(u)u.textContent=YAPE_PLIN_PHONE;});
+  else if(u)u.textContent=YAPE_PLIN_PHONE;
+}
 function copyYapePlinPhone(){
   var m=(document.getElementById('ypc-msg') as HTMLElement | null);
   // Devuelve el verde: `yapeOpenFailed()` deja el renglón en ámbar, y sin esto un segundo
@@ -1031,7 +1037,7 @@ function sOPagar(){
       +'<div class="cab"><em>Pagar con Yape</em><u></u></div>'
       +'<div class="mt"><b>'+montoPartido(t)+'</b><s>'+(envio>0?'Envío '+SOLES_TXT+pz(envio)+' incluido<br>':'')+'No se suma nada más</s></div>'
       +'<div class="visor"><img src="img/yape-qr.png" alt="Código QR de Yape para pagar a '+esc(YAPE_PLIN_HOLDER||'')+'"><b class="a"></b><b class="b"></b><b class="c"></b><b class="d"></b></div>'
-      +'<div class="esc">Escanea desde Yape</div>'
+      +'<button class="esc" data-accion="copiar-yape" onclick="copiarNumeroYape()">Escanea o yapea al<b>'+esc(YAPE_PLIN_PHONE.replace(/(\d{3})(?=\d)/g,'$1 '))+'</b><u id="yape-copiado">Tocar para copiar</u></button>'
       +'<button class="alt" onclick="selectPayMethod(\'culqi\');render()"><n>Prefiero tarjeta</n><s>Son '+SOLES_TXT+pz(money(conTarjeta-t))+' más</s></button>'
       +'<div class="fr">Apenas confirmes,<br>el pedido entra a la cocina</div>'
       +'<img class="h" style="left:-14px;bottom:68px;width:112px" src="'+broPose('sando','cuerpo')+'" alt="" aria-hidden="true">'
