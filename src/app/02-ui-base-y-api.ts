@@ -649,7 +649,6 @@ function SPIRAL(size,color,gira?){
     +(gira?' class="sw-spiral"':'')+' style="flex-shrink:0" aria-hidden="true">'
     +'<path d="M'+pts.join(' L')+'" stroke="'+color+'" stroke-width="2.4" stroke-linecap="round"/></svg>';
 }
-function protPrice(p){return !p||!size?0:(size==='15'?p.p15:p.p30);}
 function sigPrice(s){return !s||!size?0:(size==='15'?s.p15:s.p30);}
 // Proteína "de referencia" para el precio de doble proteína: la del signature
 // elegido, o la elegida en Build Your Own.
@@ -713,40 +712,6 @@ function total(){
 // el cliente.
 function pointsFor(total,deliveryFee){return Math.round(total-(deliveryFee||0));}
 function szLabel(sz){return sz==='15'?'15CM':sz==='30'?'30CM':'';}
-// ── LA BANDA DEL HERMANO ──────────────────────────────────────────────────────────────
-// El hermano que manda en la pantalla, presentándola. Nació como un bloque suelto dentro
-// del armador ("Con WICHO"); lo usan ahora las DOS listas donde el cliente elige algo, que
-// es justo donde el dueño pidió que estuvieran presentes.
-//
-// Reacciona a cada toque sin una sola línea de estado: `render()` rehace el DOM, y en
-// estas dos pantallas un render ocurre exactamente cuando se toca una opción, así que la
-// animación se reproduce desde cero cada vez (ver `.sw-nudge` en shell.html).
-//
-// El ojo espiral acompaña SOLO a WICHO y gira de verdad — es geometría redibujada en SVG,
-// no un cuadro de animación. SANDO no lo lleva porque no lo tiene: inventárselo sería
-// dibujarle algo que su ilustración no dice.
-// `activo` = el cliente ya eligió algo en esta pantalla. Entonces el hermano cambia de
-// POSE, no solo de posición: saluda. Hasta el 2026-09-10 esto solo se podía hacer con
-// WICHO —de SANDO existía UNA sola pose— y ese desbalance estaba anotado en
-// marca/PERSONAJES.md como algo que solo el dueño podía destrabar. Lo destrabó: mandó seis
-// poses nuevas, incluida la sonrisa que había pedido para el momento de confirmar.
-function CAB(quien,texto,activo?){
-  var esW=quien==='wicho';
-  var pose=activo?'saluda':'cuerpo';
-  var src=broPose(quien,pose);
-  return'<div style="display:flex;align-items:flex-end;gap:11px;margin-bottom:14px">'
-    // ⚠ Se fija la ALTURA y no el ancho: los dos cuerpos son de 640 px de alto pero de
-    // ancho distinto (WICHO 448, SANDO 302), así que con un ancho fijo SANDO salía casi
-    // 50% más alto que su hermano y la banda cambiaba de tamaño según de quién fuera.
-    +'<img class="sw-nudge" src="'+src+'" alt="'+(esW?'WICHO':'SANDO')+'" loading="lazy" style="height:62px;width:auto;flex-shrink:0">'
-    +'<div style="flex:1;padding-bottom:4px">'
-    +'<div style="display:flex;align-items:center;gap:5px">'
-    +(esW?'<span style="display:inline-flex">'+SPIRAL(11,'var(--sw-spiral,#C3A6D2)',true)+'</span>':'')
-    +'<span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.24em;'
-    +'text-transform:uppercase;color:'+ACC()+'">Con '+(esW?'WICHO':'SANDO')+'</span></div>'
-    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;'
-    +'color:var(--sw-text-muted,#9DA096);line-height:1.35;margin-top:2px">'+esc(texto)+'</div></div></div>';
-}
 // ── EL ESTADO VACÍO ES DONDE VIVEN LOS HERMANOS ───────────────────────────────────────
 // Pedido del dueño (2026-09-10): que los personajes estén presentes en toda la web, no
 // solo en el menú. El estado vacío es el mejor sitio para eso y el más honesto: es una
@@ -837,44 +802,6 @@ function VACIO(titulo,texto,cta?,estado?){
 // de color según en qué parte del menú estabas parece otro documento.
 var PAPEL_TINTA='#1A1A18',PAPEL_FONDO='#F6F2E7',PAPEL_MUDO='#6A665C',PAPEL_AHORRO='#2E6B4F';
 var PAPEL_MONO='font-family:ui-monospace,SFMono-Regular,Menlo,monospace';
-function PAPEL_ABRE(titulo){
-  return'<div style="background:'+PAPEL_FONDO+';color:'+PAPEL_TINTA+';border-radius:4px;padding:15px;margin-bottom:12px;'+PAPEL_MONO+'">'
-    +'<div style="font-size:9px;letter-spacing:.2em;color:'+PAPEL_MUDO+'">'+esc(titulo)+'</div>'
-    +'<div style="border-top:1px dashed '+PAPEL_TINTA+';margin:9px 0 7px"></div>';
-}
-// Corte grueso + el importe grande. Es el cierre de cualquier papel.
-function PAPEL_TOTAL(rotulo,monto){
-  return'<div style="border-top:2px solid '+PAPEL_TINTA+';margin:8px 0 7px"></div>'
-    +'<div style="display:flex;justify-content:space-between;align-items:baseline">'
-    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600">'+esc(rotulo)+'</span>'
-    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640">'+SOLES+pz(monto)+'</span></div>'
-    +'</div>';
-}
-// Una línea del papel. `tono` no es decoración: 'ahorro' es lo que el cliente NO paga y
-// 'mudo' es lo que todavía no se puede saber. Un descuento en la misma tinta que el resto
-// se lee como un cargo más.
-function reciboLinea(k,v,tono?){
-  var col=tono==='ahorro'?PAPEL_AHORRO:tono==='mudo'?PAPEL_MUDO:PAPEL_TINTA;
-  return'<div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;color:'+col+';padding:3px 0">'
-    +'<span>'+esc(k)+'</span><span style="font-weight:700">'+v+'</span></div>';
-}
-// Toggle de tamaño reutilizado en Signature y Build Your Own. El borde de lo elegido es
-// ACC() y no GOLD: la selección es ESTADO, y el dorado es del dinero. Estaba haciendo los
-// dos trabajos a la vez, y en el mundo celeste un control dorado se lee como plata.
-function SZTOG(){
-  // Botón real, no un <div onclick>: es la primera elección del pedido en las DOS puertas
-  // (el Signature y el armador), así que un div acá deja fuera del pedido entero a quien
-  // navega con teclado o con lector de pantalla. `aria-pressed` dice cuál está elegido, que
-  // es lo que el color por sí solo no comunica.
-  function opt(sz,l,d){var sel=size===sz;return'<button type="button" aria-pressed="'+(sel?'true':'false')+'" onclick="size=\''+sz+'\';render()" style="all:unset;box-sizing:border-box;flex:1;background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?ACC():'var(--sw-border,#2C3228)')+';border-radius:10px;padding:14px;cursor:pointer;text-align:center;position:relative;box-shadow:'+SHADOW_SM+'">'+selBar(sel)+'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:'+(sel?'#FFFFFF':'#9DA096')+'">'+l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:2px">'+d+'</div></button>';}
-  // ⚠ LA APP NO LE DICE AL CLIENTE CUÁNTA GENTE DEBE COMERSE UN SÁNDWICH (dueño, 2026-09-17).
-  // Decía "Para uno" / "Para compartir", y es falso: hay quien se come un 30CM solo — el dueño
-  // el primero. Asignarle comensales a un tamaño no informa, juzga, y encima puede frenar la
-  // venta del producto más caro. La diferencia real es física y no necesita adorno: 30CM es el
-  // doble de pan y el doble de relleno. Eso se dice, y el resto lo dice el precio.
-  // (Antes de eso fueron "Individual"/"Clásico", que tampoco comunicaban el tamaño real.)
-  return ST('00','Tamaño','Elige antes de continuar.')+'<div style="display:flex;gap:8px;margin-bottom:6px">'+opt('15','15CM','El de siempre')+opt('30','30CM','El doble de todo')+'</div><div style="height:1px;background:var(--sw-bg,#17130E);margin:20px 0"></div>';
-}
 function today(){return new Date().toLocaleDateString('es-PE',{timeZone:'America/Lima'});}
 // La parte de tiempo es solo para que sea legible/ordenable — la parte random es la que
 // importa: sin ella, el ref era adivinable (puro timestamp) y servía como única prueba

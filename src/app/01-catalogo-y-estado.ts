@@ -165,17 +165,6 @@ var CHEESE=CARTA_VIEJA.CHEESE;
 // (hallazgo de auditoría UX).
 var SAUCES:{id:string;l:string;s:string;d:string;spicy?:boolean;vaultOnly?:boolean;sigOnly?:boolean}[]=CARTA_VIEJA.SAUCES;
 var SIGS:any[]=CARTA_VIEJA.SIGS;
-// Antes 4 Signatures (SIG02/03/04/06) llevaban el tag "BUILD" — la misma palabra exacta
-// que el modo "BUILD YOUR OWN" en la pantalla de inicio, confundiendo a un cliente nuevo
-// sobre si estaba viendo un sándwich curado por la casa o el armado libre (hallazgo de
-// auditoría UX, CRÍTICO). Ahora todos los Signatures regulares usan "SIGNATURE" (solo
-// el menú secreto y THE CHICAGO, los dos más exclusivos, usan "RESERVE"), y ambos tags se
-// distinguen tipográficamente del resto del texto — cursiva y más grande, como una
-// firma — para reforzar que son curados por la casa.
-function sigTypeTag(tag){
-  if(tag==='Signature'||tag==='Reserve')return'<i style="font-style:italic;font-size:.7em;color:var(--sw-text-muted,#9DA096)">'+tag+'</i>';
-  return tag;
-}
 // Fotos reales de cada Signature build — reemplazan el placeholder ilustrado
 // (emoji + paleta de marca) que se usaba antes de tener fotografía.
 // Las fotos se re-recortaron a un mismo tamaño/aspect ratio (640x440) en una ronda de

@@ -61,52 +61,6 @@ function NAV(){
   // cliente nuevo. Ver el listener de visualViewport en INIT.
   return'<div class="bottom-nav sw-barra" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);display:flex;padding-bottom:calc(0px + env(safe-area-inset-bottom,0px));z-index:100">'+nb('order','Pedido',oa)+nb('points','Puntos',!oa)+'</div>';
 }
-// Pie de contacto — datos del comercio, redes sociales y links legales. Requisito de
-// Culqi para aprobar el comercio en producción (y buena práctica de por sí): un cliente
-// debe poder identificar quién opera la web sin tener que abrir WhatsApp primero.
-// Vive solo en el home (la primera pantalla que ve cualquiera, con o sin cuenta) para no
-// repetir el mismo bloque en cada pantalla de la app.
-function contactFooterHTML(){
-  var igIcon='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>';
-  return'<div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--sw-bg,#17130E)">'
-    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:12px">Contacto //</div>'
-    +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:2.1">'
-    +'<div style="display:flex;align-items:center;gap:7px">'+icon('direccion',13,'#9DA096')+'Delivery — '+BIZ_CITY+'</div>'
-    +'<div style="display:flex;align-items:center;gap:7px">'+icon('mail',13,'#9DA096')+'<a href="mailto:'+BIZ_EMAIL+'" style="color:var(--sw-text-muted,#9DA096);text-decoration:none">'+BIZ_EMAIL+'</a></div>'
-    +'<div style="display:flex;align-items:center;gap:7px">'+icon('chat',13,'#9DA096')+'<a href="https://wa.me/'+WA+'" target="_blank" rel="noopener" style="color:var(--sw-text-muted,#9DA096);text-decoration:none">+51 930 957 640</a></div>'
-    +'</div>'
-    +'<a href="'+BIZ_IG+'" target="_blank" rel="noopener" aria-label="Instagram" style="margin-top:14px;width:34px;height:34px;border-radius:50%;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);display:flex;align-items:center;justify-content:center;text-decoration:none;color:'+GOLD+'">'+igIcon+'</a>'
-    +'<div style="display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:18px">'
-    // <button> y no <span onclick>: son navegables con teclado y las anuncia un lector de
-    // pantalla. El del Libro de Reclamaciones es obligatorio por ley para TODO consumidor y
-    // medía 10px de alto con letra de 9px — inalcanzable para quien no usa mouse y apenas
-    // legible a brillo de calle. Ahora 12px de texto y 44px de área táctil.
-    +legalFooterLink('Términos','p_legal')
-    +legalFooterLink('Cambios y devoluciones','p_returns')
-    +legalFooterLink('Libro de reclamaciones','p_complaints',"cmplStep='form';")
-    +'</div>'
-    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:var(--sw-text-muted2,#868A7E);margin-top:16px;letter-spacing:.04em">'+esc(BIZ_NAME)+' · RUC '+BIZ_RUC+'</div>'
-    // Sello del build al pie. Deliberadamente discreto (8px, gris del pie) — no le dice
-    // nada a un cliente, pero contesta de un vistazo "¿qué versión tienes tú instalada?"
-    // sin necesitar la consola del navegador ni tener el teléfono en la mano.
-    +'<div style="font-family:\'EB Garamond\',serif;font-size:8px;color:var(--sw-text-muted2,#868A7E);margin-top:4px;letter-spacing:.04em">v '+esc(APP_BUILD)+'</div>'
-    +'</div>';
-}
-// Fila compacta de enlaces legales, reutilizable fuera del home. El Libro de
-// Reclamaciones vivía SOLO en el footer del home (contactFooterHTML), o sea que no era
-// alcanzable desde el carrito, el checkout ni la confirmación — justo las pantallas donde
-// nace un reclamo. Indecopi exige que el aviso esté en lugar visible y fácilmente
-// accesible, y esa obligación se extiende a apps y a cualquier canal digital. Lo mismo
-// para "Cambios y devoluciones": el consumidor tiene derecho a conocer las condiciones de
-// contratación ANTES de pagar, no después.
-//
-// Se emiten como <button> reales, no <span onclick>: son navegables con teclado y las
-// anuncia un lector de pantalla. La versión del footer usaba spans y por eso el Libro de
-// Reclamaciones era inalcanzable para quien no usa mouse — que es precisamente el
-// consumidor al que la ley más protege.
-function legalFooterLink(label,screen,extra?){
-  return'<button type="button" onclick="bkTo=\'o_home\';sndScreen=\''+screen+'\';'+(extra||'')+'render()" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:var(--sw-text-muted,#9DA096);letter-spacing:.04em;text-decoration:underline;min-height:44px;padding:4px 2px;display:inline-flex;align-items:center">'+label+' <span class="cut-sep" style="color:'+GOLD+'">//</span></button>';
-}
 function legalLinksHTML(backTo){
   function lnk(label,screen,extra?){
     return'<button type="button" onclick="bkTo=\''+backTo+'\';sndScreen=\''+screen+'\';'+(extra||'')+'render()" style="all:unset;cursor:pointer;font-family:Archivo,sans-serif;font-weight:700;font-size:11px;color:inherit;text-decoration:underline;text-underline-offset:3px;padding:6px 0">'+label+' <span class="cut-sep" style="color:'+GOLD+'">//</span></button>';
@@ -143,25 +97,6 @@ function AB(t,can?,bk?,nfn?,nl?,hint?){
   var hintRow=(!can&&hint)?'<div style="position:fixed;bottom:66px;left:50%;transform:translateX(-50%);width:100%;max-width:480px;padding:0 20px;text-align:right;pointer-events:none"><span style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);background:rgba(11,11,11,.9);padding:4px 10px;border-radius:8px">'+esc(hint)+'</span></div>':'';
   return hintRow+'<div class="sw-barra" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 20px;display:flex;gap:10px;align-items:center;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100"><div style="flex:1">'+tt+'</div>'+bb+'<button onclick="'+(can?nfn:'')+'" '+(can?'':'disabled')+' style="all:unset;cursor:'+(can?'pointer':'not-allowed')+';background:'+(can?GOLD:'var(--sw-bg,#17130E)')+';color:'+(can?'var(--sw-on-gold,#241a08)':'#73776C')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.05em;padding:13px 0;border-radius:8px;text-align:center;flex:1">'+(nl||'Continuar //')+'</button></div>';
 }
-// PÍLDORA DE VIDRIO — el rótulo que se puede poner ENCIMA DE UNA FOTO.
-// Nace con el tratamiento a sangre: cuando la foto es la tarjeta, un rótulo con fondo de
-// la paleta deja de funcionar, porque debajo hay una foto que no controlamos (la sube el
-// dueño desde el panel). La píldora trae su propio fondo, así que se lee sobre lo que sea.
-// `dorado` no es una variante decorativa: marca lo que tiene que ganar la mirada — el
-// precio y la selección. Todo lo demás va en vidrio oscuro.
-// Sin texto no hay píldora: un óvalo vacío sobre la foto no dice nada y parece roto (pasó con
-// la carta v4, que no lleva badges).
-function PILL(txt,dorado?){
-  if(!txt)return'';
-  return'<span style="display:inline-block;font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;letter-spacing:.04em;padding:4px 10px;border-radius:999px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);white-space:nowrap;'
-    +(dorado
-      ?'background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-weight:600;border:1px solid '+GOLD
-      :'background:rgba(0,0,0,.42);color:#fff;border:1px solid rgba(255,255,255,.28)')
-    +'">'+txt+'</span>';
-}
-// Barra de acento a la izquierda de una tarjeta seleccionada — repetida en todos los
-// selectores tipo tarjeta (tamaño, signature, pan, proteína, topping, queso, salsa, extra).
-function selBar(sel){return sel?'<div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:'+ACC()+';border-radius:10px 0 0 10px"></div>':'';}
 // Badge visible de un Signature: 'Nuevo' (u otro badge temporal futuro) solo mientras
 // newUntil no haya pasado, si no el badge permanente en s.badge — evita que un badge de
 // novedad se quede pegado para siempre (hallazgo de auditoría de copy, BAJO).
@@ -343,44 +278,6 @@ function startOrder(m){
   mode=m;
   go(m==='sig'?'o_sig':'o_build');
 }
-// Igual que startOrder('sig') pero deja el Signature tocado en la lista del home
-// ya preseleccionado en sOSig — evita el paso extra de buscarlo de nuevo en la lista
-// completa cuando el cliente ya sabe justo cuál quiere.
-// «Arma uno parecido» (ficha versión WICHO): el armador arranca con la receta de un
-// Signature ya puesta, para cambiarle lo que el cliente quiera. Solo entra lo que ARMA EL
-// TUYO ofrece: una proteína, un vegetal o una salsa exclusiva del Signature (sigOnly) o del
-// menú secreto (vaultOnly) se deja fuera y SE DICE, en vez de colarla por la puerta de
-// atrás a un precio que el armador no cobra.
-function piezasDelParecido(s:any){
-  var libre=function(lista:any[],id:string){var x=lista.find(function(y){return y.id===id;});return !!x&&!x.sigOnly&&!x.vaultOnly;};
-  var fuera:string[]=[];
-  var p=libre(PROTS,s.prot)?s.prot:null;
-  if(!p){var px=PROTS.find(function(y){return y.id===s.prot;});if(px)fuera.push(px.l+' '+px.s.toLowerCase());}
-  var t=(s.tops||[]).filter(function(id:string){var ok=libre(TOPS,id);if(!ok){var tx=TOPS.find(function(y){return y.id===id;});if(tx)fuera.push(tx.l.toLowerCase());}return ok;});
-  var sa=(s.sauces||[]).filter(function(id:string){var ok=libre(SAUCES,id);if(!ok){var sx=SAUCES.find(function(y){return y.id===id;});if(sx)fuera.push(sx.l.toLowerCase());}return ok;});
-  return{base:s.base||null,prot:p,tops:t,sauces:sa,cheese:s.fixedCheese||null,fuera:fuera};
-}
-function parecidoPrecargable(s:any):boolean{
-  if(!s||s.secret)return false;
-  var pz=piezasDelParecido(s);
-  return !!(pz.base||pz.prot||pz.tops.length||pz.sauces.length);
-}
-function armaParecido(id:string){
-  var s=SIGS.find(function(x){return x.id===id;});
-  if(!s)return;
-  var pz=piezasDelParecido(s);
-  var tam=size;
-  resetBuilder();
-  mode='byo';size=tam;base=pz.base;prot=pz.prot;tops=pz.tops;sauces=pz.sauces;cheese=pz.cheese;
-  // Arranca en el primer paso que falta: sin tamaño, el tamaño; sin proteína libre, la
-  // proteína. Con todo puesto, en el tamaño, para que vea desde el principio qué lleva.
-  byoStep=!size?0:!prot?2:0;
-  homeTab='byo';sndScreen='o_build';
-  render();
-  showToast(pz.fuera.length
-    ?'Te lo dejé como '+s.n+'. '+pz.fuera.join(', ')+' es solo del Signature: elige qué va en su lugar.'
-    :'Te lo dejé como '+s.n+'. Cámbiale lo que quieras.','success');
-}
 function startOrderWithSig(id){
   resetBuilder();
   mode='sig';
@@ -405,12 +302,6 @@ function enterConfirm(){
   // pedido igual que «Lo quiero» de la ficha (ver loQuiero, 2026-09-25).
   quickPayEligible=false;
   loQuiero();
-}
-// Vuelve al builder desde la confirmación — si se había habilitado el pago directo,
-// se retira el sándwich en borrador del carrito (estaba vacío antes de entrar aquí).
-function backFromConfirm(){
-  if(quickPayEligible){cart=[];quickPayEligible=false;}
-  go(mode==='sig'?'o_sig':'o_build');
 }
 // Reinicia los campos transitorios del checkout (nombre/correo/notas/dirección/
 // programación/crédito/recompensa) — se llama solo cuando el carrito pasa de estar
@@ -490,10 +381,6 @@ function sigsEnOrden(lista){
   return lista.slice().sort(function(a,b){
     return (o[a.id]!=null?o[a.id]:999)-(o[b.id]!=null?o[b.id]:999);
   });
-}
-function lastPaidOrder(){
-  // Un pedido siempre trae `items` desde que `orders.build` se retiró de la base (2026-09-24).
-  return myOrders.find(function(o){return o.payment_status==='paid'&&o.items&&o.items.length;});
 }
 // Precio de una línea del carrito (una unidad, sin multiplicar por qty). Lo calcula el módulo
 // de dinero compartido con el servidor (ver DINERO en 01-*): 0 si la línea ya no está en la carta.
@@ -617,8 +504,6 @@ function itemExtrasLabel(item){
 function cartDesglose(){
   return DINERO.desglose(cart,{recompensa:appliedReward||null,organizador:!!pendingGroupCode,cuandoMs:effectiveOrderDate().getTime()});
 }
-function cartComboDiscount(){return cartDesglose().combo;}
-function cartOffPeakDrinkDiscount(){return cartDesglose().valle;}
 function organizerFreeAmount(){return cartDesglose().organizador.monto;}
 // La primera línea del carrito a la que se le puede aplicar la recompensa, o -1.
 function findRewardTargetIndex(rewardId){return DINERO.lineaDeLaRecompensa(cart,rewardId);}
@@ -629,7 +514,6 @@ function rewardWaiverAmount(rewardId,targetIdx){
   var d=DINERO.desglose(cart,{recompensa:rewardId,organizador:!!pendingGroupCode,cuandoMs:effectiveOrderDate().getTime()});
   return d.recompensa&&d.recompensa.indice===targetIdx?d.recompensa.monto:0;
 }
-function cartBaseTotal(){return cart.reduce(function(s,it){return s+itemLineTotal(it);},0);}
 // El código promocional lo valida y lo descuenta el servidor aparte; acá se resta el mismo
 // monto que él confirmó.
 function cartFinalTotal(){
@@ -742,16 +626,6 @@ function restoreCart(){
     }
   }catch(e){}
 }
-function addSandwichToCart(){
-  var wasEmpty=cart.length===0;
-  cart.push(currentBuiltItem());
-  if(wasEmpty)initCheckoutFields();
-  resetBuilder();mode=null;
-  saveCart();
-  fbTrack('AddToCart',{currency:'PEN',value:money(itemUnitPrice(cart[cart.length-1]))});
-  go('o_cart');
-  showToast('¡Agregado al carrito! //','success');
-}
 function addSideToCart(code){
   var wasEmpty=cart.length===0;
   var existing=cart.find(function(it){return it.type==='side'&&it.code===code;});
@@ -763,14 +637,6 @@ function addSideToCart(code){
   fbTrack('AddToCart',{currency:'PEN',value:d?d.p:0});
   showToast('¡'+(d?d.l:'Producto')+' agregado! //','success');
 }
-// pendingGroupCode se limpia acá y en doLogout() a propósito (2026-08-27). Antes solo se
-// limpiaba tras un pedido pagado con éxito, así que sobrevivía a un abandono: el
-// organizador cerraba un grupo de 5+, no pagaba, vaciaba el carrito, armaba un pedido
-// PERSONAL que también llegara a 5 sándwiches, y metaAttribution() seguía mandando ese
-// groupCode. El servidor solo comprueba que el grupo ORIGINAL tuviera 5+ y que nadie haya
-// cobrado aún con ese código — nunca que el carrito actual sea el del grupo — así que
-// regalaba un 15CM en un pedido que no tenía nada que ver con el grupo.
-function clearCart(){cart=[];appliedReward=null;appliedPromo=null;promoStatus='';pendingGroupCode=null;pendingRecurringId=null;miHoraApartada=null;saveCart();go('o_home');}
 // Reconstruye un carrito completo a partir de un pedido pasado o favorito multi-línea
 // — usado por "repetir pedido", que reproduce todo el carrito anterior de un tap.
 //
@@ -876,24 +742,7 @@ function PANTALLA(riel,cuerpo,accion?){
     +(accion||'')+'</div>';
 }
 
-// El BLOQUE - cualquier cosa que lleve texto vive dentro de uno. Un solo sitio decide el
-// margen lateral de toda la app.
-function BLOQUE(contenido,extra?){
-  return'<div style="padding:0 18px'+(extra?';'+extra:'')+'">'+contenido+'</div>';
-}
 
-// La SECCION - abre un tramo.
-function SECCION(titulo,bajada?,numero?){
-  return BLOQUE(
-    '<div style="padding:26px 0 14px">'
-    +(numero?'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.26em;'
-      +'color:'+ACC()+';margin-bottom:7px">'+esc(numero)+'</div>':'')
-    +'<h2 style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;'
-    +'color:var(--sw-text,#fff);letter-spacing:.01em;line-height:1.06;text-wrap:balance">'+titulo+'</h2>'
-    +(bajada?'<p style="font-family:\'EB Garamond\',serif;font-size:13px;line-height:1.5;'
-      +'color:var(--sw-text-muted,#9DA096);margin-top:7px;max-width:34ch">'+bajada+'</p>':'')
-    +'</div>');
-}
 
 // ── LLEVAR A OTRA PANTALLA, SIN CAJA (reescrito 2026-09-17) ───────────────────────────
 //
@@ -1940,74 +1789,43 @@ function cancelarEdicionFicha(){
   _lineaEnEdicion=null;editingItemQty=null;resetBuilder();mode=null;go('o_cart');
 }
 
-function openSigPreview(id){previewSigId=id;render();}
-function closeSigPreview(){previewSigId=null;render();}
-// Vista previa "referencial" de un Signature build — hasta tener fotografía
-// profesional/IA, se ilustra con la paleta de marca en vez de una foto real.
-function sigPreviewOverlayHTML(){
-  var s=SIGS.find(function(x){return x.id===previewSigId;});
-  if(!s)return'';
-  var pr=PROTS.find(function(x){return x.id===s.prot;}),bs=BASES.find(function(x){return x.id===s.base;});
-  // A diferencia de fn() (usado en resúmenes de texto plano), acá sí se agrega la
-  // descripción larga (`d`) cuando existe — sin esto, ingredientes exclusivos de un
-  // Signature (ej. Giardiniera/Au Jus, sigOnly) nunca se explican en ningún otro lugar
-  // de la interfaz porque BUILD YOUR OWN (el único paso que sí muestra `d`) los excluye
-  // por diseño (hallazgo de auditoría de menú).
-  var toppingsLbl=s.tops.map(function(id){var t:any=TOPS.find(function(x){return x.id===id;});return t?t.l+' // '+t.s+(t.d?' — '+t.d:''):'';}).join(' · ');
-  var saucesLbl=s.sauces.map(function(id){var sauce=SAUCES.find(function(x){return x.id===id;});return sauce?sauce.l+' // '+sauce.s+(sauce.d?' — '+sauce.d:''):'';}).join(' + ');
-  // fixedCheese (SIG02 Mozzarella, SIG03 Cheddar, ver comentario junto a esas entradas en
-  // SIGS) — a diferencia de toppings/salsas, no es una elección del cliente, siempre va.
-  var ch:any=s.fixedCheese?CHEESE.find(function(x){return x.id===s.fixedCheese;}):null;
-  var cheeseLbl=ch?ch.l+(ch.s?' // '+ch.s:'')+(ch.d?' — '+ch.d:''):'';
-  var photo=SIG_IMG[s.id];
-  // ⚠ LA FOTO PASA DE 220px A MEDIA PANTALLA (concepto 8, elegido por el dueño).
-  // A 220px la foto tratada se ve como una miniatura grande: el encuadre, la viñeta y el
-  // viraje de scripts/tratar_fotos.py solo rinden cuando la foto tiene sitio. Y esta es la
-  // pantalla donde el cliente YA decidió mirar ESTE sándwich — el único momento del flujo
-  // en que mirar la comida es exactamente lo que quiere hacer.
-  //
-  // Se dimensiona en vh con tope y piso: a pantalla completa en un celular alto la ficha
-  // dejaría el precio y los ingredientes fuera de vista, y en uno bajo la foto se
-  // aplastaría. El degradado y el nombre sobre la foto ya existían; lo que cambia es el
-  // sitio que tienen para respirar.
-  //
-  // El degradado pasa de rgba(30,57,50) —el verde que era el fondo— a casi negro: escrito
-  // a mano como estaba, dejaba una neblina verde encima de cada foto ahora que el fondo
-  // dejó de ser verde.
-  var hero=photo
-    ?'<div style="position:relative;border-radius:12px 14px 0 0;overflow:hidden;height:52vh;min-height:300px;max-height:460px"><img src="'+photo+'" alt="'+esc(s.n)+'" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block"><div style="position:absolute;top:10px;right:14px;z-index:1;font-family:\'EB Garamond\',serif;font-weight:600;font-size:8px;color:rgba(255,255,255,.72);letter-spacing:.15em;text-shadow:0 1px 3px rgba(0,0,0,.6)">Imagen referencial</div><div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(8,10,7,.94),rgba(8,10,7,.18) 55%,rgba(8,10,7,0));display:flex;flex-direction:column;justify-content:flex-end;padding:20px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div>'+(sigBadge(s)?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.15);border:1px solid rgba(203,162,88,.4);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block;width:fit-content">'+sigBadge(s)+'</span>':'')+'</div></div>'
-    // Sin foto no hay nada que rotular como "referencial" — el aviso va SOBRE la foto
-    // (ver arriba), que es donde de verdad puede diferir de lo que llega a la mesa.
-    // Estaba al revés: se mostraba solo en el placeholder sin imagen, o sea justo donde
-    // no había imagen que advertir, y nunca sobre las fotos reales.
-    :'<div style="background:linear-gradient(160deg,#1B1F18,#171A14);border-radius:12px 14px 0 0;padding:32px 20px;text-align:center;position:relative;overflow:hidden">'
-    +'<div style="margin-bottom:10px;opacity:.55;display:flex;justify-content:center">'+icon('sandwich',56,GOLD)+'</div>'
-    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff">'+s.n+'<span class="cut-sep" style="color:'+GOLD+'"> // </span>'+sigTypeTag(s.s)+'</div>'
-    +(sigBadge(s)?'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:9px;color:'+GOLD+';background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.35);border-radius:4px;padding:2px 8px;margin-top:8px;display:inline-block">'+sigBadge(s)+'</span>':'')
-    +'</div>';
-  return'<div onclick="closeSigPreview()" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;justify-content:center" class="fi">'
-    +'<div onclick="event.stopPropagation()" style="background:var(--sw-bg,#17130E);border-radius:12px 14px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto">'
-    +hero
-    +'<div style="padding:20px">'
-    +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-body,#EFEDE4);line-height:1.6;margin-bottom:16px">'+esc(s.pitch||'')+'</p>'
-    // el menú secreto (s.secret) nunca revela su composición, ni siquiera desbloqueado — el
-    // punto de un menú secreto es que sigue siendo secreto hasta que lo pruebas (pedido
-    // explícito del dueño). El resto de Signatures sí muestra el desglose normal.
-    +(s.secret
-      ?'<div style="background:var(--sw-card,#1B1F18);border:1px solid rgba(203,162,88,.35);border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:center"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Ingredientes //</div><div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);font-style:italic">Secretos. Se revelan cuando lo pruebas.</div></div>'
-      :'<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:16px"><div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Ingredientes //</div>'
-      +'<div style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.8">'
-      +'<div><span style="color:'+GOLD+'">Pan · </span>'+(bs?bs.l+' // '+bs.s+(bs.d?' — '+bs.d:''):'')+'</div>'
-      +'<div><span style="color:'+GOLD+'">Proteína · </span>'+(pr?pr.l+' // '+pr.s+(pr.d?' — '+pr.d:''):'')+'</div>'
-      +(cheeseLbl?'<div><span style="color:'+GOLD+'">Queso · </span>'+cheeseLbl+'</div>':'')
-      +'<div><span style="color:'+GOLD+'">Vegetales · </span>'+toppingsLbl+'</div>'
-      +'<div><span style="color:'+GOLD+'">Salsas · </span>'+saucesLbl+'</div>'
-      +'</div></div>')
-    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-text-muted,#9DA096)">15CM // 30CM</span><span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+GOLD+'">'+SOLES+pz(s.p15)+' // '+SOLES+pz(s.p30)+'</span></div>'
-    +'<button onclick="closeSigPreview();sigId=\''+s.id+'\';go(\'o_sig\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.1em;padding:14px;border-radius:10px;text-align:center;margin-bottom:8px">Pedir este Signature //</button>'
-    // «¿Lo quieres a tu manera? Arma uno parecido →» (ficha versión WICHO, aprobada): lleva
-    // al armador con esta receta ya puesta. Solo si hay algo que precargar.
-    +(parecidoPrecargable(s)?'<button onclick="closeSigPreview();armaParecido(\''+s.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;text-align:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-sky,#8CC8EC);letter-spacing:.12em;text-transform:uppercase;padding:10px 4px">¿Lo quieres a tu manera? Arma uno parecido →</button>':'')
-    +'<div onclick="closeSigPreview()" style="text-align:center;cursor:pointer;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-text-muted,#9DA096);letter-spacing:.1em;padding:4px">Cerrar</div>'
-    +'</div></div></div>';
+// «Arma uno parecido» (#65): hoy sin botón — lo llamaba la vista previa vieja de un Signature.
+// Se conserva hasta que el dueño decida dónde vive en la ficha nueva (2026-10-02).
+// Igual que startOrder('sig') pero deja el Signature tocado en la lista del home
+// ya preseleccionado en sOSig — evita el paso extra de buscarlo de nuevo en la lista
+// completa cuando el cliente ya sabe justo cuál quiere.
+// «Arma uno parecido» (ficha versión WICHO): el armador arranca con la receta de un
+// Signature ya puesta, para cambiarle lo que el cliente quiera. Solo entra lo que ARMA EL
+// TUYO ofrece: una proteína, un vegetal o una salsa exclusiva del Signature (sigOnly) o del
+// menú secreto (vaultOnly) se deja fuera y SE DICE, en vez de colarla por la puerta de
+// atrás a un precio que el armador no cobra.
+function piezasDelParecido(s:any){
+  var libre=function(lista:any[],id:string){var x=lista.find(function(y){return y.id===id;});return !!x&&!x.sigOnly&&!x.vaultOnly;};
+  var fuera:string[]=[];
+  var p=libre(PROTS,s.prot)?s.prot:null;
+  if(!p){var px=PROTS.find(function(y){return y.id===s.prot;});if(px)fuera.push(px.l+' '+px.s.toLowerCase());}
+  var t=(s.tops||[]).filter(function(id:string){var ok=libre(TOPS,id);if(!ok){var tx=TOPS.find(function(y){return y.id===id;});if(tx)fuera.push(tx.l.toLowerCase());}return ok;});
+  var sa=(s.sauces||[]).filter(function(id:string){var ok=libre(SAUCES,id);if(!ok){var sx=SAUCES.find(function(y){return y.id===id;});if(sx)fuera.push(sx.l.toLowerCase());}return ok;});
+  return{base:s.base||null,prot:p,tops:t,sauces:sa,cheese:s.fixedCheese||null,fuera:fuera};
+}
+function parecidoPrecargable(s:any):boolean{
+  if(!s||s.secret)return false;
+  var pz=piezasDelParecido(s);
+  return !!(pz.base||pz.prot||pz.tops.length||pz.sauces.length);
+}
+function armaParecido(id:string){
+  var s=SIGS.find(function(x){return x.id===id;});
+  if(!s)return;
+  var pz=piezasDelParecido(s);
+  var tam=size;
+  resetBuilder();
+  mode='byo';size=tam;base=pz.base;prot=pz.prot;tops=pz.tops;sauces=pz.sauces;cheese=pz.cheese;
+  // Arranca en el primer paso que falta: sin tamaño, el tamaño; sin proteína libre, la
+  // proteína. Con todo puesto, en el tamaño, para que vea desde el principio qué lleva.
+  byoStep=!size?0:!prot?2:0;
+  homeTab='byo';sndScreen='o_build';
+  render();
+  showToast(pz.fuera.length
+    ?'Te lo dejé como '+s.n+'. '+pz.fuera.join(', ')+' es solo del Signature: elige qué va en su lugar.'
+    :'Te lo dejé como '+s.n+'. Cámbiale lo que quieras.','success');
 }
