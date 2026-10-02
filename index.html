@@ -4201,7 +4201,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '039359e96c';
+var APP_BUILD = '3f6afb6680';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -9520,7 +9520,13 @@ function sODir() {
         if (km == null)
             reportarError('direccion:sin-pin', new Error('id ' + a.id + ' lat ' + typeof a.lat + ':' + String(a.lat) + ' lon ' + typeof a.lon + ':' + String(a.lon)));
         var sel = dirElegida != null && mismoId(dirElegida, a.id);
-        return '<button class="et" aria-pressed="' + sel + '" onclick="dirElegida=' + JSON.stringify(a.id).replace(/"/g, '&quot;') + ';render()">'
+        // UN toque (dueño, 2026-10-02: «no debería pedir "Es acá" porque ya se puso el pin»): con pin,
+        // la dirección se usa y se vuelve al carrito; sin pin, se abre el mapa ubicado en ELLA.
+        var idJs = JSON.stringify(a.id).replace(/"/g, '&quot;');
+        var alTocar = km != null
+            ? 'dirElegida=' + idJs + ';usarDireccion()'
+            : 'abrirMapaPara(\'o_cart\',' + idJs + ',' + esc(JSON.stringify(a.address || '')) + ')';
+        return '<button class="et" data-accion="elegir-direccion" aria-pressed="' + sel + '" onclick="' + alTocar + '">'
             + '<span class="hd"><span>' + esc(a.label || 'Guardada') + '</span><span>' + (km != null ? km.toFixed(1) + ' km' : '—') + '</span></span>'
             + '<b>' + esc(a.address) + '</b>' + (a.reference ? '<s>' + esc(a.reference) + '</s>' : '')
             + '<span class="pie"><i>' + (env != null ? 'Envío ' + SOLES_TXT + pz(env) : 'Márcala en el mapa') + '</i><u>Editar</u></span></button>';

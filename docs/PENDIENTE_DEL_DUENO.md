@@ -36,7 +36,7 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 | # | Qué | Qué me dices después |
 |---|---|---|
 | P30 | **Dirección guardada**: cerrar y abrir sndwch.app, agregar un sándwich, ver que «Dónde» ya trae «Casa» con el envío, y tocar Pagar | Si te vuelve a pedir el mapa (la app me reporta qué recibió) |
-| P31 | **Pin de «Casa»**: hoy está EXACTO en el local (el mapa abría ahí). Si tu casa no es el local: «Editar» y mover el pin a tu puerta | Nada, salvo que no te deje |
+| ~~P31~~ | ~~Mover el pin de «Casa»~~ — **no hace falta** (dueño, 2026-10-02): el pin que ya tiene se respeta; una guardada con pin se usa de un toque, sin mapa | — |
 | P32 | **Tarjeta**: Pagar → «Prefiero tarjeta» → «Ir a pagar». Si la ventana no aparece, Pagar lo dice y me llega el registro | Avísame que lo intentaste y leo `debug_logs` |
 
 ## 1. Antes de abrir — sin esto no se puede operar
