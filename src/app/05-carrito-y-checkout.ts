@@ -1221,6 +1221,20 @@ function payWithCulqi(amountSoles,email){
     paymentMethods:{tarjeta:true,yape:true,billetera:false,bancaMovil:false,agente:false,cuotealo:false}
   });
   Culqi.open();
+  vigilarVentanaDeCulqi();
+}
+// «No veo nada, no carga Niubiz ni nada» (dueño, 2026-10-02): Culqi.open() no avisa si su ventana
+// no aparece. A los 6 s se mira si hay una ventana de Culqi visible; si no, se dice en Pagar y se
+// reporta qué hay en la página (para saber si es la red, el script o algo que la tapa).
+function vigilarVentanaDeCulqi(){
+  setTimeout(function(){
+    if(!_payingInProgress)return;
+    var marcos=[].slice.call(document.querySelectorAll('iframe')).filter(function(f:any){return /culqi/i.test(f.src||'');});
+    var visible=marcos.some(function(f:any){var r=f.getBoundingClientRect();var st=getComputedStyle(f);return r.width>100&&r.height>100&&st.display!=='none'&&st.visibility!=='hidden';});
+    if(visible)return;
+    falloConTarjeta('no-abrio','La ventana de pago no se abrió. Vuelve a tocar «Ir a pagar»; si sigue igual, paga con Yape.',
+      {marcos:marcos.length,src:marcos.map(function(f:any){return String(f.src).slice(0,60);}),ua:navigator.userAgent.slice(0,120)});
+  },6000);
 }
 
 // Callback global requerido por Culqi Checkout V4 — se ejecuta tras el intento de pago
