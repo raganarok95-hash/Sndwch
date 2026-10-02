@@ -154,15 +154,26 @@ export async function actAdminAccountsList(b: Entrada<"admin-accounts-list"> & {
 // el PIN de quien lo hace, a diferencia de actAdminAccountsDelete que sí lo pide desde
 // hace tiempo. Con una sesión admin robada, esto era un backdoor de un solo request que
 // sobrevivía a logout-everywhere (hallazgo de auditoría de seguridad, MEDIO).
+// El teléfono de un administrador: 9 dígitos que empiezan en 9, sin espacios ni prefijo. Antes
+// se guardaba tal cual se escribió: «930 957 640» creaba una cuenta que nunca coincidía con nadie,
+// y al QUITAR un acceso con el número mal escrito no se borraba nada y el panel decía «listo»:
+// la persona seguía entrando sin que el dueño lo supiera.
+export function telefonoDeAdmin(v: unknown): string {
+  let d = String(v ?? "").replace(/\D/g, "");
+  if (d.length === 11 && d.startsWith("51")) d = d.slice(2);
+  if (!/^9\d{8}$/.test(d)) throw new ApiError("El teléfono tiene que ser un celular de 9 dígitos que empiece con 9.", 400);
+  return d;
+}
 export async function actAdminAccountsAdd(b: Entrada<"admin-accounts-add"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const pin = String(b.pin || "").trim();
   if (!pin) throw new ApiError("Ingresa tu PIN para confirmar.", 400);
   const ok = await rpc("verify_pin", { p_phone: s.phone, plain: pin });
   if (!ok) throw new ApiError("PIN incorrecto.", 401);
-  const phone = String(b.phone || "").trim();
-  const name = String(b.name || "").trim();
-  if (!phone || !name) throw new ApiError("Ingresa nombre y teléfono.");
+  const phone = telefonoDeAdmin(b.phone);
+  const name = String(b.name || "").trim().slice(0, 80);
+  if (!name) throw new ApiError("Ingresa nombre y teléfono.");
+  if ((await sbGet("admin_accounts", `phone=eq.${phone}&select=phone`)).length) throw new ApiError("Ese teléfono ya es administrador.", 409);
   await sbInsert("admin_accounts", { phone, name, role: "admin" });
   await logAdminAction(s.phone, "accounts-add", phone, { name });
   return { success: true };
@@ -178,10 +189,12 @@ export async function actAdminAccountsDelete(b: Entrada<"admin-accounts-delete">
   if (!pin) throw new ApiError("Ingresa tu PIN para confirmar.", 400);
   const ok = await rpc("verify_pin", { p_phone: s.phone, plain: pin });
   if (!ok) throw new ApiError("PIN incorrecto.", 401);
-  const phone = String(b.phone || "").trim();
-  const rows = await sbGet("admin_accounts", `phone=eq.${encodeURIComponent(phone)}`);
-  if (rows.length && rows[0].role === "superadmin") throw new ApiError("No se puede eliminar al superadmin.", 403);
-  await sbDelete("admin_accounts", `phone=eq.${encodeURIComponent(phone)}`);
+  const phone = telefonoDeAdmin(b.phone);
+  const rows = await sbGet("admin_accounts", `phone=eq.${phone}`);
+  // Un número que no es administrador no se «borra» en silencio: se dice.
+  if (!rows.length) throw new ApiError("Ese teléfono no es administrador.", 404);
+  if (rows[0].role === "superadmin") throw new ApiError("No se puede eliminar al superadmin.", 403);
+  await sbDelete("admin_accounts", `phone=eq.${phone}`);
   await logAdminAction(s.phone, "accounts-delete", phone);
   return { success: true };
 }
@@ -210,7 +223,9 @@ export async function actAdminInventorySetStock(b: Entrada<"admin-inventory-set-
   const code = String(b.code || "").trim();
   const name = String(b.name || "").trim();
   if (!code) throw new ApiError("Falta el producto.");
-  const qty = b.qty === null || b.qty === "" || b.qty === undefined ? null : Math.max(0, parseInt(b.qty, 10) || 0);
+  // El contrato ya trae un entero ≥ 0 o null («sin control»): antes «abc» se volvía 0 y el
+  // producto quedaba AGOTADO en silencio.
+  const qty = b.qty == null ? null : Math.floor(b.qty);
   const upd: Record<string, unknown> = { stock_qty: qty };
   if (qty != null) upd.in_stock = qty > 0;
   const existing = await sbGet("inventory", `product_code=eq.${encodeURIComponent(code)}`);
