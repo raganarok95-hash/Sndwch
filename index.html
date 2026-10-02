@@ -4164,7 +4164,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '565859fb91';
+var APP_BUILD = 'b2c3e4f530';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -12373,6 +12373,49 @@ if ('serviceWorker' in navigator) {
     // además una marca en la caché y aquí se consulta al arrancar.
     checkShellUpdateFlag();
 }
+// Una pestaña que queda abierta horas nunca navegaba, así que nunca se enteraba de una versión
+// nueva (dueño, 2026-10-02: subió la captura con la versión de la mañana y no pasó nada). Al
+// volver a la pestaña y cada 10 min se pregunta al servidor qué versión hay. En una pantalla
+// donde no hay nada a medio hacer se actualiza sola; si no, aparece el aviso de actualizar.
+var PANTALLAS_SIN_RIESGO = { o_home: true, o_sig: true, o_sides: true, p_home: true, p_history: true, p_orders: true, p_rewards: true, p_favs: true, p_lo_legal: true };
+var _buscandoVersion = false;
+async function buscarVersionNueva() {
+    if (_buscandoVersion || document.visibilityState === 'hidden')
+        return;
+    _buscandoVersion = true;
+    try {
+        var r = await fetch('./index.html?v=' + Date.now(), { cache: 'no-store' });
+        var html = await r.text();
+        var m = html.match(/var APP_BUILD = '([0-9a-f]{10})'/);
+        if (m && m[1] !== APP_BUILD) {
+            // El service worker contesta la recarga con su copia guardada (la vieja) y recién después
+            // la renueva: se deja la nueva en esa copia ANTES de recargar, o se recargaría lo mismo.
+            try {
+                if (window.caches) {
+                    var ks = await caches.keys();
+                    for (var i = 0; i < ks.length; i++) {
+                        var c = await caches.open(ks[i]);
+                        if (await c.match('./index.html'))
+                            await c.put('./index.html', new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8' } }));
+                    }
+                }
+            }
+            catch (e) { }
+            var tecleando = document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+            if (PANTALLAS_SIN_RIESGO[sndScreen] && !busy && !_payingInProgress && !tecleando)
+                applyAppUpdate();
+            else if (!updateReady) {
+                updateReady = true;
+                render();
+            }
+        }
+    }
+    catch (e) { }
+    _buscandoVersion = false;
+}
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible')
+    buscarVersionNueva(); });
+setInterval(buscarVersionNueva, 10 * 60 * 1000);
 async function checkShellUpdateFlag() {
     if (!window.caches)
         return;
