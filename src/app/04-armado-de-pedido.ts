@@ -161,7 +161,8 @@ function BYO_PROTEINA(pr){
     +'<div class="foto">'+(img?'<img src="'+img+'" alt="" aria-hidden="true" loading="lazy">':'')+'<div class="velo"></div>'
     +'<div class="txt"><div class="n">'+esc(pr.l)+'<s>'+esc(pr.s)+'</s></div>'
     +'<div class="d">'+esc(av?pr.d:'Agotada hoy')+'</div>'
-    +'<div class="p">'+SOLES+pz(precio)+'</div></div></div>'
+    // «Quedan N hoy» junto al precio, que es lo que siempre se ve de la tarjeta.
+    +'<div class="p">'+SOLES+pz(precio)+(av&&quedanHoy(pr.id)?' <i data-quedan="'+pr.id+'">· quedan '+quedanHoy(pr.id)+'</i>':'')+'</div></div></div>'
     +'</button>';
 }
 
@@ -346,11 +347,13 @@ function sOBuild(){
     var dispo=PROTS.filter(function(x){return!x.vaultOnly&&!x.sigOnly;});
     var elegida=PROTS.find(function(x){return x.id===prot;});
     var puedeDoble=elegida&&!(size==='30'?elegida.noDouble30:elegida.noDouble);
+    var alcanzaDoble=!elegida||alcanzaParaDoble(elegida.id);
+    if(!alcanzaDoble)doubleProt=false;
     var recargoDbl=elegida?(size==='30'?elegida.pDbl30:elegida.pDbl):0;
     cuerpo=BYO_PREGUNTA('¿Qué va adentro?','Lo que elijas acá es el sándwich.')
       +'<div class="rej">'+dispo.map(BYO_PROTEINA).join('')+'</div>'
       +(puedeDoble
-        ?'<div class="extra">'+BYO_PIEZA({t:'Doble de '+elegida.l,s:'+'+SOLES_TXT+pz(recargoDbl),sel:doubleProt,
+        ?'<div class="extra">'+BYO_PIEZA({t:'Doble de '+elegida.l,s:alcanzaDoble?'+'+SOLES_TXT+pz(recargoDbl):'Queda 1 hoy: no alcanza para doble',sel:doubleProt,off:!alcanzaDoble,
                      fn:"doubleProt=!doubleProt;render()"})+'</div>':'')
       +BYO_PUENTE()+BYO_SECRETO();
 

@@ -846,19 +846,19 @@ function sigInStock(s){
   if(s.fixedCheese)codes.push(s.fixedCheese);
   return codes.every(function(c){return !c||isAvail(c);});
 }
-function lowStockNote(code){
+// Cuántas porciones quedan HOY de algo, solo si son pocas (1 a 5) y el dueño las contó al abrir
+// («Abro con N», Cocina abierta). Sin conteo (null) no se dice nada: la escasez que se muestra es
+// real, nunca un contador inventado. La usan el armador (proteína y doble) y el plato del Signature.
+var QUEDAN_POCAS=5;
+function quedanHoy(code:string):number|null{
   var q=invQty[code];
-  if(q==null||q<=0||q>5)return'';
-  return'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';margin-left:6px;white-space:nowrap">quedan '+q+'</span>';
+  return typeof q==='number'&&q>0&&q<=QUEDAN_POCAS?q:null;
 }
-// Doble proteína consume 2 unidades de esa proteína, no 1 — antes el cliente solo se
-// enteraba de que no alcanzaba stock cuando el servidor rechazaba el pedido al pagar
-// (hallazgo de auditoría UX). invQty ya se carga para todos (ver lowStockNote arriba),
-// solo faltaba advertir específicamente cuando pedir DOBLE consumiría más de lo que queda.
-function dblStockWarn(protId){
-  var q=invQty[protId];
-  if(q==null||q>=2)return'';
-  return' <span style="color:'+GOLD+'">— '+(q<=0?'sin stock ahora mismo':'solo queda '+q+', puede no alcanzar para doble')+'</span>';
+// Doble proteína gasta DOS porciones: con una sola contada, no se ofrece (antes el cliente se
+// enteraba al pagar, cuando el servidor rechazaba la reserva).
+function alcanzaParaDoble(code:string):boolean{
+  var q=invQty[code];
+  return !(typeof q==='number'&&q<2);
 }
 
 // STATE

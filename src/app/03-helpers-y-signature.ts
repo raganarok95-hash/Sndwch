@@ -1636,6 +1636,8 @@ function sMundoSando(){
   var platos=visibles.map(function(s,i){
     var av=sigInStock(s);
     var marca=s.recommended?'La estrella':(sigBadge(s)||'');
+    // Escasez REAL: lo que el dueño contó al abrir (quedanHoy). Manda sobre la etiqueta.
+    if(av&&quedanHoy(s.prot))marca='Quedan '+quedanHoy(s.prot)+' hoy';
     // El plato de cada Signature va en KRAFT, el papel de la bolsa y del ticket (dueño,
     // 2026-09-30: «no estoy eligiendo color de todo el mundo pero sí de sus sándwiches… elegí
     // kraft»). El secreto conserva su noche morada.

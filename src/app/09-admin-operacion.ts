@@ -758,6 +758,7 @@ function sAdminCocina(){
     +(cocinaPausaAbierta&&!pausa?'<div class="coc-pausas">'+[[30,'30 min'],[60,'1 hora'],[180,'3 horas'],[600,'Resto del día']].map(function(x){
         return'<button data-accion="pausar-'+x[0]+'" onclick="cocinaPausaAbierta=false;pauseStore('+x[0]+')">'+x[1]+'</button>';}).join('')+'</div>':'')
     +(pollFailing?'<div class="coc-alerta">No se pudo actualizar. Lo que ves puede estar atrasado.</div>':'')
+    +(abro.abierta?hojaAbroCon():abroHecho()?'':'<button class="coc-abro" data-accion="abro-con" onclick="abrirAbroCon()"><span>¿Con cuántas porciones abres hoy?</span><u>Contar</u></button>')
     +addressFlagsBanner()
     +'<div class="coc-cont">'+ETAPAS_COCINA.filter(function(e){return e[0]==='todos'||cuenta[e[0]];}).map(function(e){
         return'<button class="'+e[0]+(cocinaFiltro===e[0]?' sel':'')+'" data-filtro="'+e[0]+'" onclick="cocinaFiltro=\''+e[0]+'\';render()"><b>'+cuenta[e[0]]+'</b><span>'+e[1]+'</span></button>';
@@ -774,3 +775,62 @@ function sAdminCocina(){
     +'</div>';
 }
 var cocinaPausaAbierta=false;
+// ── «ABRO CON N PORCIONES» (dueño, 2026-10-02: «4 al máximo, aprobado») ─────────────────────
+// Al abrir el día se cuentan las porciones de cada proteína. Desde ahí el servidor descuenta con
+// cada pedido (reserve_inventory), marca agotado al llegar a 0 y avisa de poco stock; el cliente
+// ve «Quedan N hoy» y no se le ofrece el doble si no alcanza. Sin conteo nada cambia: la
+// proteína se vende sin límite, como antes. Una vez por día por este teléfono (localStorage).
+var abro:{abierta:boolean,sugerido:Record<string,number>|null,msg:string,guardando:boolean}={abierta:false,sugerido:null,msg:'',guardando:false};
+function diaDeHoyLima():string{return new Date().toLocaleDateString('en-CA',{timeZone:'America/Lima'});}
+function abroHecho():boolean{try{return localStorage.getItem('sw_abro_con')===diaDeHoyLima();}catch(e){return false;}}
+function marcarAbroHecho(){try{localStorage.setItem('sw_abro_con',diaDeHoyLima());}catch(e){}}
+function proteinasParaContar(){return PROTS.filter(function(p){return!!p.l;});}
+async function abrirAbroCon(){
+  abro.abierta=true;abro.msg='';render();
+  // La sugerencia sale del plan de tanda para 1 día, SOLO si tiene historial para creerle.
+  try{
+    var plan=await api('admin-batch-plan',{token:token,coverDays:1});
+    if(plan&&plan.reliable){
+      var sug:Record<string,number>={};
+      (plan.items||[]).forEach(function(it:any){if(typeof it.needed==='number')sug[it.code]=Math.ceil(it.needed);});
+      abro.sugerido=sug;render();
+    }
+  }catch(e){}
+}
+function hojaAbroCon(){
+  var filas=proteinasParaContar().map(function(p){
+    var actual=invQty[p.id];
+    var val=typeof actual==='number'?actual:(abro.sugerido&&abro.sugerido[p.id]!=null?abro.sugerido[p.id]:'');
+    return'<label class="fila"><span><b>'+esc(p.l)+'</b><s>'+esc(p.s||'')+'</s></span>'
+      +'<input id="abro-'+p.id+'" type="number" inputmode="numeric" min="0" max="999" placeholder="—" aria-label="Porciones de '+esc(p.l)+'" value="'+val+'"></label>';
+  }).join('');
+  return'<div class="coc-hoja" role="dialog" aria-label="Porciones con las que abres">'
+    +'<b>¿Con cuántas abres hoy?</b>'
+    +'<p>'+(abro.sugerido?'Sugerido por lo que vendiste en las últimas semanas. ':'')+'Cada pedido las descuenta solo; en 0 se agota y el cliente ve «Quedan N» cuando quedan 5 o menos. Vacío = sin límite.</p>'
+    +filas
+    +(abro.msg?'<div class="coc-alerta">'+esc(abro.msg)+'</div>':'')
+    +'<div class="coc-par"><button class="coc-b gh" data-accion="abro-sin-contar" onclick="abro.abierta=false;marcarAbroHecho();render()">Hoy no cuento</button>'
+    +'<button class="coc-b cola" data-accion="abro-guardar" '+(abro.guardando?'disabled':'')+' onclick="guardarAbroCon()">'+(abro.guardando?'Guardando…':'Listo')+'</button></div>'
+    +'</div>';
+}
+async function guardarAbroCon(){
+  if(abro.guardando)return;
+  var cambios=proteinasParaContar().map(function(p){
+    var el=document.getElementById('abro-'+p.id) as HTMLInputElement|null;
+    var v=el?el.value.trim():'';
+    return{p:p,qty:v===''?null:Math.max(0,Math.floor(Number(v)))};
+  }).filter(function(c){return c.qty===null?typeof invQty[c.p.id]==='number':c.qty!==invQty[c.p.id];});
+  abro.guardando=true;abro.msg='';render();
+  try{
+    for(var i=0;i<cambios.length;i++){
+      await api('admin-inventory-set-stock',{token:token,code:cambios[i].p.id,name:cambios[i].p.l,qty:cambios[i].qty});
+      invQty[cambios[i].p.id]=cambios[i].qty;
+      if(cambios[i].qty!==null)invStock[cambios[i].p.id]=cambios[i].qty>0;
+    }
+    marcarAbroHecho();abro.abierta=false;
+    showToast(cambios.length?'Porciones guardadas.':'Sin cambios.','success');
+  }catch(e:any){
+    abro.msg='No se guardó todo: '+(e&&e.message||'error')+'. Vuelve a tocar Listo.';
+  }
+  abro.guardando=false;render();
+}

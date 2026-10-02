@@ -445,6 +445,15 @@ body.kb-open #app{padding-bottom:0}
 .coc-pausas{display:flex;gap:6px;padding:10px 12px 0}
 .coc-pausas button{all:unset;cursor:pointer;flex:1;text-align:center;min-height:44px;border:1px solid var(--sw-border);border-radius:8px;font-size:13px;font-weight:700;color:var(--sw-text)}
 .coc-alerta{margin:10px 12px 0}
+.coc-abro{all:unset;box-sizing:border-box;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;margin:10px 12px 0;width:calc(100% - 24px);min-height:48px;padding:10px 14px;border:1px dashed var(--sw-warn,#ffa500);border-radius:10px;font-size:15px;font-weight:700;color:var(--sw-text)}
+.coc-abro u{text-decoration:none;font-size:13px;color:var(--sw-warn,#ffa500)}
+.coc-hoja{margin:10px 12px 0;padding:14px;border:1px solid var(--sw-border);border-radius:12px;background:var(--sw-card,#1B1F18)}
+.coc-hoja>b{font-size:18px}
+.coc-hoja p{font-size:13px;color:var(--sw-text-muted);margin:6px 0 10px;line-height:1.4}
+.coc-hoja .fila{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--sw-border)}
+.coc-hoja .fila b{display:block;font-size:15px}
+.coc-hoja .fila s{display:block;text-decoration:none;font-size:11px;color:var(--sw-text-muted)}
+.coc-hoja input{width:88px;min-height:44px;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid var(--sw-border);background:var(--sw-bg);color:var(--sw-text);font-size:18px;text-align:center}
 .coc-cont{display:flex;gap:6px;padding:10px 12px;overflow-x:auto}
 .coc-cont button{all:unset;cursor:pointer;flex:1 1 0;min-width:52px;text-align:center;background:var(--sw-card);border:2px solid transparent;border-radius:10px;padding:6px 6px}
 .coc-cont button b{display:block;font-size:22px;font-weight:800}
@@ -3903,21 +3912,19 @@ function sigInStock(s) {
         codes.push(s.fixedCheese);
     return codes.every(function (c) { return !c || isAvail(c); });
 }
-function lowStockNote(code) {
+// Cuántas porciones quedan HOY de algo, solo si son pocas (1 a 5) y el dueño las contó al abrir
+// («Abro con N», Cocina abierta). Sin conteo (null) no se dice nada: la escasez que se muestra es
+// real, nunca un contador inventado. La usan el armador (proteína y doble) y el plato del Signature.
+var QUEDAN_POCAS = 5;
+function quedanHoy(code) {
     var q = invQty[code];
-    if (q == null || q <= 0 || q > 5)
-        return '';
-    return '<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:' + GOLD + ';margin-left:6px;white-space:nowrap">quedan ' + q + '</span>';
+    return typeof q === 'number' && q > 0 && q <= QUEDAN_POCAS ? q : null;
 }
-// Doble proteína consume 2 unidades de esa proteína, no 1 — antes el cliente solo se
-// enteraba de que no alcanzaba stock cuando el servidor rechazaba el pedido al pagar
-// (hallazgo de auditoría UX). invQty ya se carga para todos (ver lowStockNote arriba),
-// solo faltaba advertir específicamente cuando pedir DOBLE consumiría más de lo que queda.
-function dblStockWarn(protId) {
-    var q = invQty[protId];
-    if (q == null || q >= 2)
-        return '';
-    return ' <span style="color:' + GOLD + '">— ' + (q <= 0 ? 'sin stock ahora mismo' : 'solo queda ' + q + ', puede no alcanzar para doble') + '</span>';
+// Doble proteína gasta DOS porciones: con una sola contada, no se ofrece (antes el cliente se
+// enteraba al pagar, cuando el servidor rechazaba la reserva).
+function alcanzaParaDoble(code) {
+    var q = invQty[code];
+    return !(typeof q === 'number' && q < 2);
 }
 // STATE
 // `sndScreen` (antes `sc`) y `sndTab` (antes `tab`) llevan prefijo A PROPÓSITO — no es
@@ -4134,7 +4141,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'aa8276c0c7';
+var APP_BUILD = '9f1de49218';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -7175,6 +7182,9 @@ function sMundoSando() {
     var platos = visibles.map(function (s, i) {
         var av = sigInStock(s);
         var marca = s.recommended ? 'La estrella' : (sigBadge(s) || '');
+        // Escasez REAL: lo que el dueño contó al abrir (quedanHoy). Manda sobre la etiqueta.
+        if (av && quedanHoy(s.prot))
+            marca = 'Quedan ' + quedanHoy(s.prot) + ' hoy';
         // El plato de cada Signature va en KRAFT, el papel de la bolsa y del ticket (dueño,
         // 2026-09-30: «no estoy eligiendo color de todo el mundo pero sí de sus sándwiches… elegí
         // kraft»). El secreto conserva su noche morada.
@@ -7598,7 +7608,8 @@ function BYO_PROTEINA(pr) {
         + '<div class="foto">' + (img ? '<img src="' + img + '" alt="" aria-hidden="true" loading="lazy">' : '') + '<div class="velo"></div>'
         + '<div class="txt"><div class="n">' + esc(pr.l) + '<s>' + esc(pr.s) + '</s></div>'
         + '<div class="d">' + esc(av ? pr.d : 'Agotada hoy') + '</div>'
-        + '<div class="p">' + SOLES + pz(precio) + '</div></div></div>'
+        // «Quedan N hoy» junto al precio, que es lo que siempre se ve de la tarjeta.
+        + '<div class="p">' + SOLES + pz(precio) + (av && quedanHoy(pr.id) ? ' <i data-quedan="' + pr.id + '">· quedan ' + quedanHoy(pr.id) + '</i>' : '') + '</div></div></div>'
         + '</button>';
 }
 // ── EL PUENTE ──────────────────────────────────────────────────────────────────────────
@@ -7809,11 +7820,14 @@ function sOBuild() {
         var dispo = PROTS.filter(function (x) { return !x.vaultOnly && !x.sigOnly; });
         var elegida = PROTS.find(function (x) { return x.id === prot; });
         var puedeDoble = elegida && !(size === '30' ? elegida.noDouble30 : elegida.noDouble);
+        var alcanzaDoble = !elegida || alcanzaParaDoble(elegida.id);
+        if (!alcanzaDoble)
+            doubleProt = false;
         var recargoDbl = elegida ? (size === '30' ? elegida.pDbl30 : elegida.pDbl) : 0;
         cuerpo = BYO_PREGUNTA('¿Qué va adentro?', 'Lo que elijas acá es el sándwich.')
             + '<div class="rej">' + dispo.map(BYO_PROTEINA).join('') + '</div>'
             + (puedeDoble
-                ? '<div class="extra">' + BYO_PIEZA({ t: 'Doble de ' + elegida.l, s: '+' + SOLES_TXT + pz(recargoDbl), sel: doubleProt,
+                ? '<div class="extra">' + BYO_PIEZA({ t: 'Doble de ' + elegida.l, s: alcanzaDoble ? '+' + SOLES_TXT + pz(recargoDbl) : 'Queda 1 hoy: no alcanza para doble', sel: doubleProt, off: !alcanzaDoble,
                     fn: "doubleProt=!doubleProt;render()" }) + '</div>' : '')
             + BYO_PUENTE() + BYO_SECRETO();
     }
