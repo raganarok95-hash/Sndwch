@@ -153,7 +153,24 @@ function pickAddr(id){
   var a=myAddresses.find(function(x){return mismoId(x.id,id);});
   if(!a)return;
   syncConfirmFields();
-  pickedAddrId=id;addrText=a.address;
+  aplicarDireccion(a);
+  render();
+}
+// La dirección guardada se elige SOLA (dueño, 2026-10-02: «debería seleccionarse sola la dirección
+// que tengo guardada»). El carrito copiaba solo el TEXTO de la última dirección, sin su pin ni la
+// guardada elegida, y pedía marcar el mapa a quien ya la tenía. Se elige la guardada con pin que
+// coincide con la última usada; si ninguna coincide, la más reciente con pin. No pisa una
+// dirección que la persona ya eligió o marcó en el mapa. No repinta: la llama quien pinta.
+function elegirGuardadaSola(){
+  if(!cust||pickedAddrId!=null||deliveryKmNow()!==null)return;
+  var conPin=myAddresses.filter(function(x:any){return typeof x.lat==='number'&&typeof x.lon==='number';});
+  if(!conPin.length)return;
+  var norm=function(t:any){return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');};
+  var igual=addrText?conPin.find(function(x:any){return norm(x.address)===norm(addrText);}):null;
+  aplicarDireccion(igual||conPin[conPin.length-1]);
+}
+function aplicarDireccion(a:any){
+  pickedAddrId=a.id;addrText=a.address;
   // Se restauran las coordenadas guardadas con esa dirección: por eso el pin se pide UNA
   // sola vez por dirección y no en cada pedido. Si la dirección es vieja y no las tiene, se
   // limpian para que el checkout vuelva a pedir el pin en vez de cobrar la distancia de la
@@ -166,7 +183,6 @@ function pickAddr(id){
   if(inferred){deliveryDistrict=inferred;deliveryDistrictFromPin=true;}
   // La referencia viaja con la dirección (maqueta 34): no se vuelve a escribir en cada pedido.
   if(a.reference)confNotes=a.reference;
-  render();
 }
 // Bloque de campos de checkout (puntos a ganar, recompensas, direcciones guardadas,
 // nombre/correo/dirección/notas, horario, crédito, banner de notificaciones push) —
@@ -770,6 +786,7 @@ function sOCart(){
       +'<div class="tit"><em>Todavía nada</em><b>Tu pedido<br>está vacío</b></div>'
       +'<div class="vk">'+VACIO('Carrito vacío','Elige un Signature o arma el tuyo — todo se junta acá antes de pagar.',null,'piensa')+'</div></div>';
   }
+  elegirGuardadaSola();
   var d=cartDesglose();
   var envio=deliveryFeeAmount();
   var dirOk=direccionLista(),recOk=recibeListo();
@@ -1024,6 +1041,7 @@ var _pendingOrder=null;
 // Lo que impide pagar, o null. Lee el ESTADO del pedido (confNom, addrText, schedSlot…), no
 // campos de un formulario: la 30G guarda cada dato en su renglón. El servidor vuelve a validar.
 function problemaDelPedido():string|null{
+  elegirGuardadaSola();
   if(!cart.length)return'Tu pedido está vacío.';
   // Las bebidas se ven y se entra a ellas directo, pero van con un sándwich (dueño, 2026-09-30).
   // El servidor lo exige igual (assertTraeSandwich en orders.ts): esto solo lo avisa antes.
