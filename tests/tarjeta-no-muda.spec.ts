@@ -27,3 +27,22 @@ test('si prepare-order falla, el motivo se queda en Pagar y se reporta', async (
   await expect.poll(() => calls.filter((c) => c.action === 'report-client-error').map((c) => c.body.donde))
     .toContain('tarjeta:prepare-order');
 });
+
+// Promesa: si la ventana de Culqi no aparece (dueño, 2026-10-02: «no veo nada, no carga Niubiz
+// ni nada»), a los segundos Pagar lo dice y llega al registro con lo que había en la página.
+// Modo de fallo: el silencio — Culqi.open() no avisa nada si su ventana no se muestra.
+test('si la ventana de Culqi no aparece, Pagar lo dice y se reporta', async ({ page }) => {
+  await page.addInitScript(() => { (window as any).Culqi = { settings() {}, options() {}, open() {} }; });
+  const calls = await gotoApp(page, { '*': { success: true } });
+  await pedirUnSignature(page);
+  await ponerRecibe(page);
+  await ponerDireccion(page);
+  await page.locator('.m30-go .oro').click();
+  await page.locator('.m31').waitFor();
+  await page.evaluate(() => { (window as any).selectPayMethod('culqi'); (window as any).render(); });
+  await page.locator('.m31.t').waitFor();
+  await page.locator('.m30-go .oro').click();
+  await expect.poll(() => calls.filter((c) => c.action === 'report-client-error').map((c) => c.body.donde), { timeout: 12000 })
+    .toContain('tarjeta:no-abrio');
+  await expect(page.locator('.m31.t [role="alert"]')).not.toBeEmpty();
+});
