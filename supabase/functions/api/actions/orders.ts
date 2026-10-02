@@ -297,6 +297,16 @@ async function organizerWaiverFor(b: any): Promise<boolean> {
   return await organizerFreeSandwichApplies(code, active.payload.phone);
 }
 
+// La fila de la reserva de un pago con tarjeta: SOLO columnas de pending_charges. El 2026-09-30
+// se le esparció readMetaAttribution (fbp, fbc, clientUserAgent, groupCode), que no son columnas:
+// PostgREST rechazaba la fila y TODO pago con tarjeta moría en «Error interno del servidor» antes
+// de abrir Culqi, durante dos días (dueño: «el pago con tarjeta no sirve… antes funcionaba»). La
+// atribución de Meta viaja en place-order, no en la reserva. tests-api/reserva-de-tarjeta.test.ts
+// compara estas claves con las columnas reales (supabase/esquema-actual.sql).
+export function filaDeReserva(campos: Record<string, unknown>, b: unknown): Record<string, unknown> {
+  return { ...campos, ...readCoords(b) };
+}
+
 function readMetaAttribution(b: any): { fbp: string | null; fbc: string | null; clientUserAgent: string | null; groupCode: string | null } {
   const clean = (v: unknown, max: number) => {
     const s = typeof v === "string" ? v.trim().slice(0, max) : "";
@@ -987,7 +997,7 @@ export async function actPrepareOrder(b: Entrada<"prepare-order"> & { _ip?: stri
 
     const expiresAt = new Date(Date.now() + PENDING_CHARGE_TTL_MINUTES * 60000).toISOString();
     try {
-      await sbInsert("pending_charges", {
+      await sbInsert("pending_charges", filaDeReserva({
         ref,
         customer_phone: phone,
         contact_phone: contactPhone,
@@ -1009,9 +1019,7 @@ export async function actPrepareOrder(b: Entrada<"prepare-order"> & { _ip?: stri
         promo_code_id: promoCodeId,
         promo_discount: promoDiscount,
         recurring_id: recurringId,
-        ...readCoords(b),
-        ...readMetaAttribution(b),
-      });
+      }, b));
     } catch (e) {
       await restockBestEffort(codes, qtys, "prepare-order");
       if (e instanceof Error && e.message.includes("23505")) {
