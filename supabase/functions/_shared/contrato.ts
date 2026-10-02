@@ -279,7 +279,6 @@ export const CONTRATO = {
   'admin-orders': accion<Record<string, unknown>>()(e.objeto({ token })),
   'admin-receipt-ocr': accion<Record<string, unknown>>()(e.objeto({ token, ref: crudo, text: crudo })),
   'admin-update-status': accion<Record<string, unknown>>()(e.objeto({ token, orderId: e.uuid('Falta el pedido.'), status: e.texto({ min: 1, max: 20, mensaje: 'Falta el estado.' }), etaMinutes: e.numero({ min: 0, max: 600, opcional: true, mensaje: 'Los minutos no son válidos.' }) })),
-  'admin-bulk-update-status': accion<Record<string, unknown>>()(e.objeto({ token, orderIds: e.lista(e.uuid('Un pedido de la lista no es válido.'), { max: 100 }), status: e.texto({ min: 1, max: 20, mensaje: 'Falta el estado.' }), etaMinutes: e.numero({ min: 0, max: 600, opcional: true, mensaje: 'Los minutos no son válidos.' }) })),
   'admin-confirm-payment': accion<Record<string, unknown>>()(e.objeto({ token, orderId: e.uuid('Falta el pedido.') })),
   'admin-cancel-order': accion<Record<string, unknown>>()(e.objeto({ token, orderId: e.uuid('Falta el pedido.'), acknowledgeRefund: e.bandera(), reason: e.textoOpcional(200) })),
   'admin-receipt-url': accion<Record<string, unknown>>()(e.objeto({ token, orderId: crudo })),

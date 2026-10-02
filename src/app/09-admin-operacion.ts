@@ -1,24 +1,3 @@
-// ADMIN HOME
-// Barra flotante de acciones en lote (#113) — aparece solo cuando hay pedidos
-// seleccionados; deja avanzar varios a la vez al mismo estado en un solo tap.
-function bulkBar(){
-  var ids=Object.keys(bulkSelected).filter(function(k){return bulkSelected[k];});
-  if(!ids.length)return'';
-  var n=ids.length;
-  // Antes cada botón medía ~10px de padding vertical (~34px de alto total) y el botón de
-  // cerrar apenas 4px de padding horizontal sin alto fijo — por debajo del mínimo táctil
-  // recomendado (~44px), justo en la barra que se usa a las apuradas en hora pico
-  // (hallazgo de la re-auditoría del panel admin). Ahora los 4 botones de acción miden
-  // ~44px de alto y el botón de cerrar es un cuadrado de 40x40 en vez de un ícono suelto.
-  return'<div class="sw-barra" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(11,11,11,.97);border-top:1px solid var(--sw-border-soft,#1c1c1c);padding:12px 16px;display:flex;gap:6px;align-items:center;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:110">'
-    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';flex-shrink:0">'+n+' sel.</div>'
-    +'<button onclick="bulkConfirmPayments()" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:var(--sw-warn,#ffa500);color:var(--sw-on-gold,#241a08);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:15px 4px;border-radius:8px">'+iconTxt('check','Pago','var(--sw-on-gold,#241a08)')+'</button>'
-    +'<button onclick="bulkAdvanceStatus(\'PREPARANDO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.PREPARANDO.c+';color:#fff;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:15px 4px;border-radius:8px">'+STATUSES.PREPARANDO.label+'</button>'
-    +'<button onclick="bulkAdvanceStatus(\'EN CAMINO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:'+STATUSES['EN CAMINO'].c+';color:#fff;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:15px 4px;border-radius:8px">'+STATUSES['EN CAMINO'].label+'</button>'
-    +'<button onclick="bulkAdvanceStatus(\'ENTREGADO\')" style="all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;background:'+STATUSES.ENTREGADO.c+';color:#fff;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;padding:15px 4px;border-radius:8px">'+STATUSES.ENTREGADO.label+'</button>'
-    +'<button onclick="bulkSelected={};render()" aria-label="Cancelar selección" style="all:unset;box-sizing:border-box;cursor:pointer;color:var(--sw-danger,#ff8888);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+icon('close',16,'var(--sw-danger,#ff8888)')+'</button>'
-    +'</div>';
-}
 // Íconos de línea minimalistas — mismo trazo/estilo que el ícono de Instagram del pie
 // de página (stroke currentColor, sin relleno), en vez de emoji grandes y de colores
 // dispares que no calzan con la estética tipográfica del resto de la app. Nació para el
