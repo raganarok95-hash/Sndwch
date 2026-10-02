@@ -717,21 +717,33 @@ export async function actAdminPromoList(b: Entrada<"admin-promo-list"> & { _ip?:
 }
 
 const PROMO_DISCOUNT_TYPES = new Set(["percent", "fixed"]);
+// Las fechas de un código: que sean fechas, y que no nazca vencido ni al revés. Antes un texto
+// cualquiera llegaba a la base (500) y un «hasta» anterior al «desde» creaba un código que el
+// panel mostraba activo y ningún cliente podía usar, sin que nadie se enterara.
+export function vigenciaDePromo(desde: string, hasta: string, ahora: number): { validFrom: string | null; validUntil: string | null } {
+  const leer = (t: string, campo: string) => {
+    if (!t) return null;
+    const ms = Date.parse(t);
+    if (!isFinite(ms)) throw new ApiError(`La fecha «${campo}» no es válida.`, 400);
+    return ms;
+  };
+  const d = leer(desde, "desde"), h = leer(hasta, "hasta");
+  if (h != null && h <= ahora) throw new ApiError("La fecha «hasta» ya pasó: el código nacería vencido.", 400);
+  if (d != null && h != null && h <= d) throw new ApiError("La fecha «hasta» es anterior a «desde».", 400);
+  return { validFrom: d == null ? null : new Date(d).toISOString(), validUntil: h == null ? null : new Date(h).toISOString() };
+}
 export async function actAdminPromoCreate(b: Entrada<"admin-promo-create"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
-  const code = String(b.code || "").trim().toUpperCase();
-  const discountType = String(b.discountType || "");
-  const value = Number(b.value);
-  if (!code || !/^[A-Z0-9_-]{3,20}$/.test(code)) throw new ApiError("El código debe tener 3-20 caracteres (letras, números, - o _).", 400);
+  const code = b.code.toUpperCase();
+  const discountType = b.discountType;
+  const value = b.value as number;
+  if (!/^[A-Z0-9_-]{3,20}$/.test(code)) throw new ApiError("El código debe tener 3-20 caracteres (letras, números, - o _).", 400);
   if (!PROMO_DISCOUNT_TYPES.has(discountType)) throw new ApiError("Tipo de descuento inválido.", 400);
-  if (!(value > 0)) throw new ApiError("El valor del descuento debe ser mayor a 0.", 400);
-  if (discountType === "percent" && value > 100) throw new ApiError("Un descuento porcentual no puede pasar de 100%.", 400);
-  const maxDiscount = b.maxDiscount !== undefined && b.maxDiscount !== null && b.maxDiscount !== "" ? Number(b.maxDiscount) : null;
-  const maxUses = b.maxUses !== undefined && b.maxUses !== null && b.maxUses !== "" ? Math.max(1, parseInt(b.maxUses, 10) || 0) : null;
-  const minOrderTotal = b.minOrderTotal !== undefined && b.minOrderTotal !== null && b.minOrderTotal !== "" ? Math.max(0, Number(b.minOrderTotal)) : 0;
-  const validFrom = b.validFrom ? String(b.validFrom) : null;
-  const validUntil = b.validUntil ? String(b.validUntil) : null;
-  const campaignTag = b.campaignTag ? String(b.campaignTag).trim().slice(0, 60) : null;
+  const maxDiscount = b.maxDiscount;
+  const maxUses = b.maxUses == null ? null : Math.floor(b.maxUses);
+  const minOrderTotal = b.minOrderTotal ?? 0;
+  const { validFrom, validUntil } = vigenciaDePromo(b.validFrom, b.validUntil, Date.now());
+  const campaignTag = b.campaignTag || null;
   let row;
   try {
     const rows = await sbInsert("promo_codes", {

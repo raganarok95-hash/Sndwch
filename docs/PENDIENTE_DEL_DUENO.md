@@ -31,6 +31,14 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 > de migraciones y en 4 de los 42 crons, pero ese historial no lo expone la API: solo lo ve quien
 > ya tiene acceso total a la base. Rotarlo es higiene, no urgencia.
 
+## 0. Probar en tu celular (2026-10-02) — lo dijiste: «lo haré luego»
+
+| # | Qué | Qué me dices después |
+|---|---|---|
+| P30 | **Dirección guardada**: cerrar y abrir sndwch.app, agregar un sándwich, ver que «Dónde» ya trae «Casa» con el envío, y tocar Pagar | Si te vuelve a pedir el mapa (la app me reporta qué recibió) |
+| P31 | **Pin de «Casa»**: hoy está EXACTO en el local (el mapa abría ahí). Si tu casa no es el local: «Editar» y mover el pin a tu puerta | Nada, salvo que no te deje |
+| P32 | **Tarjeta**: Pagar → «Prefiero tarjeta» → «Ir a pagar». Si la ventana no aparece, Pagar lo dice y me llega el registro | Avísame que lo intentaste y leo `debug_logs` |
+
 ## 1. Antes de abrir — sin esto no se puede operar
 
 | # | Qué | Por qué importa |
