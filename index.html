@@ -481,6 +481,10 @@ body.kb-open #app{padding-bottom:0}
 .coc-b.arm{background:#3A86FF;color:#061633}
 .coc-b.cam{background:#9b6fff;color:#140833}
 .coc-b.gh{border:1px solid var(--sw-border);color:var(--sw-text)}
+.coc-cap{margin-top:8px;padding:9px 12px;border-radius:8px;font-size:13px;line-height:1.35}
+.coc-cap.ok{background:rgba(37,211,102,.14);border:1px solid rgba(37,211,102,.45)}
+.coc-cap.mal{background:rgba(255,136,136,.12);border:1px solid rgba(255,136,136,.45)}
+.coc-cap.duda{background:rgba(255,165,0,.10);border:1px solid rgba(255,165,0,.4)}
 .coc-vacio{padding:40px 12px;text-align:center;font-size:15px;color:var(--sw-text-muted)}
 .coc-tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--sw-bg);border-top:1px solid var(--sw-border);padding-bottom:env(safe-area-inset-bottom)}
 .coc-tabs button{all:unset;cursor:pointer;flex:1;text-align:center;min-height:56px;font-size:13px;font-weight:700;color:var(--sw-text-muted)}
@@ -2093,6 +2097,7 @@ body.kb-open #app{padding-bottom:0}
     WEEKLY_PLAN_CREDIT: () => WEEKLY_PLAN_CREDIT,
     WEEKLY_PLAN_PRICE: () => WEEKLY_PLAN_PRICE,
     WELCOME_BONUS_POINTS: () => WELCOME_BONUS_POINTS,
+    YAPE_AUTO_TOPE: () => YAPE_AUTO_TOPE,
     ZONAS_DE_ENVIO: () => ZONAS_DE_ENVIO
   });
   var ptsDe = (tipo) => {
@@ -2161,6 +2166,7 @@ body.kb-open #app{padding-bottom:0}
   var RESPUESTA_CORTE_HORA = 19;
   var RESPUESTA_HOY_HORA = 21;
   var RESPUESTA_MANANA_HORA = 13;
+  var YAPE_AUTO_TOPE = 80;
 
   // src/nuevo/reglas.ts
   var mayuscula = (s2) => s2.charAt(0).toUpperCase() + s2.slice(1);
@@ -4141,7 +4147,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'da4c0e74d9';
+var APP_BUILD = 'c0ec285034';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -4604,6 +4610,7 @@ function startPoll() {
             var r = await api('admin-orders', { token: token });
             lastPollCount = r.orders.length;
             avisarSiHayNovedad(r.orders);
+            leerCapturasNuevas(r.orders);
             adminOrdersTruncated = !!r.truncated;
             // Antes un poll fallido quedaba en silencio total — el operador veía el estado
             // de siempre sin ninguna señal de que en realidad no se está actualizando.
@@ -9154,7 +9161,7 @@ function sOSent() {
                 + (deadlineLabel ? '; si no lo hacemos antes de las ' + esc(deadlineLabel) + ', el pedido se cancela solo' : '') + '.<br>'
                 + (receiptUploadState === 'done' ? '✓ Comprobante recibido.'
                     : receiptUploadState === 'uploading' ? 'Subiendo el comprobante…'
-                        : '<label>Subir la captura del comprobante (opcional)<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>')
+                        : '<label data-accion="subir-captura">Sube la captura de tu ' + methodLabel + ': si cuadra, tu pedido entra a la cocina solo, sin esperar a que lo revisemos<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>')
                 + (typeof receiptUploadState === 'string' && receiptUploadState.indexOf('error:') === 0 ? '<br>' + esc(receiptUploadState.slice(6)) : '')
                 + '</div>' : '')
             + (window._lRankUp ? '<div class="dr"><span>Subiste a</span><b class="pt">' + esc(window._lRankUp) + '</b></div>' : '')
@@ -11751,6 +11758,7 @@ async function loadAdmin() {
         adminAddressFlags = r.addressFlags || null;
         lastPollCount = adminOrders.length;
         avisarSiHayNovedad(adminOrders);
+        leerCapturasNuevas(adminOrders);
     }
     catch (e) {
         adminOrders = [];
@@ -11863,6 +11871,31 @@ function loadTesseract() {
     });
     return _tesseractPromise;
 }
+// Yape por captura (dueño, 2026-10-02): el panel lee SOLO cada captura nueva de un pedido Yape sin
+// confirmar, una a la vez; el servidor decide si confirma (decisionAutomatica). Gratis: el lector
+// corre en este teléfono. Sin el panel abierto no se lee nada y el pedido espera como antes.
+var _leyendoCaptura = false;
+async function leerCapturasNuevas(orders) {
+    if (_leyendoCaptura || !isAdmin)
+        return;
+    var o = (orders || []).find(function (x) {
+        return (x.payment_method === 'yape' || x.payment_method === 'plin') && x.payment_status !== 'paid' && x.status !== 'CANCELADO'
+            && x.receipt_path && !x.receipt_ocr && !receiptOcrState[x.ref];
+    });
+    if (!o)
+        return;
+    _leyendoCaptura = true;
+    try {
+        var r = await api('admin-receipt-url', { token: token, orderId: o.id });
+        await readReceipt(o.id, r.url);
+    }
+    catch (e) {
+        receiptOcrState[o.ref] = { error: (e && e.message) || 'sin acceso a la captura' };
+        render();
+    }
+    _leyendoCaptura = false;
+    leerCapturasNuevas(adminOrders);
+}
 async function readReceipt(ordId, url) {
     var o = (adminOrders || []).find(function (x) { return x.id === ordId; });
     if (!o)
@@ -11879,7 +11912,10 @@ async function readReceipt(ordId, url) {
         // está la tabla contra la que se comprueba si esa misma operación ya respaldó otro
         // pedido — algo que este navegador no puede saber solo.
         var r = await api('admin-receipt-ocr', { token: token, ref: o.ref, text: texto });
-        receiptOcrState[o.ref] = { fields: r.fields, checks: r.checks };
+        receiptOcrState[o.ref] = { fields: r.fields, checks: r.checks, auto: r.auto };
+        // Confirmado por la captura: el pedido ya está pagado; se refleja sin esperar el próximo poll.
+        if (r.order)
+            adminOrders = (adminOrders || []).map(function (x) { return x.id === o.id ? Object.assign({}, x, r.order) : x; });
     }
     catch (e) {
         receiptOcrState[o.ref] = { error: e.message || 'No se pudo leer el comprobante.' };

@@ -221,6 +221,7 @@ function startPoll(){
       var r=await api('admin-orders',{token:token});
       lastPollCount=r.orders.length;
       avisarSiHayNovedad(r.orders);
+      leerCapturasNuevas(r.orders);
       adminOrdersTruncated=!!r.truncated;
       // Antes un poll fallido quedaba en silencio total — el operador veía el estado
       // de siempre sin ninguna señal de que en realidad no se está actualizando.

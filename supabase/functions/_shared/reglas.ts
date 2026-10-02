@@ -97,3 +97,7 @@ export const REPORTE_PLAZO_HORAS = 48;
 export const RESPUESTA_CORTE_HORA = 19;
 export const RESPUESTA_HOY_HORA = 21;
 export const RESPUESTA_MANANA_HORA = 13;
+
+// ── Yape confirmado por captura (dueño, 2026-10-02: «gratis y automatizado aun con el riesgo de
+// que se modifique la captura»; tope decidido: S/80). Sobre este total el pago lo confirma el dueño.
+export const YAPE_AUTO_TOPE = 80;

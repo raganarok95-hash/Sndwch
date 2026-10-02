@@ -163,7 +163,7 @@ async function loadAdmin(){
   sndScreen=panelModo==='cocina'?'admin_cocina':'admin_home';busy=true;busyMsg='Cargando...';render();
   var done=false;
   var timer=setTimeout(function(){if(!done){done=true;busy=false;render();}},8000);
-  try{var r=await api('admin-orders',{token:token});adminOrders=r.orders;adminOrdersTruncated=!!r.truncated;adminAddressFlags=r.addressFlags||null;lastPollCount=adminOrders.length;avisarSiHayNovedad(adminOrders);}
+  try{var r=await api('admin-orders',{token:token});adminOrders=r.orders;adminOrdersTruncated=!!r.truncated;adminAddressFlags=r.addressFlags||null;lastPollCount=adminOrders.length;avisarSiHayNovedad(adminOrders);leerCapturasNuevas(adminOrders);}
   catch(e){adminOrders=[];}
   // ⚠ ACÁ HUBO UN AUTO-SALTO A MODO COCINA Y SE RETIRÓ EL MISMO DÍA (2026-09-12).
   // La idea era ahorrar el paso de atravesar el home (4 600 px, 53 controles) con pedidos
@@ -265,6 +265,25 @@ function loadTesseract(){
   });
   return _tesseractPromise;
 }
+// Yape por captura (dueño, 2026-10-02): el panel lee SOLO cada captura nueva de un pedido Yape sin
+// confirmar, una a la vez; el servidor decide si confirma (decisionAutomatica). Gratis: el lector
+// corre en este teléfono. Sin el panel abierto no se lee nada y el pedido espera como antes.
+var _leyendoCaptura=false;
+async function leerCapturasNuevas(orders:any[]){
+  if(_leyendoCaptura||!isAdmin)return;
+  var o=(orders||[]).find(function(x:any){
+    return (x.payment_method==='yape'||x.payment_method==='plin')&&x.payment_status!=='paid'&&x.status!=='CANCELADO'
+      &&x.receipt_path&&!x.receipt_ocr&&!receiptOcrState[x.ref];
+  });
+  if(!o)return;
+  _leyendoCaptura=true;
+  try{
+    var r=await api('admin-receipt-url',{token:token,orderId:o.id});
+    await readReceipt(o.id,r.url);
+  }catch(e:any){receiptOcrState[o.ref]={error:(e&&e.message)||'sin acceso a la captura'};render();}
+  _leyendoCaptura=false;
+  leerCapturasNuevas(adminOrders);
+}
 async function readReceipt(ordId,url){
   var o=(adminOrders||[]).find(function(x){return x.id===ordId;});
   if(!o)return;
@@ -279,7 +298,9 @@ async function readReceipt(ordId,url){
     // está la tabla contra la que se comprueba si esa misma operación ya respaldó otro
     // pedido — algo que este navegador no puede saber solo.
     var r=await api('admin-receipt-ocr',{token:token,ref:o.ref,text:texto});
-    receiptOcrState[o.ref]={fields:r.fields,checks:r.checks};
+    receiptOcrState[o.ref]={fields:r.fields,checks:r.checks,auto:r.auto};
+    // Confirmado por la captura: el pedido ya está pagado; se refleja sin esperar el próximo poll.
+    if(r.order)adminOrders=(adminOrders||[]).map(function(x:any){return x.id===o.id?Object.assign({},x,r.order):x;});
   }catch(e){
     receiptOcrState[o.ref]={error:e.message||'No se pudo leer el comprobante.'};
   }

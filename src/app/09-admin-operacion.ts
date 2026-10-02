@@ -360,25 +360,15 @@ function adminToolsSections(){
 // El caso "no se pudo leer" se muestra igual que los otros dos, a propósito. Callarlo haría
 // que la ausencia de aviso pareciera aprobación — y esa es exactamente la confusión que
 // convierte una ayuda en un riesgo.
+// La captura de Yape, leída sola (Cocina abierta la lee apenas llega, ver leerCapturasNuevas):
+// si todo cuadra el servidor ya confirmó el pago; si no, el motivo queda a la vista del dueño.
 function receiptOcrHTML(o){
   var st=receiptOcrState[o.ref];if(!st)return '';
-  var caja=function(color,texto){
-    return '<div style="background:rgba('+color+',.12);border:1px solid rgba('+color+',.35);border-radius:8px;padding:9px 12px;margin-bottom:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-body,#EFEDE4);line-height:1.5">'+texto+'</div>';
-  };
-  if(st.loading)return caja('168,200,176','Leyendo el comprobante…');
-  if(st.error)return caja('168,200,176','No se pudo leer el comprobante ('+esc(st.error)+'). Revísalo a ojo, como siempre.');
-  var c=st.checks||{},f=st.fields||{};
-  var money=function(n){return 'S/'+(Math.round((Number(n)||0)*100)/100).toFixed(2);};
-  if(c.duplicateOpRefs&&c.duplicateOpRefs.length){
-    return caja('255,85,85','<b>Esta misma operación ya respalda '+c.duplicateOpRefs.map(esc).join(', ')+'.</b> Una transferencia no puede pagar dos pedidos — compáralos antes de confirmar.');
-  }
-  if(c.verdict==='ok'){
-    return caja('37,211,102','El monto de la captura ('+money(c.amountRead)+') coincide con el pedido'+(f.opNumber?' · op. '+esc(f.opNumber):'')+(f.dateText?' · '+esc(f.dateText):'')+'. <b>Igual confirma contra tu cuenta</b>: una captura se puede editar.');
-  }
-  if(c.verdict==='revisar'){
-    return caja('255,85,85','<b>La captura dice '+money(c.amountRead)+' y el pedido es '+money(c.expected)+'.</b> Revísalo antes de confirmar.');
-  }
-  return caja('255,165,0','No se reconoció el monto en la captura. Compáralo a ojo — que no se haya leído no significa que esté bien.');
+  if(st.loading)return '<div class="coc-cap duda">Leyendo la captura…</div>';
+  if(st.error)return '<div class="coc-cap duda">No se pudo leer la captura ('+esc(st.error)+'). Revísala tú.</div>';
+  var a=st.auto||{};
+  if(a.confirmado)return '<div class="coc-cap ok" data-captura="confirmada"><b>Confirmado por la captura.</b> '+esc(a.motivo||'')+'</div>';
+  return '<div class="coc-cap mal" data-captura="revisar"><b>Revísalo tú:</b> '+esc(a.motivo||'la captura no se pudo comprobar')+'</div>';
 }
 function addressFlagsBanner(){
   var f=adminAddressFlags;if(!f)return '';
@@ -717,6 +707,7 @@ function tarjetaDeCocina(o){
     +'<div class="it">'+esc(o.summary||'')+'</div>'
     +(et==='pago'?'<div class="q">'+(o.payment_method==='plin'?'Plin':'Yape')+' · '+soles(o.total)+'</div>':'')
     +(et==='armando'||et==='camino'?'<div class="q">'+esc(o.customer_address||'')+(o.notes?' · '+esc(o.notes):'')+'</div>':'')
+    +(o.payment_method==='yape'||o.payment_method==='plin'?receiptOcrHTML(o):'')
     +botonDeCocina(o)
     +'</div>';
 }
