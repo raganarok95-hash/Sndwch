@@ -29,8 +29,8 @@ test('elegir una guardada sin pin abre el mapa para ELLA, la guarda con su pin y
     w._gmapsPromise = Promise.resolve();
     w.sndScreen = 'o_dir'; w.render();
   });
-  await page.locator('.m34 .et').first().click();
-  await page.getByRole('button', { name: /Ubicar «Casa» en el mapa/ }).click();
+  // Un toque en la guardada SIN pin abre el mapa para ella (sin paso intermedio).
+  await page.locator('[data-accion="elegir-direccion"]').first().click();
   await expect(page.locator('#mmap')).toBeVisible();
   // El buscador viene con la dirección guardada escrita.
   await expect(page.locator('#maddr-input')).toHaveValue(/César Vallejo 2670/);
@@ -96,4 +96,31 @@ test('con una dirección guardada con pin, el carrito queda listo para pagar sin
   expect(r.lat).toBe(-8.0912);
   expect(r.lista, 'el carrito sigue pidiendo el mapa').toBe(true);
   expect(r.problema || '').not.toMatch(/mapa/);
+});
+
+// UNA GUARDADA CON PIN SE USA DE UN TOQUE (dueño, 2026-10-02: «no debería pedir "Es acá" porque
+// ya se puso el pin»). Tocarla solo la marcaba y había que tocar otro botón; peor si abría el mapa.
+test('tocar una guardada con pin la usa y vuelve al carrito, sin abrir el mapa', async ({ page }) => {
+  const updates: any[] = [];
+  await gotoApp(page, {
+    login: { customer: { phone: '900000001', name: 'Prueba', points: 0 }, isAdmin: false, token: 't' },
+    'addresses-list': { addresses: [{ id: 5, label: 'Oficina', address: 'Jr Pizarro 100', reference: '', lat: -8.0912, lon: -79.0101 }] },
+    'addresses-update': (b: any) => { updates.push(b); return { success: true }; },
+    '*': { success: true },
+  });
+  await entrarConTelefono(page);
+  await page.waitForFunction(() => (window as any).cust && (window as any).myAddresses.length);
+  await page.evaluate(() => {
+    const w = window as any;
+    w._mLat = null; w._mLon = null; w.pickedAddrId = null;
+    w.cart = [{ type: 'sig', code: w.SIGS[0].id, size: '15', qty: 1 }];
+    w.sndScreen = 'o_dir'; w.render();
+  });
+  await page.locator('[data-accion="elegir-direccion"]').first().click();
+  await expect.poll(() => page.evaluate(() => (window as any).sndScreen)).toBe('o_cart');
+  await expect(page.locator('#mmap')).toBeHidden();
+  const r = await page.evaluate(() => { const w = window as any; return { elegida: w.pickedAddrId, lista: w.direccionLista() }; });
+  expect(r.elegida).toBe(5);
+  expect(r.lista, 'quedó pidiendo el mapa').toBe(true);
+  expect(updates.length, 'no debía volver a guardar el pin').toBe(0);
 });

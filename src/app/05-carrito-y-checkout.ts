@@ -940,7 +940,13 @@ function sODir(){
     // la base tenía el pin y el celular decía «Márcala en el mapa»). Una vez por sesión.
     if(km==null)reportarError('direccion:sin-pin',new Error('id '+a.id+' lat '+typeof a.lat+':'+String(a.lat)+' lon '+typeof a.lon+':'+String(a.lon)));
     var sel=dirElegida!=null&&mismoId(dirElegida,a.id);
-    return'<button class="et" aria-pressed="'+sel+'" onclick="dirElegida='+JSON.stringify(a.id).replace(/"/g,'&quot;')+';render()">'
+    // UN toque (dueño, 2026-10-02: «no debería pedir "Es acá" porque ya se puso el pin»): con pin,
+    // la dirección se usa y se vuelve al carrito; sin pin, se abre el mapa ubicado en ELLA.
+    var idJs=JSON.stringify(a.id).replace(/"/g,'&quot;');
+    var alTocar=km!=null
+      ?'dirElegida='+idJs+';usarDireccion()'
+      :'abrirMapaPara(\'o_cart\','+idJs+','+esc(JSON.stringify(a.address||''))+')';
+    return'<button class="et" data-accion="elegir-direccion" aria-pressed="'+sel+'" onclick="'+alTocar+'">'
       +'<span class="hd"><span>'+esc(a.label||'Guardada')+'</span><span>'+(km!=null?km.toFixed(1)+' km':'—')+'</span></span>'
       +'<b>'+esc(a.address)+'</b>'+(a.reference?'<s>'+esc(a.reference)+'</s>':'')
       +'<span class="pie"><i>'+(env!=null?'Envío '+SOLES_TXT+pz(env):'Márcala en el mapa')+'</i><u>Editar</u></span></button>';
