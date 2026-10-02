@@ -92,40 +92,62 @@ export async function actGetCatalog(_b: Entrada<"get-catalog">) {
       : null,
   };
 }
+// Un precio del panel: positivo, con dos decimales, bajo un techo, y sin saltar más de 3 veces
+// respecto al vigente. Sin esto, un campo vacío llegaba como 0 (el producto quedaba gratis) y un
+// tipeo como 2290 por 22.90 se guardaba igual: dinero perdido o clientes espantados, en silencio.
+export const PRECIO_MAX = 150;
+export const PUNTOS_MAX = 5000;
+const SALTO_MAX = 3;
+function precioDelPanel(v: unknown, campo: string, actual: number | undefined): number {
+  if (typeof v !== "number" || !isFinite(v) || v <= 0) throw new ApiError(`${campo}: escribe un precio mayor que 0.`);
+  if (v > PRECIO_MAX) throw new ApiError(`${campo}: S/${v} pasa el tope de S/${PRECIO_MAX}. ¿Sobra un cero?`);
+  const n = Math.round(v * 100) / 100;
+  if (actual && actual > 0 && (n > actual * SALTO_MAX || n < actual / SALTO_MAX)) {
+    throw new ApiError(`${campo}: de S/${actual} a S/${n} es más de ${SALTO_MAX} veces. Revisa la cifra.`);
+  }
+  return n;
+}
+/** Lo que se guarda en catalog_prices.values: SOLO los campos de la categoría, ya validados. */
+export function valoresDePrecio(category: string, code: string, values: unknown): Record<string, number> {
+  if (!values || typeof values !== "object") throw new ApiError("Faltan los valores del precio.");
+  const v = values as Record<string, unknown>;
+  if (category === "protein") {
+    const actual = PROT_PRICE[code];
+    if (!actual) throw new ApiError("Proteína desconocida.");
+    // pDbl30 se agregó el 2026-08-22 (el recargo de doble proteína dejó de ser plano): sin él,
+    // el 30CM quedaba con el literal del código y el 15CM con el del panel.
+    return {
+      p15: precioDelPanel(v.p15, "15CM", actual.p15),
+      p30: precioDelPanel(v.p30, "30CM", actual.p30),
+      pDbl: precioDelPanel(v.pDbl, "Doble 15CM", actual.pDbl),
+      pDbl30: precioDelPanel(v.pDbl30, "Doble 30CM", actual.pDbl30),
+    };
+  }
+  if (category === "sig") {
+    // Desde el 2026-08-27 el precio de un Signature vive en `catalog_items`: guardarlo acá
+    // diría "guardado" y loadCatalogItems() lo pisaría un instante después.
+    throw new ApiError("El precio de un Signature se edita en Admin // Catálogo // Signatures, no acá.");
+  }
+  if (category === "side") {
+    if (!(code in SIDE_PRICE)) throw new ApiError("Bebida/side desconocido.");
+    return { price: precioDelPanel(v.price, "Precio", SIDE_PRICE[code]) };
+  }
+  if (category === "reward") {
+    if (!REWARDS[code]) throw new ApiError("Recompensa desconocida.");
+    const pts = v.pts;
+    if (typeof pts !== "number" || !Number.isInteger(pts) || pts < 1 || pts > PUNTOS_MAX) {
+      throw new ApiError(`Puntos: un entero entre 1 y ${PUNTOS_MAX}.`);
+    }
+    return { pts };
+  }
+  throw new ApiError("Categoría inválida.");
+}
+
 export async function actAdminCatalogSetPrice(b: Entrada<"admin-catalog-set-price"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
-  const code = String(b.code || "").trim();
-  const category = String(b.category || "").trim();
-  const values = b.values;
-  if (!values || typeof values !== "object") throw new ApiError("Faltan los valores del precio.");
-  // Valida la forma exacta esperada por categoría antes de guardar — evita que un typo
-  // en el panel guarde un jsonb con campos faltantes/de más que luego rompa el pricing.
-  if (category === "protein") {
-    if (!PROT_PRICE[code]) throw new ApiError("Proteína desconocida.");
-    // pDbl30 se agregó el 2026-08-22 (el recargo de doble proteína dejó de ser plano, ver
-    // PROT_PRICE en catalog.ts). Se valida igual que los otros tres — sin esto, el panel
-    // admin podría guardar una fila sin pDbl30 y loadCatalogPrices dejaría el 30CM con el
-    // literal del código mientras el 15CM sí se actualiza: precios de dos épocas en la
-    // misma proteína.
-    if (typeof values.p15 !== "number" || typeof values.p30 !== "number" || typeof values.pDbl !== "number" || typeof values.pDbl30 !== "number" || values.p15 < 0 || values.p30 < 0 || values.pDbl < 0 || values.pDbl30 < 0) {
-      throw new ApiError("Precio inválido.");
-    }
-  } else if (category === "sig") {
-    // Desde el 2026-08-27 el precio de un Signature vive en `catalog_items`, junto con su
-    // composición, su nombre y su foto. Aceptarlo acá guardaría una fila en catalog_prices
-    // que loadCatalogItems() pisa un instante después: el panel diría "guardado" y el
-    // precio no cambiaría. Es exactamente el fallo silencioso que ya costó tres semanas de
-    // precios fantasma, así que se rechaza con un mensaje que dice a dónde ir.
-    throw new ApiError("El precio de un Signature se edita en Admin // Catálogo // Signatures, no acá.");
-  } else if (category === "side") {
-    if (!(code in SIDE_PRICE)) throw new ApiError("Bebida/side desconocido.");
-    if (typeof values.price !== "number" || values.price < 0) throw new ApiError("Precio inválido.");
-  } else if (category === "reward") {
-    if (!REWARDS[code]) throw new ApiError("Recompensa desconocida.");
-    if (typeof values.pts !== "number" || values.pts < 1) throw new ApiError("Costo en puntos inválido.");
-  } else {
-    throw new ApiError("Categoría inválida.");
-  }
+  const code = b.code;
+  const category = b.category;
+  const values = valoresDePrecio(category, code, b.values);
   // sbUpsert (no sbUpdate): un PATCH de PostgREST que no encuentra ninguna fila devuelve
   // 200 con `[]` — es decir, editar el precio de un código SIN fila previa en
   // `catalog_prices` respondía "success" al panel admin sin haber guardado absolutamente

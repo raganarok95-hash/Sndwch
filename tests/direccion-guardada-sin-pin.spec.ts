@@ -40,8 +40,9 @@ test('elegir una guardada sin pin abre el mapa para ELLA, la guarda con su pin y
   await page.locator('#mmap-hoja .oro').click();
   await expect.poll(() => updates.length, { message: 'la dirección guardada no se actualizó con su pin' }).toBe(1);
   expect(updates[0].lat, 'el pin guardado no es el de la dirección').toBe(-8.0912);
-  const r = await page.evaluate(() => { const w = window as any; return { pantalla: w.sndScreen, lista: w.direccionLista(), elegida: w.pickedAddrId }; });
-  expect(r.pantalla).toBe('o_cart');
+  // La pantalla cambia cuando el servidor RESPONDE (fijarPinDeGuardada espera), no al enviar.
+  await expect.poll(() => page.evaluate(() => (window as any).sndScreen)).toBe('o_cart');
+  const r = await page.evaluate(() => { const w = window as any; return { lista: w.direccionLista(), elegida: w.pickedAddrId }; });
   expect(r.lista, 'la dirección quedó sin poder pagar').toBe(true);
   expect(r.elegida, 'el carrito no quedó con la dirección guardada elegida').toBe(7);
 });
