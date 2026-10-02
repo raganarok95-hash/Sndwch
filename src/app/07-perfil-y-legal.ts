@@ -41,7 +41,7 @@ async function fijarPinDeGuardada(id:any,lat:number,lon:number){
   var a:any=id!=null?myAddresses.find(function(x:any){return mismoId(x.id,id);}):null;
   if(!a)return null;
   try{await api('addresses-update',{token:token,id:a.id,label:a.label,address:a.address,reference:a.reference||'',lat:lat,lon:lon});a.lat=lat;a.lon=lon;}
-  catch(e:any){showToast('No se pudo guardar la ubicación de «'+(a.label||'tu dirección')+'»: '+e.message,'error');}
+  catch(e:any){reportarError('direccion:guardar-pin',e);showToast('No se pudo guardar la ubicación de «'+(a.label||'tu dirección')+'»: '+e.message,'error');}
   return a;
 }
 // Vuelta del mapa a la pantalla que lo abrió (ver confirmMap).
