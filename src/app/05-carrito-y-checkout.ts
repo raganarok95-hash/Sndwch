@@ -242,14 +242,6 @@ async function uploadReceiptBase64(base64){
   }
   render();
 }
-// Etiqueta del botón de pago principal — compartida entre TU CARRITO y el pago directo
-// de un solo sándwich, ya que ambos ofrecen los mismos métodos de pago.
-function payButtonLabel(t,fallback){
-  if(t===0)return'Confirmar pedido gratis //';
-  if(useCredit&&cust&&(cust.credit_balance||0)>=t)return'Confirmar con crédito //';
-  if(manualPayMethod)return'Ya realicé el pago //';
-  return fallback;
-}
 // ── 30 G · EL PEDIDO ES UN RECIBO DE ESTRAZA (aprobada) + renglones y hojas ────────────────
 // docs/maquetas/aprobadas/30G-el-carrito.png y 30G-*.png (camino de compra, 2026-09-25).
 // Reemplaza «Confirmar sándwich» y «Tu carrito». Todo lo que se decide antes de pagar es un
@@ -408,7 +400,7 @@ function hoja30HTML(){
       +'<div class="cant"><button onclick="cambiarCantidad('+hojaLinea+',-1)" aria-label="Uno menos">−</button><b>'+it.qty+'</b><button onclick="cambiarCantidad('+hojaLinea+',1)" aria-label="Uno más">+</button></div>'
       +(it.type!=='side'?'<button class="op" onclick="hoja30=null;editCartItem('+hojaLinea+')"><span>Cambiarle algo</span><u>Editar</u></button>'
         +'<button class="op" onclick="editItemNote('+hojaLinea+')"><span>'+esc(it.note?'Nota: '+it.note:'Una nota para la cocina')+'</span><u>'+(it.note?'Cambiar':'Poner')+'</u></button>':'')
-      +'<button class="op" onclick="quitarLinea('+hojaLinea+')"><span>Sacarla del pedido</span><u>Quitar</u></button>';
+      +'<button class="op" data-accion="quitar-linea" onclick="quitarLinea('+hojaLinea+')"><span>Sacarla del pedido</span><u>Quitar</u></button>';
   }
   return'<div class="hvelo" onclick="cerrarHoja()"></div><div class="hoja" role="dialog" aria-modal="true">'+cuerpo+'</div>';
 }
@@ -420,6 +412,11 @@ function cambiarCantidad(i:number,delta:number){
 function quitarLinea(i:number){
   cart.splice(i,1);
   if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
+  // Carrito vaciado = pedido abandonado: el código del grupo, el pedido fijo y la hora apartada
+  // no pasan al siguiente. Lo hacía clearCart (botón «Vaciar» de la app anterior) y se perdió con
+  // el carrito nuevo: un organizador que no pagó el grupo podía armar OTRO pedido de 5 y el
+  // groupCode seguía viajando — el servidor regalaba el 15CM del grupo (hallado 2026-10-02).
+  if(!cart.length){pendingGroupCode=null;pendingRecurringId=null;miHoraApartada=null;appliedReward=null;appliedPromo=null;promoStatus='';}
   saveCart();hoja30=null;hojaLinea=-1;render();
 }
 async function hojaListo(){
@@ -1491,7 +1488,6 @@ function mountGoogleButton(){
 // de un celular bajo techo puede errar por cientos de metros; se ofrece como botón y, si su
 // precisión es mala, se dice.
 var GPS_PRECISO_M=60;
-function setGpsHint(msg,color?){var h=(document.getElementById('gps-hint') as HTMLInputElement | null);if(h)h.innerHTML='<span style="color:'+(color||'var(--sw-warn,#ffa500)')+'">'+msg+'</span>';}
 // El aviso amarillo del mapa: '' lo esconde.
 function avisoMapa(msg){
   var b=(document.getElementById('mmap-accuracy-banner') as HTMLElement | null);
@@ -1704,7 +1700,6 @@ function loadGoogleMaps(){
   _gmapsPromise.catch(function(){_gmapsPromise=null;});
   return _gmapsPromise;
 }
-function googleListo(){return !!gClase('places','AutocompleteSuggestion');}
 // Un token por sesión de búsqueda. Se pide una sola vez y se suelta al elegir.
 function gSessionToken(){
   var T=gClase('places','AutocompleteSessionToken');

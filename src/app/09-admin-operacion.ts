@@ -491,13 +491,6 @@ if(typeof document!=='undefined'&&!(window as any)._wakeLockBound){
     if(document.visibilityState==='visible'&&(sndScreen==='admin_focus'||sndScreen==='admin_cocina'))keepScreenAwake();
   });
 }
-function enterFocusMode(){
-  var ao=sortedActiveOrders();
-  focusRef=ao.length?ao[0].id:'';
-  focusIdx=0;
-  sndScreen='admin_focus';render();
-  keepScreenAwake();
-}
 // Salir de la receta vuelve a la lista de la cocina, que es de donde se entró.
 function exitFocusMode(){sndScreen='admin_cocina';render();}
 // Devuelve la posición ACTUAL del pedido anclado. Si desapareció (se entregó, se canceló,

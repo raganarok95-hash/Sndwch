@@ -831,6 +831,12 @@ function sPAvisos(){
     +fila('pedido','Tu pedido','Cuando sale y cuando llega.')
     +fila('promo','Novedades y recordatorios','El sándwich del mes, tus puntos, lo que dejaste en el carrito.')
     +'</div><div class="ok">'+esc(prefMsg)+'</div>'
+    // Derecho de oposición a la medición publicitaria (Ley 29733): el interruptor se perdió al
+    // rehacer «Tu cuenta» y toggleAdTracking quedó sin botón (hallado al limpiar código muerto,
+    // 2026-10-02). Encendido = se mide; el estado sale del servidor (cust), no de lo supuesto.
+    +(cust?'<div class="cab" style="margin-top:22px"><em>Privacidad</em></div><div class="lis">'
+      +'<button class="r'+(!(cust as any).ad_tracking_opt_out?' on':'')+'" role="switch" data-accion="medicion-anuncios" aria-checked="'+(!(cust as any).ad_tracking_opt_out)+'" onclick="toggleAdTracking()"><span><b>Medir anuncios con mis pedidos</b><s>Meta recibe tus datos cifrados para saber qué anuncio trajo el pedido. Apágalo y no se reportan.</s></span><span class="llave"></span></button>'
+      +'</div><div class="ok">'+esc(adOptOutMsg)+'</div>':'')
     +(permiso==='granted'?'':'<div class="nota">'+(permiso==='denied'
       ?'<b>Este celular tiene los avisos bloqueados.</b> Actívalos desde los ajustes del navegador para que te lleguen.'
       :'<b>Este celular todavía no recibe avisos.</b> Se activan la primera vez que haces un pedido.')+'</div>')
