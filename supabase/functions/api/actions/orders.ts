@@ -22,6 +22,7 @@ import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../email.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 import { cargasPorHora, horaLlena, fijoPropio } from "../capacidad.ts";
 import { ID_SECRETO } from "../../_shared/carta.ts";
+import { YAPE_AUTO_TOPE } from "../../_shared/reglas.ts";
 
 // Avisa al dueño solo en el momento en que un producto CRUZA su umbral de stock bajo (o
 // llega a 0) — no en cada pedido siguiente mientras ya viene bajo, para no saturarlo de
@@ -1773,13 +1774,59 @@ export function receiptChecks(
 // Requiere sesión de ADMIN: el cliente nunca ejecuta esto, así que no hay forma de que
 // alguien mande un OCR inventado para que su pedido se vea bien. Y aunque lo hiciera, no
 // confirmaría nada — el pago lo sigue confirmando una persona.
+// ── YAPE CONFIRMADO POR LA CAPTURA (2026-10-02) ────────────────────────────────────────────
+// El dueño aceptó el riesgo de una captura editada a cambio de no confirmar a mano. Se confirma
+// SOLO si todo cuadra; ante la menor duda queda para el dueño, con el motivo a la vista.
+// Una operación ya usada en otro pedido no se confirma (receiptChecks). ⚠ Queda una ventana de
+// carrera si dos capturas iguales se leen en el mismo instante; la cierra un índice único sobre
+// orders.receipt_op_number (migración propuesta el 2026-10-02, pendiente de que el dueño la apruebe).
+const MESES: Record<string, number> = { ene: 1, feb: 2, mar: 3, abr: 4, may: 5, jun: 6, jul: 7, ago: 8, set: 9, sep: 9, oct: 10, nov: 11, dic: 12 };
+/** La fecha de la constancia como AAAA-MM-DD, o null si no se reconoce. */
+export function fechaDelComprobante(texto: string | null): string | null {
+  const t = String(texto || "").toLowerCase();
+  const par = (a: number, m: number, d: number) =>
+    a >= 2024 && a <= 2100 && m >= 1 && m <= 12 && d >= 1 && d <= 31
+      ? `${a}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}` : null;
+  let m = t.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})\b/);
+  if (m) return par(+m[3], +m[2], +m[1]);
+  m = t.match(/\b(\d{1,2})\s*(?:de\s+)?([a-zñ]{3})[a-zñ]*\.?\s*(?:de\s+|del?\s+)?(\d{4})\b/);
+  if (m && MESES[m[2]]) return par(+m[3], MESES[m[2]], +m[1]);
+  return null;
+}
+export type DecisionAutomatica = { confirmar: boolean; motivo: string };
+export function decisionAutomatica(p: {
+  checks: ReceiptChecks;
+  fields: ReceiptFields;
+  order: { payment_method?: string | null; payment_status?: string | null; status?: string | null; total?: unknown };
+  hoyLima: string;
+  tope: number;
+}): DecisionAutomatica {
+  const no = (motivo: string) => ({ confirmar: false, motivo });
+  const o = p.order || {};
+  if (o.payment_method !== "yape" && o.payment_method !== "plin") return no("No es un pago por Yape.");
+  if (o.payment_status === "paid") return no("Ya estaba confirmado.");
+  if (o.status === "CANCELADO") return no("El pedido está cancelado.");
+  if (p.checks.duplicateOpRefs.length) return no("Esta operación ya pagó el pedido " + p.checks.duplicateOpRefs.join(", ") + ".");
+  if (p.checks.amountMatches === null) return no("No se pudo leer el monto.");
+  if (!p.checks.amountMatches) return no(`El monto leído (S/${p.checks.amountRead}) no es el del pedido (S/${p.checks.expected}).`);
+  if (!p.fields.opNumber) return no("No se pudo leer el número de operación.");
+  const fecha = fechaDelComprobante(p.fields.dateText);
+  if (!fecha) return no("No se pudo leer la fecha.");
+  if (fecha !== p.hoyLima) return no("La captura no es de hoy.");
+  if ((Number(o.total) || 0) > p.tope) return no(`Pasa el tope de S/${p.tope}: confírmalo tú.`);
+  return { confirmar: true, motivo: "Monto exacto, operación nueva, de hoy." };
+}
+
 export async function actAdminReceiptOcr(b: Entrada<"admin-receipt-ocr"> & { _ip?: string }) {
-  await requireAdmin(b.token);
+  const admin = await requireAdmin(b.token);
   const ref = String(b.ref || "").trim().slice(0, 40);
   if (!ref) throw new ApiError("Falta el pedido.", 400);
   const texto = String(b.text || "").slice(0, 4000);
 
-  const rows = await sbGet("orders", `ref=eq.${encodeURIComponent(ref)}&select=id,ref,total`);
+  const rows = await sbGet(
+    "orders",
+    `ref=eq.${encodeURIComponent(ref)}&select=id,ref,total,delivery_fee,customer_phone,contact_phone,customer_name,customer_address,customer_email,payment_method,payment_status,status`,
+  );
   const order = rows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
 
@@ -1792,13 +1839,31 @@ export async function actAdminReceiptOcr(b: Entrada<"admin-receipt-ocr"> & { _ip
     );
     otras = previos.map((r: any) => String(r.ref || "")).filter((r: string) => r && r !== ref);
   }
-  const checks = receiptChecks(fields, Number(order.total) || 0, otras);
+  let checks = receiptChecks(fields, Number(order.total) || 0, otras);
 
-  await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, {
-    receipt_ocr: { ...fields, readAt: new Date().toISOString() },
-    receipt_op_number: fields.opNumber,
-  });
-  return { success: true, fields, checks };
+  try {
+    await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, {
+      receipt_ocr: { ...fields, readAt: new Date().toISOString() },
+      receipt_op_number: fields.opNumber,
+    });
+  } catch (e) {
+    // Con el índice único (pendiente), esto atrapa la carrera: otro pedido reservó esa operación antes.
+    if (!(e instanceof Error && e.message.includes("23505"))) throw e;
+    checks = { ...checks, duplicateOpRefs: ["otro pedido"], verdict: "revisar" };
+    await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { receipt_ocr: { ...fields, readAt: new Date().toISOString(), duplicada: true } });
+  }
+
+  const hoyLima = new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" });
+  const auto = decisionAutomatica({ checks, fields, order, hoyLima, tope: YAPE_AUTO_TOPE });
+  let confirmado = false;
+  let pedido: any = null;
+  if (auto.confirmar) {
+    const r = await confirmManualPayment(order);
+    confirmado = !!r;
+    pedido = r?.order ?? null;
+    if (r) await logAdminAction(admin.phone, "auto-confirm-payment", order.id, { ref, total: order.total, opNumber: fields.opNumber });
+  }
+  return { success: true, fields, checks, auto: { ...auto, confirmado }, order: pedido };
 }
 
 // ── #19: CONFIRMACIÓN DE ENTREGA POR LINK ──────────────────────────────────────────────

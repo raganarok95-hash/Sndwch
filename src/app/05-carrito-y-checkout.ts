@@ -1003,7 +1003,7 @@ function sOSent(){
         +(deadlineLabel?'; si no lo hacemos antes de las '+esc(deadlineLabel)+', el pedido se cancela solo':'')+'.<br>'
         +(receiptUploadState==='done'?'✓ Comprobante recibido.'
           :receiptUploadState==='uploading'?'Subiendo el comprobante…'
-          :'<label>Subir la captura del comprobante (opcional)<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>')
+          :'<label data-accion="subir-captura">Sube la captura de tu '+methodLabel+': si cuadra, tu pedido entra a la cocina solo, sin esperar a que lo revisemos<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>')
         +(typeof receiptUploadState==='string'&&receiptUploadState.indexOf('error:')===0?'<br>'+esc(receiptUploadState.slice(6)):'')
         +'</div>':'')
       +(window._lRankUp?'<div class="dr"><span>Subiste a</span><b class="pt">'+esc(window._lRankUp)+'</b></div>':'')
