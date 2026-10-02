@@ -49,3 +49,25 @@ test('el cliente sube la captura, su celular la lee y ve el pago confirmado', as
   expect(lecturas[0].text).toContain('12345678');
   await expect.poll(() => page.evaluate(() => (window as any).receiptUploadState)).toBe('confirmado');
 });
+
+// Una captura pendiente leída con la versión anterior del lector se relee sola una vez con las
+// reglas de hoy (2026-10-02: la prueba del dueño quedó en «revisar» por la regla vieja de la fecha).
+test('una captura pendiente leída con el lector anterior se relee sola una vez', async ({ page }) => {
+  const ocr: any[] = [];
+  const VIEJO = { ...PEDIDO, id: '44444444-4444-4444-8444-444444444444', ref: 'R-4444', receipt_ocr: { amount: 0.1, opNumber: '13286952', dateText: null } };
+  await page.addInitScript(() => { (window as any).Tesseract = { recognize: async () => ({ data: { text: 'x' } }) }; });
+  await gotoApp(page, {
+    login: { customer: { phone: '900000001', name: 'Dueño', points: 0 }, isAdmin: true, token: 't' },
+    'admin-orders': { orders: [VIEJO], truncated: false },
+    'admin-receipt-url': { url: 'https://ejemplo.invalid/c.jpg' },
+    'admin-receipt-ocr': (b: any) => { ocr.push(b); return { success: true, fields: {}, checks: {}, auto: { confirmar: true, confirmado: true, motivo: 'ok' }, order: { ...VIEJO, payment_status: 'paid' } }; },
+    '*': { success: true },
+  });
+  await entrarConTelefono(page);
+  await page.waitForFunction(() => (window as any).cust);
+  await page.evaluate(() => { try { localStorage.setItem('sw_abro_con', new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' })); } catch (e) {} (window as any).loadAdmin(); });
+  await page.waitForFunction(() => typeof (window as any).abrirCocina === 'function');
+  await page.evaluate(() => (window as any).abrirCocina());
+  await expect.poll(() => ocr.length, { message: 'la captura vieja no se releyó' }).toBe(1);
+  expect(ocr[0].ref).toBe('R-4444');
+});

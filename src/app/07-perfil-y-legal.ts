@@ -277,6 +277,10 @@ async function leerCapturasNuevas(orders:any[]){
     // leer UNA vez para comparar (procesarCaptura avisa si no coincide).
     var ocr=x.receipt_ocr;
     if(!ocr)return x.payment_status!=='paid';
+    // Leída con una versión anterior del lector (sin el texto guardado, antes del 2026-10-02) y
+    // todavía sin pagar: se relee UNA vez con las reglas de hoy. Las lecturas nuevas guardan el
+    // texto, así que esto no se repite.
+    if(x.payment_status!=='paid'&&!ocr.texto&&!ocr.origen)return true;
     return ocr.origen==='cliente'&&x.payment_status==='paid'&&!ocr.verificadoPanel;
   });
   if(!o)return;
