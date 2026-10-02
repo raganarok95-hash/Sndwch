@@ -20,8 +20,10 @@ test('elegir una guardada sin pin abre el mapa para ELLA, la guarda con su pin y
     w.cart = [{ type: 'sig', code: w.SIGS[0].id, size: '15', qty: 1 }];
     w.googleMapsKey = 'K';
     w.google = { maps: {
-      Map: function () { this.addListener = () => {}; this.getCenter = () => ({ lat: () => -8.1, lng: () => -79.02 }); this.setCenter = () => {}; this.setZoom = () => {}; },
-      Geocoder: function () { this.geocode = () => Promise.resolve({ results: [] }); },
+      // Un mapa que recuerda dónde está su centro: abre en lo que le pasen y se mueve con setCenter.
+      Map: function (_el: any, o: any) { let c = o.center; this.addListener = () => {}; this.getCenter = () => ({ lat: () => c.lat, lng: () => c.lng }); this.setCenter = (n: any) => { c = n; }; this.setZoom = () => {}; },
+      // Google encuentra la dirección escrita (lejos del local, para que se note la diferencia).
+      Geocoder: function () { this.geocode = (q: any) => Promise.resolve({ results: q.address ? [{ geometry: { location: { lat: () => -8.0912, lng: () => -79.0101 } } }] : [] }); },
       places: { AutocompleteSuggestion: { fetchAutocompleteSuggestions: () => Promise.resolve({ suggestions: [] }) }, AutocompleteSessionToken: function () {} },
     } };
     w._gmapsPromise = Promise.resolve();
@@ -32,11 +34,39 @@ test('elegir una guardada sin pin abre el mapa para ELLA, la guarda con su pin y
   await expect(page.locator('#mmap')).toBeVisible();
   // El buscador viene con la dirección guardada escrita.
   await expect(page.locator('#maddr-input')).toHaveValue(/César Vallejo 2670/);
+  // El mapa abre donde Google ubicó ESA dirección, no en el local: si no, «Es acá» guardaba el
+  // local como casa del cliente (0 km, envío mínimo) sin que nadie lo notara.
+  await expect.poll(() => page.evaluate(() => (window as any)._mLat)).toBe(-8.0912);
   await page.locator('#mmap-hoja .oro').click();
   await expect.poll(() => updates.length, { message: 'la dirección guardada no se actualizó con su pin' }).toBe(1);
-  expect(typeof updates[0].lat).toBe('number');
+  expect(updates[0].lat, 'el pin guardado no es el de la dirección').toBe(-8.0912);
   const r = await page.evaluate(() => { const w = window as any; return { pantalla: w.sndScreen, lista: w.direccionLista(), elegida: w.pickedAddrId }; });
   expect(r.pantalla).toBe('o_cart');
   expect(r.lista, 'la dirección quedó sin poder pagar').toBe(true);
   expect(r.elegida, 'el carrito no quedó con la dirección guardada elegida').toBe(7);
+});
+
+// UN PIN QUE NADIE PUSO NO SE GUARDA. El mapa abre en el local; confirmar sin mover el mapa ni
+// elegir nada guardaba el local como la dirección del cliente: envío mínimo cobrado a cualquiera.
+test('confirmar el mapa sin haber puesto el pin no guarda el local como dirección', async ({ page }) => {
+  await gotoApp(page, { '*': { success: true } });
+  await page.evaluate(async () => {
+    const w = window as any;
+    w.cart = [{ type: 'sig', code: w.SIGS[0].id, size: '15', qty: 1 }];
+    w.googleMapsKey = 'K';
+    w.google = { maps: {
+      Map: function (_el: any, o: any) { let c = o.center; this.addListener = () => {}; this.getCenter = () => ({ lat: () => c.lat, lng: () => c.lng }); this.setCenter = (n: any) => { c = n; }; this.setZoom = () => {}; },
+      Geocoder: function () { this.geocode = () => Promise.resolve({ results: [] }); },
+      places: { AutocompleteSuggestion: { fetchAutocompleteSuggestions: () => Promise.resolve({ suggestions: [] }) }, AutocompleteSessionToken: function () {} },
+    } };
+    w._gmapsPromise = Promise.resolve();
+    w._mLat = null; w._mLon = null;
+    w.sndScreen = 'o_dir'; w.render();
+  });
+  await page.locator('.m34 .otra').click();
+  await expect(page.locator('#mmap')).toBeVisible();
+  await page.locator('#maddr-input').fill('Mi casa');
+  await page.locator('#mmap-hoja .oro').click();
+  await expect(page.locator('#mmap'), 'el mapa se cerró con el pin en el local').toBeVisible();
+  expect(await page.evaluate(() => (window as any).direccionLista())).toBe(false);
 });

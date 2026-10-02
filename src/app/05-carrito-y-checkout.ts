@@ -919,6 +919,9 @@ function sODir(){
   if(dirElegida===null&&pickedAddrId!=null)dirElegida=pickedAddrId;
   var tarjetas=lista.map(function(a){
     var km=kmADireccion(a),env=envioADireccion(a);
+    // Lo que el teléfono recibe de verdad cuando una guardada sale sin pin (dueño, 2026-10-01:
+    // la base tenía el pin y el celular decía «Márcala en el mapa»). Una vez por sesión.
+    if(km==null)reportarError('direccion:sin-pin',new Error('id '+a.id+' lat '+typeof a.lat+':'+String(a.lat)+' lon '+typeof a.lon+':'+String(a.lon)));
     var sel=dirElegida!=null&&mismoId(dirElegida,a.id);
     return'<button class="et" aria-pressed="'+sel+'" onclick="dirElegida='+JSON.stringify(a.id).replace(/"/g,'&quot;')+';render()">'
       +'<span class="hd"><span>'+esc(a.label||'Guardada')+'</span><span>'+(km!=null?km.toFixed(1)+' km':'—')+'</span></span>'
@@ -1921,6 +1924,7 @@ function falloGoogle(donde,e){reportarError('ubicacion-google:'+donde,e);}
 // Punto de entrada: abre el mapa donde quedó el último pin (o en la tienda) con el buscador
 // listo para escribir.
 function abrirUbicacion(){
+  _pinPuesto=typeof window._mLat==='number';
   var lat=typeof window._mLat==='number'?window._mLat:STORE_LAT;
   var lon=typeof window._mLon==='number'?window._mLon:STORE_LON;
   openMap(lat,lon,false);
@@ -1941,7 +1945,7 @@ function doGPS(){
   var ok=function(pos){
     done();
     var prec=Math.round(pos.coords.accuracy||9999);
-    openMap(pos.coords.latitude,pos.coords.longitude,false);
+    _pinPuesto=true;openMap(pos.coords.latitude,pos.coords.longitude,false);
     avisoMapa(prec>GPS_PRECISO_M
       ?'Tu ubicación es aproximada (±'+prec+' m). Escribe tu dirección arriba o arrastra el mapa hasta tu puerta.'
       :'');
@@ -1957,6 +1961,10 @@ function doGPS(){
   },{timeout:15000,enableHighAccuracy:true,maximumAge:60000});
 }
 var _lmap:any=null,_mTimer:any=null;
+// El pin lo puso la PERSONA (arrastró, eligió un resultado, usó su GPS) o Google al leer la
+// dirección guardada. Sin esto, el mapa abría en el local y «Es acá» guardaba el local como la
+// casa del cliente: 0 km y envío mínimo, en silencio (dueño, 2026-10-01, dirección «Casa»).
+var _pinPuesto=false;
 function openMap(lat,lon,approx){
   var m=(document.getElementById('mmap') as HTMLElement | null);
   if(!m)return;
@@ -1973,7 +1981,7 @@ function openMap(lat,lon,approx){
         // dedos y el cliente cree que el pin no se mueve.
         gestureHandling:'greedy',
       });
-      _lmap.addListener('dragstart',function(){var h=(document.getElementById('maddr-hint') as HTMLElement | null);if(h)h.textContent='Buscando…';});
+      _lmap.addListener('dragstart',function(){_pinPuesto=true;var h=(document.getElementById('maddr-hint') as HTMLElement | null);if(h)h.textContent='Buscando…';});
       _lmap.addListener('idle',function(){
         if(_mTimer)clearTimeout(_mTimer);
         _mTimer=setTimeout(function(){var c=_lmap.getCenter();revGeo(c.lat(),c.lng());},500);
@@ -2219,6 +2227,7 @@ async function addrPick(i){
     _gSessionToken=null;
   }
   if(!isFinite(lat)||!isFinite(lon))return;
+  _pinPuesto=true;
   if(_lmap){_lmap.setCenter({lat:lat,lng:lon});_lmap.setZoom(18);revGeo(lat,lon);}
   else{openMap(lat,lon,false);}
 }
@@ -2228,11 +2237,31 @@ async function addrPick(i){
 var mapaVuelveA:string|null=null,mapaDirId:any=null;
 function abrirMapaPara(vuelve:string,dirId:any,textoInicial:string){
   mapaVuelveA=vuelve;mapaDirId=dirId;
+  // Una guardada se ubica en SU dirección, no en el último pin ni en el local.
+  if(dirId!=null){window._mLat=null;window._mLon=null;}
   abrirUbicacion();
   if(textoInicial){
     var i=(document.getElementById('maddr-input') as HTMLInputElement|null);
-    if(i){i.value=textoInicial;setTimeout(addrSearchNow,400);}
+    if(i)i.value=textoInicial;
+    // Google lee la dirección escrita y el mapa abre ahí: la persona solo confirma (o ajusta).
+    // Si no la encuentra, queda el buscador con el texto, como antes.
+    ubicarTextoConGoogle(textoInicial).then(function(p){
+      if(p){_pinPuesto=true;openMap(p.lat,p.lon,true);}
+      else addrSearchNow();
+    }).catch(function(e){falloGoogle('ubicar-guardada',e);addrSearchNow();});
   }
+}
+async function ubicarTextoConGoogle(texto:string):Promise<{lat:number,lon:number}|null>{
+  await loadGoogleMaps();
+  var Geo=gClase('geocoding','Geocoder');
+  if(!Geo)return null;
+  var res:any=await new Geo().geocode({address:texto,region:'pe',language:'es',
+    bounds:{north:STORE_LAT+0.25,south:STORE_LAT-0.25,east:STORE_LON+0.25,west:STORE_LON-0.25}});
+  var r=res&&res.results&&res.results[0];
+  var loc=r&&r.geometry&&r.geometry.location;
+  if(!loc)return null;
+  var lat=typeof loc.lat==='function'?loc.lat():loc.lat,lon=typeof loc.lng==='function'?loc.lng():loc.lng;
+  return isFinite(lat)&&isFinite(lon)?{lat:lat,lon:lon}:null;
 }
 function closeMap(){mapaVuelveA=null;mapaDirId=null;(document.getElementById('mmap') as HTMLInputElement | null).style.display='none';}
 function confirmMap(){
@@ -2246,7 +2275,15 @@ function confirmMap(){
     if(inp)inp.focus();
     return;
   }
-  if(_lmap){var c=_lmap.getCenter();window._mLat=c.lat();window._mLon=c.lng();}
+  if(!_lmap){
+    avisoMapa('El mapa todavía no cargó. Espera un momento o vuelve a abrirlo.');
+    return;
+  }
+  if(!_pinPuesto){
+    avisoMapa('Mueve el mapa hasta tu puerta (o elige tu dirección en la lista) y vuelve a tocar.');
+    return;
+  }
+  var c=_lmap.getCenter();window._mLat=c.lat();window._mLon=c.lng();
   // Solo se esconde: closeMap() además olvida a qué pantalla volver (es la ✕ del mapa).
   (document.getElementById('mmap') as HTMLElement).style.display='none';
   // Antes esto escribía la dirección directo en el input y no repintaba, para no perder
