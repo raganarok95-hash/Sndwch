@@ -3661,7 +3661,21 @@ function envioADireccion(a) {
     var km = kmADireccion(a);
     return km == null ? null : deliveryFeeForKm(km);
 }
+// El envío sale 0 si TODAS las líneas son de un Signature que no lo cobra (catalog_items.sin_envio,
+// p. ej. el sándwich de prueba). DEBE coincidir con carritoSinEnvio del servidor (api/catalog.ts).
+function carritoSinEnvio() {
+    if (!cart.length)
+        return false;
+    return cart.every(function (it) {
+        if (it.type !== 'sig')
+            return false;
+        var s = SIGS.find(function (x) { return x.id === it.sigId; });
+        return !!(s && s.sinEnvio);
+    });
+}
 function deliveryFeeBase() {
+    if (carritoSinEnvio())
+        return 0;
     var km = deliveryKmNow();
     if (km === null) {
         // Sin pin se cae a la zona, exactamente como antes. Es el respaldo para un shell viejo
@@ -4150,7 +4164,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '4f91b464f5';
+var APP_BUILD = '5564eb8703';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -4842,6 +4856,8 @@ async function loadCatalogBackground() {
                     sig.fixedCheese = v.fixedCheese || null;
                 if (typeof v.cheeseOptional === 'boolean')
                     sig.cheeseOptional = v.cheeseOptional;
+                if (typeof v.sinEnvio === 'boolean')
+                    sig.sinEnvio = v.sinEnvio;
                 if (v.img)
                     SIG_IMG[id] = v.img;
                 // Retirar un Signature del menú (lo que con THE CHICAGO costó una sesión de código)

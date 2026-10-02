@@ -39,7 +39,7 @@ export async function actGetCatalog(_b: Entrada<"get-catalog">) {
     items[code] = {
       n: c.n, s: c.s, badge: c.badge, pitch: c.pitch, img: c.img, active: c.active,
       base: d.base, prot: d.prot, tops: d.tops, sauces: d.sauces, p15: d.p15, p30: d.p30,
-      fixedCheese: d.fixedCheese ?? null, cheeseOptional: d.cheeseOptional === true,
+      fixedCheese: d.fixedCheese ?? null, cheeseOptional: d.cheeseOptional === true, sinEnvio: d.sinEnvio === true,
     };
   }
   // Disponibilidad de ingredientes. El cliente la leía por PostgREST DIRECTO contra

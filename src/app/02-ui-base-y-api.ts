@@ -392,6 +392,7 @@ async function loadCatalogBackground(){
         // ediciones válidas — con `if(v.fixedCheese)` sería imposible.
         if('fixedCheese' in v)sig.fixedCheese=v.fixedCheese||null;
         if(typeof v.cheeseOptional==='boolean')sig.cheeseOptional=v.cheeseOptional;
+        if(typeof v.sinEnvio==='boolean')sig.sinEnvio=v.sinEnvio;
         if(v.img)SIG_IMG[id]=v.img;
         // Retirar un Signature del menú (lo que con THE CHICAGO costó una sesión de código)
         // ahora es publicar active=false desde el panel. La receta queda guardada en la

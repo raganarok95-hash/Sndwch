@@ -317,7 +317,7 @@ export function dblFee(pr: { pDbl: number; pDbl30: number } | undefined, size: "
 export const SIG_CONTENT: Record<string, { n: string; s: string; badge: string; pitch: string; img: string | null; active: boolean }> = Object.fromEntries(
   signaturesDeLaCarta().map((x) => [x.id, { n: x.nombre, s: x.tipo, badge: "", pitch: "", img: x.foto ?? null, active: true }]),
 );
-export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean; fixedCheese?: string }> = Object.fromEntries(
+export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean; fixedCheese?: string; sinEnvio?: boolean }> = Object.fromEntries(
   CARTA.signatures.map((x) => [x.id, {
     base: x.pan, prot: x.prot, tops: [...x.vegetales], sauces: [...x.salsas], p15: x.p15, p30: x.p30,
     ...(x.queso ? { fixedCheese: x.queso } : {}),
@@ -479,6 +479,7 @@ export async function loadCatalogItems(): Promise<void> {
         p30: Number(row.price_30),
         ...(row.fixed_cheese ? { fixedCheese: String(row.fixed_cheese) } : {}),
         ...(row.cheese_optional ? { cheeseOptional: true } : {}),
+        ...(row.sin_envio ? { sinEnvio: true } : {}),
       };
       const nombre = String(row.name || "").trim();
       const sub = String(row.subtitle || "Signature").trim();
@@ -1120,4 +1121,12 @@ export function buildTopProducts(orders: any[], limit: number): { name: string; 
     .map(([name, v]) => ({ name, ...v }))
     .sort((a, b) => b.count - a.count)
     .slice(0, limit);
+}
+
+// El envío sale 0 solo si TODAS las líneas del carrito son de un Signature que no lo cobra
+// (catalog_items.sin_envio, p. ej. el sándwich de prueba del dueño). Una sola línea normal y se
+// cobra completo. El cliente hace la misma pregunta (carritoSinEnvio en 01-*).
+export function carritoSinEnvio(items: unknown): boolean {
+  if (!Array.isArray(items) || !items.length) return false;
+  return items.every((it: any) => it && it.type === "sig" && SIG_DATA[String(it.sigId)]?.sinEnvio === true);
 }
