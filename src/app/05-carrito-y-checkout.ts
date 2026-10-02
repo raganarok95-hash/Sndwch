@@ -787,6 +787,7 @@ function sOCart(){
       +'<div class="vk">'+VACIO('Carrito vacío','Elige un Signature o arma el tuyo — todo se junta acá antes de pagar.',null,'piensa')+'</div></div>';
   }
   elegirGuardadaSola();
+  programarSiCerrado();
   var d=cartDesglose();
   var envio=deliveryFeeAmount();
   var dirOk=direccionLista(),recOk=recibeListo();
@@ -811,7 +812,7 @@ function sOCart(){
     ?'<div class="ex"><span>Envío '+deliveryKmNow()+' km</span><span>'+pz(envio)+'</span></div>'
     :'<div class="ex"><span>Envío</span><span>Al elegir dónde</span></div>';
   var rw2=!appliedPromo?recompensaUsable():null;
-  var renglones=en30('Llega',llegaTexto(),'Programar',"hoja30='programar';initSchedDefault();render()")
+  var renglones=en30('Llega',llegaTexto(),'Programar',"hoja30='programar';hojaErr='';initSchedDefault();render()")
     +en30('Dónde',dirOk?addrText:'¿Dónde te lo dejamos?',dirOk?'Cambiar':'Elegir',"go('o_dir')",!dirOk)
     +en30('Recibe',recOk?confNom.trim()+' · '+confPhone:'¿A nombre de quién?',recOk?'Cambiar':'Poner',"hoja30='recibe';hojaErr='';render()",!recOk)
     +(cust&&!appliedPromo&&(appliedReward||rw2)
@@ -863,9 +864,10 @@ function hoja30HTML(){
         var cerrado=!STORE_HOURS[limaDayHour(schedDateForDay(x.k)).weekday];
         return'<button aria-pressed="'+(schedDay===x.k)+'"'+(cerrado?' disabled':'')+' onclick="schedDay=\''+x.k+'\';schedSlot=null;initSchedDefault();render()">'+x.l+'</button>';
       }).join('')
-      +(scheduleMode==='later'?'<button onclick="scheduleMode=\'now\';schedSlot=null;hoja30=null;render()">Lo antes posible</button>':'')+'</div>'
+      +(scheduleMode==='later'&&storeStatus().open?'<button onclick="scheduleMode=\'now\';schedSlot=null;hoja30=null;render()">Lo antes posible</button>':'')+'</div>'
+      +(hojaErr?'<div class="err" role="alert">'+esc(hojaErr)+'</div>':'')
       +(slots.length
-        ?'<div class="fr">'+slots.map(function(s){return'<button aria-pressed="'+(scheduleMode==='later'&&schedSlot===s.t)+'"'+(s.full?' disabled':'')+' onclick="scheduleMode=\'later\';schedSlot=\''+s.t+'\';render()">'+s.t+'</button>';}).join('')+'</div>'
+        ?'<div class="fr">'+slots.map(function(s){return'<button aria-pressed="'+(scheduleMode==='later'&&schedSlot===s.t)+'"'+(s.full?' disabled':'')+' onclick="scheduleMode=\'later\';schedSlot=\''+s.t+'\';hojaErr=\'\';render()">'+s.t+'</button>';}).join('')+'</div>'
         :'<div class="nota">No hay horarios disponibles ese día.</div>')
       +'<div class="nota" style="margin-top:14px">Las tachadas ya están llenas.<br>Te llega en la media hora que elijas.</div>';
   }else if(hoja30==='codigo'){
@@ -916,13 +918,26 @@ async function hojaListo(){
 // PAGAR: lo que falta se resuelve donde vive (la 34 o la hoja de RECIBE); después la 31.
 var FALTA_SANDWICH='Las bebidas van con un sándwich: agrega uno para pedir.';
 function faltaSandwich():boolean{return cart.length>0&&!cart.some(function(it:any){return it.type!=='side';});}
+// Con el local cerrado (o la hora llena) el pedido se PROGRAMA solo para la primera hora libre
+// (dueño, 2026-10-02, a las 5 a.m.: «me pide programar pero no hay dónde o no me deriva»). Antes
+// el carrito mostraba «Llega 5:24 a.m.» y «Pagar» solo repetía un aviso en rojo. Si no queda
+// ninguna hora libre hoy ni mañana, se deja como estaba y el aviso lo dice.
+function programarSiCerrado(){
+  if(scheduleMode!=='now'||!businessLaunched)return;
+  if(storeStatus().open&&!hourIsFull(new Date()))return;
+  scheduleMode='later';schedSlot=null;initSchedDefault();
+  if(!schedSlot)scheduleMode='now';
+}
 function irAPagar(){
+  programarSiCerrado();
   // Antes de pedir dirección o datos: a quien solo lleva bebidas no se le hace llenar todo para
   // decirle al final que no puede pagar.
   if(faltaSandwich()){var e0=document.getElementById('o-err');if(e0)e0.textContent=FALTA_SANDWICH;else showToast(FALTA_SANDWICH,'error');return;}
   if(!direccionLista()){go('o_dir');return;}
   if(!recibeListo()){hoja30='recibe';hojaErr='';render();return;}
   var err=problemaDelPedido();
+  // Si lo que falla es la hora, se abre donde se elige, no un aviso que manda a buscarla.
+  if(err&&businessLaunched&&(scheduleMode==='later'||!storeStatus().open||hourIsFull(new Date()))){hoja30='programar';hojaErr=err;initSchedDefault();render();return;}
   if(err){var e=document.getElementById('o-err');if(e)e.textContent=err;else showToast(err,'error');return;}
   go('o_pagar');
 }
