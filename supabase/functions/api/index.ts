@@ -37,7 +37,6 @@ import {
   actPushSubscribe, actPushUnsubscribe, actRemindUnclaimedChallenge, actRemindPeakHour,
   actAnniversaryGreeting, actSyncCart, actRemindAbandonedCart,
   actRemindSecondOrder, actRemindHighRankWinback, actRemindNeverOrdered,
-  actExpirePendingWeeklyPlans,
   actBounceBackFirstOrder, actRemindLapsedCustomers,
   actRemindAbandonedPayment, actRemindUnusedCredit, actRemindAfterCancel,
 } from "./actions/customer.ts";
@@ -261,7 +260,6 @@ const ACTIONS: ConContrato & SinContrato = {
   "remind-never-ordered": actRemindNeverOrdered,
   "bounce-back-first-order": actBounceBackFirstOrder,
   "remind-lapsed-customers": actRemindLapsedCustomers,
-  "expire-pending-weekly-plans": actExpirePendingWeeklyPlans,
   "create-group-order": actCreateGroupOrder,
   "get-group-order": actGetGroupOrder,
   "add-group-item": actAddGroupItem,
