@@ -419,8 +419,16 @@ function adminToolsSections() {
 // si todo cuadra el servidor ya confirmó el pago; si no, el motivo queda a la vista del dueño.
 function receiptOcrHTML(o) {
     var st = receiptOcrState[o.ref];
-    if (!st)
+    var ocr = o.receipt_ocr;
+    if (!st) {
+        // Lo que ya quedó en la base (por ejemplo, confirmado por el celular del cliente).
+        if (ocr && ocr.origen === 'cliente' && o.payment_status === 'paid') {
+            if (ocr.verificadoPanel && ocr.coincide === false)
+                return '<div class="coc-cap mal" data-captura="no-coincide"><b>Revísalo en tu Yape:</b> lo confirmó el cliente y tu panel leyó otra cosa.</div>';
+            return '<div class="coc-cap ok" data-captura="confirmada"><b>Confirmado por la captura</b> (la leyó el cliente' + (ocr.verificadoPanel ? '; tu panel leyó lo mismo' : '') + ').</div>';
+        }
         return '';
+    }
     if (st.loading)
         return '<div class="coc-cap duda">Leyendo la captura…</div>';
     if (st.error)

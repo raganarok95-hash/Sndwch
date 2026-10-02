@@ -239,8 +239,27 @@ async function uploadReceiptBase64(base64){
     receiptUploadState='done';
   }catch(e){
     receiptUploadState='error:'+(e.message||'No se pudo subir el comprobante.');
+    render();return;
   }
   render();
+  leerMiCaptura(base64);
+}
+// El celular del cliente lee su propia captura apenas la sube (dueño, 2026-10-02: «sí hazlo, es
+// mejor»): el servidor decide con las mismas reglas que el panel y, si cuadra, el pedido entra
+// solo. Si el lector no carga o tarda, no pasa nada malo: queda para el panel, como antes.
+async function leerMiCaptura(base64:string){
+  var ref=window._lRef;
+  receiptUploadState='reading';render();
+  try{
+    var T=await loadTesseract();
+    var res:any=await Promise.race([T.recognize('data:image/jpeg;base64,'+base64,'spa'),new Promise(function(_r,rej){setTimeout(function(){rej(new Error('lento'));},60000);})]);
+    var texto=(res&&res.data&&res.data.text)||'';
+    var r=await api('cliente-lee-captura',{ref:ref,text:texto});
+    receiptUploadState=r&&r.confirmado?'confirmado':'revisamos';
+  }catch(e){
+    receiptUploadState='revisamos';
+  }
+  if(window._lRef===ref)render();
 }
 // ── 30 G · EL PEDIDO ES UN RECIBO DE ESTRAZA (aprobada) + renglones y hojas ────────────────
 // docs/maquetas/aprobadas/30G-el-carrito.png y 30G-*.png (camino de compra, 2026-09-25).
@@ -1001,7 +1020,10 @@ function sOSent(){
       +(invitado?avisoDePuntosHTML(pts):'')
       +(manualWaiting?'<div class="nota">Confirmamos tu '+methodLabel+' contra la cuenta'
         +(deadlineLabel?'; si no lo hacemos antes de las '+esc(deadlineLabel)+', el pedido se cancela solo':'')+'.<br>'
-        +(receiptUploadState==='done'?'✓ Comprobante recibido.'
+        +(receiptUploadState==='confirmado'?'<b data-captura="confirmado">✓ ¡Pago confirmado! Tu pedido ya entró a la cocina.</b>'
+          :receiptUploadState==='revisamos'?'✓ Captura recibida. La revisamos y te avisamos.'
+          :receiptUploadState==='reading'?'✓ Captura recibida. Comprobando tu pago…'
+          :receiptUploadState==='done'?'✓ Comprobante recibido.'
           :receiptUploadState==='uploading'?'Subiendo el comprobante…'
           :'<label data-accion="subir-captura">Sube la captura de tu '+methodLabel+': si cuadra, tu pedido entra a la cocina solo, sin esperar a que lo revisemos<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>')
         +(typeof receiptUploadState==='string'&&receiptUploadState.indexOf('error:')===0?'<br>'+esc(receiptUploadState.slice(6)):'')

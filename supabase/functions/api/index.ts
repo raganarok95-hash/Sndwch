@@ -21,7 +21,7 @@ import {
   actGoogleAuth, actRequestLoginCode, actVerifyLoginCode,
 } from "./actions/auth.ts";
 import {
-  actPrepareOrder, actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actConfirmDelivery, actAdminReceiptOcr, actAdminUpdateStatus,
+  actPrepareOrder, actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actConfirmDelivery, actAdminReceiptOcr, actClienteLeeCaptura, actAdminUpdateStatus,
   actAdminConfirmPayment, actAdminCancelOrder, actCancelMyOrder,
   actExpireStaleManualPayments, actAlertStuckOrders, actExpirePendingCharges,
   actAlertScheduledOrders, actReconcileCulqiCharges, actRemindLowStock, actAlertBatchExpiry,
@@ -132,6 +132,7 @@ const ACTIONS: ConContrato & SinContrato = {
   "admin-orders": actAdminOrders,
   "confirm-delivery": actConfirmDelivery,
   "admin-receipt-ocr": actAdminReceiptOcr,
+  "cliente-lee-captura": actClienteLeeCaptura,
   "admin-update-status": actAdminUpdateStatus,
   "admin-confirm-payment": actAdminConfirmPayment,
   "admin-cancel-order": actAdminCancelOrder,
