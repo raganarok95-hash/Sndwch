@@ -13,7 +13,7 @@ import {
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
-import { loadCatalogPrices, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES, etiquetaDeEscalon, loQueGanaQuienInvita } from "../catalog.ts";
+import { loadCatalogPrices, carritoSinEnvio, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES, etiquetaDeEscalon, loQueGanaQuienInvita } from "../catalog.ts";
 import { organizerFreeSandwichApplies, cerrarGrupoSiTodosPagaron } from "./group.ts";
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
 import { sendPurchaseEvent } from "../meta-capi.ts";
@@ -864,7 +864,7 @@ export async function actPrepareOrder(b: Entrada<"prepare-order"> & { _ip?: stri
   const clientTotal = Number(b.total || 0);
   const rewardId = b.rewardId ? String(b.rewardId) : null;
   const deliveryZone = String(b.deliveryZone || "");
-  const { fee: deliveryFee, km: deliveryKm } = resolveDeliveryFeeCard(b.lat, b.lon, deliveryZone);
+  const { fee: envioCalculado, km: deliveryKm } = resolveDeliveryFeeCard(b.lat, b.lon, deliveryZone);
   if (!ref || !name || !contactPhone || !address || clientTotal <= 0) throw new ApiError("Faltan datos del pedido.");
   assertAddressAllowed(address);
 
@@ -902,6 +902,8 @@ export async function actPrepareOrder(b: Entrada<"prepare-order"> & { _ip?: stri
   await loadCatalogPrices();
   const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b) /* contrato-campos: b pasa entero a organizerWaiverFor, readCoords y readMetaAttribution, que lee groupCode, token, lat, lon, fbp, fbc, ua */);
   assertTraeSandwich(sanitizedItems);
+  // Un carrito hecho SOLO de productos que no cobran envío (catalog_items.sin_envio) va sin envío.
+  const deliveryFee = carritoSinEnvio(sanitizedItems) ? 0 : envioCalculado;
 
   // Sesión (si hay token) se resuelve ANTES del código promocional — el teléfono de la
   // CUENTA autenticada (no contactPhone, campo de texto libre del checkout que un
@@ -1282,13 +1284,15 @@ export async function actPlaceOrder(b: Entrada<"place-order"> & { _ip?: string }
   await assertHourCapacity(scheduledFor ? new Date(scheduledFor) : new Date(), recurringId);
 
   const deliveryZone = String(b.deliveryZone || "");
-  const { fee: deliveryFee, km: deliveryKm } = resolveDeliveryFee(b.lat, b.lon, deliveryZone);
+  const { fee: envioCalculado, km: deliveryKm } = resolveDeliveryFee(b.lat, b.lon, deliveryZone);
 
   // Precios vigentes (pueden haber cambiado desde el panel admin sin redeploy) —
   // ver loadCatalogPrices/catalog_prices.
   await loadCatalogPrices();
   const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b) /* contrato-campos: b pasa entero a organizerWaiverFor, readCoords y readMetaAttribution, que lee groupCode, token, lat, lon, fbp, fbc, ua */);
   assertTraeSandwich(sanitizedItems);
+  // Un carrito hecho SOLO de productos que no cobran envío (catalog_items.sin_envio) va sin envío.
+  const deliveryFee = carritoSinEnvio(sanitizedItems) ? 0 : envioCalculado;
 
   // Sesión (si hay token) se resuelve ANTES del código promocional — mismo criterio y
   // mismo motivo que en actPrepareOrder (hallazgo de auditoría, ALTO): la identidad real

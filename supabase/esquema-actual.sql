@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20261002181120
+-- foto-tomada-tras-migracion: 20261002184919
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -76,7 +76,8 @@ create table public.catalog_items (
   image_path text,
   active boolean default true not null,
   created_by text,
-  created_at timestamp with time zone default now() not null
+  created_at timestamp with time zone default now() not null,
+  sin_envio boolean default false not null
 );
 
 create table public.catalog_prices (

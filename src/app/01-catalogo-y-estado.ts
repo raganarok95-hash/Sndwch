@@ -617,7 +617,18 @@ function envioADireccion(a:any):number|null{
   var km=kmADireccion(a);
   return km==null?null:deliveryFeeForKm(km);
 }
+// El envío sale 0 si TODAS las líneas son de un Signature que no lo cobra (catalog_items.sin_envio,
+// p. ej. el sándwich de prueba). DEBE coincidir con carritoSinEnvio del servidor (api/catalog.ts).
+function carritoSinEnvio():boolean{
+  if(!cart.length)return false;
+  return cart.every(function(it:any){
+    if(it.type!=='sig')return false;
+    var s:any=SIGS.find(function(x:any){return x.id===it.sigId;});
+    return !!(s&&s.sinEnvio);
+  });
+}
 function deliveryFeeBase(){
+  if(carritoSinEnvio())return 0;
   var km=deliveryKmNow();
   if(km===null){
     // Sin pin se cae a la zona, exactamente como antes. Es el respaldo para un shell viejo

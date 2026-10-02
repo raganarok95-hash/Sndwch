@@ -7,7 +7,7 @@
 // Regenerar después de cada migración (con la herramienta de Supabase generate_typescript_types)
 // y actualizar la línea de abajo con la versión de la última migración aplicada.
 // `npm run check:tipos-base` falla si hay una migración más nueva que esta.
-// generado-contra-migracion: 20261002181120
+// generado-contra-migracion: 20261002184919
 export type Json =
   | string
   | number
@@ -180,6 +180,7 @@ export type Database = {
           price_30: number
           protein_id: string
           sauces: Json
+          sin_envio: boolean
           subtitle: string
           tops: Json
         }
@@ -200,6 +201,7 @@ export type Database = {
           price_30: number
           protein_id: string
           sauces?: Json
+          sin_envio?: boolean
           subtitle?: string
           tops?: Json
         }
@@ -220,6 +222,7 @@ export type Database = {
           price_30?: number
           protein_id?: string
           sauces?: Json
+          sin_envio?: boolean
           subtitle?: string
           tops?: Json
         }
