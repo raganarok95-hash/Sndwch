@@ -1756,7 +1756,9 @@ export function parseTransferReceipt(text: string): ReceiptFields {
   // justamente para detectar comprobantes viejos.
   let dateText: string | null = null;
   // «28 set. 2026» (Yape real): el punto del mes va seguido de un espacio.
-  const fecha = t.match(/([0-3]?[0-9][\/\-. ](?:[0-1]?[0-9]|ene|feb|mar|abr|may|jun|jul|ago|set|sep|oct|nov|dic)[a-z]*\.?[\/\-. ]\s*[0-9]{2,4})/i);
+  // Año de 4 dígitos y el día sin otro número pegado delante: si no, «710.10 02…» (monto + día)
+  // se leía como la fecha «0.10 02».
+  const fecha = t.match(/(?<![0-9.,])([0-3]?[0-9][\/\-. ]\s*(?:[0-1]?[0-9]|ene|feb|mar|abr|may|jun|jul|ago|set|sep|[o0]ct|nov|dic)[a-z]*[.,]?[\/\-. ]\s*[0-9]{4})/i);
   if (fecha) dateText = fecha[1].trim();
 
   // CELULAR QUE RECIBIÓ. Yape enmascara: «Nro. de celular *** *** 640», y el OCR lee los
@@ -1823,7 +1825,8 @@ export function receiptChecks(
 const MESES: Record<string, number> = { ene: 1, feb: 2, mar: 3, abr: 4, may: 5, jun: 6, jul: 7, ago: 8, set: 9, sep: 9, oct: 10, nov: 11, dic: 12 };
 /** La fecha de la constancia como AAAA-MM-DD, o null si no se reconoce. */
 export function fechaDelComprobante(texto: string | null): string | null {
-  const t = String(texto || "").toLowerCase();
+  // El lector confunde la «o» con un 0 («0ct») y el punto con una coma.
+  const t = String(texto || "").toLowerCase().replace(/\b0ct\b/g, "oct").replace(/,/g, ".");
   const par = (a: number, m: number, d: number) =>
     a >= 2024 && a <= 2100 && m >= 1 && m <= 12 && d >= 1 && d <= 31
       ? `${a}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}` : null;
@@ -1854,11 +1857,13 @@ export function decisionAutomatica(p: {
   if (!p.fields.opNumber) return no("No se pudo leer el número de operación.");
   if (!p.fields.celularFinal) return no("No se pudo leer a qué celular se yapeó.");
   if (p.fields.celularFinal !== String(p.numeroCobro).slice(-3)) return no(`El yapeo fue a otro celular (termina en ${p.fields.celularFinal}).`);
+  // Fecha: si se LEE y no es de hoy, se rechaza. Si no se pudo leer, no bloquea (prueba real del
+  // dueño, 2026-10-02: monto, operación y celular leídos; la fecha no). Lo que impide reusar una
+  // captura vieja es el número de operación, que no puede respaldar dos pedidos (índice único).
   const fecha = fechaDelComprobante(p.fields.dateText);
-  if (!fecha) return no("No se pudo leer la fecha.");
-  if (fecha !== p.hoyLima) return no("La captura no es de hoy.");
+  if (fecha && fecha !== p.hoyLima) return no("La captura no es de hoy.");
   if ((Number(o.total) || 0) > p.tope) return no(`Pasa el tope de S/${p.tope}: confírmalo tú.`);
-  return { confirmar: true, motivo: "Monto exacto, operación nueva, de hoy." };
+  return { confirmar: true, motivo: fecha ? "Monto exacto, operación nueva, de hoy." : "Monto exacto, operación nueva (la fecha no se pudo leer)." };
 }
 
 export async function actAdminReceiptOcr(b: Entrada<"admin-receipt-ocr"> & { _ip?: string }) {
@@ -1887,7 +1892,8 @@ export async function actAdminReceiptOcr(b: Entrada<"admin-receipt-ocr"> & { _ip
 
   try {
     await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, {
-      receipt_ocr: { ...fields, readAt: new Date().toISOString() },
+      // El texto que leyó el lector, para saber por qué falló algo sin adivinar.
+      receipt_ocr: { ...fields, readAt: new Date().toISOString(), texto: texto.slice(0, 1500) },
       receipt_op_number: fields.opNumber,
     });
   } catch (e) {

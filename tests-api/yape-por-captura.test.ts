@@ -25,7 +25,8 @@ Deno.test("cualquier duda queda para el dueño", () => {
   assertEquals(decide(yape, leida, ["R-OTRO"]).confirmar, false, "operación ya usada");
   assertEquals(decide(yape, { ...leida, opNumber: null }).confirmar, false, "sin operación");
   assertEquals(decide(yape, { ...leida, dateText: "01 oct. 2026" }).confirmar, false, "de ayer");
-  assertEquals(decide(yape, { ...leida, dateText: null }).confirmar, false, "sin fecha");
+  // Fecha ilegible no bloquea (la operación única es la protección); fecha de otro día, sí.
+  assertEquals(decide(yape, { ...leida, dateText: null }).confirmar, true, "sin fecha legible");
   assertEquals(decide({ ...yape, total: 85 }, { ...leida, amount: 85 }).confirmar, false, "sobre el tope");
   assertEquals(decide({ ...yape, payment_method: "culqi" }, leida).confirmar, false, "no es Yape");
   assertEquals(decide({ ...yape, payment_status: "paid" }, leida).confirmar, false, "ya pagado");
@@ -35,7 +36,7 @@ Deno.test("cualquier duda queda para el dueño", () => {
 });
 
 Deno.test("la fecha de la constancia se lee en los formatos comunes", () => {
-  for (const t of ["02/10/2026", "2-10-2026", "02 oct. 2026", "2 de octubre de 2026", "02 Oct 2026 19:15"]) {
+  for (const t of ["02/10/2026", "2-10-2026", "02 oct. 2026", "2 de octubre de 2026", "02 Oct 2026 19:15", "02 0ct. 2026", "02 oct, 2026"]) {
     assertEquals(fechaDelComprobante(t), HOY, t);
   }
   assertEquals(fechaDelComprobante("sin fecha"), null);
@@ -70,4 +71,10 @@ Deno.test("una constancia real de Yape se lee entera: monto, operación, fecha y
   assertEquals(d.confirmar, false);
   const igual = decisionAutomatica({ checks: receiptChecks(f, 10.4, []), fields: f, order: o, hoyLima: "2026-09-28", tope: 80, numeroCobro: "999999688" });
   assertEquals(igual.confirmar, true, "la misma captura, yapeada al número correcto y de hoy, sí se confirma");
+});
+
+Deno.test("el lector encuentra la fecha aunque confunda la o con un 0 o el punto con una coma", () => {
+  for (const linea of ["E 02 0ct. 2026 | 02:58 p. m.", "E 02 oct, 2026 | 02:58 p. m.", "02 oct. 2026"]) {
+    assertEquals(fechaDelComprobante(parseTransferReceipt("¡Yapeaste!\n710.10\n" + linea).dateText), HOY, linea);
+  }
 });
