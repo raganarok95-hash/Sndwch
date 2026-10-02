@@ -70,3 +70,29 @@ test('confirmar el mapa sin haber puesto el pin no guarda el local como direcci�
   await expect(page.locator('#mmap'), 'el mapa se cerró con el pin en el local').toBeVisible();
   expect(await page.evaluate(() => (window as any).direccionLista())).toBe(false);
 });
+
+// LA GUARDADA SE ELIGE SOLA (dueño, 2026-10-02: «sigue pidiendo marcar en el mapa, debería
+// seleccionarse sola la dirección que tengo guardada»). El carrito copiaba solo el TEXTO de la
+// última dirección: se veía escrita pero sin pin, y pedía el mapa a quien ya la tenía guardada.
+test('con una dirección guardada con pin, el carrito queda listo para pagar sin tocar nada', async ({ page }) => {
+  await gotoApp(page, {
+    login: { customer: { phone: '900000001', name: 'Prueba', points: 0, last_address: 'Av Prolongación Cesar Vallejo 2670' }, isAdmin: false, token: 't' },
+    'addresses-list': { addresses: [{ id: 1, label: 'Casa', address: 'Av Prolongación Cesar Vallejo 2670', reference: null, lat: -8.0912, lon: -79.0101 }] },
+    '*': { success: true },
+  });
+  await entrarConTelefono(page);
+  await page.waitForFunction(() => (window as any).cust && (window as any).myAddresses.length);
+  await page.evaluate(() => {
+    const w = window as any;
+    // Como un teléfono recién abierto: sin el pin de prueba que deja gotoApp.
+    w._mLat = null; w._mLon = null;
+    w.cart = [{ type: 'sig', code: w.SIGS[0].id, size: '15', qty: 1 }];
+    w.initCheckoutFields();
+    w.sndScreen = 'o_cart'; w.render();
+  });
+  const r = await page.evaluate(() => { const w = window as any; return { lista: w.direccionLista(), elegida: w.pickedAddrId, lat: w._mLat, problema: w.problemaDelPedido() }; });
+  expect(r.elegida, 'la guardada no quedó elegida').toBe(1);
+  expect(r.lat).toBe(-8.0912);
+  expect(r.lista, 'el carrito sigue pidiendo el mapa').toBe(true);
+  expect(r.problema || '').not.toMatch(/mapa/);
+});
