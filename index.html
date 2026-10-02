@@ -4164,7 +4164,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'b2c3e4f530';
+var APP_BUILD = 'fa4a633e3a';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -11931,6 +11931,11 @@ async function leerCapturasNuevas(orders) {
         var ocr = x.receipt_ocr;
         if (!ocr)
             return x.payment_status !== 'paid';
+        // Leída con una versión anterior del lector (sin el texto guardado, antes del 2026-10-02) y
+        // todavía sin pagar: se relee UNA vez con las reglas de hoy. Las lecturas nuevas guardan el
+        // texto, así que esto no se repite.
+        if (x.payment_status !== 'paid' && !ocr.texto && !ocr.origen)
+            return true;
         return ocr.origen === 'cliente' && x.payment_status === 'paid' && !ocr.verificadoPanel;
     });
     if (!o)
