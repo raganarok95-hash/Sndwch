@@ -277,6 +277,7 @@ export const CONTRATO = {
   // llegan (sinRevisar): el contrato descarta lo no declarado y check:contrato-campos asegura que
   // no falte nada. Endurecer los tipos de cada una queda pendiente, empezando por las que tocan dinero.
   'admin-orders': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'cliente-lee-captura': accion<Record<string, unknown>>()(e.objeto({ token, ref: e.textoOpcional(40), text: e.textoOpcional(4000) })),
   'admin-receipt-ocr': accion<Record<string, unknown>>()(e.objeto({ token, ref: crudo, text: crudo })),
   'admin-update-status': accion<Record<string, unknown>>()(e.objeto({ token, orderId: e.uuid('Falta el pedido.'), status: e.texto({ min: 1, max: 20, mensaje: 'Falta el estado.' }), etaMinutes: e.numero({ min: 0, max: 600, opcional: true, mensaje: 'Los minutos no son válidos.' }) })),
   'admin-confirm-payment': accion<Record<string, unknown>>()(e.objeto({ token, orderId: e.uuid('Falta el pedido.') })),

@@ -31,3 +31,21 @@ test('la captura nueva se lee sola y la tarjeta muestra que se confirmó', async
   expect(ocr[0].ref).toBe(PEDIDO.ref);
   await expect(page.locator(`[data-pedido="${PEDIDO.id}"] [data-captura="confirmada"]`)).toBeVisible();
 });
+
+// El celular del CLIENTE lee su captura apenas la sube (dueño, 2026-10-02: «sí hazlo, es
+// mejor»): no depende de que el panel esté abierto. Modo de fallo: el silencio — si este paso no
+// se dispara, el pedido vuelve a esperar al dueño y el cliente se queda sin respuesta.
+test('el cliente sube la captura, su celular la lee y ve el pago confirmado', async ({ page }) => {
+  const lecturas: any[] = [];
+  await page.addInitScript(() => { (window as any).Tesseract = { recognize: async () => ({ data: { text: '¡Yapeaste!\n710.10\nNro. de celular *** *** 640\nNro. de operación 12345678' } }) }; });
+  await gotoApp(page, {
+    'upload-receipt': { success: true },
+    'cliente-lee-captura': (b: any) => { lecturas.push(b); return { success: true, confirmado: true }; },
+    '*': { success: true },
+  });
+  await page.evaluate(() => { const w = window as any; w._lRef = 'ORD-PRUEBA-99'; w.uploadReceiptBase64('AAAA'); });
+  await expect.poll(() => lecturas.length, { message: 'el celular del cliente no leyó la captura' }).toBe(1);
+  expect(lecturas[0].ref).toBe('ORD-PRUEBA-99');
+  expect(lecturas[0].text).toContain('12345678');
+  await expect.poll(() => page.evaluate(() => (window as any).receiptUploadState)).toBe('confirmado');
+});

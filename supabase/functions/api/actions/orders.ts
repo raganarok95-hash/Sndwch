@@ -1866,41 +1866,56 @@ export function decisionAutomatica(p: {
   return { confirmar: true, motivo: fecha ? "Monto exacto, operación nueva, de hoy." : "Monto exacto, operación nueva (la fecha no se pudo leer)." };
 }
 
-export async function actAdminReceiptOcr(b: Entrada<"admin-receipt-ocr"> & { _ip?: string }) {
-  const admin = await requireAdmin(b.token);
-  const ref = String(b.ref || "").trim().slice(0, 40);
-  if (!ref) throw new ApiError("Falta el pedido.", 400);
-  const texto = String(b.text || "").slice(0, 4000);
-
+// Lee la captura (texto del lector) y decide. La usan el panel (origen «panel», lee la imagen
+// guardada) y el celular del cliente apenas la sube (origen «cliente», dueño 2026-10-02: «sí
+// hazlo, es mejor»: así no depende de que el panel esté abierto). Cuando el panel vuelve a leer
+// una captura que el cliente ya confirmó, COMPARA: si no coincide, avisa al dueño.
+type OrigenCaptura = "panel" | "cliente";
+async function procesarCaptura(ref: string, texto: string, origen: OrigenCaptura, actor: string) {
   const rows = await sbGet(
     "orders",
-    `ref=eq.${encodeURIComponent(ref)}&select=id,ref,total,delivery_fee,customer_phone,contact_phone,customer_name,customer_address,customer_email,payment_method,payment_status,status`,
+    `ref=eq.${encodeURIComponent(ref)}&select=id,ref,total,delivery_fee,customer_phone,contact_phone,customer_name,customer_address,customer_email,payment_method,payment_status,status,receipt_path,receipt_ocr,receipt_op_number`,
   );
   const order = rows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
-
   const fields = parseTransferReceipt(texto);
+  const ahora = new Date().toISOString();
+  const previa: any = order.receipt_ocr || null;
+
+  // El panel re-lee lo que el cliente ya confirmó: no decide de nuevo, solo compara.
+  if (origen === "panel" && order.payment_status === "paid" && previa?.origen === "cliente") {
+    const coincide = !!fields.opNumber && fields.opNumber === previa.opNumber &&
+      receiptChecks(fields, Number(order.total) || 0, []).amountMatches === true;
+    await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, {
+      receipt_ocr: { ...previa, verificadoPanel: true, verificadoAt: ahora, coincide, lecturaPanel: { ...fields, texto: texto.slice(0, 1500) } },
+    });
+    if (!coincide) {
+      try {
+        await sendPushToAdmins({ title: `Revisa el pago de ${ref}`, body: "La captura no dice lo mismo que leyó el celular del cliente. Míralo en tu Yape.", url: "./index.html", tag: "sndwch-captura-no-coincide-" + ref });
+      } catch { /* el aviso es un extra */ }
+      await debugLog({ stage: "captura-no-coincide", ref, cliente: { op: previa.opNumber, monto: previa.amount }, panel: { op: fields.opNumber, monto: fields.amount } });
+    }
+    const motivo = coincide ? "Lo confirmó el cliente y tu panel leyó lo mismo." : "Lo confirmó el cliente, pero tu panel leyó otra cosa: revísalo en tu Yape.";
+    return { fields, checks: receiptChecks(fields, Number(order.total) || 0, []), auto: { confirmar: false, confirmado: coincide, motivo, verificacion: true }, order: null };
+  }
+
   let otras: string[] = [];
   if (fields.opNumber) {
-    const previos = await sbGet(
-      "orders",
-      `receipt_op_number=eq.${encodeURIComponent(fields.opNumber)}&select=ref&limit=20`,
-    );
+    const previos = await sbGet("orders", `receipt_op_number=eq.${encodeURIComponent(fields.opNumber)}&select=ref&limit=20`);
     otras = previos.map((r: any) => String(r.ref || "")).filter((r: string) => r && r !== ref);
   }
   let checks = receiptChecks(fields, Number(order.total) || 0, otras);
-
   try {
     await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, {
       // El texto que leyó el lector, para saber por qué falló algo sin adivinar.
-      receipt_ocr: { ...fields, readAt: new Date().toISOString(), texto: texto.slice(0, 1500) },
+      receipt_ocr: { ...fields, readAt: ahora, origen, texto: texto.slice(0, 1500) },
       receipt_op_number: fields.opNumber,
     });
   } catch (e) {
     // El índice único atrapó la carrera: otro pedido reservó esa operación un instante antes.
     if (!(e instanceof Error && e.message.includes("23505"))) throw e;
     checks = { ...checks, duplicateOpRefs: ["otro pedido"], verdict: "revisar" };
-    await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { receipt_ocr: { ...fields, readAt: new Date().toISOString(), duplicada: true } });
+    await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { receipt_ocr: { ...fields, readAt: ahora, origen, duplicada: true } });
   }
 
   const hoyLima = new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" });
@@ -1911,9 +1926,37 @@ export async function actAdminReceiptOcr(b: Entrada<"admin-receipt-ocr"> & { _ip
     const r = await confirmManualPayment(order);
     confirmado = !!r;
     pedido = r?.order ?? null;
-    if (r) await logAdminAction(admin.phone, "auto-confirm-payment", order.id, { ref, total: order.total, opNumber: fields.opNumber });
+    if (r) await logAdminAction(actor, "auto-confirm-payment", order.id, { ref, total: order.total, opNumber: fields.opNumber, origen });
   }
-  return { success: true, fields, checks, auto: { ...auto, confirmado }, order: pedido };
+  return { fields, checks, auto: { ...auto, confirmado }, order: pedido };
+}
+
+export async function actAdminReceiptOcr(b: Entrada<"admin-receipt-ocr"> & { _ip?: string }) {
+  const admin = await requireAdmin(b.token);
+  const ref = String(b.ref || "").trim().slice(0, 40);
+  if (!ref) throw new ApiError("Falta el pedido.", 400);
+  const r = await procesarCaptura(ref, String(b.text || "").slice(0, 4000), "panel", admin.phone);
+  return { success: true, ...r };
+}
+
+// El celular del cliente leyó su propia captura. Igual que upload-receipt, el `ref` es la prueba
+// de que el pedido es suyo (solo él lo tiene). Pocas lecturas por pedido y solo si ya subió la
+// imagen: el texto se compara contra esa imagen cuando el panel la vuelve a leer.
+const LECTURAS_CLIENTE_POR_HORA = 3;
+export async function actClienteLeeCaptura(b: Entrada<"cliente-lee-captura"> & { _ip?: string }) {
+  const ref = String(b.ref || "").trim().slice(0, 40);
+  const texto = String(b.text || "").slice(0, 4000);
+  if (!ref || !texto) throw new ApiError("Faltan datos de la captura.", 400);
+  const permitido = await rpc("check_rate_limit", { p_key: "cliente-lee-captura:" + ref, p_limit: LECTURAS_CLIENTE_POR_HORA, p_window_minutes: 60 });
+  if (!permitido) return { success: true, confirmado: false };
+  const rows = await sbGet("orders", `ref=eq.${encodeURIComponent(ref)}&select=receipt_path,payment_status`);
+  if (!rows[0]) throw new ApiError("Pedido no encontrado.", 404);
+  if (!rows[0].receipt_path) throw new ApiError("Primero sube la captura.", 400);
+  if (rows[0].payment_status === "paid") return { success: true, confirmado: true };
+  const r = await procesarCaptura(ref, texto, "cliente", "cliente");
+  // Al cliente solo se le dice si quedó confirmado: el motivo exacto ayudaría a quien quiera
+  // fabricar una captura que pase.
+  return { success: true, confirmado: !!r.auto.confirmado };
 }
 
 // ── #19: CONFIRMACIÓN DE ENTREGA POR LINK ──────────────────────────────────────────────

@@ -272,8 +272,12 @@ var _leyendoCaptura=false;
 async function leerCapturasNuevas(orders:any[]){
   if(_leyendoCaptura||!isAdmin)return;
   var o=(orders||[]).find(function(x:any){
-    return (x.payment_method==='yape'||x.payment_method==='plin')&&x.payment_status!=='paid'&&x.status!=='CANCELADO'
-      &&x.receipt_path&&!x.receipt_ocr&&!receiptOcrState[x.ref];
+    if(!(x.payment_method==='yape'||x.payment_method==='plin')||x.status==='CANCELADO'||!x.receipt_path||receiptOcrState[x.ref])return false;
+    // Sin leer y sin pagar → se lee y decide. Confirmado por el celular del cliente → se vuelve a
+    // leer UNA vez para comparar (procesarCaptura avisa si no coincide).
+    var ocr=x.receipt_ocr;
+    if(!ocr)return x.payment_status!=='paid';
+    return ocr.origen==='cliente'&&x.payment_status==='paid'&&!ocr.verificadoPanel;
   });
   if(!o)return;
   _leyendoCaptura=true;
