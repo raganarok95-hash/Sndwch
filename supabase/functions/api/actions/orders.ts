@@ -1777,9 +1777,8 @@ export function receiptChecks(
 // ── YAPE CONFIRMADO POR LA CAPTURA (2026-10-02) ────────────────────────────────────────────
 // El dueño aceptó el riesgo de una captura editada a cambio de no confirmar a mano. Se confirma
 // SOLO si todo cuadra; ante la menor duda queda para el dueño, con el motivo a la vista.
-// Una operación ya usada en otro pedido no se confirma (receiptChecks). ⚠ Queda una ventana de
-// carrera si dos capturas iguales se leen en el mismo instante; la cierra un índice único sobre
-// orders.receipt_op_number (migración propuesta el 2026-10-02, pendiente de que el dueño la apruebe).
+// El número de operación lo reserva un índice ÚNICO (orders_receipt_op_number_unico, migración
+// 20261002181120): la misma captura no puede respaldar dos pedidos ni aunque lleguen a la vez.
 const MESES: Record<string, number> = { ene: 1, feb: 2, mar: 3, abr: 4, may: 5, jun: 6, jul: 7, ago: 8, set: 9, sep: 9, oct: 10, nov: 11, dic: 12 };
 /** La fecha de la constancia como AAAA-MM-DD, o null si no se reconoce. */
 export function fechaDelComprobante(texto: string | null): string | null {
@@ -1847,7 +1846,7 @@ export async function actAdminReceiptOcr(b: Entrada<"admin-receipt-ocr"> & { _ip
       receipt_op_number: fields.opNumber,
     });
   } catch (e) {
-    // Con el índice único (pendiente), esto atrapa la carrera: otro pedido reservó esa operación antes.
+    // El índice único atrapó la carrera: otro pedido reservó esa operación un instante antes.
     if (!(e instanceof Error && e.message.includes("23505"))) throw e;
     checks = { ...checks, duplicateOpRefs: ["otro pedido"], verdict: "revisar" };
     await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}`, { receipt_ocr: { ...fields, readAt: new Date().toISOString(), duplicada: true } });
