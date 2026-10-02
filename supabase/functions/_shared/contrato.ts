@@ -140,10 +140,6 @@ export const CONTRATO = {
   // como número opcional, un dato ausente llegaría como null y Number(null) es 0 —una coordenada
   // válida en el mar—, cuando hoy llega NaN y la acción lo rechaza.
   'my-orders': accion<Record<string, unknown>>()(e.objeto({ token, ref: e.textoOpcional(40) })),
-  'credit-gift': accion<Record<string, unknown>>()(
-    e.objeto({ token, toPhone: e.textoOpcional(20), amount: e.numero({ min: 0, max: 10_000, opcional: true, mensaje: 'El monto no es válido.' }) }),
-  ),
-  'credit-lookup': accion<Record<string, unknown>>()(e.objeto({ token, toPhone: e.textoOpcional(20) })),
   'cancel-my-order': accion<Record<string, unknown>>()(
     e.objeto({ token, orderId: e.textoOpcional(64), ref: e.textoOpcional(40) }),
   ),

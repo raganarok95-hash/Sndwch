@@ -744,15 +744,6 @@ var REFERRER_REWARD_POINTS=REGLAS_N.REFERRER_REWARD_POINTS;
 // del escalón. El primer escalón decía 120 con la bebida en 160 — pasaba el chequeo viejo
 // porque 120 es múltiplo de la salsa extra (20).
 var REFERRAL_MILESTONES=REGLAS_N.REFERRAL_MILESTONES;
-// Cuál es el siguiente escalón por alcanzar y cuántos amigos faltan. Devuelve null cuando
-// ya se pasó el último — ahí la escalera se pinta completa, sin un "faltan -2".
-function nextReferralMilestone(n){
-  var t=Number(n)||0;
-  for(var i=0;i<REFERRAL_MILESTONES.length;i++){
-    if(REFERRAL_MILESTONES[i].count>t) return {m:REFERRAL_MILESTONES[i],missing:REFERRAL_MILESTONES[i].count-t};
-  }
-  return null;
-}
 // Píxel de Meta — el id llega del servidor (get-store-hours) y no está en el código: si el
 // dueño todavía no configuró el secret, la app no carga NINGÚN script de terceros. Todo lo
 // de medición pasa por fbq(), que es un no-op mientras el píxel no exista, así que ningún
