@@ -292,7 +292,8 @@ async function readReceipt(ordId,url){
     var T=await loadTesseract();
     // 'spa' — los rótulos de la constancia están en español. El motor descarga el modelo del
     // idioma la primera vez y lo deja en caché del navegador.
-    var res=await T.recognize(url,'spa');
+    // Nunca «Leyendo…» para siempre: a los 60 s se dice que no se pudo y queda para el dueño.
+    var res:any=await Promise.race([T.recognize(url,'spa'),new Promise(function(_r,rej){setTimeout(function(){rej(new Error('el lector tardó demasiado'));},60000);})]);
     var texto=(res&&res.data&&res.data.text)||'';
     // El texto se manda al SERVIDOR para interpretarlo: ahí vive el parser probado, y ahí
     // está la tabla contra la que se comprueba si esa misma operación ya respaldó otro
