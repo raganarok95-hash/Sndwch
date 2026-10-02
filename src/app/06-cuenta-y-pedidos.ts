@@ -476,41 +476,11 @@ function loQueGanaQuienInvita(){
     ? 'un <b>sándwich 15CM GRATIS</b> ('+REFERRER_REWARD_POINTS+' pts)'
     : '<b>'+REFERRER_REWARD_POINTS+' pts</b> para tu próximo pedido';
 }
-function etiquetaDeEscalon(m){
-  var r=m.covers?RWDS.filter(function(x){return x.id===m.covers;})[0]:null;
-  var necesita=r?(m.veces||1)*r.pts:0;
-  return (!r||m.points>=necesita)?m.label:(m.points+' puntos para tu próximo pedido');
-}
 function loQueGanaElInvitado(){
   var r05=recompensaDeTipo('bebida');
   return (r05&&REFERRAL_BONUS_POINTS>=r05.pts)
     ? REFERRAL_BONUS_POINTS+' pts — una bebida de la casa'
     : REFERRAL_BONUS_POINTS+' pts para su primer pedido';
-}
-function referralLadderHTML(refs){
-  var n=Number(refs)||0;
-  var sig=nextReferralMilestone(n);
-  var filas=REFERRAL_MILESTONES.map(function(m){
-    var ganado=n>=m.count;
-    var esSiguiente=!!sig&&sig.m.count===m.count;
-    var col=ganado?GOLD:(esSiguiente?'var(--sw-text,#FFFFFF)':'var(--sw-text-muted,#9DA096)');
-    // La etiqueta nombra una recompensa concreta ("una bebida de la casa gratis"), y esa
-    // recompensa se puede repricear desde el panel por encima de lo que el escalón paga —
-    // `RWDS[].pts` llega vivo en `get-catalog`. Si deja de alcanzar se dice lo único cierto:
-    // los puntos. Mismo criterio que `loQueGanaElInvitado()`, y vuelve solo si vuelve a
-    // alcanzar. `npm run parity` cubre el hueco del código; esto cubre el del panel.
-    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;opacity:'+(ganado||esSiguiente?1:.5)+'">'
-      +'<div style="flex:0 0 auto;width:18px;text-align:center;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:640;color:'+col+'">'+(ganado?'&#10003;':m.count)+'</div>'
-      +'<div style="flex:1;min-width:0;font-family:\'EB Garamond\',serif;font-size:11px;color:'+col+'">'+esc(etiquetaDeEscalon(m))+'</div>'
-      +'<div style="flex:0 0 auto;font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+col+'">+'+m.points+' pts</div></div>';
-  }).join('');
-  var pie=sig
-    ? 'Te '+(sig.missing===1?'falta 1 amigo':'faltan '+sig.missing+' amigos')+' para el siguiente premio.'
-    : 'Ganaste todos los premios de la escalera. Cada nuevo amigo te sigue dando tu sándwich.';
-  return '<div style="background:rgba(0,0,0,.18);border-radius:10px;padding:10px 12px;margin-bottom:12px">'
-    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;letter-spacing:.14em;color:var(--sw-text-muted,#9DA096);margin-bottom:4px">PREMIOS EXTRA //</div>'
-    +filas
-    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:11px;color:'+GOLD+';margin-top:6px">'+esc(pie)+'</div></div>';
 }
 function shareReferral(){
   // Antes solo mandaba el número como "código" — el amigo tenía que escribirlo a mano
@@ -528,35 +498,6 @@ function shareReferral(){
   }
 }
 var _creditGiftInProgress=false;
-async function doCreditGift(){
-  if(_creditGiftInProgress)return;
-  var phoneEl=(document.getElementById('cg-phone') as HTMLInputElement | null),amtEl=(document.getElementById('cg-amt') as HTMLInputElement | null);
-  var phone=phoneEl?phoneEl.value.trim():'';
-  var amt=amtEl?parseFloat(amtEl.value):NaN;
-  wPhone=phone;wAmt=amtEl?amtEl.value:'';
-  if(!phone||!amt||amt<=0){wMsg='Ingresa un teléfono y un monto válido.';render();return;}
-  // Antes esto transfería con un solo tap y sin mostrar a quién le estaba llegando el
-  // dinero — un typo en el teléfono lo mandaba a un desconocido sin ninguna forma de
-  // darse cuenta antes de confirmar (hallazgo de la auditoría de flujo de pedidos).
-  var name;
-  try{
-    var lookup=await api('credit-lookup',{token:token,toPhone:phone});
-    name=lookup.name;
-  }catch(e){wMsg=e.message;render();return;}
-  if(!(await showConfirm('¿Enviar '+SOLES_TXT+pz(amt)+' de crédito a '+name+' ('+phone+')?')))return;
-  // Guard de doble-tap — tarjeta de regalo y Plan Semanal ya lo tenían, esta transferencia
-  // de saldo YA propio se había quedado sin él (hallazgo de auditoría de funcionamiento,
-  // MEDIO): un doble-tap tras confirmar el modal regalaba el crédito dos veces.
-  _creditGiftInProgress=true;
-  try{
-    await api('credit-gift',{token:token,toPhone:phone,amount:amt});
-    var r=await api('session-check',{token:token});
-    if(r.valid){cust=r.customer;cacheCust(cust,isAdmin);}
-    wMsg='¡Crédito enviado a '+name+'!';wPhone='';wAmt='';
-  }catch(e){wMsg=e.message;}
-  _creditGiftInProgress=false;
-  render();
-}
 // Guardias de reentrada, como ya tienen doCreditGift/doGiftCardBuy/doWeeklyPlanBuy. BTN()
 // no genera `disabled`, así que el botón sigue clickeable durante la llamada. El servidor
 // rechaza el segundo reclamo de forma atómica (RPC claim_monthly_challenge), así que no se
