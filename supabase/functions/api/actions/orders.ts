@@ -22,7 +22,7 @@ import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../email.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 import { cargasPorHora, horaLlena, fijoPropio } from "../capacidad.ts";
 import { ID_SECRETO } from "../../_shared/carta.ts";
-import { YAPE_AUTO_TOPE } from "../../_shared/reglas.ts";
+import { YAPE_AUTO_TOPE, YAPE_NUMERO_COBRO } from "../../_shared/reglas.ts";
 
 // Avisa al dueño solo en el momento en que un producto CRUZA su umbral de stock bajo (o
 // llega a 0) — no en cada pedido siguiente mientras ya viene bajo, para no saturarlo de
@@ -1680,7 +1680,15 @@ async function alertLowMarginOrder(p: FinalizeOrderParams): Promise<void> {
 // en dos pedidos. Es más fuerte que el hash de la imagen (#29), porque volver a capturar la
 // pantalla cambia el hash y no el número.
 
-export type ReceiptFields = { amount: number | null; opNumber: string | null; dateText: string | null };
+export type ReceiptFields = {
+  amount: number | null;
+  /** Lecturas posibles del monto cuando el símbolo «S/» se leyó como un dígito (ver abajo). */
+  amountCandidates?: number[];
+  opNumber: string | null;
+  dateText: string | null;
+  /** Los 3 últimos dígitos del celular que RECIBIÓ el yapeo («Nro. de celular *** *** 640»). */
+  celularFinal?: string | null;
+};
 
 // Parser tolerante del texto que devuelve el OCR.
 //
@@ -1711,6 +1719,26 @@ export function parseTransferReceipt(text: string): ReceiptFields {
       .filter((n) => Number.isFinite(n) && n > 0);
     if (valores.length) amount = Math.round(Math.max(...valores) * 100) / 100;
   }
+  // Constancia REAL de Yape (captura del dueño, 2026-10-02): Tesseract lee «S/ 10.40» como
+  // «710.40» — el símbolo se pierde y queda un dígito delante. El monto es el primer número con
+  // dos decimales DESPUÉS de «Yapeaste»; si no trae el símbolo, también vale sin su primer
+  // dígito (7, 5 o S mal leídos). receiptChecks acepta la lectura que coincida con el pedido.
+  let amountCandidates: number[] = amount !== null ? [amount] : [];
+  if (amount === null) {
+    const lineas = raw.split(/\n+/);
+    const i = lineas.findIndex((l) => /yape(aste|aron)/i.test(l));
+    // Sin el rótulo NO se toma ningún número suelto (un «26.90» cualquiera no es un monto).
+    for (let k = i + 1; i >= 0 && k < lineas.length && k <= i + 3; k++) {
+      const m = lineas[k].match(/([0-9]{1,5})[.,]([0-9]{2})(?![0-9])/);
+      if (!m) continue;
+      const entero = m[1], dec = m[2];
+      const n = Number(entero + "." + dec);
+      amountCandidates = [n];
+      if (entero.length >= 2 && /^[57]/.test(entero)) amountCandidates.push(Number(entero.slice(1) + "." + dec));
+      amount = amountCandidates[amountCandidates.length - 1];
+      break;
+    }
+  }
 
   // NÚMERO DE OPERACIÓN. Se acepta cualquiera de los rótulos que usan las apps peruanas.
   // Solo se toma un número que venga DETRÁS de un rótulo: agarrar el dígito más largo del
@@ -1723,10 +1751,18 @@ export function parseTransferReceipt(text: string): ReceiptFields {
   // marzo o setiembre según el runtime metería un error de meses en un dato que existe
   // justamente para detectar comprobantes viejos.
   let dateText: string | null = null;
-  const fecha = t.match(/([0-3]?[0-9][\/\-. ](?:[0-1]?[0-9]|ene|feb|mar|abr|may|jun|jul|ago|set|sep|oct|nov|dic)[a-z]*[\/\-. ][0-9]{2,4})/i);
+  // «28 set. 2026» (Yape real): el punto del mes va seguido de un espacio.
+  const fecha = t.match(/([0-3]?[0-9][\/\-. ](?:[0-1]?[0-9]|ene|feb|mar|abr|may|jun|jul|ago|set|sep|oct|nov|dic)[a-z]*\.?[\/\-. ]\s*[0-9]{2,4})/i);
   if (fecha) dateText = fecha[1].trim();
 
-  return { amount, opNumber, dateText };
+  // CELULAR QUE RECIBIÓ. Yape enmascara: «Nro. de celular *** *** 640», y el OCR lee los
+  // asteriscos como cualquier cosa («Xxx 4% 688»). Se toman los 3 dígitos del FINAL del renglón.
+  let celularFinal: string | null = null;
+  const lineaCel = raw.split(/\n+/).find((l) => /celular/i.test(l));
+  const fin = lineaCel ? lineaCel.trim().match(/([0-9]{3})$/) : null;
+  if (fin) celularFinal = fin[1];
+
+  return { amount, amountCandidates, opNumber, dateText, celularFinal };
 }
 
 // Qué decirle al admin sobre lo que se leyó. Puro y probado: decide un VEREDICTO sobre
@@ -1746,16 +1782,17 @@ export function receiptChecks(
   otherRefsWithSameOp: string[],
 ): ReceiptChecks {
   const expected = Math.round((Number(expectedTotal) || 0) * 100) / 100;
-  const leido = fields?.amount ?? null;
+  const cerca = (n: number) => Math.abs(Math.round(n * 100) - Math.round(expected * 100)) <= 1;
+  // Si el «S/» se leyó como un dígito hay dos lecturas posibles; vale la que coincide con el pedido.
+  const candidatos = (fields?.amountCandidates && fields.amountCandidates.length ? fields.amountCandidates : fields?.amount != null ? [fields.amount] : []);
+  const leido = candidatos.find(cerca) ?? (fields?.amount ?? null);
   // Tolerancia de un céntimo: el OCR puede leer una coma como punto y el total del pedido
   // lleva decimales desde los precios .90.
   //
   // La comparación va en CÉNTIMOS ENTEROS, no en soles: `Math.abs(26.91 - 26.90)` da
   // 0.010000000000001563 en punto flotante y no pasa un `<= 0.01`. Es el mismo motivo por el
   // que el servidor compara totales con `Math.round(total * 100)` en el checkout.
-  const amountMatches = leido === null
-    ? null
-    : Math.abs(Math.round(leido * 100) - Math.round(expected * 100)) <= 1;
+  const amountMatches = leido === null ? null : cerca(leido);
   const duplicateOpRefs = (Array.isArray(otherRefsWithSameOp) ? otherRefsWithSameOp : []).filter(Boolean);
   // Un duplicado manda sobre todo lo demás: aunque el monto cuadre, la misma transferencia
   // no puede respaldar dos pedidos.
@@ -1799,6 +1836,8 @@ export function decisionAutomatica(p: {
   order: { payment_method?: string | null; payment_status?: string | null; status?: string | null; total?: unknown };
   hoyLima: string;
   tope: number;
+  /** El celular del negocio que recibe los yapeos (reglas.ts · YAPE_NUMERO_COBRO). */
+  numeroCobro: string;
 }): DecisionAutomatica {
   const no = (motivo: string) => ({ confirmar: false, motivo });
   const o = p.order || {};
@@ -1809,6 +1848,8 @@ export function decisionAutomatica(p: {
   if (p.checks.amountMatches === null) return no("No se pudo leer el monto.");
   if (!p.checks.amountMatches) return no(`El monto leído (S/${p.checks.amountRead}) no es el del pedido (S/${p.checks.expected}).`);
   if (!p.fields.opNumber) return no("No se pudo leer el número de operación.");
+  if (!p.fields.celularFinal) return no("No se pudo leer a qué celular se yapeó.");
+  if (p.fields.celularFinal !== String(p.numeroCobro).slice(-3)) return no(`El yapeo fue a otro celular (termina en ${p.fields.celularFinal}).`);
   const fecha = fechaDelComprobante(p.fields.dateText);
   if (!fecha) return no("No se pudo leer la fecha.");
   if (fecha !== p.hoyLima) return no("La captura no es de hoy.");
@@ -1853,7 +1894,7 @@ export async function actAdminReceiptOcr(b: Entrada<"admin-receipt-ocr"> & { _ip
   }
 
   const hoyLima = new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" });
-  const auto = decisionAutomatica({ checks, fields, order, hoyLima, tope: YAPE_AUTO_TOPE });
+  const auto = decisionAutomatica({ checks, fields, order, hoyLima, tope: YAPE_AUTO_TOPE, numeroCobro: YAPE_NUMERO_COBRO });
   let confirmado = false;
   let pedido: any = null;
   if (auto.confirmar) {

@@ -101,3 +101,6 @@ export const RESPUESTA_MANANA_HORA = 13;
 // ── Yape confirmado por captura (dueño, 2026-10-02: «gratis y automatizado aun con el riesgo de
 // que se modifique la captura»; tope decidido: S/80). Sobre este total el pago lo confirma el dueño.
 export const YAPE_AUTO_TOPE = 80;
+/** El celular que recibe los yapeos (el mismo de WhatsApp). El cliente lo muestra para yapear y el
+ *  servidor comprueba que la captura diga que el yapeo fue a este número (sus 3 últimos dígitos). */
+export const YAPE_NUMERO_COBRO = "930957640";

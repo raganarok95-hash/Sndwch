@@ -44,7 +44,8 @@ var CULQI_PUBLIC_KEY='pk_live_q82LnGIDlmQ0bpUC';
 // cobro. El pedido queda pendiente hasta que el operador confirme en el panel de admin
 // que el dinero llegó (ver payWithManualMethod() y actAdminConfirmPayment en el servidor).
 // Yape y Plin confirmados activos en este número (el mismo de WhatsApp).
-var YAPE_PLIN_PHONE='930957640';
+// Sale de reglas.ts (YAPE_NUMERO_COBRO): el servidor comprueba las capturas contra el mismo número.
+var YAPE_PLIN_PHONE:string=(window as any).__sndNuevo.reglas.YAPE_NUMERO_COBRO;
 var YAPE_PLIN_NAME='SND//WCH';
 // El TITULAR real de la cuenta, que es el nombre que Yape le muestra al cliente cuando
 // escribe el número — no la marca. Sale de BIZ_NAME (el titular del RUC del negocio), no
