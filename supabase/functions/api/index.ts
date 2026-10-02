@@ -62,7 +62,7 @@ import { actReportClientError } from "./actions/errores.ts";
 import {
   actReportOrderProblem, actMyOrderProblems, actAdminOrderProblems, actAdminResolveOrderProblem, actAlertOrderProblems,
 } from "./actions/problems.ts";
-import { actZoneWaitlistJoin, actAdminZoneWaitlist, actAdminNotifyZone } from "./actions/zones.ts";
+import { actAdminZoneWaitlist, actAdminNotifyZone } from "./actions/zones.ts";
 import {
   actCreateGroupOrder, actGetGroupOrder, actAddGroupItem, actRemoveGroupItem, actCancelGroupOrder, actCloseGroupOrder, actSplitGroupOrder, actExpireGroupShares,
 } from "./actions/group.ts";
@@ -246,7 +246,6 @@ const ACTIONS: ConContrato & SinContrato = {
   "admin-order-problems": actAdminOrderProblems,
   "admin-resolve-order-problem": actAdminResolveOrderProblem,
   "alert-order-problems": actAlertOrderProblems,
-  "zone-waitlist-join": actZoneWaitlistJoin,
   "admin-zone-waitlist": actAdminZoneWaitlist,
   "admin-notify-zone": actAdminNotifyZone,
   "remind-unclaimed-challenge": actRemindUnclaimedChallenge,

@@ -412,14 +412,6 @@ function backFromConfirm(){
   if(quickPayEligible){cart=[];quickPayEligible=false;}
   go(mode==='sig'?'o_sig':'o_build');
 }
-// El cliente decide pedir más de un producto: el sándwich ya confirmado se queda
-// en el carrito y pasamos a la vista de carrito completo para seguir agregando.
-function goToCartFromConfirm(){
-  syncConfirmFields();
-  quickPayEligible=false;
-  resetBuilder();mode=null;
-  go('o_cart');
-}
 // Reinicia los campos transitorios del checkout (nombre/correo/notas/dirección/
 // programación/crédito/recompensa) — se llama solo cuando el carrito pasa de estar
 // vacío a tener su primer producto, para que un pedido nuevo nunca arrastre texto
@@ -625,11 +617,8 @@ function itemExtrasLabel(item){
 function cartDesglose(){
   return DINERO.desglose(cart,{recompensa:appliedReward||null,organizador:!!pendingGroupCode,cuandoMs:effectiveOrderDate().getTime()});
 }
-function cartComboCount(){return Math.round(cartDesglose().combo/COMBO_DISCOUNT_PER_PAIR);}
 function cartComboDiscount(){return cartDesglose().combo;}
 function cartOffPeakDrinkDiscount(){return cartDesglose().valle;}
-// Cuánto costaría subir ESTE sándwich (ya en 15CM) a 30CM, pan incluido. Usado por R03.
-function itemSizeUpgradeDiff(it){var t=DINERO.tasar(it);return t?t.subir30/100:0;}
 function organizerFreeAmount(){return cartDesglose().organizador.monto;}
 // La primera línea del carrito a la que se le puede aplicar la recompensa, o -1.
 function findRewardTargetIndex(rewardId){return DINERO.lineaDeLaRecompensa(cart,rewardId);}

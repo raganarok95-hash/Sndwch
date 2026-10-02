@@ -239,9 +239,6 @@ export const CONTRATO = {
   'report-client-error': accion<Record<string, unknown>>()(
     e.objeto({ token, donde: e.textoOpcional(200), mensaje: e.textoOpcional(1000), pila: e.textoOpcional(2000), pantalla: e.textoOpcional(100), version: e.textoOpcional(100) }),
   ),
-  'zone-waitlist-join': accion<Record<string, unknown>>()(
-    e.objeto({ token, district: e.textoOpcional(60), lat: e.sinRevisar(), lon: e.sinRevisar() }),
-  ),
   'anniversary-greeting': accion<Record<string, unknown>>()(e.objeto({ token, cronSecret: e.textoOpcional(500) })),
   'sync-cart': accion<Record<string, unknown>>()(e.objeto({ token, items: e.sinRevisar() })),
 
