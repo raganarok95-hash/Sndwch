@@ -5,9 +5,9 @@
 // abrir esa zona— avisa a todos de una vez desde el panel. Cada persona recibe UN aviso por
 // zona: después queda marcada (notified_at) y no se le vuelve a escribir.
 import type { Entrada } from "../../_shared/contrato.ts";
-import { sbGet, sbInsert, sbUpdate } from "../db.ts";
+import { sbGet, sbUpdate } from "../db.ts";
 import { ApiError } from "../types.ts";
-import { requireSession, requireAdmin } from "../session.ts";
+import { requireAdmin } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { sendPushToPhone } from "../push.ts";
 import { DELIVERY_EXCLUDED_ZONES } from "../env.ts";
@@ -19,24 +19,9 @@ export function distritoValido(d: unknown): string | null {
   return /^[a-z_]{3,40}$/.test(s) && s !== "otro" ? s : null;
 }
 
-export async function actZoneWaitlistJoin(b: Entrada<"zone-waitlist-join"> & { _ip?: string }) {
-  const s = await requireSession(b.token);
-  const district = distritoValido(b.district);
-  if (!district) throw new ApiError("Falta el distrito.");
-  const ya = await sbGet(
-    "zone_waitlist",
-    `customer_phone=eq.${encodeURIComponent(s.phone)}&district=eq.${district}&notified_at=is.null&select=id`,
-  );
-  if (!ya.length) {
-    await sbInsert("zone_waitlist", {
-      customer_phone: s.phone,
-      district,
-      lat: typeof b.lat === "number" ? b.lat : null,
-      lon: typeof b.lon === "number" ? b.lon : null,
-    });
-  }
-  return { success: true };
-}
+// La acción con que el cliente se anotaba (zone-waitlist-join) se retiró el 2026-10-02: desde el
+// 2026-09-30 no hay zonas fuera de cobertura (dueño), así que la app ya no la ofrece. Lo de abajo
+// queda para avisar a quienes se anotaron antes.
 
 // Para decidir qué zona abrir: cuántos esperan en cada una.
 export async function actAdminZoneWaitlist(b: Entrada<"admin-zone-waitlist"> & { _ip?: string }) {

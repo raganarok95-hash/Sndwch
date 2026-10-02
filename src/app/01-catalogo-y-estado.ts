@@ -55,28 +55,7 @@ var YAPE_PLIN_HOLDER=BIZ_NAME;
 // DEBE coincidir con STALE_MANUAL_PAYMENT_HOURS en supabase/functions/api/env.ts. Se usa
 // para mostrarle al cliente un plazo real (no inventado) en la pantalla de confirmación.
 var STALE_MANUAL_PAYMENT_HOURS_CLIENT=3;
-// ⚠ NO SE PUEDE ABRIR YAPE DESDE EL NAVEGADOR. NO LO VUELVAS A INTENTAR (2026-09-09).
-//
-// Hasta hoy el botón decía "Copiar número y abrir Yape" y en Android disparaba un
-// `intent://` con `S.browser_fallback_url` al Play Store. Lo que el dueño vio al probarlo
-// fue lo único que ese código podía hacer: **abrir la ficha de Play Store para DESCARGAR
-// Yape**, a alguien que ya la tiene instalada. Nunca abrió la app, ni una vez.
-//
-// La causa no es el enlace, es Android: un `intent://` solo puede lanzar una actividad que
-// declare `android.intent.category.BROWSABLE`, o sea que la app tiene que publicar un deep
-// link. Yape NO publica ninguno para terceros — no hay `yape://` documentado ni App Link
-// abierto (verificado por búsqueda el 2026-09-09, igual que en la investigación previa de
-// 2026-09-05 sobre el QR). Sin eso, el intent no resuelve y el navegador cae al fallback:
-// el Play Store. Quitar solo el fallback deja un botón que no hace nada, que es el mismo
-// defecto de silencio que ya se había "arreglado" con un aviso en ámbar.
-//
-// Así que el botón hace UNA cosa y la hace siempre: copiar el número. El cambio de app lo
-// hace la persona, que es lo que venía haciendo igual. Es la misma clase de decisión que
-// retirar el QR de contacto disfrazado de QR de cobro: mejor no prometer que prometer y
-// fallar. **Si alguien vuelve a proponer "abrir Yape", la respuesta está acá.**
-function isMobileUA(){return/Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'');}
 var showYapeQR=false;
-function toggleYapeQR(){showYapeQR=!showYapeQR;confirmRerender();}
 // Captura del comprobante de transferencia — puramente opcional, nunca reemplaza la
 // confirmación manual real que hace el admin (ver actAdminConfirmPayment en el servidor).
 // null = sin subir todavía, 'uploading', 'done', o 'error:<mensaje>'.
@@ -411,27 +390,6 @@ function initSchedDefault(){
   if(!slots.length&&schedDay==='today'){schedDay='tomorrow';slots=schedSlots('tomorrow');}
   schedSlot=slots.length?slots[0]:null;
 }
-function pickSchedDay(dayKey){schedDay=dayKey;var slots=schedSlots(dayKey);schedSlot=slots.length?slots[0]:null;confirmRerender();}
-function pickSchedSlot(hhmm){schedSlot=hhmm;confirmRerender();}
-function scheduleTimePickerHTML(){
-  var days=[{key:'today',l:'HOY'},{key:'tomorrow',l:'MAÑANA'}];
-  var dayChips=days.map(function(dd){
-    var d=schedDateForDay(dd.key),closed=!STORE_HOURS[limaDayHour(d).weekday],sel=schedDay===dd.key;
-    var sub=d.toLocaleDateString('es-PE',{timeZone:'America/Lima',weekday:'short',day:'numeric',month:'short'});
-    return'<div onclick="'+(closed?'':'pickSchedDay(\''+dd.key+'\')')+'" style="flex:1;text-align:center;background:'+(closed?'var(--sw-card2,#171A14)':(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)'))+';border:1px solid '+(sel&&!closed?GOLD:'#2C3228')+';border-radius:8px;padding:9px 6px;cursor:'+(closed?'not-allowed':'pointer')+';opacity:'+(closed?.4:1)+'"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:#fff">'+dd.l+'</div><div style="font-family:\'EB Garamond\',serif;font-size:9px;color:var(--sw-text-muted,#9DA096);text-transform:capitalize;margin-top:1px">'+(closed?'CERRADO':esc(sub))+'</div></div>';
-  }).join('');
-  var slots=schedSlotsDetailed(schedDay);
-  var libres=slots.filter(function(s){return !s.full;});
-  var slotsHTML=slots.length
-    ?'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;max-height:160px;overflow-y:auto">'+slots.map(function(s){
-        if(s.full)return'<div title="Esa hora ya está llena" style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:20px;padding:7px 14px;cursor:not-allowed;opacity:.45;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096);text-decoration:line-through">'+s.t+'</div>';
-        var sel=schedSlot===s.t;return'<div onclick="pickSchedSlot(\''+s.t+'\')" style="background:'+(sel?'var(--sw-card2,#171A14)':'var(--sw-card,#1B1F18)')+';border:1px solid '+(sel?GOLD:'#2C3228')+';border-radius:20px;padding:7px 14px;cursor:pointer;font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(sel?'#fff':'#9DA096')+';box-shadow:'+(sel?SHADOW_GOLD:'none')+'">'+s.t+'</div>';
-      }).join('')+'</div>'
-      +(libres.length<slots.length?'<div style="margin-top:8px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096)">Las horas tachadas ya están completas — la cocina no da abasto para más pedidos en esa franja.</div>':'')
-    :'<div style="margin-top:10px;font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096)">No hay horarios disponibles ese día.</div>';
-  if(slots.length&&!libres.length)slotsHTML+='<div style="margin-top:6px;font-family:\'EB Garamond\',serif;font-size:11px;color:'+GOLD+'">Todas las horas de ese día están completas. Prueba el otro día.</div>';
-  return'<div style="display:flex;gap:8px">'+dayChips+'</div>'+slotsHTML+'<input type="hidden" id="o-sched" value="'+esc(schedInputValue())+'">';
-}
 // Rango orientativo de preparación + entrega mostrado ANTES de pagar (reduce la
 // incertidumbre justo en el momento de decidir) — no es el ETA real del pedido, que
 // el operador fija por pedido en el panel admin. ⚠️ EDITA este rango con el tiempo
@@ -728,10 +686,6 @@ function effectiveOrderDate(){
     if(v){var d=new Date(v);if(!isNaN(d.getTime()))return d;}
   }
   return new Date();
-}
-function isOffPeakDrinkPromoActiveNow(){
-  var limaHour=new Date(effectiveOrderDate().getTime()-5*3600000).getUTCHours();
-  return OFFPEAK_DRINK_PROMO_HOURS_LIMA.some(function(r){return limaHour>=r[0]&&limaHour<r[1];});
 }
 // Plan Semanal — recarga de saldo propio con bono. Monto fijo (no hay input de monto como
 // en la tarjeta de regalo) porque el bono está calculado para un solo punto de precio;
