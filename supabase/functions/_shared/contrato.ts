@@ -262,7 +262,6 @@ export const CONTRATO = {
   'remind-after-cancel': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
   'remind-high-rank-winback': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
   'remind-lapsed-customers': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
-  'expire-pending-weekly-plans': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
   'remind-recurring-orders': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
   'remind-points-nudge': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
   'expire-stale-manual-payments': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),

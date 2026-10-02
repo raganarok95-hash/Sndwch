@@ -1535,28 +1535,6 @@ const WEEKLY_PLAN_TTL_MINUTES = 15;
 
 
 // Igual que actExpirePendingCreditPurchases pero para la tabla del Plan Semanal.
-export async function actExpirePendingWeeklyPlans(b: Entrada<"expire-pending-weekly-plans"> & { _ip?: string }) {
-  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
-  const nowIso = new Date().toISOString();
-  const stale = await sbGet(
-    "pending_weekly_plans",
-    `status=in.(pending,charging)&expires_at=lt.${encodeURIComponent(nowIso)}&select=id,status&limit=5000`,
-  );
-  let expired = 0;
-  for (const pp of stale) {
-    try {
-      await sbUpdate("pending_weekly_plans", `id=eq.${pp.id}&status=eq.${pp.status}`, { status: "expired" });
-      expired++;
-    } catch (e) {
-      console.error("expire-pending-weekly-plans failed for", pp.id, e);
-      // Fallos dentro de loops de cron solo iban a console.error — para los 3 crons que
-      // mueven dinero real esto contradice la razón de ser de debug_logs (hallazgo de
-      // auditoría de código, MEDIO).
-      await debugLog({ stage: "expire-pending-weekly-plans", pendingPlanId: pp.id, error: String(e) });
-    }
-  }
-  return { success: true, expired };
-}
 
 
 // Lista de espera pre-lanzamiento (waitlist_signups) — el negocio aún no abre (ver
