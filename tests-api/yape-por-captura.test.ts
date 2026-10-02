@@ -7,13 +7,13 @@
 //
 // Correr con: npm run test:api
 import { assertEquals } from "jsr:@std/assert@1";
-const { decisionAutomatica, fechaDelComprobante, receiptChecks } = await import("../supabase/functions/api/actions/orders.ts");
+const { decisionAutomatica, fechaDelComprobante, receiptChecks, parseTransferReceipt } = await import("../supabase/functions/api/actions/orders.ts");
 
 const HOY = "2026-10-02";
 const yape = { payment_method: "yape", payment_status: "pending", status: "RECIBIDO", total: 27.9 };
-const leida = { amount: 27.9, opNumber: "12345678", dateText: "02 oct. 2026 - 07:15 p. m." };
+const leida = { amount: 27.9, opNumber: "12345678", dateText: "02 oct. 2026 - 07:15 p. m.", celularFinal: "640" };
 const decide = (o: any, f: any, otras: string[] = [], tope = 80) =>
-  decisionAutomatica({ checks: receiptChecks(f, Number(o.total), otras), fields: f, order: o, hoyLima: HOY, tope });
+  decisionAutomatica({ checks: receiptChecks(f, Number(o.total), otras), fields: f, order: o, hoyLima: HOY, tope, numeroCobro: "930957640" });
 
 Deno.test("todo cuadra: se confirma solo", () => {
   assertEquals(decide(yape, leida).confirmar, true);
@@ -30,6 +30,8 @@ Deno.test("cualquier duda queda para el dueño", () => {
   assertEquals(decide({ ...yape, payment_method: "culqi" }, leida).confirmar, false, "no es Yape");
   assertEquals(decide({ ...yape, payment_status: "paid" }, leida).confirmar, false, "ya pagado");
   assertEquals(decide({ ...yape, status: "CANCELADO" }, leida).confirmar, false, "cancelado");
+  assertEquals(decide(yape, { ...leida, celularFinal: "688" }).confirmar, false, "yapeado a otro celular");
+  assertEquals(decide(yape, { ...leida, celularFinal: null }).confirmar, false, "celular sin leer");
 });
 
 Deno.test("la fecha de la constancia se lee en los formatos comunes", () => {
@@ -38,4 +40,34 @@ Deno.test("la fecha de la constancia se lee en los formatos comunes", () => {
   }
   assertEquals(fechaDelComprobante("sin fecha"), null);
   assertEquals(fechaDelComprobante("31/02/1999"), null);
+});
+
+// Lo que Tesseract leyó de una constancia REAL de Yape (captura del dueño, 2026-10-02; el nombre
+// de la persona se cambió). El «S/» sale como «7» y los asteriscos del celular como basura.
+const OCR_REAL = `1:11 5, NEZR | ED
+¡Yapeaste! S Compartir
+710.40
+Nombre Ape*
+E 28 set. 2026 | () 08:49 a. m.
+CÓDIGO DE SEGURIDAD o 2 7 2
+DATOS DE LA TRANSACCIÓN
+Nro. de celular Xxx 4% 688
+Destino Yape
+Nro. de operación 06058272
+Y Nuevo Yapeo`;
+
+Deno.test("una constancia real de Yape se lee entera: monto, operación, fecha y celular", () => {
+  const f = parseTransferReceipt(OCR_REAL);
+  assertEquals(f.opNumber, "06058272");
+  assertEquals(fechaDelComprobante(f.dateText), "2026-09-28");
+  assertEquals(f.celularFinal, "688");
+  assertEquals(receiptChecks(f, 10.4, []).amountMatches, true, "S/ 10.40 leído como 710.40");
+  assertEquals(receiptChecks(f, 710.4, []).amountMatches, true);
+  assertEquals(receiptChecks(f, 11.4, []).amountMatches, false);
+  // Ese yapeo fue a OTRO celular (…688) y es de otro día: no se confirma por ninguna de las dos.
+  const o = { ...yape, total: 10.4 };
+  const d = decisionAutomatica({ checks: receiptChecks(f, 10.4, []), fields: f, order: o, hoyLima: "2026-09-28", tope: 80, numeroCobro: "930957640" });
+  assertEquals(d.confirmar, false);
+  const igual = decisionAutomatica({ checks: receiptChecks(f, 10.4, []), fields: f, order: o, hoyLima: "2026-09-28", tope: 80, numeroCobro: "999999688" });
+  assertEquals(igual.confirmar, true, "la misma captura, yapeada al número correcto y de hoy, sí se confirma");
 });

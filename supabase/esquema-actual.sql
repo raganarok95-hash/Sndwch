@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20261002123751
+-- foto-tomada-tras-migracion: 20261002181120
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -814,6 +814,7 @@ CREATE UNIQUE INDEX orders_payment_id_unique ON public.orders USING btree (payme
 CREATE INDEX orders_receipt_hash_idx ON public.orders USING btree (receipt_hash) WHERE (receipt_hash IS NOT NULL);
 
 CREATE INDEX orders_receipt_op_number_idx ON public.orders USING btree (receipt_op_number) WHERE (receipt_op_number IS NOT NULL);
+CREATE UNIQUE INDEX orders_receipt_op_number_unico ON public.orders USING btree (receipt_op_number) WHERE (receipt_op_number IS NOT NULL);
 
 CREATE INDEX orders_recurring_id_idx ON public.orders USING btree (recurring_id) WHERE (recurring_id IS NOT NULL);
 
