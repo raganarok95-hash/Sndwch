@@ -1,0 +1,35 @@
+name: Leer las capturas de Yape reales
+
+# Dueño, 2026-10-03: «Debes probar con los comprobantes que ya se tienen». Baja las capturas
+# guardadas en producción, las lee con el mismo lector del celular y les aplica las reglas que
+# deciden en producción. Solo lee: no confirma ni cambia ningún pedido. Se corre a mano.
+on:
+  workflow_dispatch:
+    inputs:
+      limite:
+        description: 'Cuántas capturas (las más recientes)'
+        required: false
+        default: '20'
+
+jobs:
+  leer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm install --no-save tesseract.js@6.0.0
+      - name: Bajar y leer las capturas guardadas
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          LIMITE: ${{ github.event.inputs.limite }}
+        run: node scripts/capturas-reales.mjs
+      # En una copia aparte, como scripts/check-money.mjs: Deno resuelve sus npm: sin pisar node_modules.
+      - name: Aplicarles las reglas de producción
+        run: |
+          tmp=$(mktemp -d)
+          cp -r supabase "$tmp/" && mkdir "$tmp/scripts" && cp scripts/decidir-capturas.ts "$tmp/scripts/" && cp capturas-reales.json "$tmp/"
+          cd "$tmp" && "$GITHUB_WORKSPACE/node_modules/.bin/deno" run --allow-read --allow-env --allow-net --no-check scripts/decidir-capturas.ts
