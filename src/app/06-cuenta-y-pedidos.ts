@@ -626,71 +626,152 @@ function sPReturns(){
 // Consumidor (D.S. 011-2011-PCM y modificatorias). Debe ser propio del sitio (no un
 // formulario externo ni un Drive), identificar al proveedor, y entregar un código de
 // reclamo al consumidor. Accesible SIN cuenta — cualquiera debe poder reclamar.
+// ── LIBRO DE RECLAMACIONES · TRES PASOS (maqueta aprobada 2026-10-03,
+// docs/maquetas/aprobadas/libro-de-reclamaciones-tres-pasos.png) ─────────────────────────
+// 1) ¿Esto es tuyo? — con cuenta, una tarjeta ya llena con «Cambiar»; sin cuenta, los campos.
+// 2) Reclamo o queja, y el pedido (se elige de su lista, no se escribe).
+// 3) Qué pasó y qué solicitas.
+// Los campos son los mismos que exige la ley y que `submit-complaint` ya recibía; los textos
+// legales van iguales. Lo escrito vive en `cmplDatos`: cada render reconstruye el DOM, y sin
+// guardarlo antes de pasar de paso (o de tocar Reclamo/Queja) se perdería lo tecleado.
+var cmplDatos:any={},cmplEditando=false,cmplPedidosPedidos=false,cmplVuelta='';
+var CMPL_PASOS=['form','que','detalle'];
+var CMPL_CAMPOS=['cq-name','cq-dni','cq-addr','cq-phone','cq-email','cq-guardian','cq-ref','cq-amount','cq-detail','cq-request'];
+function cmplGuardar(){
+  CMPL_CAMPOS.forEach(function(id){
+    var el=document.getElementById(id) as HTMLInputElement|null;
+    if(el)cmplDatos[id]=el.value.trim();
+  });
+}
+function cmplDato(id:string){return cmplDatos[id]!=null?String(cmplDatos[id]):'';}
+// La cuenta llena lo que sabe, una sola vez: si el cliente lo cambió, se respeta lo suyo.
+function cmplPrellenar(){
+  if(!cust||cmplDatos._prellenado)return;
+  var c:any=cust;
+  var de:any={'cq-name':c.name,'cq-dni':c.dni,'cq-addr':c.last_address,'cq-phone':c.phone,'cq-email':c.email};
+  Object.keys(de).forEach(function(k){if(!cmplDato(k)&&de[k])cmplDatos[k]=String(de[k]);});
+  cmplDatos._prellenado=true;
+}
+function cmplFaltaDeLaPersona(){
+  return['cq-name','cq-dni','cq-addr','cq-phone','cq-email'].some(function(k){return!cmplDato(k);});
+}
+function cmplIr(paso:string){
+  cmplGuardar();
+  if(paso==='que'&&cmplStep==='form'){
+    var falta=cmplFaltaDeLaPersona();
+    if(falta){cmplEditando=true;cmplErr='Completa tus datos: nombre, DNI, domicilio, teléfono y correo.';render();return;}
+    if(!/^[^@]+@[^@]+\.[^@]+$/.test(cmplDato('cq-email'))){cmplEditando=true;cmplErr='Ingresa un correo válido.';render();return;}
+    if(cmplMinor&&!cmplDato('cq-guardian')){cmplErr='Ingresa el nombre del padre, madre o apoderado.';render();return;}
+  }
+  cmplErr='';cmplStep=paso;render();
+  window.scrollTo(0,0);
+}
+function cmplAtras(bk:string){
+  cmplGuardar();cmplErr='';
+  var i=CMPL_PASOS.indexOf(cmplStep);
+  if(i>0){cmplStep=CMPL_PASOS[i-1];render();window.scrollTo(0,0);return;}
+  cmplVuelta='';sndScreen=bk;render();
+}
+function cmplCampo(id:string,label:string,type:string,ac:string,area?:boolean){
+  var v=esc(cmplDato(id));
+  return'<label class="cp"><span>'+label+'</span>'
+    +(area?'<textarea id="'+id+'" rows="4">'+v+'</textarea>'
+      :'<input id="'+id+'" type="'+type+'"'+(ac?' autocomplete="'+ac+'"':'')+(type==='tel'?' inputmode="tel"':'')+' value="'+v+'">')
+    +'</label>';
+}
+function cmplDniOculto(d:string){d=String(d||'');return d.length>3?d.charAt(0)+'•••••'+d.slice(-2):d;}
 function sPComplaints(){
-  var bk=(bkTo||(cust?'p_lo_legal':'o_home'));bkTo=null;
+  // A dónde vuelve: se toma de bkTo en la primera pintada y se guarda, porque los pasos
+  // vuelven a pintar la pantalla y bkTo es de un solo uso.
+  if(bkTo){cmplVuelta=bkTo;bkTo=null;}
+  var bk=cmplVuelta||(cust?'p_lo_legal':'o_home');
   if(cmplStep==='success')return sComplaintsSuccess(bk);
-  var kindToggle='<div style="display:flex;background:var(--sw-card,#1B1F18);border-radius:10px;padding:4px;margin-bottom:20px">'+[['reclamo','Reclamo'],['queja','Queja']].map(function(x){return'<button onclick="cmplKind=\''+x[0]+'\';render()" style="all:unset;cursor:pointer;flex:1;background:'+(cmplKind===x[0]?GOLD:'transparent')+';color:'+(cmplKind===x[0]?'var(--sw-on-gold,#241a08)':'var(--sw-text-muted,#9DA096)')+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;letter-spacing:.1em;padding:11px 0;border-radius:8px;text-align:center;transition:all .15s">'+x[1]+'</button>';}).join('')+'</div>';
-  var kindHint='<p style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.5;margin-bottom:20px">'+(cmplKind==='queja'?'Queja: malestar o disconformidad no relacionada directamente a un pedido (ej. atención, demoras).':'Reclamo: disconformidad relacionada a un producto o servicio que contrataste con nosotros.')+'</p>';
-  // Checkbox nativo del navegador — único control de toda la app que rompía con el
-  // lenguaje 100% custom del resto (accent-color solo tiñe el estado marcado, el
-  // desmarcado seguía siendo el default del SO) (hallazgo de auditoría de diseño, MEDIO).
-  // <button role="checkbox"> en vez de <div onclick>: el Libro de Reclamaciones es
-  // obligatorio por ley para TODO consumidor, y con un div clickeable no era completable
-  // ni con teclado ni con lector de pantalla — justo el usuario que la norma más protege.
-  var minorBlock='<button type="button" role="checkbox" aria-checked="'+(cmplMinor?'true':'false')+'" onclick="cmplMinor=!cmplMinor;render()" style="all:unset;box-sizing:border-box;width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;margin:6px 0 10px;min-height:44px"><div style="flex-shrink:0;width:20px;height:20px;border-radius:4px;background:'+(cmplMinor?GOLD:'transparent')+';border:1px solid '+(cmplMinor?GOLD:'#2C3228')+';display:flex;align-items:center;justify-content:center">'+(cmplMinor?icon('check',13,'var(--sw-on-gold,#241a08)'):'')+'</div><span style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">Soy menor de edad (o reclamo en representación de uno)</span></button>'
-    +(cmplMinor?INP('cq-guardian','Nombre del padre, madre o apoderado','text',undefined,'clientes'):'');
-  var ta=function(id,ph){return'<textarea id="'+id+'" placeholder="'+ph+'" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px 16px;color:var(--sw-text,#FFFFFF);width:100%;font-size:15px;font-family:EB Garamond,serif;min-height:90px;box-sizing:border-box"></textarea>';};
-  return CAB_LEGAL(bk,'Libro de Reclamaciones')+'<div style="flex:1;padding:8px 20px 40px;overflow-y:auto" class="fi">'
-    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:#fff;margin-bottom:4px;text-wrap:balance">Libro de<span class="cut-sep" style="color:'+GOLD+'"> // </span>reclamaciones</div>'
-    +'<p style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.6;margin-bottom:16px">Conforme a lo establecido en el Código de Protección y Defensa del Consumidor, este establecimiento cuenta con un Libro de Reclamaciones a tu disposición.</p>'
-    +providerBlockHTML()
-    +kindToggle+kindHint
-    +'<div style="display:flex;flex-direction:column;gap:10px">'
-    +ST('01','Tus datos','')
-    // Prellenado desde la cuenta si hay sesión — antes un cliente logueado con un
-    // reclamo real (ya frustrado) tenía que re-escribir 5 campos que la app ya conoce, en
-    // vez de solo revisarlos/corregirlos (hallazgo de auditoría UX, MEDIO). Todo sigue
-    // editable, para el caso de reclamar en nombre de otra persona.
-    +INP('cq-name','Nombres y apellidos','text',cust?cust.name:undefined,'clientes')
-    +INP('cq-dni','DNI / Carnet de extranjería','text',cust?cust.dni:undefined,'card')
-    +INP('cq-addr','Domicilio','text',cust?cust.last_address:undefined,'direccion')
-    +INP('cq-phone','Teléfono','tel',cust?cust.phone:undefined,'phone')
-    +INP('cq-email','Correo electrónico','email',cust?cust.email:undefined,'mail')
-    +minorBlock
-    +'</div>'
-    +'<div style="height:1px;background:var(--sw-bg,#17130E);margin:20px 0"></div>'
-    +ST('02','El '+(cmplKind==='queja'?'malestar':'pedido'),'')
-    +'<div style="display:flex;flex-direction:column;gap:10px">'
-    +INP('cq-ref','Referencia del pedido // opcional (ej: SND-1234)','text')
-    +INP('cq-amount','Monto reclamado // S/, opcional','number')
-    +ta('cq-detail','Describe lo que pasó, con el mayor detalle posible')
-    +ta('cq-request','¿Qué solicitas? (ej: reposición, reembolso, respuesta)')
-    +'</div>'
-    +'<div id="cq-err" style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-danger-strong,#ff5555);min-height:16px;margin-top:14px">'+esc(cmplErr)+'</div>'
-    +BTN(cmplBusy?'Enviando...':'Enviar '+(cmplKind==='queja'?'queja':'reclamo')+' //',cmplBusy?'':'doSubmitComplaint()')
-    +'<p style="font-family:\'EB Garamond\',serif;font-size:11px;color:var(--sw-text-muted,#9DA096);line-height:1.5;margin-top:14px">Tenemos hasta 15 días hábiles para responder tu reclamo o queja, conforme a la normativa vigente.</p>'
-    +'</div></div>';
+  if(CMPL_PASOS.indexOf(cmplStep)<0)cmplStep='form';
+  cmplPrellenar();
+  var n=CMPL_PASOS.indexOf(cmplStep)+1;
+  var queja=cmplKind==='queja';
+  var h='<div class="lib3 fi"><div class="top"><button class="sal" data-accion="libro-atras" onclick="cmplAtras(\''+bk+'\')" aria-label="Volver">←</button><span>SND//WCH</span></div>'
+    +'<div class="pasos" aria-hidden="true">'+[1,2,3].map(function(k){return'<i'+(k<=n?' class="on"':'')+'></i>';}).join('')+'</div>'
+    +'<div class="eyb">Libro de reclamaciones · '+n+' de 3</div>';
+  var ley='Conforme a lo establecido en el Código de Protección y Defensa del Consumidor, este establecimiento cuenta con un Libro de Reclamaciones a tu disposición.';
+  var plazo='Tenemos hasta 15 días hábiles para responder tu reclamo o queja, conforme a la normativa vigente.';
+  var err='<div id="cq-err" class="err" role="alert">'+esc(cmplErr)+'</div>';
+  var minor='<button type="button" class="menor" role="checkbox" data-accion="libro-menor" aria-checked="'+(cmplMinor?'true':'false')+'" onclick="cmplGuardar();cmplMinor=!cmplMinor;render()"><i>'+(cmplMinor?icon('check',13,'#F4ECDD'):'')+'</i><span>Soy menor de edad (o reclamo en representación de uno)</span></button>'
+    +(cmplMinor?cmplCampo('cq-guardian','Nombre del padre, madre o apoderado','text','name'):'');
+  if(cmplStep==='form'){
+    var tarjeta=!!cust&&!cmplEditando&&!cmplFaltaDeLaPersona();
+    h+='<h2>'+(tarjeta?'¿Esto es tuyo?':'¿Quién reclama?')+'</h2>';
+    if(tarjeta){
+      h+='<div class="yo"><div class="n">'+esc(cmplDato('cq-name'))+'</div>'
+        +'<div class="d">DNI '+esc(cmplDniOculto(cmplDato('cq-dni')))+'<br>'+esc(cmplDato('cq-addr'))+'<br>'+esc(cmplDato('cq-phone'))+' · '+esc(cmplDato('cq-email'))+'</div>'
+        +'<button type="button" class="cam" data-accion="libro-cambiar-datos" onclick="cmplEditando=true;render()">Cambiar (reclamo por otra persona)</button></div>';
+    }else{
+      h+='<div class="campos">'+cmplCampo('cq-name','Nombres y apellidos','text','name')+cmplCampo('cq-dni','DNI / Carnet de extranjería','text','off')
+        +cmplCampo('cq-addr','Domicilio','text','street-address')+cmplCampo('cq-phone','Teléfono','tel','tel')+cmplCampo('cq-email','Correo electrónico','email','email')+'</div>';
+    }
+    h+=minor
+      +'<div class="eyb luego">Luego</div><div class="mini"><div><b>2 · ¿Qué es?</b>Reclamo o queja, y el pedido</div><div><b>3 · ¿Qué pasó?</b>Lo que pasó y qué solicitas</div></div>'
+      +'<p class="ley">'+ley+' '+plazo+'</p>'+providerBlockLib()+err
+      +'<div class="go sw-barra"><button data-accion="libro-siguiente" onclick="cmplIr(\'que\')">'+(tarjeta?'Sí, soy yo · siguiente':'Siguiente')+'</button></div></div>';
+    return h;
+  }
+  if(cmplStep==='que'){
+    if(cust&&!myOrders.length&&!cmplPedidosPedidos){
+      cmplPedidosPedidos=true;
+      api('my-orders',{token:token}).then(function(r:any){myOrders=(r&&r.orders)||[];if(sndScreen==='p_complaints'&&cmplStep==='que'){cmplGuardar();render();}}).catch(function(){});
+    }
+    h+='<h2>¿Qué es?</h2>'
+      +'<div class="tipo" role="radiogroup" aria-label="Tipo">'+[['reclamo','Reclamo','Disconformidad relacionada a un producto o servicio que contrataste con nosotros.'],['queja','Queja','Malestar o disconformidad no relacionada directamente a un pedido (ej. atención, demoras).']].map(function(x){
+        var on=cmplKind===x[0];
+        return'<button type="button" role="radio" aria-checked="'+on+'" data-accion="libro-tipo-'+x[0]+'" class="'+(on?'on':'')+'" onclick="cmplGuardar();cmplKind=\''+x[0]+'\';render()"><b>'+x[1]+'</b><span>'+x[2]+'</span></button>';
+      }).join('')+'</div>';
+    var recientes=(myOrders||[]).slice(0,4);
+    h+='<div class="eyb">El pedido · opcional</div>';
+    if(recientes.length){
+      h+='<div class="peds" role="radiogroup" aria-label="Pedido">'+recientes.map(function(o:any){
+        var on=cmplDato('cq-ref')===o.ref,d=fechaDelPedido(o);
+        return'<button type="button" role="radio" aria-checked="'+on+'" data-accion="libro-pedido" class="'+(on?'on':'')+'" onclick="cmplGuardar();cmplDatos[\'cq-ref\']=cmplDatos[\'cq-ref\']===\''+esc(o.ref)+'\'?\'\':\''+esc(o.ref)+'\';render()">'
+          +'<b>'+esc(o.summary||o.ref)+'</b><span>'+(d?cuandoFue(d)+' · ':'')+SOLES_TXT+pz(o.total||0)+'</span></button>';
+      }).join('')+'</div>'
+      +'<input id="cq-ref" type="hidden" value="'+esc(cmplDato('cq-ref'))+'">';
+    }else{
+      h+='<div class="campos">'+cmplCampo('cq-ref','Referencia del pedido (ej: SND-1234)','text','off')+'</div>';
+    }
+    h+='<div class="campos">'+cmplCampo('cq-amount','Monto reclamado · S/, opcional','number','off')+'</div>'+err
+      +'<div class="go sw-barra"><button data-accion="libro-siguiente" onclick="cmplIr(\'detalle\')">Siguiente</button></div></div>';
+    return h;
+  }
+  h+='<h2>¿Qué pasó?</h2><div class="campos">'
+    +cmplCampo('cq-detail','Describe lo que pasó, con el mayor detalle posible','text','',true)
+    +cmplCampo('cq-request','¿Qué solicitas? (ej: reposición, reembolso, respuesta)','text','',true)+'</div>'
+    +'<p class="ley">'+plazo+'</p>'+err
+    +'<div class="go sw-barra"><button data-accion="libro-enviar" onclick="doSubmitComplaint()"'+(cmplBusy?' disabled':'')+'>'+(cmplBusy?'Enviando…':'Enviar '+(queja?'queja':'reclamo'))+'</button></div></div>';
+  return h;
+}
+// Los datos del proveedor son obligatorios a la vista en el libro; salen de BIZ_*, nunca escritos.
+function providerBlockLib(){
+  return'<div class="prov"><div><b>Proveedor · </b>'+esc(BIZ_NAME)+'</div><div><b>RUC · </b>'+BIZ_RUC+'</div>'
+    +'<div><b>Cobertura · </b>Delivery en '+BIZ_CITY+' (sin local de atención al público)</div>'
+    +'<div><b>Contacto · </b>'+BIZ_EMAIL+' · WhatsApp +51 930 957 640</div></div>';
 }
 function sComplaintsSuccess(bk){
-  return CAB_LEGAL(bk,'Libro de Reclamaciones')+'<div style="flex:1;padding:8px 20px 40px;overflow-y:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center" class="fi">'
-    // Antes un carácter Unicode "✓" suelto a font-size:40px — sin relación con el
-    // tratamiento de éxito ya establecido en la app (círculo con ícono propio, ver
-    // pantalla de confirmación de pedido) — hallazgo de auditoría visual, MEDIO.
-    +'<div style="margin-bottom:16px;width:64px;height:64px;border-radius:50%;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.3);display:flex;align-items:center;justify-content:center">'+icon('check',28,'var(--sw-ok,#25D366)')+'</div>'
-    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:#fff;margin-bottom:8px">'+(cmplKind==='queja'?'Queja':'Reclamo')+' registrad'+(cmplKind==='queja'?'a':'o')+'</div>'
-    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:6px">Tu código //</div>'
-    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:28px;font-weight:640;color:'+GOLD+';margin-bottom:20px">'+esc(cmplCode||'')+'</div>'
-    +'<p style="font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.6;max-width:320px">Te enviamos una copia a tu correo. Responderemos dentro de los 15 días hábiles siguientes, conforme a ley.</p>'
-    +'<div style="margin-top:24px;width:100%;max-width:280px">'+BTN('Volver al inicio //','sndScreen=\'o_home\';cmplStep=\'form\';render()')+'</div>'
-    +'</div></div>';
+  var queja=cmplKind==='queja';
+  return'<div class="lib3 fi"><div class="top"><span></span><span>SND//WCH</span></div>'
+    +'<div class="eyb">Libro de reclamaciones</div>'
+    +'<h2>'+(queja?'Queja':'Reclamo')+' registrad'+(queja?'a':'o')+'</h2>'
+    +'<div class="yo"><div class="eyb" style="margin-top:0">Tu código</div><div class="cod">'+esc(cmplCode||'')+'</div>'
+    +'<div class="d">Te enviamos una copia a tu correo. Responderemos dentro de los 15 días hábiles siguientes, conforme a ley.</div></div>'
+    +'<div class="go sw-barra"><button data-accion="libro-volver" onclick="sndScreen=\''+bk+'\';cmplStep=\'form\';cmplDatos={};cmplEditando=false;cmplErr=\'\';cmplVuelta=\'\';render()">Volver</button></div></div>';
 }
 async function doSubmitComplaint(){
-  var g=function(id){var el=(document.getElementById(id) as HTMLInputElement | null);return el?el.value.trim():'';};
+  cmplGuardar();
+  var g=cmplDato;
   var name=g('cq-name'),dni=g('cq-dni'),addr=g('cq-addr'),phone=g('cq-phone'),email=g('cq-email'),guardian=g('cq-guardian');
   var ref=g('cq-ref'),amount=g('cq-amount'),detail=g('cq-detail'),request=g('cq-request');
-  if(!name||!dni||!addr||!phone||!email||!detail||!request){cmplErr='Completa todos los campos obligatorios.';render();return;}
-  if(!/^[^@]+@[^@]+\.[^@]+$/.test(email)){cmplErr='Ingresa un correo válido.';render();return;}
-  if(cmplMinor&&!guardian){cmplErr='Ingresa el nombre del padre, madre o apoderado.';render();return;}
+  if(!name||!dni||!addr||!phone||!email){cmplEditando=true;cmplErr='Completa tus datos: nombre, DNI, domicilio, teléfono y correo.';cmplStep='form';render();return;}
+  if(!detail||!request){cmplErr='Cuéntanos qué pasó y qué solicitas.';render();return;}
+  if(!/^[^@]+@[^@]+\.[^@]+$/.test(email)){cmplEditando=true;cmplErr='Ingresa un correo válido.';cmplStep='form';render();return;}
+  if(cmplMinor&&!guardian){cmplErr='Ingresa el nombre del padre, madre o apoderado.';cmplStep='form';render();return;}
   cmplErr='';cmplBusy=true;render();
   try{
     var res=await api('submit-complaint',{kind:cmplKind,consumerName:name,consumerDni:dni,consumerAddress:addr,consumerPhone:phone,consumerEmail:email,isMinor:cmplMinor,guardianName:guardian,orderRef:ref,claimedAmount:amount?Number(amount):null,detail:detail,consumerRequest:request});

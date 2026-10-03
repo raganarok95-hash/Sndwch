@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Libro de Reclamaciones · tres opciones</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* Propuesta 2026-10-03. Los campos son los que la ley pide y el código ya manda
+   (submit-complaint); los textos legales van IGUALES a los de hoy. Los datos del proveedor
+   salen de BIZ_* en el código: acá van como «del código», no se copian. */
+*{box-sizing:border-box;margin:0}
+body{background:#e8e6e1;font-family:Archivo,system-ui,sans-serif;padding:24px;color:#1b1b18}
+h1.lam{font:800 22px/1.2 Archivo;margin-bottom:4px}
+p.lam{font-size:13px;color:#45463f;max-width:900px;line-height:1.45;margin-bottom:18px}
+.fila{display:flex;gap:28px;flex-wrap:nowrap;align-items:flex-start}
+.col{width:360px;flex:none}
+.tit{font-weight:800;font-size:18px;margin-bottom:4px}
+.sub{font-size:13px;color:#45463f;line-height:1.4;min-height:72px;margin-bottom:10px}
+.tel{width:360px;height:780px;border-radius:22px;overflow:hidden;border:6px solid #111;position:relative;background:#111}
+.tel>img{width:100%;display:block}
+.nota{margin-top:10px;font-size:13px;line-height:1.45;color:#2b2c27}
+.reco{outline:3px solid #CBA258;outline-offset:6px;border-radius:24px}
+.mono{font-family:'IBM Plex Mono',monospace}
+
+/* ── A · kraft, «lo legal en criollo» (el mismo mundo de Tu cuenta) ── */
+.a{background:#C9A878;color:#33230F;height:100%;padding:18px 18px 0;display:flex;flex-direction:column;overflow:hidden}
+.a .top{display:flex;justify-content:space-between;font:600 11px/1 'IBM Plex Mono';letter-spacing:.2em}
+.a .eyb{font:600 9px/1 'IBM Plex Mono';letter-spacing:.2em;color:#6B4E28;margin-top:22px}
+.a h2{font:400 40px/.95 Anton;text-transform:uppercase;margin:8px 0 10px}
+.a .ley{font:400 11px/1.5 'IBM Plex Mono';color:#5C4426}
+.a .seg{display:flex;border:1.5px solid #33230F;margin:14px 0 4px}
+.a .seg b{flex:1;text-align:center;padding:9px 0;font:700 11px/1 'IBM Plex Mono';letter-spacing:.2em}
+.a .seg b.on{background:#33230F;color:#E7D3AE}
+.a .hint{font:400 11px/1.4 'IBM Plex Mono';color:#5C4426;margin-bottom:8px}
+.a .sec{font:600 9px/1 'IBM Plex Mono';letter-spacing:.2em;margin:12px 0 2px}
+.a .ren{border-bottom:1px dashed rgba(51,35,15,.45);padding:9px 0 6px;display:flex;justify-content:space-between;align-items:baseline}
+.a .ren span{font:400 9px/1 'IBM Plex Mono';letter-spacing:.15em;color:#6B4E28;text-transform:uppercase}
+.a .ren b{font:600 13px/1 Archivo}
+.a .ren b.vac{color:rgba(51,35,15,.4);font-weight:400}
+.a .go{margin:auto -18px 0;background:#33230F;color:#E7D3AE;text-align:center;padding:18px 0;font:700 11px/1 'IBM Plex Mono';letter-spacing:.25em}
+
+/* ── B · tres pasos cortos (la cuenta ya sabe quién eres) ── */
+.b{background:#F4ECDD;color:#2A2118;height:100%;display:flex;flex-direction:column;padding:18px 18px 0}
+.b .top{display:flex;justify-content:space-between;align-items:center;font:600 11px/1 'IBM Plex Mono';letter-spacing:.2em}
+.b .pasos{display:flex;gap:6px;margin-top:18px}
+.b .pasos i{flex:1;height:4px;border-radius:999px;background:#E0D3BC}.b .pasos i.on{background:#2A2118}
+.b .eyb{font:600 9px/1 'IBM Plex Mono';letter-spacing:.2em;color:#8A6A3E;margin-top:16px}
+.b h2{font:400 28px/1.1 'Instrument Serif';font-style:italic;margin:6px 0 14px}
+.b .yo{background:#fff;border-radius:12px;padding:14px;border:1px solid #E6DAC4}
+.b .yo .n{font:800 15px/1.2 Archivo}
+.b .yo .d{font:400 11px/1.6 'IBM Plex Mono';color:#6E5A40;margin-top:4px}
+.b .yo .cam{font:700 11px/1 Archivo;color:#2A2118;text-decoration:underline;margin-top:10px;display:inline-block}
+.b .tipo{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.b .tipo div{border:1.5px solid #D8C8AC;border-radius:12px;padding:12px;background:#fff}
+.b .tipo div.on{border-color:#2A2118;box-shadow:inset 0 0 0 1px #2A2118}
+.b .tipo b{font:800 15px/1.2 Archivo;display:block}
+.b .tipo span{font:400 11px/1.35 Archivo;color:#6E5A40}
+.b .menor{display:flex;gap:8px;align-items:center;margin-top:12px;font:400 13px/1.3 Archivo;color:#4A3B28}
+.b .menor i{width:18px;height:18px;border:1.5px solid #8A6A3E;border-radius:4px;flex:none}
+.b .ley{font:400 11px/1.5 Archivo;color:#8A6A3E;margin-top:14px}
+.b .go{margin:auto -18px 0;display:flex}
+.b .go b{flex:1;text-align:center;padding:18px 0;font:700 11px/1 'IBM Plex Mono';letter-spacing:.25em;background:#2A2118;color:#F4ECDD}
+.b .mini{display:flex;gap:8px;margin-top:10px}
+.b .mini div{flex:1;border-radius:10px;background:#EADFCB;padding:8px;font:400 9px/1.35 'IBM Plex Mono';color:#6E5A40}
+.b .mini div b{display:block;font:700 11px/1.2 Archivo;color:#2A2118;margin-bottom:2px}
+
+/* ── C · la hoja oficial (blanco y tinta, como los diálogos aprobados) ── */
+.c{background:#FAFAF7;color:#141412;height:100%;display:flex;flex-direction:column}
+.c .cab{background:#141412;color:#FAFAF7;padding:16px 18px 14px}
+.c .cab .t{font:600 9px/1 'IBM Plex Mono';letter-spacing:.2em;opacity:.7}
+.c .cab h2{font:800 22px/1.1 Archivo;margin-top:6px}
+.c .cab .nro{display:flex;justify-content:space-between;font:500 11px/1 'IBM Plex Mono';margin-top:10px;opacity:.85}
+.c .cuerpo{padding:12px 14px 0;overflow:hidden}
+.c .prov{border:1px solid #141412;font:400 9px/1.6 'IBM Plex Mono';padding:6px 8px;color:#3a3a35}
+.c .blk{border:1px solid #141412;border-top:none}
+.c .blk .h{background:#141412;color:#FAFAF7;font:600 9px/1 'IBM Plex Mono';letter-spacing:.15em;padding:5px 8px}
+.c .g{display:grid;grid-template-columns:1fr 1fr}
+.c .f{border-top:1px solid #C9C9C2;padding:5px 8px 7px;min-height:38px}
+.c .f+.f{border-left:1px solid #C9C9C2}
+.c .f.w{grid-column:1 / 3;border-left:none}
+.c .f span{display:block;font:500 8px/1 'IBM Plex Mono';letter-spacing:.12em;color:#6b6b63;text-transform:uppercase}
+.c .f b{display:block;font:600 13px/1.3 Archivo;margin-top:4px}
+.c .f b.vac{color:#B5B5AC;font-weight:400}
+.c .chk{display:flex;gap:14px;font:600 11px/1 Archivo;padding:8px}
+.c .chk i{display:inline-block;width:12px;height:12px;border:1.5px solid #141412;margin-right:5px;vertical-align:-2px}
+.c .chk i.on{background:#141412}
+.c .go{margin-top:auto;display:flex}
+.c .go b{flex:1;text-align:center;padding:18px 0;font:700 11px/1 'IBM Plex Mono';letter-spacing:.25em;background:#141412;color:#FAFAF7}
+</style></head><body>
+<h1 class="lam">Libro de Reclamaciones · hoy y tres opciones</h1>
+<p class="lam">Pide los mismos datos que hoy, porque son los que exige la ley: tus datos, si eres menor (con apoderado), reclamo o queja, pedido, monto, qué pasó y qué solicitas. Los textos legales no cambian. Lo que cambia es cómo se ve y cuánto escribe quien ya tiene cuenta.</p>
+<div class="fila">
+
+<div class="col"><div class="tit">Hoy</div>
+<div class="sub">Funciona, pero se quedó en el oscuro de antes. Tu cuenta y «Lo legal» ya están en kraft. El botón de WhatsApp tapa los campos.</div>
+<div class="tel"><img src="hoy/libro-hoy.png" alt="Libro de reclamaciones hoy"></div>
+<div class="nota">Tiene 10 campos en una sola pantalla larga. Con cuenta, cinco ya vienen llenos, pero igual se ven.</div></div>
+
+<div class="col"><div class="tit">A · Kraft, como Tu cuenta</div>
+<div class="sub">Es la misma pantalla de hoy, en el mundo de «Tu cuenta» y «Lo legal»: kraft, letra grande, campos como renglones de un formulario de papel.</div>
+<div class="tel"><div class="a">
+ <div class="top"><span>←</span><span>SND//WCH</span></div>
+ <div class="eyb">LO LEGAL · LIBRO DE RECLAMACIONES</div>
+ <h2>Libro de<br>reclamaciones</h2>
+ <div class="ley">Conforme a lo establecido en el Código de Protección y Defensa del Consumidor, este establecimiento cuenta con un Libro de Reclamaciones a tu disposición.</div>
+ <div class="seg"><b class="on">RECLAMO</b><b>QUEJA</b></div>
+ <div class="hint">Reclamo: disconformidad relacionada a un producto o servicio que contrataste con nosotros.</div>
+ <div class="sec">01 · TUS DATOS</div>
+ <div class="ren"><span>Nombre</span><b>Mafe Ríos</b></div>
+ <div class="ren"><span>DNI</span><b>4•••••12</b></div>
+ <div class="ren"><span>Domicilio</span><b>Av. España 123</b></div>
+ <div class="ren"><span>Teléfono · correo</span><b>987 654 321</b></div>
+ <div class="sec">02 · EL PEDIDO</div>
+ <div class="ren"><span>Pedido</span><b>#1042 · ayer</b></div>
+ <div class="ren"><span>Qué pasó</span><b class="vac">Escríbelo aquí…</b></div>
+ <div class="go">ENVIAR RECLAMO</div>
+</div></div>
+<div class="nota"><b>Fuerte:</b> es el cambio más pequeño y queda igual que las pantallas aprobadas. <b>Débil:</b> sigue siendo un formulario largo; quien llega molesto ve 10 renglones.</div></div>
+
+<div class="col reco"><div class="tit">B · Tres pasos cortos ★</div>
+<div class="sub">1) Quién eres: con cuenta, una tarjeta ya llena con «Cambiar». 2) Reclamo o queja, y qué pedido. 3) Qué pasó y qué pides. Cada paso cabe sin bajar.</div>
+<div class="tel"><div class="b">
+ <div class="top"><span>←</span><span>SND//WCH</span></div>
+ <div class="pasos"><i class="on"></i><i></i><i></i></div>
+ <div class="eyb">LIBRO DE RECLAMACIONES · 1 DE 3</div>
+ <h2>¿Esto es tuyo?</h2>
+ <div class="yo"><div class="n">Mafe Ríos</div>
+  <div class="d">DNI 4•••••12<br>Av. España 123, Trujillo<br>987 654 321 · mafe@correo.pe</div>
+  <span class="cam">Cambiar (reclamo por otra persona)</span></div>
+ <div class="menor"><i></i>Soy menor de edad (o reclamo en representación de uno)</div>
+ <div class="eyb" style="margin-top:20px">LUEGO</div>
+ <div class="mini"><div><b>2 · ¿Qué es?</b>Reclamo o queja, y el pedido</div><div><b>3 · ¿Qué pasó?</b>Lo que pasó y qué solicitas</div></div>
+ <div class="ley">Conforme a lo establecido en el Código de Protección y Defensa del Consumidor, este establecimiento cuenta con un Libro de Reclamaciones a tu disposición. Tenemos hasta 15 días hábiles para responder tu reclamo o queja, conforme a la normativa vigente.</div>
+ <div class="go"><b>SÍ, SOY YO · SIGUIENTE</b></div>
+</div></div>
+<div class="nota"><b>Fuerte:</b> quien tiene cuenta confirma sus datos con un toque y solo escribe lo que pasó. El pedido se elige de su lista, no se escribe. <b>Débil:</b> sin cuenta, el paso 1 son los 5 campos de hoy. Es un flujo de tres pantallas que hay que construir.</div></div>
+
+<div class="col"><div class="tit">C · La hoja oficial</div>
+<div class="sub">Se ve como la hoja de reclamación de papel, con número y casillas, en blanco y tinta como los diálogos aprobados. Se nota que es un trámite formal.</div>
+<div class="tel"><div class="c">
+ <div class="cab"><div class="t">LIBRO DE RECLAMACIONES</div><h2>Hoja de reclamación</h2>
+  <div class="nro"><span>N.º se asigna al enviar</span><span>03/10/2026</span></div></div>
+ <div class="cuerpo">
+  <div class="prov">PROVEEDOR · RUC · COBERTURA · CONTACTO (del código)</div>
+  <div class="blk"><div class="h">1 · IDENTIFICACIÓN DEL CONSUMIDOR</div>
+   <div class="g"><div class="f w"><span>Nombres y apellidos</span><b>Mafe Ríos</b></div>
+   <div class="f"><span>DNI / CE</span><b>4•••••12</b></div><div class="f"><span>Teléfono</span><b>987 654 321</b></div>
+   <div class="f w"><span>Domicilio</span><b>Av. España 123, Trujillo</b></div>
+   <div class="f w"><span>Correo</span><b>mafe@correo.pe</b></div></div>
+   <div class="chk"><span><i></i>Menor de edad</span></div></div>
+  <div class="blk"><div class="h">2 · DETALLE</div>
+   <div class="chk"><span><i class="on"></i>Reclamo</span><span><i></i>Queja</span></div>
+   <div class="g"><div class="f"><span>Pedido</span><b>#1042</b></div><div class="f"><span>Monto · S/</span><b class="vac">opcional</b></div>
+   <div class="f w"><span>Qué pasó</span><b class="vac">Escríbelo aquí…</b></div>
+   <div class="f w"><span>Qué solicitas</span><b class="vac">Reposición, reembolso…</b></div></div></div>
+ </div>
+ <div class="go"><b>ENVIAR LA HOJA</b></div>
+</div></div>
+<div class="nota"><b>Fuerte:</b> todo cabe en una pantalla y se reconoce como el documento oficial. Da confianza de que el reclamo queda registrado. <b>Débil:</b> es la más fría de las tres, y el texto es chico porque el espacio no da para más.</div></div>
+
+</div></body></html>

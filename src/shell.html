@@ -1636,6 +1636,45 @@ body.kb-open #app{padding-bottom:0}
 .mll .doc:focus-visible{outline:2px solid #8A4A10;outline-offset:2px}
 .mll .biz{margin:30px 0 0;padding-top:20px;border-top:1px solid rgba(34,32,28,.2);font:500 9px/1.8 'IBM Plex Mono',monospace;color:#5E5A52;text-transform:uppercase}
 /* Los textos legales (2026-10-01): fondo oscuro de siempre, cabecera de «Lo legal». */
+/* Libro de Reclamaciones · tres pasos (maqueta aprobada 2026-10-03, aprobadas/libro-de-reclamaciones-tres-pasos.png) */
+.lib3{position:relative;min-height:100dvh;box-sizing:border-box;background:#F4ECDD;color:#2A2118;padding:18px max(18px,calc(50% - 302px)) 96px;display:flex;flex-direction:column}
+.lib3 .top{display:flex;justify-content:space-between;align-items:center;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.2em}
+.lib3 .sal{all:unset;cursor:pointer;font-size:18px;padding:6px 10px 6px 0;color:#2A2118}
+.lib3 .sal:focus-visible,.lib3 button:focus-visible,.lib3 input:focus-visible,.lib3 textarea:focus-visible{outline:2px solid #2A2118;outline-offset:2px}
+.lib3 .pasos{display:flex;gap:6px;margin-top:18px}
+.lib3 .pasos i{flex:1;height:4px;border-radius:999px;background:#E0D3BC}.lib3 .pasos i.on{background:#2A2118}
+.lib3 .eyb{font:600 9px/1 'IBM Plex Mono',monospace;letter-spacing:.2em;color:#8A6A3E;margin-top:16px;text-transform:uppercase}
+.lib3 .eyb.luego{margin-top:20px}
+.lib3 h2{font:400 28px/1.1 'Instrument Serif',serif;font-style:italic;margin:6px 0 14px;text-wrap:balance}
+.lib3 .yo{background:#fff;border-radius:12px;padding:14px;border:1px solid #E6DAC4}
+.lib3 .yo .n{font:800 15px/1.2 Archivo,sans-serif}
+.lib3 .yo .d{font:400 11px/1.6 'IBM Plex Mono',monospace;color:#6E5A40;margin-top:4px;overflow-wrap:anywhere}
+.lib3 .yo .cod{font:800 28px/1.1 'IBM Plex Mono',monospace;margin:8px 0 6px;letter-spacing:.04em}
+.lib3 .cam{all:unset;cursor:pointer;font:700 11px/1 Archivo,sans-serif;text-decoration:underline;margin-top:10px;display:inline-block;padding:6px 0}
+.lib3 .campos{display:flex;flex-direction:column;gap:10px}
+.lib3 .cp{display:flex;flex-direction:column;gap:6px}
+.lib3 .cp span{font:600 9px/1.5 'IBM Plex Mono',monospace;letter-spacing:.15em;color:#8A6A3E;text-transform:uppercase}
+.lib3 .cp input,.lib3 .cp textarea{box-sizing:border-box;width:100%;background:#fff;border:1px solid #D8C8AC;border-radius:10px;padding:12px 14px;font:400 15px/1.35 Archivo,sans-serif;color:#2A2118;resize:vertical}
+.lib3 .menor{all:unset;cursor:pointer;display:flex;gap:10px;align-items:center;margin-top:12px;min-height:44px;font:400 13px/1.3 Archivo,sans-serif;color:#4A3B28}
+.lib3 .menor i{width:18px;height:18px;border:1.5px solid #8A6A3E;border-radius:4px;flex:none;display:flex;align-items:center;justify-content:center}
+.lib3 .menor[aria-checked="true"] i{background:#2A2118;border-color:#2A2118}
+.lib3 .mini{display:flex;gap:8px;margin-top:10px}
+.lib3 .mini div{flex:1;border-radius:10px;background:#EADFCB;padding:8px;font:400 9px/1.35 'IBM Plex Mono',monospace;color:#6E5A40}
+.lib3 .mini div b{display:block;font:700 11px/1.2 Archivo,sans-serif;color:#2A2118;margin-bottom:2px}
+.lib3 .ley{font:400 11px/1.5 Archivo,sans-serif;color:#8A6A3E;margin-top:14px}
+.lib3 .prov{margin-top:12px;font:400 9px/1.6 'IBM Plex Mono',monospace;color:#6E5A40;border-top:1px dashed #D8C8AC;padding-top:10px}
+.lib3 .prov b{font-weight:600;color:#2A2118}
+.lib3 .tipo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.lib3 .tipo button,.lib3 .peds button{all:unset;box-sizing:border-box;cursor:pointer;border:1.5px solid #D8C8AC;border-radius:12px;padding:12px;background:#fff}
+.lib3 .tipo button.on,.lib3 .peds button.on{border-color:#2A2118;box-shadow:inset 0 0 0 1px #2A2118}
+.lib3 .tipo b,.lib3 .peds b{font:800 15px/1.2 Archivo,sans-serif;display:block}
+.lib3 .tipo span,.lib3 .peds span{font:400 11px/1.35 Archivo,sans-serif;color:#6E5A40}
+.lib3 .peds{display:flex;flex-direction:column;gap:8px;margin:10px 0 12px}
+.lib3 .peds b{font-size:13px}
+.lib3 .err{font:400 13px/1.4 Archivo,sans-serif;color:var(--sw-danger-strong,#ff5555);min-height:16px;margin-top:12px}
+.lib3 .go{position:fixed;left:0;right:0;bottom:0;display:flex;z-index:5}
+.lib3 .go button{all:unset;box-sizing:border-box;cursor:pointer;flex:1;text-align:center;padding:20px 0 calc(20px + env(safe-area-inset-bottom));font:700 11px/1 'IBM Plex Mono',monospace;letter-spacing:.25em;text-transform:uppercase;background:#2A2118;color:#F4ECDD}
+.lib3 .go button[disabled]{opacity:.6;cursor:default}
 .mlt{position:relative;min-height:100dvh;box-sizing:border-box;background:#17130E;padding:18px max(0px,calc(50% - 320px)) 0;display:flex;flex-direction:column}
 .mlt .sal{all:unset;cursor:pointer;font-size:18px;color:#EFEDE4;padding:6px 20px}
 .mlt .cab{padding:22px 20px 6px}

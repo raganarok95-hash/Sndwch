@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Repartir el grupo · tres opciones</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Propuesta 2026-10-03. Nombres y precios de muestra salen de _shared/carta.ts (Philly
+   Cheesesteak, Meatball Marinara, Turkey, Classic Tuna, 15CM); el envío es un ejemplo. En la
+   app todo se lee del código. */
+*{box-sizing:border-box;margin:0}
+body{background:#e8e6e1;font-family:Archivo,system-ui,sans-serif;padding:24px;color:#1b1b18}
+h1.lam{font:800 22px/1.2 Archivo;margin-bottom:4px}
+p.lam{font-size:13px;color:#45463f;max-width:900px;line-height:1.45;margin-bottom:18px}
+.fila{display:flex;gap:28px;align-items:flex-start}
+.col{width:360px;flex:none}
+.tit{font-weight:800;font-size:18px;margin-bottom:4px}
+.sub{font-size:13px;color:#45463f;line-height:1.4;min-height:72px;margin-bottom:10px}
+.tel{width:360px;height:780px;border-radius:22px;overflow:hidden;border:6px solid #111;position:relative;background:#111}
+.tel>img{width:100%;display:block}
+.nota{margin-top:10px;font-size:13px;line-height:1.45;color:#2b2c27}
+.reco{outline:3px solid #CBA258;outline-offset:6px;border-radius:24px}
+.k{background:#C9A878;color:#33230F;height:100%;display:flex;flex-direction:column;padding:18px 18px 0;position:relative}
+.top{display:flex;justify-content:space-between;font:600 11px/1 'IBM Plex Mono';letter-spacing:.2em}
+.eyb{font:600 9px/1 'IBM Plex Mono';letter-spacing:.2em;color:#6B4E28;margin-top:20px}
+h2{font:400 40px/.95 Anton;text-transform:uppercase;margin:8px 0 12px}
+.go{margin:auto -18px 0;display:flex}
+.go b{flex:1;text-align:center;padding:18px 0;font:700 11px/1 'IBM Plex Mono';letter-spacing:.25em;background:#33230F;color:#E7D3AE}
+.go b.oro{background:#CBA258;color:#33230F}
+/* A · el ticket */
+.tk{background:#FBF4E6;border:1.5px solid #33230F;padding:12px 12px 8px;font-family:'IBM Plex Mono'}
+.tk .ln{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px dashed rgba(51,35,15,.35);font-size:11px}
+.tk .ln:last-child{border-bottom:none}
+.tk .ln b{font:700 13px/1.2 Archivo}
+.tk .ln s{text-decoration:none;color:#6B4E28;font-size:9px;letter-spacing:.1em;display:block;margin-top:2px}
+.tk .ln em{font-style:normal;font:700 13px 'IBM Plex Mono'}
+.tk .ln.gratis em{color:#2F6B3A}
+.tk .dir{display:flex;justify-content:space-between;align-items:center;font-size:11px;padding-bottom:8px;border-bottom:1.5px solid #33230F;margin-bottom:2px}
+.tk .dir b{font:700 13px Archivo;display:block}
+.tk .dir u{font:700 9px 'IBM Plex Mono';letter-spacing:.15em;background:#33230F;color:#FBF4E6;padding:5px 7px;text-decoration:none}
+.pie{font:400 11px/1.45 'IBM Plex Mono';color:#5C4426;margin-top:12px}
+.cin{background:repeating-linear-gradient(90deg,#33230F 0 6px,transparent 6px 10px);height:2px;margin:10px 0}
+/* B · dos pasos */
+.w2{display:flex;gap:0;height:100%}
+.dl{background:#FBF4E6;border-radius:12px;padding:12px;border:1px solid #D9C29A;margin-bottom:8px}
+.dl.on{border:2px solid #33230F}
+.dl b{font:800 15px/1.2 Archivo;display:block}.dl span{font:400 11px/1.4 'IBM Plex Mono';color:#6B4E28}
+.dl.sin{background:transparent;border-style:dashed}
+.hoja{position:absolute;left:0;right:0;bottom:0;background:#FBF4E6;border-radius:20px 20px 0 0;padding:16px 18px 0;box-shadow:0 -10px 30px rgba(51,35,15,.35);display:flex;flex-direction:column}
+.hoja .mango{width:40px;height:4px;border-radius:999px;background:#D9C29A;margin:0 auto 12px}
+.hoja h3{font:400 28px/1 Anton;text-transform:uppercase}
+.hoja .p{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed rgba(51,35,15,.3);font:400 13px Archivo}
+.hoja .p em{font:700 13px 'IBM Plex Mono';font-style:normal}
+.velo{position:absolute;inset:0;background:rgba(51,35,15,.45)}
+/* C · la mesa */
+.mesa{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.pz{background:#FBF4E6;border-radius:12px;padding:10px;position:relative;min-height:96px;display:flex;flex-direction:column;justify-content:space-between}
+.pz .q{font:800 15px/1.1 Archivo}.pz .s{font:400 9px/1.3 'IBM Plex Mono';color:#6B4E28;letter-spacing:.05em}
+.pz .m{font:700 18px/1 'IBM Plex Mono'}
+.pz .tag{position:absolute;top:8px;right:8px;font:700 8px/1 'IBM Plex Mono';letter-spacing:.12em;background:#33230F;color:#FBF4E6;padding:4px 5px;border-radius:4px}
+.pz .tag.g{background:#2F6B3A}
+.va{display:flex;align-items:center;gap:10px;background:#33230F;color:#E7D3AE;border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.va b{font:700 13px Archivo;color:#FBF4E6;display:block}.va span{font:400 11px 'IBM Plex Mono'}
+.va u{margin-left:auto;font:700 9px 'IBM Plex Mono';letter-spacing:.15em;text-decoration:underline}
+.reloj{display:flex;align-items:center;gap:10px;margin-top:12px;font:400 11px/1.4 'IBM Plex Mono';color:#5C4426}
+.reloj i{width:38px;height:38px;border-radius:999px;border:3px solid #33230F;border-right-color:transparent;flex:none;display:flex;align-items:center;justify-content:center;font:700 11px 'IBM Plex Mono';font-style:normal;color:#33230F}
+.tel input{all:unset}
+.fono{display:flex;justify-content:space-between;border-bottom:1px dashed rgba(51,35,15,.45);padding:8px 0;font:400 9px 'IBM Plex Mono';letter-spacing:.15em;color:#6B4E28}
+.fono b{font:700 13px Archivo;color:#33230F;letter-spacing:0}
+</style></head><body>
+<h1 class="lam">Cerrar el grupo y repartir · hoy y tres opciones</h1>
+<p class="lam">Es la pantalla donde quien organiza cierra el grupo: elige la dirección y el teléfono, y a cada uno le llega su parte para pagar con Yape (tienen 20 minutos). Hoy funciona, pero <b>no dice cuánto le toca a cada uno</b> antes de cobrar. Ese número es lo que más le importa a quien organiza.</p>
+<div class="fila">
+
+<div class="col"><div class="tit">Hoy</div>
+<div class="sub">La dirección, el teléfono y un botón. El aviso explica el reparto con palabras, pero no muestra ninguna cifra.</div>
+<div class="tel"><img src="hoy/grupo-hoy.png" alt="Repartir el grupo hoy"></div>
+<div class="nota">Quien organiza toca «Repartir y cobrar» sin saber cuánto le va a llegar a cada uno.</div></div>
+
+<div class="col reco"><div class="tit">A · El ticket del grupo ★</div>
+<div class="sub">El mismo ticket del carrito aprobado (30G), ahora con una línea por persona: lo suyo más su parte del envío. La dirección va en la cabecera del ticket, con «Cambiar».</div>
+<div class="tel"><div class="k">
+ <div class="top"><span>←</span><span>#SHS3H5</span></div>
+ <div class="eyb">CERRAR Y PAGAR · 4 PERSONAS</div>
+ <h2>A cada uno<br>lo suyo</h2>
+ <div class="tk">
+  <div class="dir"><div><span style="font-size:9px;letter-spacing:.15em;color:#6B4E28">VA A</span><b>Casa · Av. España 123</b></div><u>CAMBIAR</u></div>
+  <div class="ln"><div><b>Mafe (tú)</b><s>PHILLY CHEESESTEAK 15CM + ENVÍO</s></div><em>S/24.40</em></div>
+  <div class="ln"><div><b>Luis</b><s>MEATBALL MARINARA 15CM + ENVÍO</s></div><em>S/23.40</em></div>
+  <div class="ln"><div><b>Carla</b><s>TURKEY 15CM + ENVÍO</s></div><em>S/25.40</em></div>
+  <div class="ln"><div><b>Dani</b><s>CLASSIC TUNA 15CM + ENVÍO</s></div><em>S/22.40</em></div>
+ </div>
+ <div class="pie">Envío S/6.00 partido entre 4 = S/1.50 c/u. Cada uno paga lo suyo con Yape: tienen 20 min. Lo que no se pague se cancela y el resto sale igual.</div>
+ <div class="fono" style="margin-top:8px"><span>EL REPARTIDOR LLAMA A</span><b>987 654 321</b></div>
+ <div class="go"><b class="oro">COBRAR A CADA UNO</b></div>
+</div></div>
+<div class="nota"><b>Fuerte:</b> se ve la plata antes de cobrar, en el mismo idioma que el carrito aprobado. Si alguien no paga, ya se sabe cuánto falta. <b>Débil:</b> con 8 o más personas el ticket se alarga y hay que bajar.</div></div>
+
+<div class="col"><div class="tit">B · Dos pasos: dónde, y luego cuánto</div>
+<div class="sub">Primero solo la dirección, en grande, como «34 · Dónde te lo dejamos». Al elegirla sube una hoja con el reparto y el botón de cobrar.</div>
+<div class="tel"><div class="k">
+ <div class="top"><span>←</span><span>#SHS3H5</span></div>
+ <div class="eyb">CERRAR Y PAGAR · 1 DE 2</div>
+ <h2>¿Dónde lo<br>dejamos?</h2>
+ <div class="dl on"><b>Casa</b><span>Av. España 123 · puerta verde</span></div>
+ <div class="dl"><b>Oficina</b><span>Jr. Pizarro 450 · ubícala en el mapa</span></div>
+ <div class="dl sin"><b>Otra dirección</b><span>Búscala o márcala en el mapa</span></div>
+ <div class="velo"></div>
+ <div class="hoja" style="top:300px">
+  <div class="mango"></div>
+  <h3>Así se reparte</h3>
+  <div class="p"><span>Mafe (tú)</span><em>S/24.40</em></div>
+  <div class="p"><span>Luis</span><em>S/23.40</em></div>
+  <div class="p"><span>Carla</span><em>S/25.40</em></div>
+  <div class="p"><span>Dani</span><em>S/22.40</em></div>
+  <div class="pie" style="margin-top:8px">Incluye S/1.50 de envío cada uno · 20 min para pagar</div>
+  <div class="fono"><span>EL REPARTIDOR LLAMA A</span><b>987 654 321</b></div>
+  <div class="go"><b>COBRAR A CADA UNO</b></div>
+ </div>
+</div></div>
+<div class="nota"><b>Fuerte:</b> elegir la dirección queda limpio, sin cifras, y el cobro llega como confirmación aparte. <b>Débil:</b> agrega un paso, y el envío (que depende de la dirección) recién aparece en la hoja.</div></div>
+
+<div class="col"><div class="tit">C · La mesa</div>
+<div class="sub">Cada persona es una ficha con su monto, en grilla, como gente sentada en una mesa. La que sale gratis (con 5) se marca. Abajo, el reloj de 20 minutos que va a correr.</div>
+<div class="tel"><div class="k">
+ <div class="top"><span>←</span><span>#SHS3H5</span></div>
+ <div class="eyb">CERRAR Y PAGAR</div>
+ <h2>La cuenta<br>de la mesa</h2>
+ <div class="va"><div><b>Va a Casa</b><span>Av. España 123 · 987 654 321</span></div><u>CAMBIAR</u></div>
+ <div class="mesa">
+  <div class="pz"><span class="tag">TÚ</span><div class="q">Mafe</div><div class="s">PHILLY 15CM</div><div class="m">S/24.40</div></div>
+  <div class="pz"><div class="q">Luis</div><div class="s">MEATBALL 15CM</div><div class="m">S/23.40</div></div>
+  <div class="pz"><div class="q">Carla</div><div class="s">TURKEY 15CM</div><div class="m">S/25.40</div></div>
+  <div class="pz"><div class="q">Dani</div><div class="s">CLASSIC TUNA 15CM</div><div class="m">S/22.40</div></div>
+ </div>
+ <div class="reloj"><i>20</i><span>Al cobrar, cada uno tiene 20 min para pagar con Yape. Lo que no se pague se cancela; el resto sale igual.</span></div>
+ <div class="go"><b class="oro">COBRAR A CADA UNO</b></div>
+</div></div>
+<div class="nota"><b>Fuerte:</b> es la más visual: se ve de un vistazo quién es quién, y la misma grilla puede después mostrar quién ya pagó. <b>Débil:</b> los nombres de los sándwiches se acortan, y con muchas personas la grilla pesa más que el ticket.</div></div>
+
+</div></body></html>
