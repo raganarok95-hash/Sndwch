@@ -1207,8 +1207,22 @@ function sGroupOrder(){
   var abierto=g.status==='open';
   var repartido=g.status==='splitting'||(g.status==='paid'&&g.partes&&g.partes.length);
   var puedeCerrar=g.isOrganizer&&(abierto||g.canPay);
-  var h='<div class="mgr fi"><button class="sal" onclick="'+bk+'" aria-label="Volver">←</button>'+wmClaro()
-    +'<div class="tit"><em>Pedido grupal · #'+esc(g.code)+'</em><b>QUIÉNES<br>COMEN</b></div>';
+  var h;
+  if(repartido){
+    // La mesa cobrando (maqueta aprobada 2026-10-03, aprobadas/grupo-la-mesa-cobrando.png).
+    var ps=g.partes||[];
+    var pagadas=ps.filter(function(p:any){return p.paid;}).length;
+    var vivas=ps.filter(function(p:any){return!p.cancelled;}).length;
+    var msL=g.splitDeadline?Date.parse(g.splitDeadline)-Date.now():0;
+    var minL=Math.max(0,Math.ceil(msL/60000));
+    var cobrando=g.status==='splitting'&&msL>0;
+    h='<div class="mgr mesa-g fi"><button class="sal" onclick="'+bk+'" aria-label="Volver">←</button>'
+      +'<div class="cod">#'+esc(g.code)+'</div>'
+      +'<div class="tit"><em>'+(cobrando?'Cobrando · quedan '+minL+' min':'Pedido grupal')+'</em><b>'+pagadas+' DE '+vivas+'<br>'+(pagadas===1?'YA PAGÓ':'YA PAGARON')+'</b></div>';
+  }else{
+    h='<div class="mgr fi"><button class="sal" onclick="'+bk+'" aria-label="Volver">←</button>'+wmClaro()
+      +'<div class="tit"><em>Pedido grupal · #'+esc(g.code)+'</em><b>QUIÉNES<br>COMEN</b></div>';
+  }
   // Qué está pasando, dicho arriba (dueño, 2026-10-01: «nunca compartí el enlace»; el grupo se crea
   // al tocar «Armar el grupo»). Al organizador: que ya está abierto y cómo sumar gente. A quien
   // llega por el enlace: quién lo invitó y qué hacer — casi nunca conoce SND//WCH.
@@ -1221,6 +1235,10 @@ function sGroupOrder(){
   if(abierto)h+='<button class="link" onclick="copiarEnlaceGrupo()"><s>'+esc(linkDelGrupo().replace(/^https?:\/\//,''))+'</s><u>Copiar enlace</u></button>';
   if(repartido){
     h+=partesDelGrupoHTML(g);
+    if(cobrando)h+='<div class="reloj"><i>'+minL+'</i><span>Lo que no se pague en '+minL+' min se cancela; lo pagado sale igual, junto.</span></div>';
+    var faltanPagar=ps.some(function(p:any){return!p.paid&&!p.cancelled;});
+    if(g.isOrganizer&&cobrando&&faltanPagar)h+='<div class="go sw-barra"><button class="osc solo" data-accion="recordar-pagos" onclick="recordarPagosGrupo()">Recordarles por WhatsApp</button></div>';
+    return h+'</div>';
   }else{
     var gente=gentePorPersona(g);
     h+='<div class="gente">'+gente.map(function(p){
@@ -1328,7 +1346,7 @@ async function quitarDelGrupo(id:string){
 // 2026-09-24) — el servidor crea un pedido Yape por persona con su parte del envío
 // (actions/group.ts · repartirGrupo). «Yo invito»: el organizador paga todo en un pedido.
 function botonesCierreGrupo():string{
-  return'<div class="go sw-barra"><button class="oro" onclick="abrirRepartoGrupo()">Cerrar y pagar</button><button class="cel" onclick="doCloseGroupOrder()">Yo invito</button></div>';
+  return'<div class="go sw-barra"><button class="oro" data-accion="cerrar-y-pagar" onclick="abrirRepartoGrupo()">Cerrar y pagar</button><button class="cel" onclick="doCloseGroupOrder()">Yo invito</button></div>';
 }
 var repartoAddrId:any=null,repartoPhone='';
 async function abrirRepartoGrupo(){
@@ -1342,65 +1360,135 @@ async function abrirRepartoGrupo(){
   var hayPinDelPedido=!!addrText&&typeof window._mLat==='number'&&typeof window._mLon==='number';
   repartoAddrId=conPin.length?conPin[0].id:(hayPinDelPedido?'__mapa':null);
   repartoPhone=cust&&cust.phone?String(cust.phone):'';
+  grpPrev=null;grpHoja=false;
   sndScreen='group_split';render();
 }
-function sGroupSplit(){
-  var conPin=myAddresses.filter(function(a:any){return typeof a.lat==='number'&&typeof a.lon==='number';});
-  var h='<div class="mgr fi"><button class="sal" onclick="sndScreen=\'group_order\';render()" aria-label="Volver">←</button>'+wmClaro()
-    +'<div class="tit"><em>Cerrar y pagar · #'+esc(groupCode||'')+'</em><b>¿DÓNDE LO<br>DEJAMOS?</b></div>'
-    +'<div class="aviso"><s>El envío sale de esta dirección y se parte entre todos. A cada uno le llega su parte para pagarla con Yape; tienen '+GROUP_SPLIT_MINUTES_CLIENT+' minutos. Lo que no se pague se cancela y el resto sale igual.</s></div>';
-  // Todas las direcciones guardadas, no solo las que tienen pin (dueño, 2026-10-01: «no carga en
-  // automático la misma ni deja seleccionar, ni permite el google maps»). Una sin pin se ubica en
-  // el mapa con un toque y queda guardada con su pin.
+// ── LA MESA (maqueta aprobada 2026-10-03: aprobadas/grupo-la-mesa*.png) ──────────────────
+// Antes de cobrar, quien organiza ve cuánto le llega a cada uno. Los montos NO se calculan
+// acá: los da `group-split-preview`, que usa la misma función que cobra (repartirGrupo). Si la
+// pantalla hiciera su propia cuenta, el día que cambie una regla mostraría un monto y cobraría
+// otro. La dirección y el teléfono se cambian en una hoja («Cambiar») sin salir de la mesa.
+var grpHoja=false;
+var grpPrev:any=null;
+function repartoDireccion():any{
+  if(repartoAddrId==='__mapa')return typeof window._mLat==='number'?{label:'La de este pedido',address:addrText,reference:'',lat:window._mLat,lon:window._mLon}:null;
+  var a=myAddresses.find(function(x:any){return mismoId(x.id,repartoAddrId);});
+  return a&&typeof a.lat==='number'&&typeof a.lon==='number'?a:null;
+}
+function pedirPreviewReparto(){
+  var a=repartoDireccion();
+  if(!a||!groupCode)return;
+  var clave=a.lat+','+a.lon+'|'+((groupData&&groupData.items)||[]).length;
+  if(grpPrev&&grpPrev.clave===clave)return;
+  grpPrev={clave:clave,cargando:true};
+  api('group-split-preview',{token:token,code:groupCode,lat:a.lat,lon:a.lon}).then(function(r:any){
+    if(!grpPrev||grpPrev.clave!==clave)return;
+    grpPrev={clave:clave,partes:r.partes||[],fee:Number(r.fee)||0};
+    if(sndScreen==='group_split')render();
+  }).catch(function(e:any){
+    if(!grpPrev||grpPrev.clave!==clave)return;
+    grpPrev={clave:clave,error:(e&&e.message)||'No pudimos calcular el reparto.'};
+    if(sndScreen==='group_split')render();
+  });
+}
+function hojaDeReparto():string{
   var hayPinDelPedido=!!addrText&&typeof window._mLat==='number'&&typeof window._mLon==='number';
-  h+='<div class="gente" role="radiogroup" aria-label="Dirección">';
+  var h='<div class="hoja-velo" onclick="grpHoja=false;render()"></div><div class="hoja" role="dialog" aria-label="Dónde lo dejamos"><div class="mango"></div><h3>¿Dónde lo dejamos?</h3>';
+  h+='<div class="dirs" role="radiogroup" aria-label="Dirección">';
   if(hayPinDelPedido){
     var onM=repartoAddrId==='__mapa';
-    h+='<button class="dir'+(onM?' on':'')+'" role="radio" aria-checked="'+onM+'" onclick="repartoAddrId=\'__mapa\';render()"><b>La de este pedido</b><s>'+esc(addrText)+'</s></button>';
+    h+='<button class="dl'+(onM?' on':'')+'" role="radio" aria-checked="'+onM+'" data-accion="reparto-direccion" onclick="repartoAddrId=\'__mapa\';render()"><b>La de este pedido</b><s>'+esc(addrText)+'</s></button>';
   }
+  // Todas las guardadas, no solo las que tienen pin (dueño, 2026-10-01): una sin pin se ubica en
+  // el mapa con un toque y queda guardada con su pin.
   h+=myAddresses.map(function(a:any){
     var pin=typeof a.lat==='number'&&typeof a.lon==='number';
     var on=pin&&mismoId(repartoAddrId,a.id);
     return pin
-      ?'<button class="dir'+(on?' on':'')+'" role="radio" aria-checked="'+on+'" onclick="repartoAddrId=\''+a.id+'\';render()"><b>'+esc(a.label)+'</b><s>'+esc(a.address)+(a.reference?' · '+esc(a.reference):'')+'</s></button>'
-      :'<button class="dir sinpin" onclick="abrirMapaPara(\'group_split\',\''+a.id+'\','+esc(JSON.stringify(a.address||''))+')"><b>'+esc(a.label)+'</b><s>'+esc(a.address)+' · tócala para ubicarla en el mapa</s></button>';
+      ?'<button class="dl'+(on?' on':'')+'" role="radio" aria-checked="'+on+'" data-accion="reparto-direccion" onclick="repartoAddrId=\''+a.id+'\';render()"><b>'+esc(a.label)+'</b><s>'+esc(a.address)+(a.reference?' · '+esc(a.reference):'')+'</s></button>'
+      :'<button class="dl" data-accion="reparto-ubicar" onclick="grpHoja=false;abrirMapaPara(\'group_split\',\''+a.id+'\','+esc(JSON.stringify(a.address||''))+')"><b>'+esc(a.label)+'</b><s>'+esc(a.address)+' · tócala para ubicarla en el mapa</s></button>';
   }).join('');
-  h+='<button class="dir otra" onclick="abrirMapaPara(\'group_split\',null,\'\')"><b>Otra dirección</b><s>Búscala o márcala en el mapa</s></button></div>';
-  if(!repartoAddrId){
-    return h+'<div class="go sw-barra"><button class="oro solo" onclick="abrirMapaPara(\'group_split\',null,\'\')">Elegir en el mapa</button></div></div>';
+  h+='<button class="dl sin" data-accion="reparto-otra" onclick="grpHoja=false;abrirMapaPara(\'group_split\',null,\'\')"><b>Otra dirección</b><s>Búscala o márcala en el mapa</s></button></div>';
+  h+='<label class="lbl" for="grp-phone">Teléfono para el repartidor</label>'
+    +'<input id="grp-phone" class="inp" type="tel" inputmode="tel" autocomplete="tel" value="'+esc(repartoPhone)+'" oninput="repartoPhone=this.value">'
+    +'<p class="av">El envío sale de esta dirección y se parte entre todos.</p>';
+  return h+'<div class="go sw-barra"><button class="osc solo" data-accion="reparto-listo" onclick="grpHoja=false;render()"'+(repartoAddrId?'':' disabled')+'>Listo</button></div></div>';
+}
+function sGroupSplit(){
+  var g=groupData||{};
+  var a=repartoDireccion();
+  if(!a)grpHoja=true;
+  else setTimeout(pedirPreviewReparto,0);
+  var gente=gentePorPersona(g);
+  var h='<div class="mgr mesa-g fi"><button class="sal" onclick="grpHoja=false;sndScreen=\'group_order\';render()" aria-label="Volver">←</button>'
+    +'<div class="cod">#'+esc(groupCode||'')+'</div>'
+    +'<div class="tit"><em>Cerrar y pagar · '+gente.length+(gente.length===1?' persona':' personas')+'</em><b>LA CUENTA<br>DE LA MESA</b></div>';
+  if(a){
+    h+='<button class="va" data-accion="reparto-cambiar" onclick="grpHoja=true;render()"><span><b>Va a '+esc(a.label)+(a.address&&a.label!=='La de este pedido'?' · '+esc(a.address):'')+'</b>'
+      +'<s>El repartidor llama a '+esc(repartoPhone||'—')+'</s></span><u>Cambiar</u></button>';
   }
-  h+='<div class="sumar" style="margin-top:26px"><em>Teléfono para el repartidor</em><input id="grp-phone" type="tel" inputmode="tel" autocomplete="tel" aria-label="Teléfono para el repartidor" value="'+esc(repartoPhone)+'"></div>';
-  return h+'<div class="go sw-barra"><button class="oro solo" onclick="doSplitGroupOrder()">Repartir y cobrar a cada uno</button></div></div>';
+  var prev=grpPrev&&a&&!grpPrev.cargando&&!grpPrev.error?grpPrev:null;
+  var porNombre:any={};
+  if(prev)prev.partes.forEach(function(p:any){porNombre[p.name]=p;});
+  var yo=quienSoyEnElGrupo(g);
+  var sw=typeof g.sandwichQty==='number'?g.sandwichQty:0;
+  h+='<div class="mesa">'+gente.map(function(p){
+    var pr=porNombre[p.name];
+    var gratis=pr&&pr.gratis>0;
+    var monto=pr?(gratis?'<s>'+SOLES_TXT+pz(pr.total+pr.gratis)+'</s>':'')+SOLES_TXT+pz(pr.total):'…';
+    return'<div class="pz'+(gratis?' gratis':'')+'">'+(gratis?'<span class="tag">Gratis</span>':'')
+      +'<b class="q">'+esc(p.name)+(p.name===yo?' (tú)':'')+'</b>'
+      +'<span class="s">'+esc(p.labels.join(' + '))+(gratis?' · va gratis: el grupo llegó a '+sw:'')+'</span>'
+      +'<span class="m">'+monto+'</span></div>';
+  }).join('');
+  if(prev&&prev.partes.length){
+    var n=prev.partes.length,cada=Math.floor(prev.fee*100/n)/100;
+    h+='<div class="pz env"><span class="s">Envío a '+esc(a.label)+'</span><span class="m">'+SOLES_TXT+pz(prev.fee)+' ÷ '+n+'</span>'
+      +'<span class="s">= '+SOLES_TXT+pz(cada)+' cada uno, ya sumado'+(Math.round(cada*n*100)!==Math.round(prev.fee*100)?' (los céntimos que sobran van a quien organiza)':'')+'</span></div>';
+  }
+  h+='</div>';
+  if(grpPrev&&grpPrev.error)h+='<div class="aviso"><b>No pudimos calcular el reparto</b><s>'+esc(grpPrev.error)+'</s></div>';
+  h+='<div class="reloj"><i>'+GROUP_SPLIT_MINUTES_CLIENT+'</i><span>Al cobrar, a cada uno le llega su parte para pagar con Yape: tienen '+GROUP_SPLIT_MINUTES_CLIENT+' min. Lo que no se pague se cancela y el resto sale igual.</span></div>';
+  h+='<div class="go sw-barra"><button class="oro solo" data-accion="reparto-cobrar" onclick="doSplitGroupOrder()"'+(prev?'':' disabled')+'>Cobrar a cada uno</button></div>';
+  if(grpHoja)h+=hojaDeReparto();
+  return h+'</div>';
 }
 var GROUP_SPLIT_MINUTES_CLIENT=20;
 async function doSplitGroupOrder(){
-  var a:any=repartoAddrId==='__mapa'
-    ?{address:addrText,reference:'',lat:window._mLat,lon:window._mLon}
-    :myAddresses.find(function(x:any){return mismoId(x.id,repartoAddrId);});
-  if(!a||typeof a.lat!=='number'){showToast('Elige la dirección.');return;}
-  var tel=gv('grp-phone').trim()||repartoPhone;
+  var a:any=repartoDireccion();
+  if(!a){grpHoja=true;render();showToast('Elige la dirección.');return;}
+  var tel=String(repartoPhone||'').trim();
   busy=true;busyMsg='Repartiendo...';render();
   try{
     await api('split-group-order',{token:token,code:groupCode,address:a.address+(a.reference?' — '+a.reference:''),lat:a.lat,lon:a.lon,contactPhone:tel});
-    busy=false;sndScreen='group_order';render();
+    busy=false;grpHoja=false;grpPrev=null;sndScreen='group_order';render();
     loadGroupOrder();startGroupPoll();
   }catch(e:any){busy=false;render();showToast(e.message);}
 }
-// Las partes, una por persona. Cada una se paga con el mismo Yape de siempre: se abre la
-// pantalla de pedido enviado para ESA referencia, con su monto y su comprobante.
+// La mesa cobrando: la misma grilla dice quién ya pagó y quién falta. Cada parte se paga con
+// el mismo Yape de siempre (pagarParteGrupo abre la pantalla de pedido enviado para ESA ref).
 function partesDelGrupoHTML(g:any):string{
   var partes=g.partes||[];
-  var pagadas=partes.filter(function(p:any){return p.paid;}).length;
-  var vivas=partes.filter(function(p:any){return!p.cancelled;}).length;
+  var yo=quienSoyEnElGrupo(g);
+  return'<div class="mesa">'+partes.map(function(p:any){
+    var est=p.cancelled?'<span class="est no">No pagó a tiempo</span>':p.paid?'<span class="est ok">Pagó</span>':'<span class="est falta">Falta</span>';
+    var dentro=est+'<b class="q">'+esc(p.name)+(p.name===yo?' (tú)':'')+'</b><span class="m">'+SOLES_TXT+pz(p.total)+'</span>';
+    if(!p.paid&&!p.cancelled&&g.status==='splitting'){
+      return'<button class="pz" data-accion="pagar-parte" onclick="pagarParteGrupo(\''+esc(p.ref)+'\','+p.total+')">'+dentro+'<u>Pagar</u></button>';
+    }
+    return'<div class="pz'+(p.paid?' pagado':'')+(p.cancelled?' fuera':'')+'">'+dentro+'</div>';
+  }).join('')+'</div>';
+}
+// Quien organiza les recuerda a los que faltan, con lo que debe cada uno y el enlace.
+function recordarPagosGrupo(){
+  var g=groupData;if(!g)return;
+  var faltan=(g.partes||[]).filter(function(p:any){return!p.paid&&!p.cancelled;});
+  if(!faltan.length)return;
   var msLeft=g.splitDeadline?Date.parse(g.splitDeadline)-Date.now():0;
-  var h='<div class="gente"><div class="g esp"><k>'+pagadas+'</k><div class="t"><b>'+pagadas+' de '+vivas+' pagaron</b><s>'
-    +(g.status==='splitting'&&msLeft>0?('Quedan '+Math.ceil(msLeft/60000)+' min · lo que no se pague se cancela'):'Cada uno paga lo suyo')+'</s></div><p>—</p></div>';
-  h+=partes.map(function(p:any){
-    var der=p.cancelled?'<span class="est no">No pagó a tiempo</span>':p.paid?'<span class="est">Pagado</span>'
-      :(g.status==='splitting'?'<button class="pagar" onclick="pagarParteGrupo(\''+esc(p.ref)+'\','+p.total+')">Pagar</button>':'');
-    return'<div class="g"><k>'+esc((String(p.name||'').trim()[0]||'?').toUpperCase())+'</k><div class="t"><b>'+esc(p.name)+'</b><s>'+SOLES_TXT+pz(p.total)+' · envío '+d2(p.envio)+'</s></div>'+der+'</div>';
-  }).join('');
-  return h+'</div>';
+  var text='Falta pagar tu parte del pedido SND//WCH: '+faltan.map(function(p:any){return p.name+' '+SOLES_TXT+pz(p.total);}).join(', ')
+    +(msLeft>0?'. Quedan '+Math.ceil(msLeft/60000)+' min':'')+'. Se paga aquí: '+linkDelGrupo();
+  if(navigator.share){navigator.share({text:text}).catch(function(){});}
+  else{window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank');}
 }
 function pagarParteGrupo(ref:string,total:number){
   window._lRef=ref;window._lTot=total;window._lPayMethod='yape';window._lPendingPayment=true;

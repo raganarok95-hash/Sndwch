@@ -157,6 +157,9 @@ export const CONTRATO = {
   'split-group-order': accion<Record<string, unknown>>()(
     e.objeto({ token, code: e.textoOpcional(12), address: e.textoOpcional(300), contactPhone: e.textoOpcional(20), lat: e.sinRevisar(), lon: e.sinRevisar() }),
   ),
+  'group-split-preview': accion<Record<string, unknown>>()(
+    e.objeto({ token, code: e.textoOpcional(12), lat: e.sinRevisar(), lon: e.sinRevisar() }),
+  ),
   'export-orders': accion<Record<string, unknown>>()(e.objeto({ token })),
 
   // ── LAS TRES QUE COBRAN (2026-10-01). Todo lo que leen ellas Y sus auxiliares

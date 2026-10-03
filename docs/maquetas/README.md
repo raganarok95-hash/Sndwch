@@ -62,6 +62,9 @@ vive en el chat o en `/tmp`, no existe.
 | Detalle de un pedido | `detalle-de-un-pedido.png` | `u2.html` #1 | «me agradan, aprobadas» |
 | Tu pedido fijo | `tu-pedido-fijo.png` | `u2.html` #2 | «me agradan, aprobadas» |
 | Libro de Reclamaciones · tres pasos | `libro-de-reclamaciones-tres-pasos.png` | `../propuestas/libro-de-reclamaciones.html` #B | «B libro de reclamos aprobada» (2026-10-03): 1) ¿Esto es tuyo? (tarjeta con los datos de la cuenta y «Cambiar»), 2) reclamo o queja y el pedido, 3) qué pasó y qué solicitas. Mismos campos y textos legales que antes; sin cuenta, el paso 1 son los campos |
+| Grupo · la mesa | `grupo-la-mesa.png` | `../propuestas/grupo-la-mesa.html` #1 | «Aprobados» (2026-10-03): la mezcla con la mesa como base — una ficha por persona con lo que pidió y paga, la del organizador tachada y GRATIS desde 5 sándwiches, la ficha del envío con su cuenta, el reloj de 20 min y «Va a … · Cambiar» |
+| Grupo · la mesa · Cambiar | `grupo-la-mesa-cambiar.png` | `../propuestas/grupo-la-mesa.html` #2 | Misma aprobación: «Cambiar» sube una hoja con las direcciones guardadas, «Otra dirección», el teléfono editable y el aviso |
+| Grupo · la mesa · cobrando | `grupo-la-mesa-cobrando.png` | `../propuestas/grupo-la-mesa.html` #3 | Misma aprobación: después de cobrar, la mesa marca PAGÓ / FALTA con el reloj y «Recordarles por WhatsApp» |
 | Lo legal | `lo-legal.png` | `u2.html` #3 | «me agradan, aprobadas» — fechas y datos fiscales los pone el dueño |
 | Mundo WICHO (M22) | `mundo-wicho-M22.png` | `m14.html` #2 | «M22 wicho aprobada» |
 | Mundo WICHO (M22) + el puente | `mundo-wicho-M22-con-puente.png` | `m22-con-puente.html` #2 | «esta bien pero no uses ese logo usa el logo actual y real» (2026-09-24) — **la vigente**: la fila «¿Prefieres que ya esté resuelto?» lleva al lado de SANDO, con el isotipo real. **Construida el 2026-09-25** (`sOBuild`, `.mw` en shell.html) |
