@@ -721,6 +721,9 @@ async function doOrder(desdePagar?){
     }
     payWithManualMethod();
   }else{
+    // create-charge no cobra menos de S/1 (Monto inválido): se dice ANTES de abrir Culqi, no
+    // después de que el cliente escribió su tarjeta.
+    if(t<1){falloConTarjeta('monto-minimo','Con tarjeta el mínimo es '+SOLES_TXT+'1.00. Paga con Yape o suma algo más.');return;}
     prepareThenPayWithCulqi(t,email);
   }
 }
@@ -838,7 +841,10 @@ function vigilarVentanaDeCulqi(){
 window.culqi=function(){
   if(!_pendingOrder)return;
   if(Culqi.token){
-    chargeAndFinalize(Culqi.token.id);
+    // El correo que el cliente escribió en la ventana de Culqi manda: un invitado (o una cuenta
+    // sin correo) no tiene otro, y create-charge rechaza el cobro sin correo («Faltan datos»)
+    // cuando el cliente ya escribió su tarjeta (2026-10-03).
+    chargeAndFinalize(Culqi.token.id,Culqi.token.email);
   }else{
     var msg=(Culqi.error&&(Culqi.error.user_message||Culqi.error.merchant_message))||'No se pudo procesar el pago. Intenta de nuevo o con otro método.';
     // Cerrar la ventana sin pagar también llega acá: eso no es un fallo y no se reporta.
@@ -847,15 +853,16 @@ window.culqi=function(){
   }
 };
 
-async function chargeAndFinalize(culqiToken){
+async function chargeAndFinalize(culqiToken,emailDeCulqi?){
   if(!_pendingOrder)return;
   var po=_pendingOrder;
+  var correo=String(emailDeCulqi||po.email||'').trim();
   busy=true;busyMsg='Procesando pago...';render();
   try{
     var resp=await fetch(CHARGE_FN_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({token:culqiToken,amountSoles:po.total,email:po.email,orderRef:po.ref})
+      body:JSON.stringify({token:culqiToken,amountSoles:po.total,email:correo,orderRef:po.ref})
     });
     var data=await resp.json().catch(function(){return{};});
     if(!resp.ok||!data.success){

@@ -46,3 +46,40 @@ test('si la ventana de Culqi no aparece, Pagar lo dice y se reporta', async ({ p
     .toContain('tarjeta:no-abrio');
   await expect(page.locator('.m31.t [role="alert"]')).not.toBeEmpty();
 });
+
+// Promesa: un invitado (o una cuenta sin correo) que paga con tarjeta llega al cobro con el
+// correo que escribió en la ventana de Culqi.
+// Modo de fallo: la app mandaba a create-charge el correo de la cuenta; vacío para un invitado,
+// y create-charge lo rechaza («Faltan datos») DESPUÉS de que el cliente escribió su tarjeta. No
+// se cobra, no hay pedido, y el cliente cree que la tarjeta no funciona.
+test('un invitado paga con tarjeta con el correo que dio en Culqi', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as any).Culqi = { settings() {}, options() {}, open() { setTimeout(() => {
+      (window as any).Culqi.token = { id: 'tkn_prueba', email: 'invitado@correo.pe' };
+      (window as any).culqi();
+    }, 50); } };
+  });
+  const cobros: any[] = [];
+  await page.route('**/functions/v1/create-charge', async (route) => {
+    cobros.push(route.request().postDataJSON());
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, chargeId: 'chr_prueba' }) });
+  });
+  const calls = await gotoApp(page, {
+    'prepare-order': { success: true },
+    'place-order': { success: true, order: { id: 'o1', ref: 'X' } },
+    '*': { success: true },
+  });
+  await pedirUnSignature(page);
+  await ponerRecibe(page);
+  await ponerDireccion(page);
+  await page.locator('.m30-go .oro').click();
+  await page.locator('.m31').waitFor();
+  await page.evaluate(() => { (window as any).selectPayMethod('culqi'); (window as any).render(); });
+  await page.locator('.m31.t').waitFor();
+  await page.locator('.m30-go .oro').click();
+
+  await expect.poll(() => cobros.length).toBe(1);
+  expect(cobros[0].email).toBe('invitado@correo.pe');
+  expect(cobros[0].token).toBe('tkn_prueba');
+  await expect.poll(() => calls.some((c) => c.action === 'place-order')).toBe(true);
+});
