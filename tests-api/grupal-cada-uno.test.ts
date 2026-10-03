@@ -62,6 +62,11 @@ Deno.test("el sándwich gratis del organizador sale de SU parte, nunca de la de 
   const ana = (ps: any[]) => ps.find((p) => p.name === "Ana");
   assertEquals(c(beto(conGratis).total), c(beto(sinGratis).total));
   assertEquals(c(ana(conGratis).food) < c(ana(sinGratis).food), true);
+  // La mesa (vista previa) tacha lo que el gratis le quitó: tiene que ser exactamente eso, y
+  // nadie más que el organizador lo tiene.
+  assertEquals(c(ana(conGratis).gratis), c(ana(sinGratis).food) - c(ana(conGratis).food));
+  assertEquals(c(beto(conGratis).gratis), 0);
+  assertEquals(c(ana(sinGratis).gratis), 0);
 });
 
 Deno.test("un grupo vacío no se reparte", () => {

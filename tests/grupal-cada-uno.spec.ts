@@ -31,61 +31,67 @@ const REPARTIDO = {
 const DIRECCION = { id: 7, label: 'Oficina', address: 'Av. España 123', reference: 'Piso 3', lat: -8.11, lon: -79.03 };
 const CASA = { id: 8, label: 'Casa', address: 'Jr. Pizarro 500', lat: -8.115, lon: -79.035 };
 
-test('«Cerrar y pagar» reparte desde la dirección con pin y cada parte se paga sola', async ({ page }) => {
+// La mesa (maqueta aprobada 2026-10-03): antes de cobrar se ve cuánto paga cada uno. Lo que
+// no puede pasar en silencio: que la mesa muestre un monto que NO es el que el servidor va a
+// cobrar (por eso los montos vienen de `group-split-preview`, no de una cuenta local), que el
+// reparto salga desde otra dirección que la elegida, o que las partes no se puedan pagar.
+test('la mesa muestra lo que cobra el servidor, reparte desde la dirección elegida y cada parte se paga sola', async ({ page }) => {
   let repartido = false;
   const calls = await gotoApp(page, {
     login: { customer: ANA, isAdmin: false, token: 'tok-ana' },
     'addresses-list': { addresses: [CASA, DIRECCION] },
     'get-group-order': () => (repartido ? REPARTIDO : ABIERTO),
+    'group-split-preview': (b: any) => ({ success: true, fee: 7, km: 2, partes: [
+      { name: 'Ana Cliente', food: 20.9, envio: 3.5, total: b.lat === DIRECCION.lat ? 24.4 : 24.41, gratis: 0, esOrganizador: true },
+      { name: 'Beto', food: 20.9, envio: 3.5, total: 24.4, gratis: 0, esOrganizador: false },
+    ] }),
     'split-group-order': () => { repartido = true; return { success: true }; },
     'close-group-order': { success: true, items: [] },
   });
   await page.goto(APP_FILE + '?group=ABC123');
-  await page.waitForSelector('text=PEDIDO GRUPAL');
+  await page.locator('[data-accion="cerrar-y-pagar"]').click();
 
-  // Lo que suma cada uno se ve antes de cerrar.
-  await expect(page.getByText('Tu parte por ahora')).toBeVisible();
+  // La primera con pin (Casa) viene elegida y la mesa pide el reparto para ELLA.
+  await expect.poll(() => calls.filter((c) => c.action === 'group-split-preview').length).toBeGreaterThan(0);
+  expect(calls.find((c) => c.action === 'group-split-preview')!.body.lat).toBe(CASA.lat);
+  await expect(page.locator('.mesa .pz').first()).toContainText('24.41');
 
-  await page.getByRole('button', { name: /cerrar y pagar/i }).first().click();
-  await expect(page.getByText('Cerrar y pagar · #ABC123')).toBeVisible();
-  await expect(page.getByText('Av. España 123')).toBeVisible();
-  // La primera (Casa) viene elegida; se cambia a la Oficina.
-  await page.getByRole('radio', { name: /Oficina/ }).click();
-  await page.getByRole('button', { name: /repartir y cobrar/i }).click();
+  // Se cambia a la Oficina en la hoja: el reparto se vuelve a pedir y la mesa lo muestra.
+  await page.locator('[data-accion="reparto-cambiar"]').click();
+  await page.locator('[data-accion="reparto-direccion"]', { hasText: DIRECCION.label }).click();
+  await page.locator('[data-accion="reparto-listo"]').click();
+  await expect(page.locator('.mesa .pz').first()).toContainText('24.40');
+  await page.locator('[data-accion="reparto-cobrar"]').click();
 
-  await expect.poll(() => calls.some((c) => c.action === 'split-group-order'), { timeout: 10000 }).toBe(true);
+  await expect.poll(() => calls.some((c) => c.action === 'split-group-order')).toBe(true);
   const body = calls.find((c) => c.action === 'split-group-order')!.body;
   expect(body.code).toBe('ABC123');
-  expect(body.lat).toBe(-8.11);
-  expect(body.lon).toBe(-79.03);
+  expect(body.lat).toBe(DIRECCION.lat);
+  expect(body.lon).toBe(DIRECCION.lon);
   expect(body.address).toContain('Piso 3');
   // El cierre viejo (todo en un pedido) no se toca por este camino.
   expect(calls.some((c) => c.action === 'close-group-order')).toBe(false);
 
-  await expect(page.getByText('1 de 2 pagaron')).toBeVisible({ timeout: 10000 });
-  await expect(page.getByText('Pagado')).toBeVisible();
-  await page.getByRole('button', { name: /^pagar$/i }).click();
+  // Cobrando: la parte que falta se paga sola, con su ref y su monto.
+  await page.locator('[data-accion="pagar-parte"]').click();
   expect(await page.evaluate(() => (window as any).sndScreen)).toBe('o_sent');
   expect(await page.evaluate(() => (window as any)._lRef)).toBe('ORD-GABC123-0XY');
   expect(await page.evaluate(() => (window as any)._lTot)).toBe(24.4);
 });
 
-// Dueño, 2026-10-01: «manda a guardar dirección, no carga en automático la misma ni deja
-// seleccionar, ni permite el google maps». Una dirección sin pin ya no es un callejón: se ofrece
-// ubicarla en el mapa ahí mismo. Lo que NO cambia: sin pin no se reparte (el envío sale del pin).
-test('sin una dirección con pin no se reparte: se ofrece ubicarla en el mapa ahí mismo', async ({ page }) => {
+// Dueño, 2026-10-01: una dirección sin pin no es un callejón: se ofrece ubicarla en el mapa ahí
+// mismo. Lo que NO cambia: sin pin no se reparte (el envío sale del pin).
+test('sin una dirección con pin no se reparte: la hoja ofrece ubicarla en el mapa', async ({ page }) => {
   const calls = await gotoApp(page, {
     login: { customer: ANA, isAdmin: false, token: 'tok-ana' },
     'addresses-list': { addresses: [{ ...DIRECCION, lat: null, lon: null }] },
     'get-group-order': ABIERTO,
   });
   await page.goto(APP_FILE + '?group=ABC123');
-  await page.waitForSelector('text=PEDIDO GRUPAL');
-  await page.getByRole('button', { name: /cerrar y pagar/i }).first().click();
-  await expect(page.getByText(/tócala para ubicarla en el mapa/)).toBeVisible();
-  await expect(page.getByRole('button', { name: /Elegir en el mapa/i })).toBeVisible();
-  await expect(page.getByRole('button', { name: /repartir y cobrar/i })).toHaveCount(0);
-  expect(calls.some((c) => c.action === 'split-group-order')).toBe(false);
+  await page.locator('[data-accion="cerrar-y-pagar"]').click();
+  await expect(page.locator('[data-accion="reparto-ubicar"]')).toBeVisible();
+  await expect(page.locator('[data-accion="reparto-cobrar"]')).toBeDisabled();
+  expect(calls.some((c) => c.action === 'split-group-order' || c.action === 'group-split-preview')).toBe(false);
 });
 
 // «QUIÉNES COMEN» salía en blanco cuando el grupo no cargaba (dueño, 2026-10-01). Silencioso: la

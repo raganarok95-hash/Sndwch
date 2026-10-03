@@ -292,6 +292,8 @@ export type ParteDelGrupo = {
   envio: number;
   total: number;
   esOrganizador: boolean;
+  /** Lo que el sándwich gratis del organizador le quitó a SU parte (0 si no aplica). */
+  gratis: number;
 };
 
 // El reparto, puro para poder probarlo. El envío se parte en céntimos exactos: cada uno paga
@@ -316,6 +318,7 @@ export function repartirGrupo(
     const esOrganizador = i === orgIdx;
     const { expectedTotal, sanitizedItems } = deriveCart(p.items, null, null, false);
     let comida = expectedTotal;
+    const lleno = expectedTotal;
     // deriveCart no sirve para el incentivo acá: exige ORGANIZER_FREE_MIN_SANDWICHES en el
     // MISMO carrito, y la parte del organizador casi nunca los tiene (el grupo sí). Se quita
     // una unidad del 15CM más barato que él pidió y el resto se tasa aparte, así esa unidad
@@ -341,8 +344,39 @@ export function repartirGrupo(
       envio: envioC / 100,
       total: Math.round(comida * 100 + envioC) / 100,
       esOrganizador,
+      gratis: Math.round((lleno - comida) * 100) / 100,
     };
   });
+}
+
+// La mesa (maqueta aprobada 2026-10-03, aprobadas/grupo-la-mesa.png): antes de cobrar,
+// quien organiza ve cuánto le va a llegar a cada uno. Se calcula con `repartirGrupo`, la MISMA
+// función que cobra en `actSplitGroupOrder`: si la pantalla hiciera su propia cuenta, el día
+// que cambie una regla mostraría un monto y cobraría otro. Solo lee; no cambia el grupo.
+export async function actGroupSplitPreview(b: Entrada<"group-split-preview">) {
+  const s = await requireSession(b.token);
+  const code = String(b.code || "").trim().toUpperCase();
+  const g = await fetchGroupOrder(code);
+  if (g.organizer_phone !== s.phone) throw new ApiError("Solo quien organizó el pedido puede verlo.", 403);
+  const lat = Number(b.lat), lon = Number(b.lon);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) throw new ApiError("Marca en el mapa dónde lo dejamos.");
+  const { fee, km } = resolveDeliveryFee(lat, lon, "");
+  const rows = await sbGet("group_order_items", `group_order_id=eq.${g.id}&order=created_at.asc`);
+  if (!rows.length) return { success: true, fee, km, partes: [] };
+  await loadCatalogPrices();
+  const porNombre = new Map<string, any[]>();
+  for (const r of rows) {
+    const k = String(r.contributor_name || "Alguien");
+    if (!porNombre.has(k)) porNombre.set(k, []);
+    porNombre.get(k)!.push(r.item);
+  }
+  const personas = [...porNombre.entries()].map(([name, items]) => ({ name, items }));
+  const sandwiches = rows.reduce((n: number, r: any) => n + (r.item && r.item.type !== "side" ? Number(r.item.qty) || 0 : 0), 0);
+  const partes = repartirGrupo(personas, fee, g.organizer_name, sandwiches >= ORGANIZER_FREE_MIN_SANDWICHES);
+  return {
+    success: true, fee, km,
+    partes: partes.map((p) => ({ name: p.name, food: p.food, envio: p.envio, total: p.total, gratis: p.gratis, esOrganizador: p.esOrganizador })),
+  };
 }
 
 function refDeParte(code: string, i: number): string {
