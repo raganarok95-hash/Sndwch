@@ -450,3 +450,10 @@ anótalo acá.
   esos ~4 minutos extra en CADA commit, incluso commits triviales — si en el futuro esto
   resulta más molesto que útil, el hook se quita editando/borrando la sección `hooks` de
   `.claude/settings.json`, no hace falta tocar nada más.
+
+## Fuentes de Google al renderizar maquetas (2026-10-03)
+
+Chromium del contenedor no carga `fonts.googleapis.com` (sale letra de respaldo sin error), pero
+`curl` sí llega. Para renderizar una lámina: bajar el CSS con un user-agent de Chrome, bajar cada
+`.woff2`, reescribir las URL a `file://` e inyectar ese CSS con `page.addStyleTag` antes de la
+captura; comprobar con `document.fonts.check('40px Anton')`.

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Confirmar entrega · tres opciones</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Propuesta 2026-10-03. Quien ve esta pantalla es el motorizado (un tercero, no el
+   cliente): abre el link en la puerta, con el casco y una mano ocupada, muchas veces al sol.
+   La pantalla se confirma SOLA al abrirse; no lleva botones ni la burbuja de WhatsApp. */
+*{box-sizing:border-box;margin:0}
+body{background:#e8e6e1;font-family:Archivo,system-ui,sans-serif;padding:24px;color:#1b1b18}
+h1.lam{font:800 22px/1.2 Archivo;margin-bottom:4px}
+p.lam{font-size:13px;color:#45463f;max-width:900px;line-height:1.45;margin-bottom:18px}
+.fila{display:flex;gap:28px;align-items:flex-start}
+.col{width:360px;flex:none}
+.tit{font-weight:800;font-size:18px;margin-bottom:4px}
+.sub{font-size:13px;color:#45463f;line-height:1.4;min-height:72px;margin-bottom:10px}
+.tel{width:360px;height:780px;border-radius:22px;overflow:hidden;border:6px solid #111;position:relative;background:#111}
+.tel>img{width:100%;display:block}
+.nota{margin-top:10px;font-size:13px;line-height:1.45;color:#2b2c27}
+.reco{outline:3px solid #CBA258;outline-offset:6px;border-radius:24px}
+.par{display:flex;gap:10px;margin-top:10px}
+.mini{width:175px;height:250px;border-radius:14px;overflow:hidden;border:4px solid #111;flex:none}
+.mono{font-family:'IBM Plex Mono',monospace}
+/* La marca: dos barras idénticas, izquierda dorada, derecha celeste (CLAUDE.md §10) */
+.wm{display:inline-flex;gap:.16em;height:.88em;vertical-align:-.06em}
+.wm i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
+.wm i:first-child{background:#CBA258}.wm i:last-child{background:#8CC8EC}
+/* A · el sello, blanco y tinta */
+.a{background:#FAFAF7;color:#141412;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px;text-align:center}
+.a .sello{border:5px solid #141412;padding:18px 22px 14px;transform:rotate(-4deg)}
+.a .sello b{font:400 56px/1 Anton;letter-spacing:.02em;display:block}
+.a .sello span{font:700 13px/1 'IBM Plex Mono';letter-spacing:.2em}
+.a .ref{font:700 22px/1.2 'IBM Plex Mono';margin-top:34px}
+.a .hora{font:400 15px/1.4 Archivo;color:#45463f;margin-top:6px}
+.a .listo{font:800 18px/1.3 Archivo;margin-top:28px}
+.a .marca{position:absolute;bottom:26px;font:800 13px Archivo;letter-spacing:.05em}
+/* B · la marca a pantalla completa */
+.b{height:100%;display:flex;color:#141412;position:relative}
+.b .l{flex:1;background:#CBA258}.b .r{flex:1;background:#8CC8EC}
+.b .t{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:24px}
+.b .t .corte{font:400 160px/0.8 Anton;letter-spacing:-.02em}
+.b .t b{font:400 56px/0.95 Anton;text-transform:uppercase;margin-top:18px}
+.b .t .ref{font:700 15px 'IBM Plex Mono';margin-top:18px;background:#141412;color:#FAFAF7;padding:8px 12px;border-radius:4px}
+.b .t .listo{font:700 15px/1.4 Archivo;margin-top:14px}
+/* C · el comprobante del motorizado */
+.c{background:#17130E;color:#F4ECDD;height:100%;display:flex;flex-direction:column;padding:22px 20px}
+.c .top{font:800 13px Archivo;letter-spacing:.05em}
+.c .chk{width:72px;height:72px;border-radius:999px;background:#2F8A4A;display:flex;align-items:center;justify-content:center;margin-top:60px}
+.c .chk svg{width:38px;height:38px}
+.c h2{font:400 56px/0.95 Anton;text-transform:uppercase;margin-top:20px}
+.c .tk{margin-top:26px;border-top:1px dashed rgba(244,236,221,.35)}
+.c .ln{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px dashed rgba(244,236,221,.35);font:400 13px 'IBM Plex Mono'}
+.c .ln span{color:#B9AE9A;letter-spacing:.1em;font-size:11px}
+.c .ln b{font:700 15px 'IBM Plex Mono'}
+.c .listo{margin-top:auto;font:700 15px/1.4 Archivo;color:#E7D3AE}
+/* estados chicos */
+.m{height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:14px}
+.m b{font:400 28px/1 Anton;text-transform:uppercase}
+.m span{font:400 11px/1.4 Archivo;margin-top:8px}
+.m em{font-style:normal;font:700 9px 'IBM Plex Mono';letter-spacing:.15em;margin-top:10px;border:2px solid currentColor;padding:6px 8px}
+</style></head><body>
+<h1 class="lam">Confirmar la entrega (link del motorizado) · hoy y tres opciones</h1>
+<p class="lam">El motorizado de terceros toca el link al dejar el pedido y la entrega se cierra sola, sin botones. La pantalla tiene un solo trabajo: que se lea de lejos y al sol que <b>quedó cerrado y ya puede irse</b>. Debajo de cada opción van sus otros dos estados: «ya estaba confirmado» y «no se pudo».</p>
+<div class="fila">
+
+<div class="col"><div class="tit">Hoy</div>
+<div class="sub">Un emoji ✅, texto chico y gris sobre oscuro, y la burbuja de WhatsApp para clientes, que al motorizado no le sirve.</div>
+<div class="tel"><img src="hoy/entrega-hoy.png" alt="Confirmar entrega hoy"></div>
+<div class="nota">Al sol, el texto gris sobre fondo oscuro casi no se lee. El emoji se ve distinto en cada celular.</div></div>
+
+<div class="col reco"><div class="tit">A · El sello ★</div>
+<div class="sub">Blanco y tinta, como los diálogos aprobados. Un sello grande «ENTREGADO», el número de pedido y la hora. Es lo más legible al sol que hay.</div>
+<div class="tel"><div class="a">
+ <div class="sello"><b>ENTREGADO</b><span>SND//WCH</span></div>
+ <div class="ref">#1042</div>
+ <div class="hora">Cerrado a las 1:47 p. m.</div>
+ <div class="listo">Listo, ya puedes irte.</div>
+ <div class="marca">SND<span class="wm"><i></i><i></i></span>WCH</div>
+</div></div>
+<div class="par">
+ <div class="mini"><div class="m" style="background:#FAFAF7"><b>Ya estaba<br>cerrado</b><span>Alguien lo cerró antes. No hace falta nada más.</span></div></div>
+ <div class="mini"><div class="m" style="background:#141412;color:#FAFAF7"><b>No se<br>cerró</b><span>Este link ya se usó o no es válido.</span><em>AVISA EN EL GRUPO DE WHATSAPP</em></div></div>
+</div>
+<div class="nota"><b>Fuerte:</b> negro sobre blanco es lo que mejor se lee al sol, y el sello se distingue sin leerlo. El error va en negro para que no se confunda con el éxito. <b>Débil:</b> es la más sobria; casi no tiene marca.</div></div>
+
+<div class="col"><div class="tit">B · El corte del pan</div>
+<div class="sub">La pantalla entera partida en dorado y celeste, con la «//» gigante en medio. Se reconoce desde lejos, sin leer nada.</div>
+<div class="tel"><div class="b"><div class="l"></div><div class="r"></div>
+ <div class="t"><div class="corte">//</div><b>Entregado</b><div class="ref">#1042 · 1:47 p. m.</div><div class="listo">Listo, ya puedes irte.</div></div>
+</div></div>
+<div class="par">
+ <div class="mini"><div class="m" style="background:linear-gradient(90deg,#CBA258 50%,#8CC8EC 50%)"><b>Ya estaba<br>cerrado</b><span>No hace falta nada más.</span></div></div>
+ <div class="mini"><div class="m" style="background:#141412;color:#FAFAF7"><b>No se<br>cerró</b><span>Este link ya se usó o no es válido.</span><em>AVISA EN EL GRUPO DE WHATSAPP</em></div></div>
+</div>
+<div class="nota"><b>Fuerte:</b> es la que más marca tiene. En el grupo de 50 motorizados, todos aprenden que «dorado y celeste» quiere decir «listo». <b>Débil:</b> la «//» es el corte del pan, no un visto bueno. Usarla como «✓» le cambia el significado a la marca.</div></div>
+
+<div class="col"><div class="tit">C · El comprobante</div>
+<div class="sub">Oscuro, con un visto propio (no emoji) y un mini ticket: pedido, hora y zona. Sirve si el motorizado quiere sacarle captura como prueba de que entregó.</div>
+<div class="tel"><div class="c">
+ <div class="top">SND<span class="wm"><i></i><i></i></span>WCH · ENTREGAS</div>
+ <div class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+ <h2>Entrega<br>cerrada</h2>
+ <div class="tk">
+  <div class="ln"><span>PEDIDO</span><b>#1042</b></div>
+  <div class="ln"><span>HORA</span><b>1:47 p. m.</b></div>
+  <div class="ln"><span>ZONA</span><b>Trujillo centro</b></div>
+ </div>
+ <div class="listo">Listo, ya puedes irte. Si te piden prueba, esta pantalla lo es.</div>
+</div></div>
+<div class="par">
+ <div class="mini"><div class="m" style="background:#17130E;color:#F4ECDD"><b>Ya estaba<br>cerrado</b><span>No hace falta nada más.</span></div></div>
+ <div class="mini"><div class="m" style="background:#7A2418;color:#FAFAF7"><b>No se<br>cerró</b><span>Este link ya se usó o no es válido.</span><em>AVISA EN EL GRUPO DE WHATSAPP</em></div></div>
+</div>
+<div class="nota"><b>Fuerte:</b> le da al motorizado una prueba de entrega que puede guardar. <b>Débil:</b> sobre fondo oscuro se lee peor al sol que la A.</div></div>
+
+</div></body></html>
