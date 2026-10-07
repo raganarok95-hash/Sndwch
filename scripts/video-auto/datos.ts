@@ -27,6 +27,8 @@ const ingredientes = [
   ...de(CARTA.quesos, s.queso ? [s.queso] : []).map((q: any) => q.nombre),
   ...de(CARTA.salsas, s.salsas).map((x: any) => x.nombre),
 ].filter(Boolean);
-// La primera frase del pitch, cortada en la coma o los dos puntos: el gancho del video.
-const gancho = String(s.pitch || "").split(/[.:]/)[0].trim();
+// El gancho: la primera frase del pitch; si es larga, hasta la primera coma. Un gancho de seis
+// líneas tapa la foto y nadie lo lee en los 3 segundos que dura (Meatball, 2026-10-07).
+const frase = String(s.pitch || "").split(/[.:]/)[0].trim();
+const gancho = frase.length > 48 ? frase.split(",")[0].trim() : frase;
 console.log(JSON.stringify({ id: s.id, nombre: s.nombre, p15: s.p15, p30: s.p30, ingredientes, gancho, foto: (s.foto || "").replace(/\.jpg$/, "_v.webp") }));
