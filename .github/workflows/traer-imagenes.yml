@@ -1,0 +1,42 @@
+name: Traer imágenes generadas
+
+# Las sesiones de Claude no llegan a media.canva.com (proxy). GitHub sí: este workflow baja las
+# imágenes que se generan en Canva (con SANDO y WICHO de referencia) y las deja en la rama
+# `imagenes-generadas`, de donde la sesión las lee con git. Solo baja archivos; no toca main.
+on:
+  workflow_dispatch:
+    inputs:
+      imagenes:
+        description: 'JSON: [{"nombre":"x.png","url":"https://..."}]'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  traer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Bajar
+        env:
+          IMAGENES: ${{ github.event.inputs.imagenes }}
+        run: |
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          if git ls-remote --exit-code origin imagenes-generadas >/dev/null; then
+            git fetch -q origin imagenes-generadas && git checkout -q -B imagenes-generadas origin/imagenes-generadas
+          else
+            git checkout -q --orphan imagenes-generadas && git rm -rfq . && rm -rf ./* .github || true
+          fi
+          mkdir -p generadas
+          echo "$IMAGENES" | jq -c '.[]' | while read -r x; do
+            n=$(echo "$x" | jq -r .nombre | tr -cd 'A-Za-z0-9._-'); u=$(echo "$x" | jq -r .url)
+            code=$(curl -sS -L -o "generadas/$n" -w '%{http_code}' "$u")
+            echo "$n → HTTP $code ($(stat -c%s "generadas/$n" 2>/dev/null || echo 0) bytes) $(file -b "generadas/$n" | cut -c1-60)"
+            [ "$code" = 200 ] || rm -f "generadas/$n"
+          done
+          git add generadas && git commit -qm "Imágenes generadas ($(date -u +%FT%TZ))" || echo "nada nuevo"
+          git push -q origin imagenes-generadas
