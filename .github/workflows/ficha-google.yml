@@ -18,6 +18,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
       - env:
           CONSULTAS: ${{ github.event.inputs.consultas }}
         run: node scripts/ficha-google.mjs
