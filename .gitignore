@@ -33,3 +33,4 @@ __pycache__/
 
 # Binarios descargados para las pruebas de punta a punta (PostgREST)
 .cache/
+recorrido/
