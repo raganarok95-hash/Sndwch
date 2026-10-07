@@ -485,3 +485,10 @@ Dueño: «Sí tienes acceso a los secrets y a la cuenta de anuncios de meta. Ya 
   «no hay acceso a Meta» ni se le pide que lo revise él.
 - `ad_spend` (gasto de pauta que lee el freno de CAC) está vacía porque no hubo gasto: 0 campañas
   con gasto en los 30 días previos al 2026-10-07.
+
+## Video por código (2026-10-07)
+
+`scripts/video-auto/` (datos.ts con Deno desde la carta → plantilla.html → render.mjs cuadro por
+cuadro con Playwright → MP4 H.264). En el contenedor no hay ffmpeg: `pip install --target
+<scratchpad> imageio-ffmpeg` trae un binario estático (`FFMPEG=<ruta>`). En GitHub sirve el de
+`apt` o el mismo paquete. Fuentes: inyectar el CSS local (`FUENTES_CSS`), ver «Fuentes de Google».
