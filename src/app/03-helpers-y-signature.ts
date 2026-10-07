@@ -281,6 +281,9 @@ function startOrderWithSig(id){
   mode='sig';
   sigId=id;
   go('o_sig');
+  // Meta: «vio el producto». Sin esto, el anuncio solo aprende de quien ya compró.
+  var s=SIGS.find(function(x){return mismoId(x.id,id);});
+  if(s&&!s.secret)fbTrack('ViewContent',{currency:'PEN',value:s.p15,content_ids:[s.id],content_type:'product',content_name:s.n});
 }
 // editingItemQty: cuando se está editando una línea ya en el carrito (ver
 // editCartItem), guarda la cantidad original para que currentBuiltItem() la respete al

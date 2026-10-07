@@ -15,7 +15,19 @@ const b = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_PATH ? { executa
 const p = await b.newPage({ viewport: { width: 1080, height: 1920 } });
 await p.addInitScript((d) => { window.DATOS = d; }, datos);
 await p.goto('file://' + resolve('scripts/video-auto/plantilla.html'));
+// Las sesiones de Claude no llegan a Google Fonts (FUENTES_CSS trae las fuentes incrustadas);
+// GitHub sí llega. Se piden por nombre antes del primer cuadro: sin eso, `fonts.ready` resuelve
+// antes de que el texto pida la fuente y el video sale con la de respaldo, sin ningún error.
 if (process.env.FUENTES_CSS) await p.addStyleTag({ content: readFileSync(process.env.FUENTES_CSS, 'utf8') });
+else await p.addStyleTag({ url: 'https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@600&display=block' });
+const faltan = await p.evaluate(async () => {
+  const pedidas = ['400 120px Anton', '800 120px Archivo', '600 34px "IBM Plex Mono"'];
+  // `load` devuelve las caras que encontró: vacío = esa fuente no existe en la página
+  // (`check` daría true igual, por eso no se usa).
+  const caras = await Promise.all(pedidas.map((f) => document.fonts.load(f)));
+  return pedidas.filter((_, i) => caras[i].length === 0);
+});
+if (faltan.length) throw new Error('No cargaron las fuentes: ' + faltan.join(', '));
 await p.evaluate(async () => { await document.fonts.ready; await Promise.all([...document.images].map((i) => i.decode().catch(() => 0))); });
 for (let i = 0; i < FPS * DURA; i++) {
   await p.evaluate((t) => window.render(t), i / FPS);

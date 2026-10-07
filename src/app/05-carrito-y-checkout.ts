@@ -491,6 +491,9 @@ function irAPagar(){
   // Antes de pedir dirección o datos: a quien solo lleva bebidas no se le hace llenar todo para
   // decirle al final que no puede pagar.
   if(faltaSandwich()){var e0=document.getElementById('o-err');if(e0)e0.textContent=FALTA_SANDWICH;else showToast(FALTA_SANDWICH,'error');return;}
+  // Meta: «empezó a pagar», una vez por carrito (volver atrás y avanzar no lo infla).
+  var firma=cart.length+':'+cartFinalTotal();
+  if((window as any)._sndCheckoutVisto!==firma){(window as any)._sndCheckoutVisto=firma;fbTrack('InitiateCheckout',{currency:'PEN',value:money(cartFinalTotal()),num_items:cart.reduce(function(n,it){return n+(it.qty||1);},0)});}
   if(!direccionLista()){go('o_dir');return;}
   if(!recibeListo()){hoja30='recibe';hojaErr='';render();return;}
   var err=problemaDelPedido();

@@ -1,0 +1,40 @@
+name: Video del día
+
+# El Productor del equipo de marketing (docs/marketing/EQUIPO.md): cada mañana arma un Reel de un
+# Signature con la carta y los precios REALES de producción, lo sube a marketing-images y lo deja
+# en marketing_calendar como BORRADOR pendiente de revisión (scripts/video-auto/diario.mjs dice
+# por qué no 'scheduled'). Costo: S/0 (minutos de GitHub). Se puede correr a mano.
+on:
+  schedule:
+    - cron: '47 10 * * *'   # 5:47 a.m. en Lima: listo antes de que el Revisor pase
+  workflow_dispatch:
+    inputs:
+      sin_subir:
+        description: 'Solo armar el video (no subir ni anotar)'
+        type: boolean
+        default: false
+
+jobs:
+  producir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: sudo apt-get install -y ffmpeg >/dev/null
+      - name: Armar, subir y anotar el video
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: node scripts/video-auto/diario.mjs ${{ github.event.inputs.sin_subir == 'true' && '--sin-subir' || '' }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: video-del-dia
+          path: video-del-dia.mp4
+          if-no-files-found: ignore
+          retention-days: 7
