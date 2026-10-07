@@ -503,3 +503,11 @@ cuadro con Playwright → MP4 H.264). En el contenedor no hay ffmpeg: `pip insta
   (ideas, guiones, Flow) la crea el dueño desde claude.ai → Rutinas, eligiendo repo y conectores.
 - Nombres de los secrets de las edge functions: `GET api.supabase.com/v1/projects/<ref>/secrets`
   con el token de despliegue (lo hace `faltanParaPublicar()` en `scripts/video-auto/produccion.mjs`).
+
+## Instagram desde acá (2026-10-07)
+- `instagram.com` está bloqueado por el proxy de la sesión (403) y por WebFetch (EGRESS_BLOCKED).
+- Desde GitHub (`mirar-instagram.yml`) el perfil sin sesión muestra solo el login y la API
+  pública `web_profile_info` responde **429**. Ver el perfil exige el token de la página (P33,
+  Graph API) o capturas del dueño.
+- El workflow guarda lo que encuentra en la rama `instagram-captura` (se reescribe en cada
+  corrida, con push forzado a esa rama y solo a esa).
