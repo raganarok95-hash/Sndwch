@@ -84,6 +84,9 @@ relatos están en `docs/MANUAL_DETALLADO.md`** (copia íntegra del archivo anter
 - **Toda barra fija lleva la clase `sw-barra`** (la mide `medirBarraFija()`).
 - **`BYO_STEP_LABELS` es el orden real de los pasos del armador** (`tests/armador-riel.spec.ts`).
 - **Un estado vacío del cliente se pinta con `VACIO()`.**
+- **Meta SÍ está conectado** (dueño, 2026-10-07): cuenta de anuncios 221839797 por el MCP
+  `Meta_Ads` y los secrets en Supabase. Si el filtro de permisos bloquea una llamada, NO es falta de
+  acceso: se reintenta con la autorización del dueño. Nunca reportar «no tengo acceso a Meta».
 - **Un secret no se da por ausente mirando el código**: llega del servidor en `get-store-hours`.
   El de Google SÍ está puesto. Verificar contra Supabase, nunca por inferencia.
 - **Un costo es una ficha con unidad** en `modelo/insumos.py`, repartido solo por

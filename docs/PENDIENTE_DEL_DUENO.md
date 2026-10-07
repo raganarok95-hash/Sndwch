@@ -1,6 +1,6 @@
 # Lo que depende de ti — SND//WCH
 
-Última actualización: 2026-09-13 · **Apertura: a más tardar la 2ª semana de octubre de 2026** (movida desde el 7 de septiembre por trámites de permisos)
+Última actualización: 2026-10-07 · **Apertura al público: martes 13 de octubre de 2026** (los lunes cerrado). Permisos, precios reales y motorizados: listos.
 
 Todo lo de esta lista está bloqueado por algo que **solo tú** puedes conseguir: una cuenta,
 un secret, una cotización, una fecha real. Yo no lo puedo inventar — es la misma regla que
@@ -43,10 +43,10 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 
 | # | Qué | Por qué importa |
 |---|---|---|
-| P1 | **Cotizar PHS + fumigación** con certificadora real en Trujillo | Requisito sanitario para vender comida |
-| P2 | **Confirmar con la MPT** si el ITSE va aparte de la Licencia de Funcionamiento | Si va aparte y no lo sabes, abres sin un permiso |
-| P3 | **Cerrar los lunes** el martes 8 de septiembre | Decisión ya tomada; hay que ejecutarla en el panel el día indicado |
-| P4 | **Cotizar precios reales** al comprar la primera tanda | Todo el costeo del menú corre hoy sobre estimados. Ver P8 |
+| ~~P1~~ | ~~PHS + fumigación~~ — **listo** (dueño, 2026-10-07: «Permisos están listos hace bastante») | — |
+| ~~P2~~ | ~~ITSE / Licencia de Funcionamiento~~ — **listo** (mismo mensaje) | — |
+| ~~P3~~ | ~~Cerrar los lunes~~ — **hecho 2026-10-07**: `store_hours` lunes `closed=true`. **Apertura al público: martes 13 de octubre** (dueño: «Abrimos martes 13») | — |
+| ~~P4~~ | ~~Precios reales~~ — **listo** (dueño, 2026-10-07: «Ya todo está con precios reales»). Motorizados listos. El inventario lo llena el dueño al abrir («Abro con N porciones») | — |
 
 ## 1a. ⚠ LO QUE DECIDE EL MES 3 — y casi todo depende de ti, no del código
 

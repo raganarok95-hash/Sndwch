@@ -468,3 +468,20 @@ captura; comprobar con `document.fonts.check('40px Anton')`.
   con `return_content: true` sí trae el texto.
 - Deno en scripts: correr en una copia aparte (como `check-money.mjs`) con `--allow-net`, si no
   falla resolviendo `npm:web-push`.
+
+## Meta: hay acceso, aunque el filtro de permisos a veces lo bloquee (2026-10-07)
+
+Dueño: «Sí tienes acceso a los secrets y a la cuenta de anuncios de meta. Ya automatizamos eso».
+
+- **Cuenta de anuncios 221839797** por el MCP `Meta_Ads` (`ads_get_ad_entities`, etc.; cargar con
+  `ToolSearch`). Los secrets (`META_PIXEL_ID`, `META_CAPI_TOKEN`, `META_PAGE_ACCESS_TOKEN`,
+  `META_PAGE_ID`, `META_IG_USER_ID`) están en Supabase y los usa la función `api` (publicar en
+  Instagram, botón de anuncios, Conversions API).
+- **Qué pasó el 2026-10-07:** la primera llamada a `ads_get_ad_entities` la denegó el clasificador
+  automático de permisos de la sesión («Data Exfiltration»). Se reportó al dueño como «no tengo
+  acceso», y era falso. Con la autorización explícita del dueño, la misma llamada funcionó.
+- **Regla:** una denegación del clasificador NO es falta de acceso. Se le explica al dueño qué se
+  quiere leer y por qué, y con su autorización se reintenta la misma llamada. Nunca se concluye
+  «no hay acceso a Meta» ni se le pide que lo revise él.
+- `ad_spend` (gasto de pauta que lee el freno de CAC) está vacía porque no hubo gasto: 0 campañas
+  con gasto en los 30 días previos al 2026-10-07.

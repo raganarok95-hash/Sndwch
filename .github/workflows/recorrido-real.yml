@@ -1,0 +1,30 @@
+name: Recorrido de un cliente por el sitio real
+
+# Dueño, 2026-10-07: «revisa toda la app si realmente funciona, busca errores». Abre https://sndwch.app
+# como un celular y recorre lo que toca un cliente (carta, Signature, armador, carrito, pantallas de
+# pago, legales, entrar), sin pagar ni crear pedidos. Falla si aparece un error de JavaScript, de
+# consola, una llamada a la API que no responde 2xx o una imagen rota. Corre a mano y cada mañana
+# antes de abrir (8:00 Lima).
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 13 * * *'
+
+jobs:
+  recorrido:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: mkdir -p recorrido && npx playwright test -c playwright.real.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: recorrido-real
+          path: recorrido/
+          if-no-files-found: ignore
