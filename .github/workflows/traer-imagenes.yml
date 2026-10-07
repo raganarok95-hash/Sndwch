@@ -1,7 +1,7 @@
 name: Traer imágenes generadas
 
 # Las sesiones de Claude no llegan a media.canva.com (proxy). GitHub sí: este workflow baja las
-# imágenes que se generan en Canva (con SANDO y WICHO de referencia) y las deja en la rama
+# imágenes que se generan fuera (Canva, Pollinations, etc., con SANDO y WICHO de referencia) y las deja en la rama
 # `imagenes-generadas`, de donde la sesión las lee con git. Solo baja archivos; no toca main.
 on:
   workflow_dispatch:
@@ -16,7 +16,7 @@ permissions:
 jobs:
   traer:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,7 +34,7 @@ jobs:
           mkdir -p generadas
           echo "$IMAGENES" | jq -c '.[]' | while read -r x; do
             n=$(echo "$x" | jq -r .nombre | tr -cd 'A-Za-z0-9._-'); u=$(echo "$x" | jq -r .url)
-            code=$(curl -sS -L -o "generadas/$n" -w '%{http_code}' "$u")
+            code=$(curl -sS -L --max-time 240 -o "generadas/$n" -w '%{http_code}' "$u")
             echo "$n → HTTP $code ($(stat -c%s "generadas/$n" 2>/dev/null || echo 0) bytes) $(file -b "generadas/$n" | cut -c1-60)"
             [ "$code" = 200 ] || rm -f "generadas/$n"
           done
