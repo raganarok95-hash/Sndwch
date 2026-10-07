@@ -78,9 +78,11 @@ test('el router usa el registro para pintar una pantalla del panel', async ({ pa
     w.token = 'tok';
     w.sndScreen = 'admin_home';
     w.render();
-    return document.getElementById('app')!.innerText || '';
+    // Por función, no por texto (2026-10-07): la portada de Administrar es la que lleva el
+    // botón que abre «Te toca». Antes buscaba la palabra «Panel», que se fue con el rediseño.
+    return !!document.querySelector('#app [data-accion="abrir-cocina"]');
   });
-  expect(pintado).toMatch(/Panel/);
+  expect(pintado, 'el router no pintó la portada del panel desde el registro').toBe(true);
 });
 
 // Éste es el caso que hace que el mecanismo sea seguro: sin el panel cargado —o con una

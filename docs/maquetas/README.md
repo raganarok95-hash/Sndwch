@@ -58,6 +58,8 @@ vive en el chat o en `/tmp`, no existe.
 | Menú secreto · estructura | `menu-secreto-estructura.png` | `n2.html` #1 | estructura «perfecta» |
 | Menú secreto · fondo | `menu-secreto-fondo.png` | `t2.html` #3 | «Secret 3 me gusta» |
 | Tu cuenta | `tu-cuenta.png` | `l1.html` #3 | «Pantalla de tu cuenta, se aprueba» |
+| Panel · Te toca (modo trabajo) | `panel-te-toca.png` | captura de la app (`../propuestas/panel-productivo.html` A + C) | «una mezcla … Hazlo, decide y avanza» (2026-10-07): lista de lo que te toca, avisos del negocio, motorizado agrupado, en camino abajo. Decidido por delegación del dueño; detalle en `docs/PANEL_NUEVO.md` §8 |
+| Panel · Administrar | `panel-administrar.png` | captura de la app (`../propuestas/panel-productivo.html` §4) | mismo día: buscador, «Lo que más usas» y 21 entradas con pestañas adentro (de 36 botones) |
 | Estado vacío (el patrón) | `estado-vacio.png` | `l1.html` #4 | «aprobada, pero sin logo» |
 | Detalle de un pedido | `detalle-de-un-pedido.png` | `u2.html` #1 | «me agradan, aprobadas» |
 | Tu pedido fijo | `tu-pedido-fijo.png` | `u2.html` #2 | «me agradan, aprobadas» |

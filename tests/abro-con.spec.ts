@@ -20,14 +20,14 @@ test('las porciones contadas al abrir llegan al servidor, una por proteína, y l
   await page.evaluate(() => { try { localStorage.removeItem('sw_abro_con'); } catch (e) {} (window as any).loadAdmin(); });
   await page.waitForFunction(() => typeof (window as any).abrirCocina === 'function');
   const prots = await page.evaluate(() => { const w = window as any; w.invQty = {}; w.abrirCocina(); return w.proteinasParaContar().map((p: any) => p.id); });
-  await page.locator('[data-accion="abro-con"]').click();
+  // Desde el 2026-10-07 la hoja ya está abierta en «Te toca»: abrir el día ES contar.
   await page.locator(`#abro-${prots[0]}`).fill('12');
   await page.locator(`#abro-${prots[1]}`).fill('0');
   await page.locator('[data-accion="abro-guardar"]').click();
   await expect.poll(() => stock.length).toBe(2);
   expect(stock.map((b) => [b.code, b.qty])).toEqual([[prots[0], 12], [prots[1], 0]]);
   // Hecho por hoy: el aviso ya no aparece.
-  await expect(page.locator('[data-accion="abro-con"]')).toHaveCount(0);
+  await expect(page.locator('[data-accion="abro-guardar"]')).toHaveCount(0);
   expect(await page.evaluate((id) => (window as any).quedanHoy(id), prots[0])).toBeNull();
   expect(await page.evaluate((id) => (window as any).invStock[id], prots[1])).toBe(false);
 });

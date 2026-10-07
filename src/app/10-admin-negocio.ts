@@ -2642,6 +2642,7 @@ function exportComplianceCsv(){
 // aparte de escribir, y ninguna herramienta lo comprueba por ti.
 Object.assign(ADMIN_SCREENS, {
   admin_home: sAdminHome,
+  admin_celular: sAdminCelular,
   admin_health: sAdminHealth,
   admin_batch: sAdminBatchPlan,
   admin_video: sAdminVideo,
@@ -2680,6 +2681,12 @@ Object.assign(ADMIN_SCREENS, {
   admin_focus: sAdminFocus,
   admin_cocina: sAdminCocina,
   admin_meta_ads: sAdminMetaAds,
+});
+// Cada pantalla del panel anota su apertura al pintarse (registrarApertura, 09-*). Se envuelve
+// acá, en el único registro de pantallas, para que una pantalla nueva no pueda olvidarse.
+Object.keys(ADMIN_SCREENS).forEach(function(k){
+  var pintar=ADMIN_SCREENS[k];
+  ADMIN_SCREENS[k]=function(){registrarApertura(k);return pintar();};
 });
 
 // ── FRENO POR TECHO DE CAC ────────────────────────────────────────────────────────────

@@ -301,3 +301,9 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
 - **Versión nueva sola**: la app se actualiza al volver a primer plano o cada 10 min.
 - **Stock del día**: «Abro con N porciones» en el panel; el cliente ve «Quedan N hoy».
 - **Lectura de capturas reales** desde GitHub (`capturas-reales.yml`), sin pedir pagos de prueba.
+- **Panel nuevo (2026-10-07, `docs/PANEL_NUEVO.md` §8)**: «Te toca» (porciones al abrir, avisos
+  del negocio, tocar = empezar, motorizado por la hoja de compartir y agrupado por zona, en camino
+  abajo, cierre del día) y Administrar en una lista de 21 con buscador, fijadas y pestañas.
+- **«Ya me llegó»**: el cliente cierra su pedido en camino (`confirm-my-delivery`); nunca un
+  contra entrega sin cobrar.
+- **Uso del panel medido**: `admin_action_log` con `action='abrir-pantalla'`.

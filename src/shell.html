@@ -489,6 +489,29 @@ body.kb-open #app{padding-bottom:0}
 .coc-tabs{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--sw-bg);border-top:1px solid var(--sw-border);padding-bottom:env(safe-area-inset-bottom)}
 .coc-tabs button{all:unset;cursor:pointer;flex:1;text-align:center;min-height:56px;font-size:13px;font-weight:700;color:var(--sw-text-muted)}
 .coc-tabs button.sel{color:var(--sw-text);box-shadow:inset 0 3px 0 var(--sw-text)}
+.adm-busca{display:block;box-sizing:border-box;width:100%;min-height:48px;margin:6px 0 0;padding:10px 14px;border-radius:10px;border:1px solid var(--sw-border);background:var(--sw-card);color:var(--sw-text);font-size:15px}
+.adm-fij{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.adm-fij button{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:72px;padding:12px;border-radius:10px;background:var(--sw-card);border:1px solid var(--sw-border);color:var(--sw-text)}
+.adm-fij b{font-size:15px;font-weight:800}
+.adm-op{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:10px 12px;border-bottom:1px solid var(--sw-border);color:var(--sw-text)}
+.adm-op span{flex:1;min-width:0}.adm-op b{display:block;font-size:15px;font-weight:700}
+.adm-op s{display:block;text-decoration:none;font-size:13px;color:var(--sw-text-muted);margin-top:2px}
+.adm-op i{font-style:normal;font-size:18px;color:var(--sw-text-muted)}
+.adm-chips{display:flex;gap:6px;padding:8px 12px;overflow-x:auto;border-bottom:1px solid var(--sw-border);background:var(--sw-bg)}
+.adm-chips button{all:unset;cursor:pointer;white-space:nowrap;min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--sw-border);font-family:'Public Sans','Segoe UI',system-ui,sans-serif;font-size:13px;font-weight:700;color:var(--sw-text-muted);display:inline-flex;align-items:center}
+.adm-chips button.sel{background:var(--sw-text);color:var(--sw-bg);border-color:var(--sw-text)}
+.coc-aviso{display:flex;align-items:center;gap:10px;margin:10px 12px 0;padding:10px 12px;border-radius:12px;background:var(--sw-card);border-left:6px solid var(--sw-warn,#ffa500)}
+.coc-aviso.mal{border-left-color:var(--sw-danger,#ff8888)}
+.coc-aviso span{flex:1;min-width:0}.coc-aviso b{display:block;font-size:15px}
+.coc-aviso s{display:block;text-decoration:none;font-size:13px;color:var(--sw-text-muted);margin-top:2px;line-height:1.35}
+.coc-aviso .coc-b{width:auto;flex:none;margin:0;padding:10px 14px}
+.coc-sec{margin:18px 12px 0}
+.coc-sec h3{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--sw-text-muted);margin:0}
+.coc-sec p{font-size:13px;color:var(--sw-text-muted);margin:4px 0 8px;line-height:1.4}
+.coc-fila{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--sw-border)}
+.coc-fila span{flex:1;min-width:0}.coc-fila b{display:block;font-size:15px}
+.coc-fila s{display:block;text-decoration:none;font-size:13px;color:var(--sw-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.coc-fila .coc-b{width:auto;flex:none;margin:0;padding:10px 14px;min-height:44px}
 @media (min-width:900px){.coc-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}.adm{max-width:1100px;margin:0 auto}}
 /* LOS MOMENTOS TENSOS CON UN HERMANO (#24, 2026-10-01): una franja, no una pantalla nueva.
    Fondo propio para que se lea igual sobre kraft, sobre el lado WICHO o sobre la cuenta. */

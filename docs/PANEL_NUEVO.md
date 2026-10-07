@@ -114,7 +114,7 @@ La portada de Administrar es un solo resumen: lo que pide atención hoy (lo que 
   programadas del calendario ya se publicaban solas (cron cada 15 min).
 - Pruebas: `tests/cocina-abierta.spec.ts`, `tests-api/anuncios-boton.test.ts` (defectos inyectados).
 
-## 7 · Pedido nuevo: remodelación TOTAL enfocada en productividad (2026-10-03) — LÁMINA LISTA, ESPERA DECISIÓN
+## 7 · Pedido nuevo: remodelación TOTAL enfocada en productividad (2026-10-03) — CONSTRUIDO (ver §8)
 
 Dueño, 2026-10-03: «el panel admin necesita una remodelación total para enfocarse en
 productividad, lo habíamos hablado». Lo construido en §6 (Cocina abierta + 5 cajones) es el
@@ -150,3 +150,70 @@ dos a la misma zona en un mensaje: 20 → 8. Tres esqueletos: **A** lista de lo 
 **B** tres momentos del día, **C** el pedido que toca + «Tu semana». Administrar 36 → 20 pantallas
 juntando, sin borrar; medir aperturas 4 semanas (hoy `admin_action_log` solo tiene 4 cambios).
 Preguntas abiertas al dueño: A/B/C o mezcla; ¿Entregado automático?; ¿juntar y medir?
+
+## 8 · Lo que decidió el dueño y lo que se construyó (2026-10-07)
+
+Dueño, sobre la lámina: «una mezcla . 2 decide tu lo mejor basado en datos siempre analizalo y
+piensalo bien y 3 sí. Adicional esto, puedes rediseñar el panel, para el modo trabajo y el otro
+pero simplifica totalmente el como se acceden a las opciones cuales son mas útiles y que mas
+necesito agregar o quitar. Hazlo, decide y avanza».
+
+**La mezcla:** A (una lista de lo que te toca) como esqueleto; de B, abrir y cerrar el día entran
+como tareas de esa lista; de C, la receta a pantalla completa al tocar un pedido, ahora con
+«Mandar al motorizado» en la misma receta.
+
+### Modo trabajo: «Te toca» (`sAdminCocina`, 09-admin-operacion)
+- **Abrir el día es contar porciones**: la hoja «¿Con cuántas abres hoy?» está abierta arriba
+  hasta que se guarda o se toca «Hoy no cuento» (antes era un botón que nadie tocaba: `inventory`
+  vacía).
+- **Avisos del negocio intercalados**: lo que `admin-health` marca y no es un pedido (reclamos con
+  plazo, agotados, tandas vencidas, procesos caídos) aparece como tarea con «Ver». Se piden al
+  entrar y cada 5 min. «Qué pide atención» dejó de ser un botón en Administrar.
+- **Tocar un pedido en cola lo empieza** (abre la receta y lo pasa a Armando: 1 toque, eran 2).
+  Uno que espera pago o está programado solo se abre.
+- **Mandar al motorizado** usa la hoja de compartir del celular (el grupo sale primero) y, sin
+  ella, wa.me. Si hay otro pedido Armando a la misma puerta o zona en la misma ventana (la señal
+  «agrupable» que ya calculaba el servidor), sale **un solo mensaje** con los dos, cada uno con su
+  propio COBRAR o «ya pagado». La tarjeta dice a qué hora se avisó.
+- **En camino va abajo, en filas**, sin botón grande. «Link al motorizado» salió (no toca links).
+- **Al cerrar**: con la tienda cerrada, «N pedidos pagados siguen en camino → Cerrarlos» (solo
+  pagados) y «Cuadra la caja de hoy».
+
+### La pregunta 2: ¿«Entregado» se cierra solo? — NO por reloj; lo cierra el cliente
+Datos revisados el 2026-10-07:
+- **No hay ni una entrega real en la base** (los únicos pedidos de 120 días son 4 cancelados de
+  prueba): no hay con qué calibrar «hora prometida + N min».
+- **ENTREGADO mueve plata**: en un contra entrega sin cobrar, marcarlo es lo que registra el cobro
+  (`confirmManualPayment`) y suma los puntos. Un cierre por reloj daría por cobrada plata que
+  nadie contó.
+- **ENTREGADO le avisa al cliente** («¡Pedido entregado!») y abre la calificación y «Algo salió
+  mal». Por reloj, se lo diría a quien todavía espera.
+- **`delivered_at`** alimenta la comparación contra la promesa (weekly-summary): una hora
+  inventada la ensucia.
+
+Decisión: **lo cierra el cliente con «Ya me llegó»** (acción nueva `confirm-my-delivery`, botón en
+su pedido), que escribe la hora REAL. Nunca un contra entrega sin cobrar (lo cierra el dueño con
+«Cobró S/x ✓»; prueba `tests-api/ya-me-llego.test.ts`). Al cerrar la tienda, lo pagado que
+quedó en camino se cierra de un toque (prueba `tests/cocina-abierta.spec.ts`). **Revisar a las 4
+semanas de abrir**: qué % de pedidos cerró el cliente y cuánto tardan; con eso sí se puede decidir
+un cierre por tiempo para los pagados.
+
+Toques por pedido (Yape que se confirmó solo, mirando la receta): **10 → 6** (tocar = receta +
+Armando · mandar al motorizado · grupo · enviar · volver a la app · Salió; Entregado lo hace el
+cliente). Dos a la misma zona: 20 → 8.
+
+### Administrar: una sola lista (`PANEL_OPCIONES`, 09-admin-operacion)
+- **36 botones → 21 entradas** (20 + «Este celular»), sin borrar ninguna pantalla: las que
+  contestan lo mismo se juntaron y adentro se cambia con pestañas (`chipsDelGrupo`, las pinta
+  `H()` en todas las del grupo). Tabla de qué se juntó: lámina `propuestas/panel-productivo.html` §4.
+- **Buscador** arriba (filtra por nombre, descripción y pantallas de adentro) y **«Lo que más
+  usas»**: 4 fijadas que aprenden del uso de ese celular (empiezan en Cierre de caja, Números, La
+  carta, Avísale a tu gente).
+- **El cajón lateral sale de la misma lista** (`adminToolsSections()` la deriva): ya no puede
+  divergir. Sonido, notificaciones y modo claro pasaron a «Este celular»; el botón de tema salió
+  de la cabecera.
+- **Se mide**: cada pantalla del panel que se pinta deja una fila en `admin_action_log`
+  (`action='abrir-pantalla'`, `target`=pantalla; acción `admin-abrir-pantalla`). La Auditoría las
+  filtra. **A las 4 semanas de abrir**:
+  `select target, count(*) from admin_action_log where action='abrir-pantalla' group by 1 order by 2;`
+  — lo que nadie abrió se discute con el dueño.

@@ -899,10 +899,26 @@ export async function actAdminAuditLog(b: Entrada<"admin-audit-log"> & { _ip?: s
   await requireAdmin(b.token);
   const limit = Math.min(AUDIT_LOG_LIMIT, Math.max(1, parseInt(b.limit, 10) || 50));
   const actorPhone = b.actorPhone ? String(b.actorPhone).trim() : null;
+  // Las aperturas de pantalla (USO_PANEL) no son auditoría: sin este filtro, 100 filas de
+  // «abrió Reportes» taparían la única cancelación que importa.
+  const sinUso = `action=neq.${USO_PANEL}`;
   const query = actorPhone
-    ? `actor_phone=eq.${encodeURIComponent(actorPhone)}&order=created_at.desc&limit=${limit}`
-    : `order=created_at.desc&limit=${limit}`;
+    ? `actor_phone=eq.${encodeURIComponent(actorPhone)}&${sinUso}&order=created_at.desc&limit=${limit}`
+    : `${sinUso}&order=created_at.desc&limit=${limit}`;
   return { log: await sbGet("admin_action_log", query) };
+}
+
+// ── QUÉ PANTALLAS DEL PANEL SE USAN (dueño, 2026-10-07: «sí» a juntar y medir) ──────────────
+// Una fila por pantalla abierta. A las 4 semanas de abrir, lo que nadie abrió se discute con
+// el dueño (docs/PANEL_NUEVO.md §8). Se guarda la CLAVE de la entrada del panel, no el texto
+// del botón: renombrar un botón no puede partir la cuenta en dos.
+export const USO_PANEL = "abrir-pantalla";
+export async function actAdminAbrirPantalla(b: Entrada<"admin-abrir-pantalla"> & { _ip?: string }) {
+  const s = await requireAdmin(b.token);
+  const clave = String(b.pantalla || "").trim();
+  if (!/^[a-z_]{2,40}$/.test(clave)) throw new ApiError("Pantalla inválida.", 400);
+  await logAdminAction(s.phone, USO_PANEL, clave);
+  return { success: true };
 }
 
 // Reporte de ingresos/pedidos por rango de fechas libre — el dashboard normal solo cubre
