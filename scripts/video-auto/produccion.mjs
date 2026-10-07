@@ -26,9 +26,10 @@ export async function conectar() {
 }
 
 // Qué secrets de publicación existen en las edge functions (solo NOMBRES; la API no da valores
-// legibles). Sin los tres, el cron auto-publish-calendar no puede publicar nada y fallaría en
-// silencio cada 15 min: el Revisor lo dice en voz alta antes de aprobar.
-export const SECRETOS_PARA_PUBLICAR = ['META_PAGE_ACCESS_TOKEN', 'META_PAGE_ID', 'META_IG_USER_ID'];
+// legibles). Sin el token, el cron auto-publish-calendar no puede publicar nada y fallaría en
+// silencio cada 15 min: el Revisor lo dice en voz alta. La página y el Instagram los deduce el
+// servidor del token (`instagramDeLaPagina()` en api/actions/social.ts).
+export const SECRETOS_PARA_PUBLICAR = ['META_PAGE_ACCESS_TOKEN'];
 export async function faltanParaPublicar() {
   const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/secrets`, { headers: { Authorization: `Bearer ${process.env.SUPABASE_ACCESS_TOKEN}` } });
   if (!r.ok) throw new Error(`No pude listar los secrets (${r.status})`);

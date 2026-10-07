@@ -99,6 +99,18 @@ async function waitForIgContainerReady(creationId: string): Promise<void> {
   throw new ApiError("El video de Instagram sigue procesándose después de 2 minutos — reintenta la publicación en unos minutos.", 504);
 }
 
+// El Instagram vinculado a la página, si no se puso META_IG_USER_ID (2026-10-07): así el dueño
+// pega UN secret (el token) y no tres. Se pide una vez por instancia.
+let igDescubierto: string | null = null;
+async function instagramDeLaPagina(pageId: string): Promise<string> {
+  if (META_IG_USER_ID) return META_IG_USER_ID;
+  if (igDescubierto) return igDescubierto;
+  const d = await metaGraphGet(pageId, { fields: "instagram_business_account", access_token: META_PAGE_ACCESS_TOKEN! });
+  const id = String(d?.instagram_business_account?.id || "");
+  if (!id) throw new ApiError("La página de Facebook no tiene un Instagram profesional vinculado.", 503);
+  return (igDescubierto = id);
+}
+
 // Publica una entrada del calendario en Instagram o Facebook — requiere que ya tenga
 // image_url o video_url (ver actAdminCalendarUploadImage/actAdminUploadRawVideo) y que
 // los 3 secretos de Meta estén configurados (ver env.ts). Compartida entre el botón
@@ -111,32 +123,28 @@ async function publishCalendarEntry(entry: any): Promise<string> {
   const isVideo = entry.media_type === "video";
   const mediaUrl = isVideo ? entry.video_url : entry.image_url;
   if (!mediaUrl) throw new ApiError(`Sube ${isVideo ? "un video" : "una foto"} antes de publicar.`, 400);
-  if (!META_PAGE_ACCESS_TOKEN || !META_PAGE_ID) {
-    throw new ApiError(
-      "Publicación de Meta sin configurar — falta ejecutar: supabase secrets set META_PAGE_ACCESS_TOKEN=... META_PAGE_ID=...",
-      503,
-    );
+  if (!META_PAGE_ACCESS_TOKEN) {
+    throw new ApiError("Publicación de Meta sin configurar — falta el secret META_PAGE_ACCESS_TOKEN (docs/PENDIENTE_DEL_DUENO.md, P33).", 503);
   }
+  const pageId = META_PAGE_ID || "me"; // con un token de página, `me` ES la página
   const caption = String(entry.caption_text || entry.title || "");
 
   let publishedRef: string;
   if (entry.channel === "facebook") {
     const data = isVideo
-      ? await metaGraphPost(`${META_PAGE_ID}/videos`, { file_url: mediaUrl, description: caption, access_token: META_PAGE_ACCESS_TOKEN })
-      : await metaGraphPost(`${META_PAGE_ID}/photos`, { url: mediaUrl, caption, access_token: META_PAGE_ACCESS_TOKEN });
+      ? await metaGraphPost(`${pageId}/videos`, { file_url: mediaUrl, description: caption, access_token: META_PAGE_ACCESS_TOKEN })
+      : await metaGraphPost(`${pageId}/photos`, { url: mediaUrl, caption, access_token: META_PAGE_ACCESS_TOKEN });
     publishedRef = String(data.post_id || data.id || "");
   } else {
-    if (!META_IG_USER_ID) {
-      throw new ApiError("Publicación de Instagram sin configurar — falta ejecutar: supabase secrets set META_IG_USER_ID=...", 503);
-    }
+    const igUserId = await instagramDeLaPagina(pageId);
     const containerParams: Record<string, string> = isVideo
       ? { video_url: mediaUrl, media_type: "REELS", caption, access_token: META_PAGE_ACCESS_TOKEN }
       : { image_url: mediaUrl, caption, access_token: META_PAGE_ACCESS_TOKEN };
-    const container = await metaGraphPost(`${META_IG_USER_ID}/media`, containerParams);
+    const container = await metaGraphPost(`${igUserId}/media`, containerParams);
     const creationId = String(container.id || "");
     if (!creationId) throw new ApiError("Meta no devolvió un contenedor de media válido.", 502);
     if (isVideo) await waitForIgContainerReady(creationId);
-    const published = await metaGraphPost(`${META_IG_USER_ID}/media_publish`, {
+    const published = await metaGraphPost(`${igUserId}/media_publish`, {
       creation_id: creationId,
       access_token: META_PAGE_ACCESS_TOKEN,
     });
