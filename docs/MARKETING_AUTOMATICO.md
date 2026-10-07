@@ -1,139 +1,170 @@
-# Marketing desde cero — auditoría y sistema nuevo (2026-10-07, v2)
+# Marketing desde cero — v3: todo automático (2026-10-07)
 
-Dueño, 2026-10-07: «quiero que sea automático por completo. Analízalo desde cero» y, tras la v1:
-«aún falta que de verdad analices bien. El sistema que tenemos no solo no arrancó sino que no
-funciona, es obsoleto, no sirve, hay que hacerlo desde cero». «Yo me encargo de que se pueda
-publicar en TikTok».
+Historia: la v1 proponía arrancar lo que había; la v2, rehacerlo con clips grabados por el dueño.
+El dueño, sobre la v2: «No es automático, porque requiere que yo grabe clips. Dije todo
+automático… ve algo más potente que reseñas… repiensa el sistema de análisis y la creación de
+videos». Respuestas suyas: WhatsApp **sí, pero gratis**; grabar **no puede**; pauta: **«analicemos
+cuánto es necesario»**; ficha de Google: **existe, revísala**; Rappi: **acuerdo de 0% de comisión el
+primer mes**. TikTok: lo habilita él.
 
-**Estado: propuesta para aprobar. Nada construido.** Concepto antes que código (regla 3).
-
----
-
-## 1 · Auditoría: cada pieza del sistema actual y por qué no sirve
-
-| pieza | qué hace hoy | veredicto |
-|---|---|---|
-| **Generador del calendario** (`remind-marketing-content`, `marketingContent()`) | Cada lunes copia textos de un **rotador fijo de 2 semanas escrito a mano** a `marketing_calendar` como **borrador sin imagen** y te manda un push para que los copies tú. El código dice: «nada de esto publica solo… es la lista de acción que el dueño copia a mano». | **Obsoleto por diseño.** Textos congelados (habla de plan semanal y hora valle, que ya no existen), sin imagen, sin video, dependiente de ti. 12 borradores, 0 publicados. **Se borra.** |
-| **Publicador** (`auto-publish-calendar`, Graph API) | Publica en Instagram/Facebook una entrada `scheduled` con foto o video ya listo. | **La única pieza que sirve**: es solo el último paso. Se conserva como «brazo» del sistema nuevo. |
-| **Videos** (`admin-upload-raw-video`, `content_uploads`) | Subes un clip crudo; «una sesión programada aparte» lo editaría. | **Esa sesión nunca existió.** 0 clips. La idea (tú grabas, el sistema edita) es la correcta; la ejecución no existe. Se rehace. |
-| **16 recordatorios de retención** (segundo pedido, carrito abandonado, cumpleaños, reactivación, puntos…) | Todos hablan **solo por notificación push del navegador**. | **Canal equivocado.** Hay **0 suscripciones** (ni la tuya). En Android hay que aceptar un permiso que casi nadie acepta en una web; en iPhone el push web solo funciona si instalas la app en la pantalla de inicio. En Perú la conversación con un negocio de comida es WhatsApp. **Se rehacen sobre WhatsApp.** |
-| **Campañas por correo** (`winback-campaign`, `birthday-bonus`) | Correo por Resend. | **Alcance mínimo**: hay 1 correo en toda la base (el registro de invitado no lo pide). Quedan solo como respaldo. |
-| **Freno de CAC** (`alert-cac-brake`) | Divide un gasto que **escribes a mano** entre clientes nuevos y te **avisa**. | **No frena nada.** `ad_spend` está vacía. Se rehace: lee el gasto de Meta solo y **pausa** solo. |
-| **Botón de anuncios** (`admin-meta-ads`) | Pausa y reanuda campañas existentes. | No crea campañas, no lee resultados. Queda como interruptor manual. |
-| **Medición para Meta** | Pixel en el navegador: `AddToCart`, `CompleteRegistration`, `Purchase`. Servidor (CAPI): solo `Purchase`. | **Insuficiente para empezar**: con 0 compras Meta no tiene de qué aprender. Faltan `ViewContent` e `InitiateCheckout` del lado del servidor. |
-| **Atribución** (`?src=`, `acquisition_source`) | Se guarda solo si la persona **crea cuenta**. | **Ciego**: el invitado (que es el camino principal) no se cuenta, y no existe conteo de **visitas**. Hoy no se puede saber cuánta gente entra y no compra. |
-| **Referidos** | Código personal, premio en puntos, botón «Compartir». | Exige cuenta y se ofrece en un rincón. La mecánica sirve; el momento y el canal no. |
-| **Reseñas** | La app pide estrellas que **se quedan adentro**. | **Nadie pide nunca una reseña de Google**, que es la acción con mejor evidencia causal (`MAQUINARIA_DE_MARKETING.md`). |
-
-**Resumen honesto:** de once piezas, una sirve tal cual (el publicador), tres sirven como base
-(videos, referidos, botón de anuncios) y siete se tiran.
+**Estado: propuesta. La única pieza ya probada es el generador de video (muestra en §2).**
+La auditoría de lo viejo (qué sirve y qué no) está en el historial de este archivo (v2, mismo día).
 
 ---
 
-## 2 · Lo que dice la investigación (lo que cambia el diseño)
+## 1 · La regla de diseño
 
-1. **El video corto es el motor de descubrimiento para un local nuevo.** TikTok y Reels son de los
-   pocos canales donde un negocio chico llega a miles de personas de su ciudad **sin pagar
-   distribución**: el algoritmo premia que lo vean entero, lo guarden y lo compartan, no los
-   seguidores. Un clip de 20 segundos puede rendir más que meses de fotos fijas.
-   ([Malou · TikTok for restaurants 2026](https://www.malou.io/en-us/blog/tiktok-for-restaurants),
-   [Direct Orders · 2026](https://www.directorders.com/blog/restaurant-marketing-2026-trends))
-2. **En Perú se compra por redes y se pide por WhatsApp.** 91% del Perú urbano usa redes y 53% ya
-   compró algo tras verlo en Facebook o TikTok; TikTok lidera en tiempo de uso entre jóvenes e
-   Instagram es la favorita de 16 a 34 años; **81% dice que seguirá usando WhatsApp para hacer
-   pedidos**. ([Ipsos Perú](https://www.threads.com/@ipsosperu/post/DUEDWaikcXR/las-redes-sociales-hoy-son-un-canal-clave-para-descubrir-evaluar-y-comprar),
-   [Lima Retail 2026](https://limaretail.com/redes-sociales/estadisticas-redes-sociales-2026/),
-   [UTP 2025](https://www.utp.edu.pe/blog/novedades-utp/tendencias-del-consumidor-peruano-2025))
-3. **WhatsApp por API cobra por mensaje de plantilla, no por conversación** (desde julio 2025): los
-   mensajes de servicio dentro de la ventana de 24 h son gratis, y las plantillas de «utilidad»
-   (estado del pedido) también si van dentro de esa ventana; las de marketing se pagan según el país.
-   ([Meta · WhatsApp pricing](https://developers.facebook.com/docs/whatsapp/pricing))
-4. **Meta Ads con presupuesto chico:** una sola campaña Advantage+ y un solo conjunto, optimizada a
-   **Compra** desde el día 1, con Conversions API además del pixel.
-   ([Meta · Advantage+](https://developers.facebook.com/documentation/ads-commerce/marketing-api/advantage-campaigns))
-5. **Instagram por API**: hasta 50–100 publicaciones por día, Reels de hasta 90 s en MP4/H.264.
-   ([Meta · Content Publishing](https://developers.facebook.com/docs/instagram-platform/content-publishing))
-6. **TikTok por API**: sin la auditoría de TikTok todo sale privado. Lo resuelves tú; el sistema
-   queda listo para publicar ahí el día que esté aprobado.
-   ([TikTok · Direct Post](https://developers.tiktok.com/doc/content-posting-api-reference-direct-post))
-7. **Reseñas de Google**: el enlace directo `search.google.com/local/writereview?placeid=…` se puede
-   mandar solo tras cada entrega. Google **prohíbe** pedírsela solo a los contentos: se le pide a
-   todos. ([Dreikon](https://www.dreikon.de/en/news/online-marketing-knowledge/link-to-google-reviews/))
+**Nada depende de una persona.** Todo lo que el sistema necesita ya existe en la app: la carta
+(nombres, precios, ingredientes, frases), 26 fotos propias tratadas, SANDO y WICHO, el inventario
+del día, los pedidos reales y los horarios. El sistema convierte eso en contenido, mensajes y
+decisiones. El dueño no graba, no escribe, no aprueba (puede frenar algo si quiere) y no carga
+números.
 
 ---
 
-## 3 · El sistema nuevo: cuatro motores y un tablero
+## 2 · Motor de contenido: video generado por código, sin cámara
 
-### Motor 1 · Contenido en video (el que trae gente nueva)
-- **Lo único que no se puede automatizar es la cámara.** Tu parte: grabar con el celular, mientras
-  cocinas una tanda, clips crudos de 1–3 minutos (manos armando, el corte del pan, el queso
-  fundiéndose, la bolsa saliendo) y subirlos desde el panel. Sin editar, sin pensar en el texto.
-- El sistema, solo: corta los mejores 15–25 s, los pone en vertical, agrega subtítulos y el texto
-  (nombres y precios **interpolados desde la carta**, nunca escritos a mano), y los programa en la
-  franja con más pedidos.
-- Publica a la vez en **Reels (Instagram + Facebook)** y **TikTok** (cuando esté habilitado).
-- Si una semana no hay clips nuevos, publica con las fotos propias para no cortar el ritmo.
-- Cada post se puede frenar desde el panel («No publicar»); si no lo tocas, sale.
+**Ya probado hoy**: `scripts/video-auto/` arma un Reel/TikTok vertical de 12 s (1080×1920, MP4
+H.264) **solo a partir de la carta**. La muestra (`docs/maquetas/propuestas/video-auto-philly.mp4`)
+salió así, sin que nadie escriba nada:
 
-### Motor 2 · WhatsApp (la relación con el cliente, reemplaza el push)
-- En el checkout, una casilla (desmarcada por defecto, por ley de datos personales): «Avísame por
-  WhatsApp». El celular ya se pide para el pedido.
-- **Estado del pedido por WhatsApp** (gratis o casi: va dentro de la ventana de servicio).
-- **Tras la entrega, un solo mensaje**: el enlace de reseña de Google + tu link para invitar a un
-  amigo (vale también para invitados, sin cuenta).
-- **Recompra**: los recordatorios que hoy van por push (segundo pedido a los 7 días, reactivación a
-  los 21–30), pasados a plantillas de WhatsApp, con tope de mensajes por persona y por mes.
+- gancho = la primera frase del pitch del Signature («El clásico de Filadelfia, sin atajos»);
+- la foto propia en movimiento, el nombre, los ingredientes reales de la receta, el precio de
+  15CM sacado de la carta, SANDO entrando y el cierre con WICHO y el «//» de la marca;
+- costo: **S/0** (navegador + codificador libre, en GitHub); tarda ~50 s por video.
 
-### Motor 3 · Pauta en Meta (acelera lo que ya funciona)
-- Desde el día 15 (después de los 14 días sin anuncios para medir el orgánico).
-- Una campaña Advantage+ optimizada a Compra, en tu zona de reparto, cuyos anuncios son **los
-  videos que mejor funcionaron gratis** (se promociona lo que la gente ya vio entero).
-- Cada mañana lee el gasto de Meta, calcula el costo por cliente nuevo y **pausa sola** si pasa tu
-  límite. Nunca supera el tope diario ni el mensual que pongas.
-- Medición completa: `ViewContent`, `AddToCart`, `InitiateCheckout` y `Purchase` también desde el
-  servidor, para que Meta aprenda antes de las primeras 50 compras.
+Lo que lo vuelve un motor y no un video suelto:
 
-### Motor 4 · Medición (para saber qué funciona)
-- Conteo de visitas por origen (video, anuncio, Google, referido, tu red), sin datos personales.
-- Embudo por origen: visitas → carrito → pago → segundo pedido.
-- **Cada lunes por WhatsApp**: qué video trajo más pedidos, cuánto costó cada cliente nuevo,
-  reseñas nuevas y qué recomienda el sistema (subir o bajar pauta, qué tema grabar).
+| plantilla | de dónde salen los datos |
+|---|---|
+| El Signature del día (la de la muestra) | carta |
+| «Quedan N hoy» (urgencia real, en vivo) | inventario del día que llenas al abrir |
+| Arma el tuyo con WICHO: el armado paso a paso | panes, proteínas, quesos, salsas de la carta |
+| 15CM vs 30CM: cuánto más es | precios y gramajes de la carta |
+| El menú secreto: lo que no se ve | número de pedidos para desbloquearlo (reglas) |
+| Pide en grupo: con N, el más barato gratis | reglas del pedido grupal |
+| El pedido más pedido de la semana | pedidos reales |
+| Lo que dicen los clientes | calificaciones y reseñas reales (cuando existan) |
 
-### El tablero (una sola pantalla de marketing en el panel)
-Lo próximo que se publica (con «No publicar»), los topes de pauta, el embudo de la semana y el
-botón para subir clips. Nada más.
+Cada día genera 1–2 videos, rota plantilla, producto, gancho y hora, y los publica en Reels
+(Instagram + Facebook) y TikTok. **Nunca se inventa una foto de producto** (regla del repo): el
+movimiento y el texto son generados; la comida es la foto real.
 
 ---
 
-## 4 · Qué se borra
+## 3 · Más potente que las reseñas: tres bucles donde cada cliente trae al siguiente
 
-El rotador `marketingContent()` y el generador de borradores; los 12 borradores; los 16
-recordatorios por push (se rehacen sobre WhatsApp); el cálculo de CAC con gasto a mano. Se
-conservan: el publicador de Graph API, el bucket de clips crudos, el pixel y la CAPI (ampliados),
-la mecánica de referidos y el botón de anuncios.
+Las reseñas siguen (automáticas, a todos, §4), pero no traen gente por sí solas. Esto sí:
+
+### Bucle 1 · Rappi como embudo gratis hacia el canal propio
+El acuerdo de **0% de comisión el primer mes** convierte a Rappi en adquisición sin costo: ahí ya
+está la gente que busca comida en Trujillo. Cada bolsa que sale por Rappi lleva una tarjeta con
+QR (impresa una sola vez): «Tu próximo pedido, directo en sndwch.app: [beneficio]». El QR lleva
+`?src=rappi`, así que el sistema sabe cuántos clientes de Rappi pasaron al canal propio. Cuando
+Rappi empiece a cobrar comisión, esos clientes ya piden directo.
+
+### Bucle 2 · La tarjeta que el cliente comparte (sin grabar nada)
+Al entregarse cada pedido, el sistema genera una imagen vertical personalizada («Mafe ya probó el
+Philly Cheesesteak»), lista para su estado de WhatsApp o su historia de Instagram, con **su link**:
+si un amigo pide con él, **los dos ganan** (premio derivado de las reglas, sin subirlo: la
+evidencia dice que un premio mayor trae referidos peores). Cada pedido produce publicidad hecha
+por el cliente, gratis.
+
+### Bucle 3 · El pedido en grupo como motor de oficinas
+Ya existe: con N sándwiches, el del organizador sale gratis. Un pedido grupal mete 4–6 personas
+nuevas de una vez. El contenido empuja este formato a la hora del almuerzo (plantilla propia),
+y el bucle 2 aplica a cada integrante del grupo.
 
 ---
 
-## 5 · Lo que tienes que decidir (sin esto no se programa)
+## 4 · WhatsApp gratis
 
-1. **WhatsApp Business por API** (P13): ¿lo activamos? Necesita un número del negocio
-   conectado a la API (según cómo lo tengas hoy puede ser el mismo de WhatsApp Business o uno
-   nuevo; lo verifico antes) y una tarjeta en Meta para los mensajes de marketing. Te traigo la
-   tarifa exacta de Perú antes de gastar nada.
-2. **Grabar**: ¿te comprometes a subir clips crudos al menos 2 veces por semana? Es lo único que
-   el sistema no puede hacer, y es lo que más gente nueva trae.
-3. **Tope de pauta**: cuánto por día y por mes, desde el 27 de octubre.
-4. **Ficha de Google**: ¿existe y está verificada? Sin ella no hay enlace de reseña.
-5. **PedidosYa / Rappi**: ¿quieres estar también ahí como vitrina? Ahí ya está la gente que busca
-   comida en Trujillo, a cambio de comisión. No es automatizable desde aquí, pero es un canal de
-   descubrimiento que el análisis no puede ignorar.
+La API de WhatsApp **no cobra los mensajes de servicio** si la conversación la empieza el
+cliente: durante 24 horas, todo lo que le respondes es gratis. Diseño:
+
+- En el pedido, un botón «Sigue tu pedido por WhatsApp». Abre WhatsApp con un mensaje ya escrito
+  («Hola, quiero seguir mi pedido ORD-…»). El cliente lo envía: **él abre la ventana gratis**.
+- Dentro de esas 24 h, el sistema le manda solo: cada cambio de estado, la entrega, la **tarjeta
+  para compartir** (bucle 2) y el **enlace de reseña de Google**. Todo gratis.
+- Lo que NO es gratis: escribirle días después para que vuelva (son plantillas de marketing,
+  pagadas). Eso **no se hace**. La recompra la llevan el contenido diario, Rappi y los bucles.
+- Requisito único: un número del negocio conectado a la API de WhatsApp (configuración de una
+  vez en Meta, sin costo).
 
 ---
 
-## 6 · Orden de construcción (cuando apruebes)
+## 5 · El sistema de análisis: decide solo, no hace reportes
 
-1. Medición (visitas, embudo, eventos completos a Meta): sin esto no se sabe si lo demás funciona.
-2. Motor 1 (video) con el publicador existente; TikTok en cuanto lo habilites.
-3. Motor 2 (WhatsApp): estado del pedido + reseña + referido; después la recompra.
-4. Motor 3 (pauta), el día 15.
-5. Borrar lo obsoleto.
+Lo viejo era un reporte para que el dueño leyera. Lo nuevo es un **bucle cerrado**:
+
+1. **Mide cada pieza**: cada video lleva su link con `?src=` propio. Instagram y TikTok dan por
+   API reproducciones, guardados y compartidos; la app da visitas, carritos y pedidos por origen
+   (hoy no se cuentan visitas: se agrega, sin datos personales).
+2. **Decide**: cada semana reparte las próximas publicaciones entre plantillas, productos,
+   ganchos y horas según lo que **trajo pedidos** (no likes). Lo que no funciona deja de salir;
+   lo que funciona sale más (un «bandido»: explora un poco, explota lo que gana).
+3. **Escala lo ganador**: el video que más pedidos trajo gratis pasa a ser el anuncio pagado (§6).
+4. **Te avisa una sola cosa por semana**: pedidos, de dónde vinieron y cuánto costó cada cliente
+   nuevo. Si no lees nada, igual sigue funcionando.
+
+---
+
+## 6 · Pauta: cuánto hace falta (el cálculo)
+
+Números del propio modelo (`docs/NEGOCIO.md`):
+
+| dato | valor |
+|---|---|
+| Lo que deja el primer pedido | ≈ S/13.6–16.4 |
+| Lo que deja un cliente completo (2.41 pedidos según la industria, al 75% de confianza) | ≈ S/25–30 |
+| Costo por cliente esperado en Meta (benchmarks, sin medir) | S/18–24 (rango S/10.5–25) |
+| Compras para leer el costo real con algo de confianza | ~30 |
+
+**Cuánto hace falta:**
+- **Mes 1 (13 oct – 9 nov): S/0 en Meta durante los primeros 14 días.** Rappi a 0% de comisión y
+  el contenido orgánico hacen la adquisición. Además, es la única forma de medir cuánta gente
+  llega sola.
+- **Prueba de medición desde el 27 oct: S/25/día × 14 días = S/350.** A S/18–24 por cliente,
+  da 15–20 clientes: lo justo para una primera lectura del costo real.
+- **Mes 2: se escala solo si el costo medido queda bajo ~S/25** (lo que deja un cliente
+  completo). Ahí el sistema sube hasta el tope mensual que apruebes. Si el costo se pasa, pausa
+  solo.
+- Lo que **no** se intenta: que Meta «salga del aprendizaje» (50 compras por semana ≈ S/900–1,200
+  semanales). No es la escala de este negocio todavía.
+
+**Lo que te pido aprobar: S/350 para la prueba (27 oct – 9 nov).** Es plata real (regla 8).
+
+---
+
+## 7 · Tu ficha de Google: no aparece
+
+Revisado hoy con la misma librería de Google que usa la app (`scripts/ficha-google.mjs`, workflow
+«Revisar la ficha de Google»). Para «SND//WCH Trujillo», «SNDWCH Trujillo» y «SND WCH sandwich
+Trujillo», Google devuelve solo competidores: King Sandwich, Don Pacho (3 locales), Xinona,
+Centrica y La Casera (4.4 estrellas con 532 reseñas). **La ficha de SND//WCH no sale en ninguna
+búsqueda.** Causas posibles: no está verificada todavía, o es de «área de servicio» sin dirección
+pública (esas no aparecen en búsquedas por texto). Con el enlace de la ficha (en la app de Google
+Business: «Compartir perfil») se revisa directo y se saca el enlace de reseñas.
+
+---
+
+## 8 · Qué se construye, en orden
+
+1. **Medición** (visitas por origen, eventos completos a Meta): sin esto el bucle de análisis no
+   tiene qué medir.
+2. **Motor de video** (§2) conectado al publicador existente; TikTok cuando lo habilites.
+3. **Bucle 2** (tarjeta para compartir) y **WhatsApp gratis** (§4) con reseña.
+4. **Tarjeta de Rappi** (§3, bucle 1): el diseño, listo para imprimir.
+5. **Análisis que decide** (§5).
+6. **Pauta** (§6), el 27 de octubre, si apruebas los S/350.
+7. Borrar lo obsoleto (rotador de textos, 16 recordatorios por push, gasto a mano).
+
+## Fuentes
+
+- [Meta · WhatsApp pricing](https://developers.facebook.com/docs/whatsapp/pricing) (ventana de servicio gratis).
+- [Meta · Instagram Content Publishing](https://developers.facebook.com/docs/instagram-platform/content-publishing).
+- [TikTok · Direct Post](https://developers.tiktok.com/doc/content-posting-api-reference-direct-post).
+- [Malou · TikTok para restaurantes 2026](https://www.malou.io/en-us/blog/tiktok-for-restaurants).
+- [Ipsos Perú · redes y compra](https://www.threads.com/@ipsosperu/post/DUEDWaikcXR/las-redes-sociales-hoy-son-un-canal-clave-para-descubrir-evaluar-y-comprar).
+- [Meta · Advantage+](https://developers.facebook.com/documentation/ads-commerce/marketing-api/advantage-campaigns).
+- Números del negocio: `docs/NEGOCIO.md` (techo de CAC, cadena de recompra).
