@@ -83,8 +83,8 @@ function renderOverlays(){
     html+='<div onclick="toggleAdminToolsDrawer()" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:430" class="fi"></div>'
       +'<div role="dialog" aria-modal="true" aria-label="Herramientas de administración" style="position:fixed;top:0;right:0;bottom:0;width:82%;max-width:340px;background:var(--sw-bg,#17130E);border-left:1px solid var(--sw-border,#2C3228);z-index:431;overflow-y:auto;padding:20px" class="fi">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">Herramientas<span style="color:'+GOLD+'"> //</span></div><button onclick="toggleAdminToolsDrawer()" aria-label="Cerrar" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#9DA096);font-size:18px;padding:4px">&#10005;</button></div>'
-      +drawerRow('refresh','Cola de pedidos','loadAdmin()')
-      +drawerRow('reportes','Panel de negocio','loadDashboard()')
+      +drawerRow('refresh','Te toca','abrirCocina()')
+      +drawerRow('grid','Administrar','irAAdministrar()')
       +adminToolsSections().map(function(section: any){
         return'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin:18px 0 4px">'+section[0]+'</div>'
           +section[1].map(function(x){return drawerRow(x[0],x[1],x[2]);}).join('');

@@ -2038,6 +2038,68 @@ export async function actConfirmDelivery(b: Entrada<"confirm-delivery"> & { _ip?
   return { success: true, ref: order.ref, alreadyDelivered: false };
 }
 
+// ── «YA ME LLEGÓ»: EL CLIENTE CIERRA SU PROPIO PEDIDO (2026-10-07) ──────────────────────
+//
+// Por qué y no un cierre automático por reloj (docs/PANEL_NUEVO.md §8): el motorizado es de
+// un tercero y no toca links, el dueño está cocinando, y no hay ni una entrega real en la base
+// para calibrar «hora prometida + N min». Cerrar por reloj le mandaría «tu pedido llegó» a
+// quien todavía espera y escribiría en `delivered_at` una hora inventada. Quien SÍ sabe que
+// llegó es el cliente, y es el momento en que más ganas tiene de abrir la app.
+//
+// La única excepción es dinero: un contra entrega sin cobrar NO lo cierra el cliente. Marcarlo
+// ENTREGADO es lo que registra el cobro (confirmManualPayment) y suma los puntos; si lo hiciera
+// el cliente, quedaría cobrado un pedido cuya plata nadie vio. Ese lo cierra el dueño.
+export function porQueNoPuedeCerrarElCliente(o: { status?: string | null; payment_method?: string | null; payment_status?: string | null }): string | null {
+  if (o.status === "CANCELADO") return "Este pedido está cancelado.";
+  if (o.status !== "EN CAMINO") return "Tu pedido todavía no salió de la cocina.";
+  if (o.payment_method === "cod" && o.payment_status !== "paid") return "Este pedido lo cierra el local cuando el motorizado entrega lo cobrado.";
+  return null;
+}
+
+export async function actConfirmMyDelivery(b: Entrada<"confirm-my-delivery"> & { _ip?: string }) {
+  const orderId = b.orderId ? String(b.orderId) : null;
+  const ref = b.ref ? String(b.ref).trim().slice(0, 40) : null;
+  if (!orderId && !ref) throw new ApiError("Falta el pedido.");
+  // Mismo criterio de acceso que cancel-my-order: con sesión, solo un pedido de ese teléfono;
+  // sin sesión (invitado), el `ref`, que solo tiene quien hizo el pedido.
+  const SELECT = "id,ref,status,payment_method,payment_status";
+  let order: any;
+  if (b.token) {
+    const s = await requireSession(b.token);
+    const q = orderId ? `id=eq.${encodeURIComponent(orderId)}` : `ref=eq.${encodeURIComponent(ref as string)}`;
+    order = (await sbGet("orders", `${q}&customer_phone=eq.${encodeURIComponent(s.phone)}&select=${SELECT}`))[0];
+  } else if (ref) {
+    order = (await sbGet("orders", `ref=eq.${encodeURIComponent(ref)}&select=${SELECT}`))[0];
+  }
+  if (!order) throw new ApiError("Pedido no encontrado.", 404);
+  if (order.status === "ENTREGADO") return { success: true, ref: order.ref, alreadyDelivered: true };
+  const motivo = porQueNoPuedeCerrarElCliente(order);
+  if (motivo) throw new ApiError(motivo, 400);
+
+  const ahora = new Date().toISOString();
+  // El filtro por estado y pago en la MISMA sentencia es el reclamo atómico: si el dueño lo
+  // cerró o lo canceló un instante antes, esto no encuentra la fila y no pisa nada.
+  const rows = await sbUpdate(
+    "orders",
+    `id=eq.${encodeURIComponent(order.id)}&status=eq.${encodeURIComponent("EN CAMINO")}`,
+    { status: "ENTREGADO", status_changed_at: ahora, delivered_at: ahora, delivery_token: null, alerted_stuck_progress: false },
+  );
+  if (!rows.length) {
+    const otra = (await sbGet("orders", `id=eq.${encodeURIComponent(order.id)}&select=status`))[0];
+    if (otra && otra.status === "ENTREGADO") return { success: true, ref: order.ref, alreadyDelivered: true };
+    throw new ApiError("Tu pedido cambió de estado. Vuelve a abrirlo.", 409);
+  }
+  try {
+    await sendPushToAdmins({
+      title: "✅ Entregado",
+      body: `${order.ref}: el cliente confirmó que le llegó.`,
+      url: "./index.html",
+      tag: "sndwch-delivered-admin-" + order.ref,
+    });
+  } catch { /* best-effort */ }
+  return { success: true, ref: order.ref, alreadyDelivered: false };
+}
+
 export async function actAdminOrders(b: Entrada<"admin-orders"> & { _ip?: string }) {
   await requireAdmin(b.token);
   const rows = await sbGet("orders", `status=in.(RECIBIDO,PREPARANDO,EN+CAMINO)&order=created_at.desc&limit=${ADMIN_ORDERS_LIMIT + 1}`);

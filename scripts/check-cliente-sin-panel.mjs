@@ -66,6 +66,9 @@ const ADMIN_ONLY = {
   loadAdmin: 'el cajón de herramientas del panel — solo se abre desde una pantalla de admin',
   loadDashboard: 'ídem',
   adminToolsSections: 'ídem',
+  abrirCocina: 'ídem (fila «Te toca» del cajón, 2026-10-07)',
+  irAAdministrar: 'ídem (fila «Administrar» del cajón, 2026-10-07)',
+  chipsDelGrupo: 'H() la llama solo en pantallas admin y antes pregunta si existe (typeof)',
 };
 
 const problems = [];

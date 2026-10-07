@@ -1,6 +1,6 @@
 // SND//WCH — bundle del PANEL. Generado por scripts/build.mjs; no editar a mano.
 // Se carga bajo demanda desde el router (loadAdminBundle) cuando se abre una pantalla
-// de admin. Ningún cliente lo descarga: son ~336 KB que antes
+// de admin. Ningún cliente lo descarga: son ~351 KB que antes
 // viajaban en index.html a cada celular que abría la carta.
 // Íconos de línea minimalistas — mismo trazo/estilo que el ícono de Instagram del pie
 // de página (stroke currentColor, sin relleno), en vez de emoji grandes y de colores
@@ -347,61 +347,120 @@ async function copyFromField(id) {
         showToast('Selecciónalo y copia con el teclado.');
     }
 }
-// ── LOS CINCO CAJONES DE «ADMINISTRAR» (2026-10-01, docs/PANEL_NUEVO.md) ──────────────
-// Ninguna pantalla se borró: se ordenaron por la pregunta que responden. Lo de operar con
-// pedidos entrando (cola, pagos, agotar, pausar) vive en «Cocina abierta», no acá.
-// La misma lista alimenta el cajón lateral de las pantallas secundarias.
+var PANEL_OPCIONES = [
+    { k: 'pedidos', t: 'Buscar pedidos', s: 'por número, cliente o día', i: 'buscar', c: 'Hoy', m: [['Buscar pedidos', "sndScreen='admin_search';searchResults=null;render()", 'admin_search']] },
+    { k: 'caja', t: 'Cierre de caja', s: 'lo que entró hoy, por medio de pago', i: 'caja', c: 'Hoy', m: [['Cierre de caja', 'loadCashClose()', 'admin_cash']] },
+    { k: 'numeros', t: 'Números', s: 'ventas, ticket, reportes por fechas', i: 'reportes', c: 'Hoy', m: [['Panel de negocio', 'loadDashboard()', 'admin_dashboard'], ['Reportes', "sndScreen='admin_report';reportData=null;render()", 'admin_report']] },
+    { k: 'stock', t: 'Stock y tanda', s: 'inventario, preparación, cuánto cocinar', i: 'inventario', c: 'Hoy', m: [['Inventario', 'loadInventory()', 'admin_inventory'], ['Preparación', 'loadPrepList()', 'admin_prep'], ['Plan de tanda', 'loadBatchPlan()', 'admin_batch']] },
+    { k: 'carta', t: 'La carta', s: 'Signatures, menú secreto, precios', i: 'precios', c: 'Carta', m: [['Signatures', 'loadCatalogItemsAdmin()', 'admin_items'], ['Menú secreto', 'loadSecretSignatureAdmin()', 'admin_secret'], ['Precios', 'loadAdminCatalog()', 'admin_catalog']] },
+    { k: 'recetas', t: 'Recetas', s: 'gramos y costo de cada sándwich', i: 'recipe', c: 'Carta', m: [['Recetas', 'loadRecipes()', 'admin_recipes']] },
+    { k: 'compras', t: 'Compras y costos', s: 'lo que compraste y a cuánto', i: 'caja', c: 'Carta', m: [['Compras y costos', 'loadPurchases()', 'admin_purchases']] },
+    { k: 'clientes', t: 'Clientes y puntos', s: 'buscar un cliente, darle puntos', i: 'clientes', c: 'Clientes', m: [['Buscar cliente', "sndScreen='admin_customer';custDetail=null;custDetailPhone='';custDetailErr='';render()", 'admin_customer'], ['Puntos manuales', "sndScreen='admin_gen';agPhone='';agPts='';agMsg='';acPhone='';acDelta='';acMsg='';render()", 'admin_gen']] },
+    { k: 'reclamos', t: 'Reclamaciones', s: 'Libro de Reclamaciones · tiene plazo legal', i: 'reclamo', c: 'Clientes', m: [['Reclamaciones', 'loadAdminComplaints()', 'admin_complaints']] },
+    { k: 'opiniones', t: 'Lo que dijeron', s: 'calificaciones y «algo salió mal»', i: 'estrella', c: 'Clientes', m: [['Calificaciones', 'loadRatingsList()', 'admin_ratings'], ['Algo salió mal', 'loadOrderProblems()', 'admin_order_problems']] },
+    { k: 'zonas', t: 'Zonas', s: 'direcciones con problemas, quién espera tu zona', i: 'direccion', c: 'Clientes', m: [['Direcciones con problemas', 'loadProblemAddresses()', 'admin_problem_addresses'], ['Zonas que esperan', 'loadZoneWaitlist()', 'admin_zone_waitlist'], ['Lista de espera', 'loadWaitlist()', 'admin_waitlist']] },
+    // «Avísale a tu gente» primero en Marketing: la simulación del 2026-09-13 midió que avisarle
+    // a la red personal es la palanca que más mueve el mes 3.
+    { k: 'avisale', t: 'Avísale a tu gente', s: 'mensajes listos para tu red', i: 'megaphone', c: 'Marketing', m: [['Avísale a tu gente', 'loadMarketingContent()', 'admin_marketing']] },
+    { k: 'meta', t: 'Anuncios de Meta', s: 'apagar o prender las campañas', i: 'megaphone', c: 'Marketing', m: [['Anuncios de Meta', 'loadMetaAds()', 'admin_meta_ads']] },
+    { k: 'contenido', t: 'Contenido', s: 'calendario de publicaciones y guion de video', i: 'calendar', c: 'Marketing', m: [['Calendario', 'loadCalendar()', 'admin_calendar'], ['Guion de video', 'loadVideoScript()', 'admin_video']] },
+    { k: 'promos', t: 'Códigos promo', s: 'crear, apagar', i: 'precios', c: 'Marketing', m: [['Códigos promo', 'loadPromoCodes()', 'admin_promo']] },
+    { k: 'rinde', t: '¿Rinde el marketing?', s: 'campañas, palancas, freno de CAC', i: 'estrella', c: 'Marketing', m: [['Campañas', 'loadCampaignPerformance()', 'admin_campaign_perf'], ['Las tres palancas', 'loadPalancas()', 'admin_palancas'], ['Freno de CAC', 'loadCacBrake()', 'admin_cac']] },
+    { k: 'horario', t: 'Horario y pausa', s: 'a qué hora abres cada día', i: 'horario', c: 'Sistema', m: [['Horario y pausa', 'loadStoreHoursForm()', 'admin_hours']] },
+    { k: 'admins', t: 'Administradores', s: 'quién entra al panel', i: 'admins', c: 'Sistema', m: [['Administradores', 'loadAdminMgr()', 'admin_mgr']] },
+    { k: 'tecnico', t: 'Técnico', s: 'salud, auditoría, Culqi, franjas', i: 'warning', c: 'Sistema', m: [['Salud técnica', 'loadTechHealth()', 'admin_tech'], ['Auditoría', 'loadAuditLog()', 'admin_audit'], ['Tarjeta / Culqi', 'loadCulqiReport()', 'admin_culqi'], ['Franjas horarias', 'loadTimeWindowReport()', 'admin_time_report']] },
+    { k: 'cumplimiento', t: 'Cumplimiento', s: 'lo legal que hay que tener al día', i: 'reclamo', c: 'Sistema', m: [['Cumplimiento', 'loadCompliance()', 'admin_compliance']] },
+    { k: 'celular', t: 'Este celular', s: 'sonido, notificaciones, modo claro', i: 'admins', c: 'Sistema', m: [['Este celular', "sndScreen='admin_celular';render()", 'admin_celular']] },
+];
+var FIJADAS_DE_SIEMPRE = ['caja', 'numeros', 'carta', 'avisale'];
+function opcionDePantalla(sc) {
+    for (var i = 0; i < PANEL_OPCIONES.length; i++) {
+        if (PANEL_OPCIONES[i].m.some(function (x) { return x[2] === sc; }))
+            return PANEL_OPCIONES[i];
+    }
+    return null;
+}
+// El cajón lateral (02-*) sigue pidiendo «secciones»: salen de la MISMA lista, así no pueden
+// volver a divergir.
 function adminToolsSections() {
-    return [
-        ['Hoy', [
-                ['warning', 'Qué pide atención', 'loadHealth()'],
-                ['reportes', 'Panel de negocio', 'loadDashboard()'],
-                ['buscar', 'Buscar pedidos', 'sndScreen=\'admin_search\';searchResults=null;render()'],
-                ['reportes', 'Reportes', 'sndScreen=\'admin_report\';reportData=null;render()'],
-                ['caja', 'Cierre de caja', 'loadCashClose()'],
-                ['inventario', 'Inventario', 'loadInventory()'],
-                ['prep', 'Preparación', 'loadPrepList()'],
-                ['inventario', 'Plan de tanda', 'loadBatchPlan()'],
-            ]],
-        ['Carta', [
-                ['precios', 'Signatures', 'loadCatalogItemsAdmin()'],
-                ['lock', 'Menú secreto', 'loadSecretSignatureAdmin()'],
-                ['precios', 'Precios', 'loadAdminCatalog()'],
-                ['recipe', 'Recetas', 'loadRecipes()'],
-                ['caja', 'Compras y costos', 'loadPurchases()'],
-            ]],
-        ['Clientes', [
-                ['clientes', 'Buscar cliente', 'sndScreen=\'admin_customer\';custDetail=null;custDetailPhone=\'\';custDetailErr=\'\';render()'],
-                ['estrella', 'Calificaciones', 'loadRatingsList()'],
-                ['reclamo', 'Reclamaciones', 'loadAdminComplaints()'],
-                ['reclamo', 'Algo salió mal', 'loadOrderProblems()'],
-                ['direccion', 'Direcciones con problemas', 'loadProblemAddresses()'],
-                ['direccion', 'Zonas que esperan', 'loadZoneWaitlist()'],
-                ['clientes', 'Lista de espera', 'loadWaitlist()'],
-                ['puntos', 'Puntos manuales', 'sndScreen=\'admin_gen\';agPhone=\'\';agPts=\'\';agMsg=\'\';acPhone=\'\';acDelta=\'\';acMsg=\'\';render()'],
-            ]],
-        ['Marketing', [
-                // «Avísale a tu gente» va primero: la simulación del 2026-09-13 midió que avisarle a la
-                // red personal es la palanca que más mueve el mes 3.
-                ['megaphone', 'Avísale a tu gente', 'loadMarketingContent()'],
-                ['megaphone', 'Anuncios de Meta', 'loadMetaAds()'],
-                ['calendar', 'Calendario de contenido', 'loadCalendar()'],
-                ['camera', 'Guion de video', 'loadVideoScript()'],
-                ['precios', 'Códigos promo', 'loadPromoCodes()'],
-                ['estrella', 'Rendimiento campañas', 'loadCampaignPerformance()'],
-                ['reportes', 'Las tres palancas', 'loadPalancas()'],
-                ['estrella', 'Freno de CAC', 'loadCacBrake()'],
-            ]],
-        ['Sistema', [
-                ['horario', 'Horario y pausa', 'loadStoreHoursForm()'],
-                ['admins', 'Administradores', 'loadAdminMgr()'],
-                ['auditoria', 'Auditoría', 'loadAuditLog()'],
-                ['warning', 'Salud técnica', 'loadTechHealth()'],
-                ['reclamo', 'Cumplimiento', 'loadCompliance()'],
-                ['caja', 'Tarjeta / Culqi', 'loadCulqiReport()'],
-                ['franjas', 'Franjas horarias', 'loadTimeWindowReport()'],
-            ]],
-    ];
+    var cajones = ['Hoy', 'Carta', 'Clientes', 'Marketing', 'Sistema'];
+    return cajones.map(function (c) {
+        return [c, PANEL_OPCIONES.filter(function (o) { return o.c === c; }).map(function (o) { return [o.i, o.t, accionDeOpcion(o)]; })];
+    });
+}
+function usoLocal() { try {
+    return JSON.parse(localStorage.getItem('sw_uso_panel') || '{}') || {};
+}
+catch (e) {
+    return {};
+} }
+function fijadas() {
+    var uso = usoLocal();
+    var conUso = PANEL_OPCIONES.filter(function (o) { return (uso[o.k] || 0) >= 3; }).sort(function (a, b) { return (uso[b.k] || 0) - (uso[a.k] || 0); });
+    var lista = conUso.slice(0, 4);
+    FIJADAS_DE_SIEMPRE.forEach(function (k) {
+        if (lista.length < 4 && !lista.some(function (o) { return o.k === k; })) {
+            var o = PANEL_OPCIONES.find(function (x) { return x.k === k; });
+            if (o)
+                lista.push(o);
+        }
+    });
+    return lista;
+}
+// La acción va escrita en el onclick (no se evalúa texto en tiempo de ejecución): contar el uso
+// de este celular para las fijadas y abrir la pantalla.
+function accionDeOpcion(o, idx) {
+    return "contarOpcion('" + o.k + "');adminToolsDrawerOpen=false;" + o.m[idx || 0][1];
+}
+function contarOpcion(k) {
+    try {
+        var uso = usoLocal();
+        uso[k] = (uso[k] || 0) + 1;
+        localStorage.setItem('sw_uso_panel', JSON.stringify(uso));
+    }
+    catch (e) { }
+}
+// Pestañas de una entrada que junta varias pantallas. La llama H() (03-*) debajo de la barra de
+// arriba: así aparece en TODAS las pantallas del grupo sin tocar cada una.
+function chipsDelGrupo() {
+    var o = opcionDePantalla(sndScreen);
+    if (!o || o.m.length < 2)
+        return '';
+    return '<div class="adm-chips" role="tablist">' + o.m.map(function (x, i) {
+        var sel = x[2] === sndScreen;
+        return '<button role="tab" aria-selected="' + sel + '" class="' + (sel ? 'sel' : '') + '" data-pantalla="' + x[2] + '" onclick="' + accionDeOpcion(o, i) + '">' + esc(x[0]) + '</button>';
+    }).join('') + '</div>';
+}
+// Una fila por pantalla abierta (actAdminAbrirPantalla). Se anota al PINTAR, no al tocar: así
+// cuenta igual si se llegó desde la lista, el cajón, un aviso de «Te toca» o un enlace interno.
+// La cocina y la receta no: se abren cien veces por turno y no son las que están en duda.
+var _ultimaPantallaAnotada = '';
+function registrarApertura(sc) {
+    if (sc === _ultimaPantallaAnotada)
+        return;
+    _ultimaPantallaAnotada = sc;
+    if (sc === 'admin_cocina' || sc === 'admin_focus' || sc === 'admin_home')
+        return;
+    try {
+        api('admin-abrir-pantalla', { token: token, pantalla: sc }).catch(function () { });
+    }
+    catch (e) { }
+}
+function normalizarBusqueda(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+// Filtra sin volver a pintar: un render() en cada letra le quitaría el foco al campo.
+function filtrarOpciones(q) {
+    var n = normalizarBusqueda(q).trim();
+    var filas = document.querySelectorAll('[data-opcion]');
+    var vistas = 0;
+    filas.forEach(function (el) { var ok = !n || String(el.getAttribute('data-q')).indexOf(n) >= 0; el.style.display = ok ? '' : 'none'; if (ok)
+        vistas++; });
+    document.querySelectorAll('.adm-cajon h3').forEach(function (h) { h.style.display = n ? 'none' : ''; });
+    var fij = document.getElementById('adm-fijadas');
+    if (fij)
+        fij.style.display = n ? 'none' : '';
+    var nada = document.getElementById('adm-nada');
+    if (nada)
+        nada.style.display = vistas ? 'none' : '';
 }
 // Banner de las tres señales de dirección de la cola (#22 duplicada, #21 ambigua,
 // #17 agrupable). Devuelve '' cuando no hay nada que decir — una franja permanente que casi
@@ -466,27 +525,39 @@ function sAdminHome() {
     var ao = sortedActiveOrders();
     var pagos = ao.filter(esPagoPorConfirmar).length;
     var abierta = storeStatus().open;
+    var fila = function (o) {
+        var q = normalizarBusqueda(o.t + ' ' + o.s + ' ' + o.m.map(function (x) { return x[0]; }).join(' '));
+        return '<button class="adm-op" data-opcion="' + o.k + '" data-q="' + esc(q) + '" onclick="' + accionDeOpcion(o) + '">' + icon(o.i, 18) + '<span><b>' + esc(o.t) + '</b><s>' + esc(o.s) + '</s></span><i aria-hidden="true">›</i></button>';
+    };
+    var cajones = ['Hoy', 'Carta', 'Clientes', 'Marketing', 'Sistema'];
     return '<div class="adm">'
         + '<div class="adm-top"><b>Administrar</b>'
         + '<button class="adm-x" data-accion="salir-del-panel" onclick="stopPoll();sndScreen=\'o_home\';sndTab=\'order\';render()">Salir</button></div>'
         + (pollFailing ? '<div class="adm-alerta">No se pudo actualizar la cola. Revisa tu conexión.</div>' : '')
         + '<button class="adm-cocina" data-accion="abrir-cocina" onclick="abrirCocina()">'
-        + '<span class="t">' + (abierta ? 'Cocina abierta' : 'Abrir cocina') + ' →</span>'
+        + '<span class="t">Te toca →</span>'
         + '<span class="s">' + (ao.length ? ao.length + ' pedido' + (ao.length === 1 ? '' : 's') + ' en curso' + (pagos ? ' · ' + pagos + ' pago' + (pagos === 1 ? '' : 's') + ' por confirmar' : '') : 'Sin pedidos en curso')
         + (abierta ? '' : ' · la tienda está cerrada') + '</span></button>'
-        + adminToolsSections().map(function (sec) {
-            return '<div class="adm-cajon"><h3>' + sec[0] + '</h3><div class="adm-grid">'
-                + sec[1].map(function (x) { return '<button onclick="' + x[2] + '">' + icon(x[0], 18) + '<span>' + x[1] + '</span></button>'; }).join('')
-                + '</div></div>';
+        + '<input class="adm-busca" type="search" id="adm-busca" placeholder="Busca: precios, horario, un cliente…" aria-label="Buscar una opción del panel" oninput="filtrarOpciones(this.value)">'
+        + '<div id="adm-fijadas" class="adm-cajon"><h3>Lo que más usas</h3><div class="adm-fij">'
+        + fijadas().map(function (o) { return '<button data-fijada="' + o.k + '" onclick="' + accionDeOpcion(o) + '">' + icon(o.i, 18) + '<b>' + esc(o.t) + '</b></button>'; }).join('')
+        + '</div></div>'
+        + cajones.map(function (c) {
+            return '<div class="adm-cajon"><h3>' + c + '</h3>' + PANEL_OPCIONES.filter(function (o) { return o.c === c; }).map(fila).join('') + '</div>';
         }).join('')
-        + '<div class="adm-cajon"><h3>Avisos de este celular</h3>'
+        + '<div id="adm-nada" class="coc-vacio" style="display:none">Nada con ese nombre. Prueba con otra palabra.</div>'
+        + '</div>';
+}
+// «Este celular»: lo que antes ocupaba el final de la portada y se ajusta una vez.
+function sAdminCelular() {
+    return '<div class="adm">' + H('ESTE CELULAR', "irAAdministrar()")
+        + '<div class="adm-cajon">'
         + (!cust || !('serviceWorker' in navigator) || !('PushManager' in window) ? '' : '<button class="adm-fila" onclick="togglePushNotifications()">' + (pushSubscribed ? 'Notificaciones activadas · tocar para apagar' : 'Activar notificaciones de pedido nuevo') + '</button>')
         + '<label class="adm-fila">Sonido de pedido nuevo <select onchange="setNotifSound(this.value)">'
         + ['campana', 'timbre', 'grave'].map(function (p) { return '<option value="' + p + '" ' + (notifSoundPreset === p ? 'selected' : '') + '>' + p + '</option>'; }).join('')
         + '</select></label>'
         + '<button class="adm-fila" onclick="toggleAdminLight()">Modo ' + (adminLightMode ? 'oscuro' : 'claro') + '</button>'
-        + '</div>'
-        + '</div>';
+        + '</div></div>';
 }
 // MODO FOCO — un solo pedido a pantalla completa, con el botón de acción principal
 // anclado con position:fixed al fondo real del viewport (la "zona del pulgar" que el
@@ -671,9 +742,8 @@ function sAdminFocus() {
         + '<div style="display:flex;gap:10px;margin-top:22px">'
         + '<button onclick="printTicket(\'' + o.id + '\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(139,175,154,.12);border:1px solid rgba(139,175,154,.4);color:var(--sw-text-muted,#9DA096);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.04em;padding:19px 4px;border-radius:8px">' + iconTxt('printer', 'Ticket', '#9DA096') + '</button>'
         + ((o.contact_phone || o.customer_phone) ? '<button onclick="waAdmin(\'' + o.id + '\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:' + GOLD + ';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.04em;padding:19px 4px;border-radius:8px">' + iconTxt('chat', 'WhatsApp', GOLD) + '</button>' : '')
-        // #19 — Solo cuando el pedido ya salió: antes de eso no hay token y no habría a quién
-        // mandarle el link.
-        + (o.status === 'EN CAMINO' && o.delivery_token ? '<button onclick="waDeliveryLink(\'' + o.id + '\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.45);color:var(--sw-whatsapp,#25D366);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.04em;padding:19px 4px;border-radius:8px">' + iconTxt('chat', 'Link entrega', 'var(--sw-whatsapp,#25D366)') + '</button>' : '')
+        // «Link al motorizado» salió el 2026-10-07: el motorizado es de un tercero y no toca links
+        // (docs/IDEAS_A_FUTURO.md). Lo cierra el cliente con «Ya me llegó».
         + '</div>'
         + '<button onclick="cancelOrder(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid rgba(255,85,85,.4);color:var(--sw-danger,#ff8888);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.06em;padding:15px 0;border-radius:8px;text-align:center;margin-top:12px">' + iconTxt('close', 'Cancelar pedido' + (manualPending ? ' (nunca pagó)' : ''), 'var(--sw-danger,#ff8888)') + '</button>'
         + '</div>';
@@ -693,6 +763,8 @@ function sAdminFocus() {
     // avisa de nada.
     var fade = '<div aria-hidden="true" style="position:absolute;left:0;right:0;top:0;transform:translateY(-100%);height:20px;pointer-events:none;background:linear-gradient(to top, var(--sw-bg,#17130E), rgba(0,0,0,0))"></div>';
     var fixedBar = '<div class="sw-barra" style="position:fixed;left:0;right:0;bottom:0;padding:14px 20px calc(14px + env(safe-area-inset-bottom));background:' + barBg + ';border-top:1px solid var(--sw-border,#2C3228);box-shadow:0 -6px 20px rgba(0,0,0,.25)">' + fade
+        // Armando: avisar al motorizado desde la misma receta, sin volver a la lista (2026-10-07).
+        + (o.status === 'PREPARANDO' ? '<button class="coc-b ' + (motoAvisos()[String(o.id)] ? 'gh' : 'cola') + '" style="margin:0 0 10px" data-accion="pedir-motorizado" onclick="pedirMotorizado(\'' + o.id + '\')">' + etiquetaMotorizado(o) + '</button>' : '')
         + (manualPending
             ? '<button onclick="confirmAndAdvance(\'' + o.id + '\')" style="all:unset;cursor:pointer;display:block;width:100%;background:' + GOLD + ';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:700;letter-spacing:.04em;padding:20px 0;border-radius:10px;text-align:center">' + iconTxt('check', 'Confirmar pago y preparar', '#000') + '</button>'
                 // min-height 44: era la ÚNICA zona táctil de esta pantalla por debajo del mínimo de
@@ -730,13 +802,14 @@ function etapaCocina(o) {
         return 'luego';
     return 'cola';
 }
-var ETAPAS_COCINA = [['todos', 'Todos'], ['pago', 'Pago'], ['cola', 'Cola'], ['armando', 'Armando'], ['camino', 'En camino'], ['luego', 'Programados']];
+var ETAPAS_COCINA = [['todos', 'Todos'], ['pago', 'Pago'], ['cola', 'Cola'], ['armando', 'Armando'], ['luego', 'Programados']];
 function abrirCocina() {
     panelModo = 'cocina';
     sndScreen = 'admin_cocina';
     if (!pollTimer)
         startPoll();
     keepScreenAwake();
+    cargarAvisosDelNegocio(true);
     render();
 }
 function irAAdministrar() {
@@ -745,6 +818,9 @@ function irAAdministrar() {
     sndScreen = 'admin_home';
     render();
 }
+// Tocar un pedido EN COLA es empezarlo (2026-10-07): si lo abres es porque lo vas a armar.
+// Eran dos toques —«Empezar» y abrir la receta— para una sola decisión. Uno que espera pago o
+// que está programado para más tarde solo se abre: avanzarlo sería saltarse el cobro o la hora.
 function abrirPedidoEnCocina(id) {
     var ao = sortedActiveOrders();
     var i = ao.findIndex(function (o) { return mismoId(o.id, id); });
@@ -754,6 +830,8 @@ function abrirPedidoEnCocina(id) {
     focusRef = ao[i].id;
     sndScreen = 'admin_focus';
     render();
+    if (etapaCocina(ao[i]) === 'cola')
+        updateStatus(ao[i].id, 'PREPARANDO');
 }
 function soles(n) { return 'S/' + (Number(n) || 0).toFixed(2); }
 // Lo que el motorizado necesita y nada más: dónde, cómo llegar, a quién y cuánto cobrar.
@@ -770,28 +848,91 @@ function mensajeParaElGrupo(o) {
         + '\nRecibe: ' + (o.customer_name || '') + (tel ? ' · ' + tel : '')
         + '\n' + cobrar;
 }
+// ── EL MOTORIZADO ────────────────────────────────────────────────────────────────────
+// Dos pedidos a la misma puerta o a la misma zona en la misma ventana (queueAddressFlags del
+// servidor) salen en un solo viaje: un solo mensaje al grupo. Cada uno lleva su propio COBRAR o
+// «ya pagado» — juntarlos nunca puede mezclar qué se cobra en qué puerta.
+function companerosDeViaje(o) {
+    var f = adminAddressFlags;
+    if (!f)
+        return [];
+    var refs = [];
+    (f.duplicates || []).concat(f.nearby || []).forEach(function (g) {
+        if ((g.refs || []).indexOf(o.ref) >= 0)
+            g.refs.forEach(function (r) { if (r !== o.ref && refs.indexOf(r) < 0)
+                refs.push(r); });
+    });
+    return (adminOrders || []).filter(function (x) { return refs.indexOf(x.ref) >= 0 && x.status === 'PREPARANDO'; });
+}
+function mensajeDelViaje(pedidos) {
+    if (pedidos.length === 1)
+        return mensajeParaElGrupo(pedidos[0]);
+    return 'SND//WCH · ' + pedidos.length + ' pedidos, un solo viaje\n\n' + pedidos.map(mensajeParaElGrupo).join('\n\n— — —\n\n');
+}
+// Cuándo se avisó al grupo, por pedido: la tarjeta lo dice para no avisar dos veces.
+function motoAvisos() { try {
+    return JSON.parse(localStorage.getItem('sw_moto') || '{}') || {};
+}
+catch (e) {
+    return {};
+} }
+function anotarMotoAvisado(ids) {
+    try {
+        var m = motoAvisos(), ahora = Date.now();
+        Object.keys(m).forEach(function (k) { if (ahora - m[k] > 86400000)
+            delete m[k]; });
+        ids.forEach(function (id) { m[String(id)] = ahora; });
+        localStorage.setItem('sw_moto', JSON.stringify(m));
+    }
+    catch (e) { }
+}
+// La hoja de compartir del celular pone primero los chats que más usas —el grupo de
+// motorizados—: tocarlo y enviar. Sin ella (laptop), wa.me abre el selector de chats.
 function pedirMotorizado(id) {
     var o = (adminOrders || []).find(function (x) { return mismoId(x.id, id); });
     if (!o)
         return;
-    // Sin número: wa.me sin destinatario abre el selector y ahí se elige el grupo.
-    window.open('https://wa.me/?text=' + encodeURIComponent(mensajeParaElGrupo(o)), '_blank');
+    var viaje = [o].concat(companerosDeViaje(o));
+    var texto = mensajeDelViaje(viaje);
+    anotarMotoAvisado(viaje.map(function (x) { return x.id; }));
+    var nav = navigator;
+    if (nav.share) {
+        nav.share({ text: texto }).catch(function (e) {
+            if (!e || e.name !== 'AbortError')
+                window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
+        });
+    }
+    else {
+        window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
+    }
+    render();
+}
+function etiquetaMotorizado(o) {
+    var n = companerosDeViaje(o).length;
+    var t = motoAvisos()[String(o.id)];
+    if (t)
+        return 'Volver a avisar';
+    return n ? 'Mandar al motorizado · ' + (n + 1) + ' pedidos' : 'Mandar al motorizado';
 }
 function botonDeCocina(o) {
     var et = etapaCocina(o);
     if (et === 'pago')
-        return '<button class="coc-b pago" data-accion="confirmar-pago" onclick="event.stopPropagation();confirmAndAdvance(\'' + o.id + '\')">Pago recibido · empezar →</button>'
+        return '<button class="coc-b pago" data-accion="confirmar-pago" onclick="event.stopPropagation();confirmAndAdvance(\'' + o.id + '\')">Pago recibido · armar →</button>'
             + (o.receipt_path ? '<button class="coc-b gh" onclick="event.stopPropagation();viewReceipt(\'' + o.id + '\')">Ver la captura</button>' : '');
-    if (et === 'cola' || et === 'luego')
-        return '<button class="coc-b cola" data-accion="empezar" onclick="event.stopPropagation();updateStatus(\'' + o.id + '\',\'PREPARANDO\')">Empezar a armar →</button>';
-    if (et === 'armando')
-        return '<div class="coc-par">'
-            + '<button class="coc-b gh" data-accion="pedir-motorizado" onclick="event.stopPropagation();pedirMotorizado(\'' + o.id + '\')">Pedir motorizado</button>'
+    if (et === 'cola')
+        return '<button class="coc-b cola" data-accion="empezar" onclick="event.stopPropagation();abrirPedidoEnCocina(\'' + o.id + '\')">Armar →</button>';
+    if (et === 'luego')
+        return '';
+    if (et === 'armando') {
+        var avisado = motoAvisos()[String(o.id)];
+        return (avisado ? '<div class="q">Motorizado avisado a las ' + horaLima(avisado) + '</div>' : '')
+            + '<div class="coc-par">'
+            + '<button class="coc-b ' + (avisado ? 'gh' : 'cola') + '" data-accion="pedir-motorizado" onclick="event.stopPropagation();pedirMotorizado(\'' + o.id + '\')">' + etiquetaMotorizado(o) + '</button>'
             + '<button class="coc-b arm" data-accion="salio" onclick="event.stopPropagation();updateStatus(\'' + o.id + '\',\'EN CAMINO\')">Salió →</button></div>';
-    return '<div class="coc-par">'
-        + (o.delivery_token ? '<button class="coc-b gh" data-accion="link-entrega" onclick="event.stopPropagation();waDeliveryLink(\'' + o.id + '\')">Link al motorizado</button>' : '')
-        + '<button class="coc-b cam" data-accion="entregado" onclick="event.stopPropagation();updateStatus(\'' + o.id + '\',\'ENTREGADO\')">Entregado ✓</button></div>';
+    }
+    return '';
 }
+function cobraContraEntrega(o) { return o.payment_method === 'cod' && o.payment_status !== 'paid'; }
 function tarjetaDeCocina(o) {
     var et = etapaCocina(o);
     var mins = minutesAgo(orderDueTime(o));
@@ -803,40 +944,118 @@ function tarjetaDeCocina(o) {
         + '<div class="h"><b>' + esc(o.ref || '') + '</b><span class="tag">' + etiqueta + '</span><span class="min">' + reloj + '</span></div>'
         + '<div class="it">' + esc(o.summary || '') + '</div>'
         + (et === 'pago' ? '<div class="q">' + (o.payment_method === 'plin' ? 'Plin' : 'Yape') + ' · ' + soles(o.total) + '</div>' : '')
-        + (et === 'armando' || et === 'camino' ? '<div class="q">' + esc(o.customer_address || '') + (o.notes ? ' · ' + esc(o.notes) : '') + '</div>' : '')
+        + (et === 'armando' ? '<div class="q">' + esc(o.customer_address || '') + (o.notes ? ' · ' + esc(o.notes) : '') + '</div>' : '')
         + (o.payment_method === 'yape' || o.payment_method === 'plin' ? receiptOcrHTML(o) : '')
         + botonDeCocina(o)
         + '</div>';
 }
+// EN CAMINO no pide tus manos: va abajo, en una fila. Lo cierra el cliente con «Ya me llegó»
+// (confirm-my-delivery). El contra entrega sin cobrar sí es tuyo: cerrarlo registra el cobro.
+function filaEnCamino(o) {
+    var cod = cobraContraEntrega(o);
+    return '<div class="coc-fila" data-pedido="' + o.id + '" data-camino="' + (cod ? 'cobrar' : 'pagado') + '">'
+        + '<span><b>' + esc(o.ref || '') + '</b><s>' + esc(o.customer_address || '') + (o.status_changed_at ? ' · salió ' + horaLima(Date.parse(o.status_changed_at)) : '') + '</s></span>'
+        + (cod
+            ? '<button class="coc-b cam" data-accion="cobrado" onclick="updateStatus(\'' + o.id + '\',\'ENTREGADO\')">Cobró ' + soles(o.total) + ' ✓</button>'
+            : '<button class="coc-b gh" data-accion="entregado" onclick="updateStatus(\'' + o.id + '\',\'ENTREGADO\')">Entregado</button>')
+        + '</div>';
+}
+// ── AL CERRAR ────────────────────────────────────────────────────────────────────────
+// Con la tienda cerrada, lo que sigue en camino ya llegó (el cliente no siempre toca «Ya me
+// llegó»). Se cierran de un toque SOLO los ya pagados: un contra entrega cerrado en lote
+// quedaría registrado como cobrado sin que nadie haya contado esa plata.
+function cerrablesAlCierre(orders) {
+    return (orders || []).filter(function (o) { return o.status === 'EN CAMINO' && !cobraContraEntrega(o); });
+}
+var _cerrandoDia = false;
+async function cerrarPagadosEnCamino() {
+    if (_cerrandoDia)
+        return;
+    var lista = cerrablesAlCierre(adminOrders);
+    if (!lista.length)
+        return;
+    _cerrandoDia = true;
+    render();
+    var hechos = 0;
+    for (var i = 0; i < lista.length; i++) {
+        try {
+            await api('admin-update-status', { token: token, orderId: lista[i].id, status: 'ENTREGADO', etaMinutes: null });
+            hechos++;
+            adminOrders = adminOrders.filter(function (x) { return x.id !== lista[i].id; });
+        }
+        catch (e) { }
+    }
+    _cerrandoDia = false;
+    showToast(hechos === lista.length ? hechos + ' pedido' + (hechos === 1 ? '' : 's') + ' cerrado' + (hechos === 1 ? '' : 's') + '.' : 'Se cerraron ' + hechos + ' de ' + lista.length + '. Vuelve a intentar.', hechos === lista.length ? 'success' : undefined);
+    render();
+}
+// ── AVISOS DEL NEGOCIO EN «TE TOCA» ─────────────────────────────────────────────────────
+// Lo que admin-health vigila y no es un pedido (los pedidos ya están en la lista): reclamos con
+// plazo, agotados, tandas vencidas, procesos caídos. Antes era un botón más en Administrar —
+// «Qué pide atención»—, o sea, solo lo veía quien se acordaba de abrirlo.
+var _avisosPedidosEn = 0;
+function cargarAvisosDelNegocio(ya) {
+    if (!ya && Date.now() - _avisosPedidosEn < 5 * 60000)
+        return;
+    _avisosPedidosEn = Date.now();
+    api('admin-health', { token: token }).then(function (r) { healthData = r; if (sndScreen === 'admin_cocina')
+        render(); }).catch(function () { });
+}
+var AVISO_PANTALLA = { admin_inventory: 'loadInventory()', admin_complaints: 'loadAdminComplaints()' };
+function avisosDelNegocio() {
+    if (!healthData || !healthData.signals)
+        return '';
+    return healthData.signals.filter(function (sg) { return sg.level !== 'ok' && sg.id !== 'pagos' && sg.id !== 'estancados'; }).map(function (sg) {
+        var ir = AVISO_PANTALLA[sg.screen] || 'loadTechHealth()';
+        return '<div class="coc-aviso ' + (sg.level === 'problema' ? 'mal' : '') + '" data-aviso="' + esc(sg.id) + '"><span><b>' + esc(sg.label) + (sg.count ? ' · ' + sg.count : '') + '</b><s>' + esc(sg.hint || '') + '</s></span>'
+            + '<button class="coc-b gh" onclick="' + ir + '">Ver</button></div>';
+    }).join('');
+}
 function sAdminCocina() {
+    cargarAvisosDelNegocio();
+    // La sugerencia de porciones (plan de tanda) se pide una vez, al aparecer la hoja.
+    if (!abroHecho() && !abro.abierta) {
+        abro.abierta = true;
+        setTimeout(abrirAbroCon, 0);
+    }
     var ao = sortedActiveOrders();
-    var cuenta = { todos: ao.length, pago: 0, cola: 0, armando: 0, camino: 0, luego: 0 };
-    ao.forEach(function (o) { cuenta[etapaCocina(o)]++; });
-    var lista = cocinaFiltro === 'todos' ? ao : ao.filter(function (o) { return etapaCocina(o) === cocinaFiltro; });
+    var enCamino = ao.filter(function (o) { return o.status === 'EN CAMINO'; });
+    var aMano = ao.filter(function (o) { return o.status !== 'EN CAMINO'; });
+    var cuenta = { todos: aMano.length, pago: 0, cola: 0, armando: 0, luego: 0 };
+    aMano.forEach(function (o) { cuenta[etapaCocina(o)]++; });
+    var lista = cocinaFiltro === 'todos' ? aMano : aMano.filter(function (o) { return etapaCocina(o) === cocinaFiltro; });
     var st = storeStatus();
     var pausa = storePausedUntil && new Date(storePausedUntil).getTime() > Date.now();
+    var cerrables = st.open ? [] : cerrablesAlCierre(adminOrders);
+    var avisos = avisosDelNegocio();
     return '<div class="coc">'
         + '<div class="coc-top"><span class="pill ' + (pausa ? 'pausa' : st.open ? 'on' : 'off') + '">' + (pausa ? 'EN PAUSA' : st.open ? 'ABIERTO' : 'CERRADO') + '</span>'
-        + '<b>Cocina</b><span class="hora">' + horaLima(Date.now()) + '</span>'
+        + '<b>Te toca</b><span class="hora">' + horaLima(Date.now()) + '</span>'
         + (pausa
             ? '<button class="coc-pausa" data-accion="reanudar" onclick="pauseStore(0)">Reanudar</button>'
-            : '<button class="coc-pausa" data-accion="pausar" onclick="cocinaPausaAbierta=!cocinaPausaAbierta;render()">Pausar</button>')
+            : st.open ? '<button class="coc-pausa" data-accion="pausar" onclick="cocinaPausaAbierta=!cocinaPausaAbierta;render()">Pausar</button>' : '')
         + '</div>'
         + (cocinaPausaAbierta && !pausa ? '<div class="coc-pausas">' + [[30, '30 min'], [60, '1 hora'], [180, '3 horas'], [600, 'Resto del día']].map(function (x) {
             return '<button data-accion="pausar-' + x[0] + '" onclick="cocinaPausaAbierta=false;pauseStore(' + x[0] + ')">' + x[1] + '</button>';
         }).join('') + '</div>' : '')
         + (pollFailing ? '<div class="coc-alerta">No se pudo actualizar. Lo que ves puede estar atrasado.</div>' : '')
-        + (abro.abierta ? hojaAbroCon() : abroHecho() ? '' : '<button class="coc-abro" data-accion="abro-con" onclick="abrirAbroCon()"><span>¿Con cuántas porciones abres hoy?</span><u>Contar</u></button>')
+        // Abrir el día ES contar porciones: sin el conteo el cliente nunca ve «Quedan N».
+        + (abroHecho() ? '' : hojaAbroCon())
+        + (cerrables.length ? '<div class="coc-aviso" data-aviso="cierre"><span><b>' + cerrables.length + ' pedido' + (cerrables.length === 1 ? '' : 's') + ' pagado' + (cerrables.length === 1 ? '' : 's') + ' siguen en camino</b><s>La tienda cerró: ya llegaron. Los de contra entrega se cierran uno por uno, con lo cobrado.</s></span>'
+            + '<button class="coc-b cola" data-accion="cerrar-en-camino" ' + (_cerrandoDia ? 'disabled' : '') + ' onclick="cerrarPagadosEnCamino()">' + (_cerrandoDia ? 'Cerrando…' : 'Cerrarlos') + '</button></div>' : '')
+        + (!st.open && abroHecho() ? '<button class="coc-abro" data-accion="cierre-de-caja" onclick="loadCashClose()"><span>Cuadra la caja de hoy</span><u>Abrir</u></button>' : '')
+        + avisos
         + addressFlagsBanner()
-        + '<div class="coc-cont">' + ETAPAS_COCINA.filter(function (e) { return e[0] === 'todos' || cuenta[e[0]]; }).map(function (e) {
-        return '<button class="' + e[0] + (cocinaFiltro === e[0] ? ' sel' : '') + '" data-filtro="' + e[0] + '" onclick="cocinaFiltro=\'' + e[0] + '\';render()"><b>' + cuenta[e[0]] + '</b><span>' + e[1] + '</span></button>';
-    }).join('') + '</div>'
+        + (aMano.length ? '<div class="coc-cont">' + ETAPAS_COCINA.filter(function (e) { return e[0] === 'todos' || cuenta[e[0]]; }).map(function (e) {
+            return '<button class="' + e[0] + (cocinaFiltro === e[0] ? ' sel' : '') + '" data-filtro="' + e[0] + '" onclick="cocinaFiltro=\'' + e[0] + '\';render()"><b>' + cuenta[e[0]] + '</b><span>' + e[1] + '</span></button>';
+        }).join('') + '</div>' : '')
         + '<div class="coc-lista">'
         + (lista.length ? lista.map(tarjetaDeCocina).join('')
-            : '<div class="coc-vacio">' + (ao.length ? 'Nada en esta etapa.' : 'Sin pedidos en curso. Cuando entre uno, suena y vibra.') + '</div>')
+            : '<div class="coc-vacio">' + (aMano.length ? 'Nada en esta etapa.' : (st.open ? 'Nada que armar. Cuando entre un pedido, suena y vibra.' : 'La tienda está cerrada.')) + '</div>')
         + '</div>'
+        + (enCamino.length ? '<div class="coc-sec"><h3>En camino · ' + enCamino.length + '</h3><p>Los cierra el cliente con «Ya me llegó». Los de contra entrega, tú, cuando el motorizado entrega lo cobrado.</p>' + enCamino.map(filaEnCamino).join('') + '</div>' : '')
         + '<div class="coc-tabs sw-barra">'
-        + '<button class="sel">Pedidos</button>'
+        + '<button class="sel">Te toca</button>'
         + '<button data-accion="agotar" onclick="loadInventory()">Agotar</button>'
         + '<button data-accion="ir-a-administrar" onclick="irAAdministrar()">Administrar</button>'
         + '</div>'
@@ -4177,6 +4396,7 @@ function exportComplianceCsv() {
 // aparte de escribir, y ninguna herramienta lo comprueba por ti.
 Object.assign(ADMIN_SCREENS, {
     admin_home: sAdminHome,
+    admin_celular: sAdminCelular,
     admin_health: sAdminHealth,
     admin_batch: sAdminBatchPlan,
     admin_video: sAdminVideo,
@@ -4215,6 +4435,12 @@ Object.assign(ADMIN_SCREENS, {
     admin_focus: sAdminFocus,
     admin_cocina: sAdminCocina,
     admin_meta_ads: sAdminMetaAds,
+});
+// Cada pantalla del panel anota su apertura al pintarse (registrarApertura, 09-*). Se envuelve
+// acá, en el único registro de pantallas, para que una pantalla nueva no pueda olvidarse.
+Object.keys(ADMIN_SCREENS).forEach(function (k) {
+    var pintar = ADMIN_SCREENS[k];
+    ADMIN_SCREENS[k] = function () { registrarApertura(k); return pintar(); };
 });
 // ── FRENO POR TECHO DE CAC ────────────────────────────────────────────────────────────
 //

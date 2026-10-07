@@ -34,20 +34,18 @@ function H(sub?,bk?,showCart?){
      +'justify-content:center;font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;'
      +'color:'+ACC_INK()+';background:'+ACC()+';border-radius:999px">'+total+'</button>'
     :'';
-  // Estos dos son del panel del dueño y no del cliente. Se quedan por la misma razon de
-  // siempre: sin ellos, un operador en cualquiera de las 14 pantallas internas del admin
-  // tiene que volver a la cola para cambiar de tema o saltar a otra herramienta.
-  var lightToggle=sndScreen.indexOf('admin')===0
-    ?'<button onclick="toggleAdminLight()" title="Modo claro/oscuro" aria-label="Cambiar modo claro/oscuro" '
-     +'style="all:unset;cursor:pointer;width:40px;height:40px;display:inline-flex;align-items:center;'
-     +'justify-content:center;flex-shrink:0">'+icon(adminLightMode?'moon':'sun',16)+'</button>':'';
+  // El cajón de herramientas, para saltar de una pantalla del panel a otra sin volver a la
+  // portada. El modo claro/oscuro vive en «Este celular» desde el 2026-10-07: se ajusta una vez.
   var toolsNav=(sndScreen.indexOf('admin')===0&&sndScreen!=='admin_home')
     ?'<button onclick="toggleAdminToolsDrawer()" title="Herramientas" aria-label="Abrir navegación de herramientas" '
      +'style="all:unset;cursor:pointer;width:40px;height:40px;display:inline-flex;align-items:center;'
      +'justify-content:center;flex-shrink:0">'+icon('grid',16)+'</button>':'';
-  var der=cartIcon+toolsNav+lightToggle;
+  var der=cartIcon+toolsNav;
+  // Las pestañas de una entrada del panel que junta varias pantallas (chipsDelGrupo, 09-*):
+  // van acá para aparecer en todas las del grupo sin tocar cada pantalla.
+  var chips=sndScreen.indexOf('admin')===0&&typeof (window as any).chipsDelGrupo==='function'?(window as any).chipsDelGrupo():'';
   return RIEL({volver:bk||'',titulo:sub||'',
-               derecha:der?'<div style="display:flex;align-items:center;gap:2px">'+der+'</div>':''});
+               derecha:der?'<div style="display:flex;align-items:center;gap:2px">'+der+'</div>':''})+chips;
 }
 function NAV(){
   var oa=sndTab==='order';

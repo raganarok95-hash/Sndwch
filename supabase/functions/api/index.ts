@@ -22,7 +22,7 @@ import {
 } from "./actions/auth.ts";
 import {
   actPrepareOrder, actPlaceOrder, actMyOrders, actMyHistory, actAdminOrders, actConfirmDelivery, actAdminReceiptOcr, actClienteLeeCaptura, actAdminUpdateStatus,
-  actAdminConfirmPayment, actAdminCancelOrder, actCancelMyOrder,
+  actAdminConfirmPayment, actAdminCancelOrder, actCancelMyOrder, actConfirmMyDelivery,
   actExpireStaleManualPayments, actAlertStuckOrders, actExpirePendingCharges,
   actAlertScheduledOrders, actReconcileCulqiCharges, actRemindLowStock, actAlertBatchExpiry,
   actUploadReceipt, actAdminReceiptUrl, actValidatePromoCode,
@@ -43,7 +43,7 @@ import {
 import {
   actAdminManualPoints, actAdminManualCredit, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
   actAdminInventoryToggle, actAdminInventorySetStock, actAdminInventoryRestock, actAdminInventoryBatches, actAdminInventorySetShelfLife, actAlertScheduledShortfall, actAlertCardDeclines, actAlertSystemHealth, actAdminHealth, actAdminBatchPlan, actAlertCookNow, actAdminRecipes, actAdminRecipeSet, actAdminCashClose, actAdminPurchases, actAdminPurchaseAdd, actAdminCulqiReport, actAdminTechHealth, actAdminCacBrake, actAdminAdSpendSet, actAlertCacBrake, actAdminKillPromos, actAdminCompliance, actAlertAdminAccess, actSendRetentionReport, actAdminExportOrders, actAdminExportCustomers,
-  actDashboardStats, actAdminCustomerDetail, actAdminSearchOrders, actAdminAuditLog,
+  actDashboardStats, actAdminCustomerDetail, actAdminSearchOrders, actAdminAuditLog, actAdminAbrirPantalla,
   actAdminRangeReport, actAdminRatingsList, actAdminAtRiskCustomers,
   actAdminPrepList, actAdminTimeWindowReport, actAdminProblemAddresses,
   actAdminMarketingContent, actRemindMarketingContent, actAdminCampaignPerformance,
@@ -131,6 +131,7 @@ const ACTIONS: ConContrato & SinContrato = {
   "submit-rating": actSubmitRating,
   "admin-orders": actAdminOrders,
   "confirm-delivery": actConfirmDelivery,
+  "confirm-my-delivery": actConfirmMyDelivery,
   "admin-receipt-ocr": actAdminReceiptOcr,
   "cliente-lee-captura": actClienteLeeCaptura,
   "admin-update-status": actAdminUpdateStatus,
@@ -204,6 +205,7 @@ const ACTIONS: ConContrato & SinContrato = {
   "admin-customer-detail": actAdminCustomerDetail,
   "admin-search-orders": actAdminSearchOrders,
   "admin-audit-log": actAdminAuditLog,
+  "admin-abrir-pantalla": actAdminAbrirPantalla,
   "admin-range-report": actAdminRangeReport,
   "admin-ratings-list": actAdminRatingsList,
   "admin-at-risk-customers": actAdminAtRiskCustomers,

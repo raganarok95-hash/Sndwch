@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Panel productivo · 3 opciones</title>
+<style>
+/* REPENSAR (docs/COMO_DISENAR_ACA.md): archivo en blanco, no parte del marcado del panel.
+   Funcional, no estético: negro + ámbar del panel actual, tipografía de sistema, dedos ≥44px.
+   Productos de muestra: nombres de _shared/carta.ts. */
+:root{--bg:#0B0C0A;--card:#171915;--card2:#1F221C;--line:#2A2D27;--tx:#EFEDE4;--mu:#9A9C92;--amb:#F2A93B;--ok:#3FBF6A;--bad:#E5544B;--blu:#5B9BFF;--vio:#A98BFF}
+*{box-sizing:border-box;margin:0}
+body{background:#d9d6cc;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:28px;color:#1b1b18;width:1260px}
+h1{font-size:28px;margin-bottom:6px}
+h2{font-size:22px;margin:34px 0 8px;border-top:2px solid #1b1b18;padding-top:14px}
+h3{font-size:18px;margin-bottom:4px}
+p,li{font-size:15px;line-height:1.45}
+.lead{font-size:15px;color:#45463f;max-width:1100px}
+.fila{display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;margin-top:14px}
+.col{width:380px}
+.sub{color:#45463f;font-size:13px;line-height:1.4;margin-bottom:10px;min-height:56px}
+.cap{width:360px;border:6px solid #111;border-radius:22px;overflow:hidden;height:740px;background:#000}
+.cap img{width:100%;display:block}
+/* teléfono */
+.tel{width:360px;height:740px;background:var(--bg);color:var(--tx);border-radius:22px;overflow:hidden;display:flex;flex-direction:column;border:6px solid #111;position:relative}
+.top{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.top b{font-size:15px}
+.pill{padding:4px 9px;border-radius:999px;font-size:11px;font-weight:800}
+.on{background:var(--ok);color:#06210f}.off{background:#3a3c36;color:var(--tx)}
+.gh{margin-left:auto;border:1px solid var(--amb);color:var(--amb);background:none;border-radius:8px;padding:8px 10px;font-size:13px;font-weight:700}
+.sc{flex:1;overflow:hidden;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.t{background:var(--card);border-radius:12px;padding:10px 12px;border-left:6px solid var(--mu)}
+.t .h{display:flex;align-items:baseline;gap:8px;font-size:13px;color:var(--mu)}
+.t .h b{color:var(--tx);font-size:15px}
+.t .h .m{margin-left:auto;font-weight:800}
+.t .it{font-size:15px;margin-top:3px;line-height:1.35}
+.t .q{color:var(--mu);font-size:13px;margin-top:2px}
+.btn{display:block;width:100%;margin-top:8px;padding:12px;border-radius:10px;border:none;font-size:15px;font-weight:800;text-align:center}
+.par{display:flex;gap:8px}.par .btn{flex:1}
+.b-amb{background:var(--amb);color:#231502}.b-ok{background:var(--ok);color:#06210f}.b-blu{background:var(--blu);color:#06142e}.b-bad{background:var(--bad);color:#2a0705}
+.b-gh{background:transparent;border:1px solid var(--line);color:var(--tx)}
+.lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);margin:4px 2px 0}
+.pago{border-left-color:var(--bad)}.cola{border-left-color:var(--amb)}.arm{border-left-color:var(--blu)}.cam{border-left-color:var(--vio)}.adm{border-left-color:#6f716a}.okk{border-left-color:var(--ok)}
+.tarde{color:var(--bad)!important}
+.nav{display:flex;border-top:1px solid var(--line);font-size:13px;font-weight:700}
+.nav span{flex:1;text-align:center;padding:14px 0;color:var(--mu)}.nav .s{color:var(--tx);box-shadow:inset 0 3px 0 var(--amb)}
+.busca{margin:10px 12px 0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:15px;color:var(--mu)}
+.paso{display:flex;gap:6px;padding:10px 12px}
+.paso span{flex:1;text-align:center;font-size:13px;font-weight:700;padding:9px 0;border-radius:8px;background:var(--card);color:var(--mu)}
+.paso .s{background:var(--amb);color:#231502}.paso .h{background:#2c3a2a;color:var(--ok)}
+.chk{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:10px;padding:12px;font-size:15px}
+.chk i{width:22px;height:22px;border-radius:6px;border:2px solid var(--mu);flex:none;font-style:normal;text-align:center;line-height:18px;font-size:13px}
+.chk.ok i{background:var(--ok);border-color:var(--ok);color:#06210f}.chk.ok{color:var(--mu)}
+.chk .r{margin-left:auto;color:var(--amb);font-weight:700;font-size:13px}
+.num{display:flex;align-items:center;justify-content:space-between;background:var(--card);border-radius:12px;padding:12px}
+.num .v{font-size:40px;font-weight:800}
+.num .pm{width:56px;height:56px;border-radius:12px;background:var(--card2);font-size:28px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.tira{display:flex;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.tira span{background:var(--card);border-radius:8px;padding:6px 8px;font-size:12px;font-weight:700;border-left:4px solid var(--mu)}
+.big{font-size:28px;font-weight:800;line-height:1.15}
+.rec li{font-size:15px;margin:4px 0}
+.ing{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.ing i{width:22px;height:22px;border-radius:999px;border:2px solid var(--mu);flex:none}
+.ing.ok i{background:var(--ok);border-color:var(--ok)}.ing.ok{color:var(--mu);text-decoration:line-through}
+.k{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.k div{background:var(--card);border-radius:10px;padding:10px}
+.k b{display:block;font-size:22px}.k span{font-size:12px;color:var(--mu)}
+/* tablas de la lámina */
+table{border-collapse:collapse;margin-top:10px;background:#efece3;font-size:14px}
+th,td{border:1px solid #b9b5a8;padding:7px 10px;text-align:left;vertical-align:top}
+th{background:#1b1b18;color:#efece3}
+td.n{text-align:center;font-weight:800}
+.nota{background:#efece3;border-left:5px solid #1b1b18;padding:12px 14px;margin-top:12px;max-width:1180px}
+.wm{display:inline-flex;gap:.16em;vertical-align:middle;margin:0 .1em}
+.wm i{display:block;width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px}
+.wm i:first-child{background:#CBA258}.wm i:last-child{background:#8CC8EC}
+</style></head><body>
+
+<h1>SND<span class="wm"><i></i><i></i></span>WCH · el panel, repensado para trabajar rápido</h1>
+<p class="lead">Encargo: «el panel admin necesita una remodelación total para enfocarse en productividad» (2026-10-03).
+No se reabre lo decidido el 2026-10-01: dos modos, celular primero, sin estado «Listo», el reparto lo hace un tercero por
+WhatsApp, «no bonito sino funcional y ordenado». <b>Nada de esto está construido.</b></p>
+
+<h2>1 · Cómo está hoy</h2>
+<p class="lead">Capturas reales del panel publicado, a 360 px, con 5 pedidos de muestra.</p>
+<div class="fila">
+  <div class="col"><h3>Cocina</h3><p class="sub">La riel aprobada. Funciona, pero cada pedido pide sus pasos uno por uno, y «Entregado» se marca a ciegas: el motorizado es de un tercero y no avisa.</p>
+    <div class="cap"><img src="hoy-panel/1-cocina.png"></div></div>
+  <div class="col"><h3>Al tocar un pedido</h3><p class="sub">La «receta» es la pantalla vieja (otra letra, otro color) y no muestra la receta: solo el resumen. Para seguir hay que volver a la lista.</p>
+    <div class="cap"><img src="hoy-panel/2-receta.png"></div></div>
+  <div class="col"><h3>Administrar</h3><p class="sub">36 botones en 5 cajones, todos del mismo tamaño. Lo que pide atención es un botón más (el primero), no lo que se ve al entrar.</p>
+    <div class="cap"><img src="hoy-panel/3-administrar.png"></div></div>
+</div>
+
+<h2>2 · Los toques de un pedido, contados</h2>
+<p class="lead">Pedido con Yape que se confirmó solo (lo normal desde el lector de capturas), de punta a punta, mirando la receta una vez.</p>
+<table>
+<tr><th>paso</th><th>hoy</th><th>toques</th><th>propuesto (vale para las 3 opciones)</th><th>toques</th></tr>
+<tr><td>empezar</td><td>«Empezar a armar»</td><td class="n">1</td><td rowspan="2">Tocar el pedido: se abre su receta <b>y</b> pasa a Armando (un solo gesto: si lo abres, es porque lo vas a armar)</td><td class="n" rowspan="2">1</td></tr>
+<tr><td>ver la receta</td><td>tocar el pedido · volver a la lista</td><td class="n">2</td></tr>
+<tr><td>pedir motorizado</td><td>«Pedir motorizado» · buscar el grupo · tocarlo · enviar · volver a la app</td><td class="n">5</td><td>Desde la receta. Se usa la hoja de compartir del celular, donde el grupo aparece primero por ser el más usado: tocarlo · enviar · volver (vuelves a la misma receta)</td><td class="n">4</td></tr>
+<tr><td>salió</td><td>«Salió →»</td><td class="n">1</td><td>«Salió →», en la receta y en la lista</td><td class="n">1</td></tr>
+<tr><td>entregado</td><td>«Entregado ✓», sin saber si se entregó</td><td class="n">1</td><td>Se cierra solo a la hora prometida + 30 min. Si algo falló, el cliente ya tiene «Algo salió mal»</td><td class="n">0</td></tr>
+<tr><th colspan="2">total por pedido</th><th>10</th><th></th><th>6</th></tr>
+</table>
+<div class="nota"><b>Y cuando salen dos a la misma zona</b> (la señal «agrupable» ya existe en la cola): un solo mensaje al grupo con los dos pedidos.
+El segundo pedido ahorra los 4 toques de WhatsApp: <b>20 → 8 toques</b> por la pareja.
+Si el pago no se confirmó solo, se suma «Ver captura» y «Pago recibido», igual que hoy (2 toques).<br>
+<b>Lo que no baja</b>: «Salió» sigue siendo un toque tuyo. Marcar «en camino» al pedir el motorizado le mentiría al cliente durante los 10–20 min que tarda en llegar.</div>
+
+<h2>3 · Tres respuestas a «¿qué es el panel?»</h2>
+<p class="lead">Las tres llevan los mismos toques de arriba y el mismo «Abro con N porciones». Cambia el esqueleto: qué ves al abrir, cómo se ordena, dónde quedan las 36 pantallas.</p>
+
+<!-- ───────── A ───────── -->
+<h2 style="border:none;margin-top:18px">A · Una lista de lo que te toca</h2>
+<p class="lead">El panel es una sola lista de tareas, la más urgente arriba. No cambia de forma en el día: cambian las tareas. Antes de abrir, la lista dice «cuenta porciones» y «abre»; en servicio, los pedidos; al cerrar, «cierra caja» y «responde 1 reclamo». Administrar deja de ser una grilla: es un buscador y tus 4 pantallas fijadas.</p>
+<div class="fila">
+  <div class="col"><p class="sub"><b>Antes de abrir.</b> Abrir la cocina ES contar porciones: sin eso no hay «Quedan N» para el cliente.</p>
+  <div class="tel">
+    <div class="top"><span class="pill off">CERRADO</span><b>Te toca</b><span style="margin-left:auto;color:var(--mu)">11:40</span></div>
+    <div class="sc">
+      <div class="t cola"><div class="h"><b>Con cuántas porciones abres</b><span class="m">abres 12:00</span></div>
+        <div class="num" style="margin-top:8px"><span class="pm">−</span><span class="v">40</span><span class="pm">+</span></div>
+        <div class="q">Ayer abriste con 40 y vendiste 31.</div>
+        <div class="btn b-amb">Abrir la cocina con 40 →</div></div>
+      <div class="t adm"><div class="h"><b>Agotado desde ayer</b></div><div class="it">Classic Tuna</div>
+        <div class="par"><div class="btn b-gh">Sigue agotado</div><div class="btn b-ok">Hay de nuevo</div></div></div>
+      <div class="t adm"><div class="h"><b>1 reclamo sin responder</b><span class="m tarde">vence en 2 días</span></div>
+        <div class="btn b-gh">Responder</div></div>
+    </div>
+    <div class="nav"><span class="s">Te toca · 3</span><span>Administrar</span></div>
+  </div></div>
+
+  <div class="col"><p class="sub"><b>En servicio.</b> La riel de hoy, pero con las tareas de administrar intercaladas por urgencia. Un pedido = una fila = un botón.</p>
+  <div class="tel">
+    <div class="top"><span class="pill on">ABIERTO</span><b>Te toca</b><span class="gh">Pausar</span></div>
+    <div class="sc">
+      <div class="t pago"><div class="h"><b>R-4101</b>pago no cuadra<span class="m tarde">hace 6 min</span></div><div class="it">Yape · la captura dice otro monto</div>
+        <div class="par"><div class="btn b-gh">Ver captura</div><div class="btn b-bad">Sí llegó</div></div></div>
+      <div class="t arm"><div class="h"><b>R-4104</b>armando<span class="m">hace 8 min</span></div><div class="it">1× Meatball Marinara 15</div>
+        <div class="btn b-amb">Mandar al motorizado · 2 a la misma zona</div></div>
+      <div class="t cola"><div class="h"><b>R-4102</b>en cola<span class="m">hace 4 min</span></div><div class="it">1× Classic Tuna 30 · 1 bebida</div>
+        <div class="btn b-amb">Armar →</div></div>
+      <div class="t cam"><div class="h"><b>R-4105</b>en camino<span class="m">se cierra solo 13:10</span></div><div class="it">Av. Larco · contra entrega</div></div>
+      <div class="t okk"><div class="h"><b>Quedan 9 porciones</b><span class="m">de 40</span></div></div>
+    </div>
+    <div class="nav"><span class="s">Te toca · 4</span><span>Administrar</span></div>
+  </div></div>
+
+  <div class="col"><p class="sub"><b>Administrar.</b> Ninguna grilla: escribes lo que buscas («precio», «horario», «Larco») y aparece. Fijas las que más usas.</p>
+  <div class="tel">
+    <div class="top"><b>Administrar</b><span class="gh">Te toca</span></div>
+    <div class="busca">Busca: precios, horario, un cliente…</div>
+    <div class="sc">
+      <div class="lbl">Fijadas</div>
+      <div class="k"><div><b>S/ 1 240</b><span>Números · hoy</span></div><div><b>Cerrar caja</b><span>abierta desde 12:00</span></div><div><b>La carta</b><span>precios · secreto</span></div><div><b>Avísale a tu gente</b><span>marketing</span></div></div>
+      <div class="lbl">Todo · 20 pantallas</div>
+      <div class="chk">Números<span class="r">›</span></div><div class="chk">Stock y tanda<span class="r">›</span></div><div class="chk">Clientes y puntos<span class="r">›</span></div><div class="chk">Reclamaciones<span class="r">›</span></div><div class="chk">¿Rinde el marketing?<span class="r">›</span></div>
+    </div>
+    <div class="nav"><span>Te toca · 4</span><span class="s">Administrar</span></div>
+  </div></div>
+</div>
+
+<!-- ───────── B ───────── -->
+<h2 style="border:none;margin-top:30px">B · Tres momentos del día</h2>
+<p class="lead">El panel es un recorrido fijo: <b>Abrir · Servicio · Cerrar</b>. El reloj te pone en el momento que toca y cada uno es una lista de pasos que se tachan. Sabes siempre qué falta para terminar el día. Administrar queda detrás de «Más», ordenado por momento.</p>
+<div class="fila">
+  <div class="col"><p class="sub"><b>Abrir.</b> Pasos fijos, siempre en el mismo orden. El último es el botón de abrir.</p>
+  <div class="tel">
+    <div class="top"><b>Hoy · miércoles</b><span style="margin-left:auto;color:var(--mu)">11:40</span></div>
+    <div class="paso"><span class="s">1 Abrir</span><span>2 Servicio</span><span>3 Cerrar</span></div>
+    <div class="sc">
+      <div class="chk ok"><i>✓</i>Revisar agotados<span class="r">0</span></div>
+      <div class="chk ok"><i>✓</i>Horario de hoy<span class="r">12–22</span></div>
+      <div class="chk"><i></i>Porciones para hoy</div>
+      <div class="num"><span class="pm">−</span><span class="v">40</span><span class="pm">+</span></div>
+      <div class="chk"><i></i>Plan de tanda<span class="r">ver ›</span></div>
+      <div class="btn b-amb" style="margin-top:auto">Abrir la tienda →</div>
+    </div>
+    <div class="nav"><span class="s">Hoy</span><span>Más</span></div>
+  </div></div>
+
+  <div class="col"><p class="sub"><b>Servicio.</b> Columnas de la pizarra en pestañas, con el número de cada una. Una pestaña a la vez: solo lo de ese paso.</p>
+  <div class="tel">
+    <div class="top"><span class="pill on">ABIERTO</span><b>Servicio</b><span class="gh">Pausar</span></div>
+    <div class="paso"><span class="h">1 ✓</span><span class="s">2 Servicio</span><span>3 Cerrar</span></div>
+    <div class="tira"><span style="border-left-color:var(--bad)">Pago 1</span><span style="border-left-color:var(--amb);background:#3a2c10">Cola 2</span><span style="border-left-color:var(--blu)">Armando 1</span><span style="border-left-color:var(--vio)">Camino 1</span></div>
+    <div class="sc">
+      <div class="t cola"><div class="h"><b>R-4102</b><span class="m">hace 4 min</span></div><div class="it">1× Classic Tuna 30 · 1 bebida</div><div class="btn b-amb">Armar →</div></div>
+      <div class="t cola"><div class="h"><b>R-4103</b><span class="m">hace 1 min</span></div><div class="it">1× Meatball Marinara 15</div><div class="btn b-amb">Armar →</div></div>
+      <div class="q" style="text-align:center;margin-top:6px">Quedan 9 porciones de 40</div>
+    </div>
+    <div class="nav"><span class="s">Hoy</span><span>Más</span></div>
+  </div></div>
+
+  <div class="col"><p class="sub"><b>Cerrar.</b> Lo que hay que hacer antes de irte, y el resumen del día. «Terminar el día» no se activa con pedidos abiertos.</p>
+  <div class="tel">
+    <div class="top"><span class="pill off">CERRADO</span><b>Cerrar</b><span style="margin-left:auto;color:var(--mu)">22:15</span></div>
+    <div class="paso"><span class="h">1 ✓</span><span class="h">2 ✓</span><span class="s">3 Cerrar</span></div>
+    <div class="sc">
+      <div class="k"><div><b>31</b><span>pedidos</span></div><div><b>S/ 1 240</b><span>vendido</span></div><div><b>9</b><span>porciones sobraron</span></div><div><b>18 min</b><span>espera media</span></div></div>
+      <div class="chk ok"><i>✓</i>Pedidos cerrados</div>
+      <div class="chk"><i></i>Cuadrar caja<span class="r">›</span></div>
+      <div class="chk"><i></i>1 reclamo nuevo<span class="r">›</span></div>
+      <div class="btn b-gh" style="margin-top:auto;color:var(--mu)">Terminar el día</div>
+    </div>
+    <div class="nav"><span class="s">Hoy</span><span>Más</span></div>
+  </div></div>
+</div>
+
+<!-- ───────── C ───────── -->
+<h2 style="border:none;margin-top:30px">C · El pedido que toca, y nada más</h2>
+<p class="lead">El panel es la mesada: a pantalla completa, el pedido que toca armar con su receta para tachar, y un botón gigante. La cola es una tira arriba. Lo que no pide tus manos (pagos que cuadran, pedidos entregados) no aparece. Administrar se reemplaza por «Tu semana»: cinco números y las decisiones pendientes; el resto, en una lista.</p>
+<div class="fila">
+  <div class="col"><p class="sub"><b>Armando.</b> Cada ingrediente se tacha. El botón de abajo es siempre el siguiente paso.</p>
+  <div class="tel">
+    <div class="top"><span class="pill on">ABIERTO</span><b>R-4104</b><span style="color:var(--mu)">hace 8 min</span><span class="gh">Pausar</span></div>
+    <div class="tira"><span style="border-left-color:var(--blu);background:#14243f">4104</span><span style="border-left-color:var(--amb)">4102</span><span style="border-left-color:var(--amb)">4103</span><span style="border-left-color:var(--bad)">4101 pago</span></div>
+    <div class="sc">
+      <div class="big">Meatball Marinara 15</div>
+      <div class="q">Mía · Av. Larco · «puerta verde»</div>
+      <div class="ing ok"><i></i>Pan Classic</div>
+      <div class="ing ok"><i></i>Albóndiga</div>
+      <div class="ing"><i></i>Tomate · cebolla</div>
+      <div class="ing"><i></i>Oil &amp; Vinegar</div>
+      <div class="ing"><i></i>1 bebida</div>
+    </div>
+    <div style="padding:12px"><div class="btn b-amb" style="padding:18px;font-size:18px">Mandar al motorizado →</div></div>
+  </div></div>
+
+  <div class="col"><p class="sub"><b>Esperando motorizado.</b> El pedido queda arriba hasta que sale; mientras, el siguiente ya se puede empezar.</p>
+  <div class="tel">
+    <div class="top"><span class="pill on">ABIERTO</span><b>R-4104</b><span style="color:var(--mu)">motorizado pedido</span><span class="gh">Pausar</span></div>
+    <div class="tira"><span style="border-left-color:var(--blu);background:#14243f">4104 ⏳</span><span style="border-left-color:var(--amb)">4102</span><span style="border-left-color:var(--amb)">4103</span><span style="border-left-color:var(--bad)">4101 pago</span></div>
+    <div class="sc" style="justify-content:center;text-align:center">
+      <div class="big">Bolsa lista</div>
+      <div class="q" style="font-size:15px">Avisado al grupo a las 12:41. Contra entrega: el motorizado cobra.</div>
+      <div class="btn b-gh" style="margin-top:18px">Empezar R-4102 mientras tanto</div>
+    </div>
+    <div style="padding:12px"><div class="btn b-blu" style="padding:18px;font-size:18px">Salió →</div></div>
+  </div></div>
+
+  <div class="col"><p class="sub"><b>Tu semana.</b> Sustituye la portada de 36 botones: lo que cambió, lo que hay que decidir, y la lista completa abajo.</p>
+  <div class="tel">
+    <div class="top"><b>Tu semana</b><span class="gh">Cocina</span></div>
+    <div class="sc">
+      <div class="k"><div><b>184</b><span>pedidos · +12%</span></div><div><b>S/ 7 310</b><span>vendido</span></div><div><b>S/ 9</b><span>costo por cliente nuevo</span></div><div><b>4,7</b><span>calificación</span></div></div>
+      <div class="lbl">Por decidir</div>
+      <div class="t adm"><div class="it">Classic Tuna se agotó 3 días</div><div class="btn b-gh">Subir porciones</div></div>
+      <div class="t adm"><div class="it">El freno de CAC pausó anuncios</div><div class="btn b-gh">Ver</div></div>
+      <div class="chk">Todo lo demás · 20<span class="r">›</span></div>
+    </div>
+  </div></div>
+</div>
+
+<h2>4 · Administrar: de 36 a 20, sin borrar nada</h2>
+<p class="lead">No hay datos de uso: el registro de acciones del panel solo guarda cambios (4 registros desde julio: 2 cancelaciones, 1 exportación, 1 promo). Propuesta: juntar ahora lo que responde a la misma pregunta y, desde la apertura, anotar cada pantalla que se abre. A las 4 semanas, lo que nadie abrió se discute contigo.</p>
+<table>
+<tr><th>pantalla nueva</th><th>junta</th></tr>
+<tr><td>(la portada misma)</td><td>Qué pide atención</td></tr>
+<tr><td>Números</td><td>Panel de negocio · Reportes</td></tr>
+<tr><td>Stock y tanda</td><td>Inventario · Preparación · Plan de tanda</td></tr>
+<tr><td>La carta</td><td>Signatures · Menú secreto · Precios</td></tr>
+<tr><td>Clientes y puntos</td><td>Buscar cliente · Puntos manuales</td></tr>
+<tr><td>Lo que dijeron</td><td>Calificaciones · Algo salió mal (Reclamaciones queda aparte: es el Libro, legal)</td></tr>
+<tr><td>Zonas</td><td>Direcciones con problemas · Zonas que esperan · Lista de espera</td></tr>
+<tr><td>Contenido</td><td>Calendario de contenido · Guion de video</td></tr>
+<tr><td>¿Rinde el marketing?</td><td>Rendimiento campañas · Las tres palancas · Freno de CAC</td></tr>
+<tr><td>Técnico</td><td>Auditoría · Salud técnica · Tarjeta / Culqi · Franjas horarias</td></tr>
+<tr><td colspan="2">Quedan igual: Buscar pedidos · Cierre de caja · Recetas · Compras y costos · Reclamaciones · Avísale a tu gente · Anuncios de Meta · Códigos promo · Horario y pausa · Administradores · Cumplimiento</td></tr>
+</table>
+
+<h2>5 · Recomendación: A</h2>
+<div class="nota">
+<p><b>A, una lista de lo que te toca</b>, con los toques del punto 2.</p>
+<ul class="rec">
+<li>Es la riel que ya aprobaste, estirada a todo el día: no hay que aprender una pantalla nueva y se construye sobre lo que existe.</li>
+<li>Es la única que responde «qué pide acción» sin que elijas un momento (B) ni un pedido (C): un reclamo que vence o un pago que no cuadra aparecen arriba aunque estés en plena cola.</li>
+<li>B ordena bien el día, pero en servicio esconde columnas detrás de pestañas: el pago que espera queda en otra pestaña. Sirve si quieres una rutina fija de apertura y cierre; sus pasos de «Abrir» y «Cerrar» pueden entrar en A como tareas.</li>
+<li>C es la mejor para armar sin equivocarse, y su pantalla de receta con ingredientes tachables debería ser la que se abre al tocar un pedido en A (hoy esa pantalla es la vieja y no muestra la receta).</li>
+</ul>
+<p style="margin-top:8px"><b>Lo que necesito que decidas:</b> (1) A, B o C, o una mezcla; (2) ¿«Entregado» se cierra solo a la hora prometida + 30 min?; (3) ¿junto las pantallas como en el punto 4 y empiezo a medir cuáles se abren?</p>
+</div>
+</body></html>

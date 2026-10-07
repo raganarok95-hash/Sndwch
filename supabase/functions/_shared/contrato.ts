@@ -220,6 +220,9 @@ export const CONTRATO = {
     e.objeto({ token, ref: e.textoOpcional(40), stars: e.sinRevisar(), comment: e.textoOpcional(2000), testimonialConsent: e.sinRevisar() }),
   ),
   'confirm-delivery': accion<Record<string, unknown>>()(e.objeto({ token, deliveryToken: e.textoOpcional(200) })),
+  'confirm-my-delivery': accion<Record<string, unknown>>()(
+    e.objeto({ token, orderId: e.textoOpcional(64), ref: e.textoOpcional(40) }),
+  ),
   'upload-receipt': accion<Record<string, unknown>>()(
     e.objeto({ token, ref: e.textoOpcional(40), mime: e.textoOpcional(60), imageBase64: e.sinRevisar() }),
   ),
@@ -317,6 +320,7 @@ export const CONTRATO = {
   'admin-secret-signature-set': accion<Record<string, unknown>>()(e.objeto({ token, name: e.textoOpcional(80), base: e.textoOpcional(20), proteinId: e.textoOpcional(20), tops: crudo, sauces: crudo, price15: e.numero({ min: 0, max: 500, mensaje: 'El precio de 15CM no es válido.' }), price30: e.numero({ min: 0, max: 500, mensaje: 'El precio de 30CM no es válido.' }), minOrders: crudo, vaultOnlyIds: crudo, imagePath: crudo, endsAt: crudo, hints: crudo, blurb: crudo, announce: crudo })),
   'admin-customer-detail': accion<Record<string, unknown>>()(e.objeto({ token, phone: crudo })),
   'admin-search-orders': accion<Record<string, unknown>>()(e.objeto({ token, q: crudo, status: crudo, dateFrom: crudo, dateTo: crudo })),
+  'admin-abrir-pantalla': accion<Record<string, unknown>>()(e.objeto({ token, pantalla: e.textoOpcional(40) })),
   'admin-audit-log': accion<Record<string, unknown>>()(e.objeto({ token, limit: crudo, actorPhone: crudo })),
   'admin-range-report': accion<Record<string, unknown>>()(e.objeto({ token, from: crudo, to: crudo })),
   'admin-ratings-list': accion<Record<string, unknown>>()(e.objeto({ token, limit: crudo, minStars: crudo, onlyWithComments: e.bandera(), onlyConsented: crudo })),

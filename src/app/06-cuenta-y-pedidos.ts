@@ -219,6 +219,9 @@ function sOrdDetail(){
   var repetible=its.some(cartItemRepeatable);
   var acc=''
     +(repetible&&o.status!=='CANCELADO'?'<button class="ac" onclick="loadCart(myOrders.find(function(x){return mismoId(x.id,_sndOd);}).items)"><span>Pedir lo mismo</span><s>'+SOLES_TXT+pz(precioDeRepetir(o))+' hoy</s></button>':'')
+    // «Ya me llegó» (2026-10-07): quien sabe que llegó es el cliente, no el dueño que cocina.
+    // Un contra entrega sin cobrar no: cerrarlo registra el cobro, y ese lo cierra el local.
+    +(o.status==='EN CAMINO'&&!(o.payment_method==='cod'&&o.payment_status!=='paid')?'<button class="ac" data-accion="ya-me-llego" onclick="doYaMeLlego(\''+esc(String(o.id))+'\',\''+esc(String(o.ref))+'\')"><span>Ya me llegó</span><s>y cuéntanos qué tal</s></button>':'')
     +(o.status==='RECIBIDO'?'<button class="ac" onclick="doCancelMyOrder(\''+esc(String(o.id))+'\',\''+esc(String(o.ref))+'\')"><span>Cancelar pedido</span><s>antes de que la cocina empiece</s></button>':'')
     +(puedeReportarPedido(o)&&cust?'<button class="ac" onclick="abrirAlgoSalioMal(\''+esc(String(o.ref))+'\')"><span>Algo salió mal</span><s>hasta '+REPORTE_PLAZO_HORAS+' h después</s></button>':'')
     +'<button class="ac" onclick="window.print()"><span>Guardar el recibo</span><s>PDF · no es boleta</s></button>';
@@ -256,6 +259,17 @@ async function doCancelMyOrder(ordId,ref){
     showToast('Pedido cancelado.','success');
     _cancelMyOrderInProgress=false;render();
   }catch(e){_cancelMyOrderInProgress=false;showToast(e.message);}
+}
+var _yaMeLlegoEnCurso=false;
+async function doYaMeLlego(ordId,ref){
+  if(_yaMeLlegoEnCurso)return;
+  _yaMeLlegoEnCurso=true;
+  try{
+    await api('confirm-my-delivery',{token:token||undefined,orderId:ordId,ref:ref});
+    myOrders=myOrders.map(function(o){return mismoId(o.id,ordId)?Object.assign({},o,{status:'ENTREGADO',delivered_at:new Date().toISOString()}):o;});
+    showToast('¡Buen provecho!','success');
+  }catch(e){showToast(e.message);}
+  _yaMeLlegoEnCurso=false;render();
 }
 // #20 — A los RATING_WINDOW_DAYS días se deja de pedir la calificación.
 //
