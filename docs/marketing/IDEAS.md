@@ -9,7 +9,7 @@ Personajes y tono: `BIBLIA_DE_LA_SERIE.md`. MAFE queda para después.
 
 ---
 
-## ★ Las 7 propuestas de esta ronda (para que las revises)
+## ★ Las propuestas de esta ronda (para que las revises)
 
 | # | idea | G N P V S H | total |
 |---|---|---|---|
@@ -20,6 +20,8 @@ Personajes y tono: `BIBLIA_DE_LA_SERIE.md`. MAFE queda para después.
 | **D1** | Para cuándo | 3 4 5 5 5 4 | **26** |
 | **B1** | La telenovela: «La Receta Prohibida» | 5 5 3 4 5 3 | **25** |
 | **A1** | La sexta salsa | 5 5 4 4 4 3 | **25** |
+| **K1** | El perfil completo (no es una pieza: es la vitrina) | 3 5 5 5 5 5 | **28** |
+| **K2** | La tira de los domingos | 4 5 3 4 5 5 | **26** |
 
 **C1 · El pedido raro de la semana.** Los domingos, WICHO lee en voz alta el armado más raro de
 los pedidos reales de la semana, sin datos del cliente. SANDO lo mira en silencio. Remate: el
@@ -44,6 +46,10 @@ justo donde se decide el almuerzo. Se generan en Canva con sus referencias, sin 
 **F1 · La anatomía.** El sándwich se abre capa por capa en el aire, cada capa con su nombre de la
 carta, y se vuelve a cerrar. Ahora se puede generar, fiel a la receta. Un Signature por
 semana, en rotación.
+
+**K1 · El perfil completo.** Antes que cualquier pieza: quien llega desde un video ve el perfil antes de pedir. Nombre que se encuentra al buscar «sándwiches», bio que responde qué, dónde, cuándo y cómo, 7 destacadas como menú fijo, 3 fijadas y portadas de Reels con un mismo sistema. Detalle en `INSTAGRAM.md`.
+
+**K2 · La tira de los domingos.** Una imagen con 4 viñetas de SANDO y WICHO, una por semana. Es personaje sin producir video, y se puede hacer ya con Canva.
 
 **D1 · Para cuándo.** La frase de situación de cada pitch, publicada a su hora: el Turkey, «el
 almuerzo que no te tumba la tarde», a las 11:30.
@@ -127,6 +133,19 @@ almuerzo que no te tumba la tarde», a las 11:30.
 | J2 | **Los stickers de WhatsApp** | 26 | propuesta |
 
 ---
+
+### K · Más allá del video (dueño, 2026-10-07: «pueden ser imágenes, etc., cualquier cosa necesaria»)
+| # | idea | G N P V S H | total | estado |
+|---|---|---|---|---|
+| K1 | **El perfil completo** (`INSTAGRAM.md`): nombre que se encuentra, bio de 4 líneas, 7 destacadas, 3 fijadas, portadas de Reels con un mismo sistema | 3 5 5 5 5 5 | **28** | **propuesta** |
+| K2 | **La tira de los domingos**: 4 viñetas de SANDO y WICHO en una imagen, una por semana | 4 5 3 4 5 5 | **26** | **propuesta** |
+| K3 | **La anatomía en carrusel**: 6 láminas, una capa por lámina (la versión fija de F1) | 4 3 5 5 5 5 | 27 | banco (va con F1) |
+| K4 | **¿Qué Signature eres?**: quiz de 4 preguntas en historias; el resultado lleva a su enlace | 4 4 5 5 3 5 | 26 | banco |
+| K5 | **El pedido raro en cómic**: la versión carrusel de C1, para quien no ve videos | 4 5 4 5 5 5 | 28 | banco (va con C1) |
+| K6 | **Póster del ganador del duelo** (E4), con los pedidos reales de cada lado | 4 5 5 5 5 5 | 29 | banco (va con E4) |
+| K7 | **Notas de Instagram**: la línea del día de un hermano, arriba de los chats | 3 5 2 5 5 5 | 25 | banco |
+| K8 | **Canal de difusión «La cocina»**: avisos del duelo, el pedido raro y lo nuevo | 3 4 4 5 5 4 | 25 | banco |
+| K9 | **La rutina de historias** (`INSTAGRAM.md` §4): hoy hay, la pregunta, la cuenta regresiva | 3 4 5 5 5 4 | 26 | banco |
 
 ## Descartadas en esta ronda, y por qué
 - **Pelearse con Rappi en un video**: tienes un acuerdo con ellos; atacar al canal que te trae
