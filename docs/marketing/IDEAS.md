@@ -13,7 +13,6 @@ Personajes y tono: `BIBLIA_DE_LA_SERIE.md`. MAFE queda para después.
 
 | # | idea | G N P V S H | total |
 |---|---|---|---|
-| **C1** | El pedido raro de la semana (ya la aprobaste) | 5 5 4 5 5 4 | **28** |
 | **E4** | El duelo de la semana | 4 5 5 5 5 4 | **28** |
 | **J2** | Los stickers de WhatsApp | 3 5 3 5 5 5 | **26** |
 | **F1** | La anatomía | 4 3 5 5 5 4 | **26** |
@@ -23,11 +22,11 @@ Personajes y tono: `BIBLIA_DE_LA_SERIE.md`. MAFE queda para después.
 | **K1** | El perfil completo (no es una pieza: es la vitrina) | 3 5 5 5 5 5 | **28** |
 | **K2** | La tira de los domingos | 4 5 3 4 5 5 | **26** |
 
-**C1 · El pedido raro de la semana.** Los domingos, WICHO lee en voz alta el armado más raro de
+**C1 · El pedido raro de la semana** (**más adelante**, cuando haya volumen de pedidos: decisión del dueño). Los domingos, WICHO lee en voz alta el armado más raro de
 los pedidos reales de la semana, sin datos del cliente. SANDO lo mira en silencio. Remate: el
 sándwich generado con esa receta exacta y «arma el tuyo».
 
-**E4 · El duelo de la semana.** El martes (el lunes no se abre), SANDO elige un Signature y WICHO arma uno propio. Cada
+**E4 · El duelo de la semana** (desde la 2.ª semana abierta, para que haya pedidos que contar). El martes (el lunes no se abre), SANDO elige un Signature y WICHO arma uno propio. Cada
 uno tiene **su enlace**. Gana el que más pedidos trae hasta el sábado, y el domingo se anuncia el
 ganador con los números reales. **Es la única idea donde el cliente vota pidiendo**, y el
 resultado se mide solo, con el `?src=` de cada lado.
@@ -82,7 +81,7 @@ almuerzo que no te tumba la tarde», a las 11:30.
 ### C · Datos reales
 | # | idea | total | estado |
 |---|---|---|---|
-| C1 | **El pedido raro de la semana** | 28 | propuesta |
+| C1 | **El pedido raro de la semana** | 28 | **más adelante**: dueño, 2026-10-07, «funcionaría a futuro con varios pedidos ya, no actualmente» |
 | C2 | **El podio del sábado**: los 3 más pedidos de la semana, con SANDO de jurado | 24 | banco |
 | C3 | **La hora punta**: «a esta hora piden todos»; la curva real de pedidos del día, contada por WICHO | 21 | banco |
 | C4 | **El grupo más grande**: el pedido grupal más grande de la semana, sin datos de nadie | 22 | banco |
