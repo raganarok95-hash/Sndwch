@@ -511,3 +511,12 @@ cuadro con Playwright → MP4 H.264). En el contenedor no hay ffmpeg: `pip insta
   Graph API) o capturas del dueño.
 - El workflow guarda lo que encuentra en la rama `instagram-captura` (se reescribe en cada
   corrida, con push forzado a esa rama y solo a esa).
+
+## Generar imágenes gratis desde la nube (2026-10-07)
+- Pollinations sin cuenta, probado desde GitHub (`traer-imagenes.yml`): `flux` responde, pero a
+  686×858 con marca de agua; `kontext` y `nanobanana` con imagen de referencia → **HTTP 500**.
+- Canva `generate-image` con referencias funciona, pero el archivo en tamaño completo no se puede
+  bajar: `media.canva.com` está bloqueado en la sesión y, desde GitHub, la URL firmada solo sirve
+  para la miniatura (cambiar el tamaño rompe la firma). Hay que pasar por exportar un diseño.
+- Flow (imágenes gratis, 50 créditos diarios de video) solo con el MCP en la laptop del dueño.
+  Detalle: `docs/marketing/GENERAR_GRATIS.md`.
