@@ -824,7 +824,9 @@ function metaAttribution(){
   // `recurringId`: el pedido fijo del que sale este carrito. Viaja por acá porque este objeto
   // ya llega a los TRES caminos de cobro (Yape/crédito, reserva con tarjeta y su confirmación);
   // un campo suelto en uno solo dejaría al otro sin gastar el lugar apartado.
-  return {fbp:get('_fbp')||'',fbc:get('_fbc')||'',ua:navigator.userAgent||'',groupCode:pendingGroupCode||'',recurringId:pendingRecurringId||''};
+  // `src`: de dónde vino este pedido (el ?src= guardado al entrar), para el equipo de marketing.
+  var src='';try{src=localStorage.getItem('sw_src')||'';}catch(e){}
+  return {fbp:get('_fbp')||'',fbc:get('_fbc')||'',ua:navigator.userAgent||'',groupCode:pendingGroupCode||'',recurringId:pendingRecurringId||'',src:src};
 }
 // Rangos por antigüedad (total_orders) — solo reconocimiento/pertenencia, nunca un
 // multiplicador de puntos ni un precio distinto (VIP se retiró como tier a propósito).

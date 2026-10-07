@@ -18,6 +18,8 @@ export const OPEN_ALL_DAY_HOURS = Array.from({ length: 7 }, () => ({ open: 0, cl
 
 const DEFAULT_HANDLERS: ActionHandlers = {
   'session-check': { valid: false },
+  // Cada carga de la app cuenta una visita (08-router); ninguna prueba depende de su respuesta.
+  'registrar-visita': { success: true },
   'get-catalog': { proteins: {}, sigs: {}, sides: {}, rewardPts: {}, inventory: {} },
   // businessLaunched:true — el negocio abre el 7 de septiembre y hasta entonces el
   // servidor y el cliente rechazan cualquier pedido (assertBusinessLaunched en

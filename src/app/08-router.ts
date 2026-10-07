@@ -343,6 +343,14 @@ window.addEventListener('load',function(){sndRestoreOwnedFns();});
   loadInvBackground().then(function(){render();}); // load stock status in background, re-render when ready
   loadCatalogBackground().then(function(){render();}); // load current prices in background, re-render when ready
   loadStoreHoursBackground().then(function(){render();}); // load real store hours in background, re-render when ready
+  // Una visita por sesión, contada por su origen (?src=), sin datos personales: el equipo de
+  // marketing mide con esto cuánta gente entra y no compra. Si falla, no pasa nada.
+  try{
+    if(!sessionStorage.getItem('sw_visita')){
+      sessionStorage.setItem('sw_visita','1');
+      api('registrar-visita',{src:new URLSearchParams(location.search).get('src')||''}).catch(function(){});
+    }
+  }catch(e){}
   if(cust)loadUserExtras();
   checkPushSubscription();
   checkNearbyStore();

@@ -50,6 +50,7 @@ const CAMPOS_DEL_PEDIDO = {
   fbp: e.textoOpcional(120),
   fbc: e.textoOpcional(300),
   ua: e.textoOpcional(400),
+  src: e.textoOpcional(60),
 };
 
 /** Lo único que manda pg_cron: el secreto que verifyCronSecret compara. */
@@ -160,6 +161,7 @@ export const CONTRATO = {
   'group-split-preview': accion<Record<string, unknown>>()(
     e.objeto({ token, code: e.textoOpcional(12), lat: e.sinRevisar(), lon: e.sinRevisar() }),
   ),
+  'registrar-visita': accion<Record<string, unknown>>()(e.objeto({ token, src: e.textoOpcional(60) })),
   'export-orders': accion<Record<string, unknown>>()(e.objeto({ token })),
 
   // ── LAS TRES QUE COBRAN (2026-10-01). Todo lo que leen ellas Y sus auxiliares

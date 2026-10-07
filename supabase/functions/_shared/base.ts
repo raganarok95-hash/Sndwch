@@ -7,7 +7,7 @@
 // Regenerar después de cada migración (con la herramienta de Supabase generate_typescript_types)
 // y actualizar la línea de abajo con la versión de la última migración aplicada.
 // `npm run check:tipos-base` falla si hay una migración más nueva que esta.
-// generado-contra-migracion: 20261007103833
+// generado-contra-migracion: 20261007153004
 export type Json =
   | string
   | number
@@ -112,31 +112,31 @@ export type Database = {
         Row: {
           business_launched: boolean
           id: boolean
+          meta_ads_pausadas: string[]
+          meta_ads_pausadas_at: string | null
           paused_until: string | null
           promos_killed_at: string | null
           promos_killed_by: string | null
-          meta_ads_pausadas: string[]
-          meta_ads_pausadas_at: string | null
           updated_at: string
         }
         Insert: {
           business_launched?: boolean
           id?: boolean
+          meta_ads_pausadas?: string[]
+          meta_ads_pausadas_at?: string | null
           paused_until?: string | null
           promos_killed_at?: string | null
           promos_killed_by?: string | null
-          meta_ads_pausadas?: string[]
-          meta_ads_pausadas_at?: string | null
           updated_at?: string
         }
         Update: {
           business_launched?: boolean
           id?: boolean
+          meta_ads_pausadas?: string[]
+          meta_ads_pausadas_at?: string | null
           paused_until?: string | null
           promos_killed_at?: string | null
           promos_killed_by?: string | null
-          meta_ads_pausadas?: string[]
-          meta_ads_pausadas_at?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -804,13 +804,21 @@ export type Database = {
           channel: string
           created_at: string
           created_by: string | null
+          datos: Json
+          gancho: string | null
           id: string
           image_url: string | null
           media_type: string
+          metricas: Json
+          motivo_revision: string | null
           photo_idea: string | null
+          plantilla: string | null
           posted_at: string | null
           published_ref: string | null
+          revision: string
+          rol: string | null
           scheduled_date: string
+          src: string | null
           status: string
           title: string
           updated_at: string
@@ -824,13 +832,21 @@ export type Database = {
           channel: string
           created_at?: string
           created_by?: string | null
+          datos?: Json
+          gancho?: string | null
           id?: string
           image_url?: string | null
           media_type?: string
+          metricas?: Json
+          motivo_revision?: string | null
           photo_idea?: string | null
+          plantilla?: string | null
           posted_at?: string | null
           published_ref?: string | null
+          revision?: string
+          rol?: string | null
           scheduled_date: string
+          src?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -844,19 +860,104 @@ export type Database = {
           channel?: string
           created_at?: string
           created_by?: string | null
+          datos?: Json
+          gancho?: string | null
           id?: string
           image_url?: string | null
           media_type?: string
+          metricas?: Json
+          motivo_revision?: string | null
           photo_idea?: string | null
+          plantilla?: string | null
           posted_at?: string | null
           published_ref?: string | null
+          revision?: string
+          rol?: string | null
           scheduled_date?: string
+          src?: string | null
           status?: string
           title?: string
           updated_at?: string
           video_idea?: string | null
           video_url?: string | null
           whatsapp_text?: string | null
+        }
+        Relationships: []
+      }
+      marketing_flow_cola: {
+        Row: {
+          actualizado_at: string
+          calendar_id: string | null
+          creado_at: string
+          duracion_s: number
+          error: string | null
+          estado: string
+          id: string
+          personajes: string[]
+          prompt: string
+          resultado_url: string | null
+        }
+        Insert: {
+          actualizado_at?: string
+          calendar_id?: string | null
+          creado_at?: string
+          duracion_s?: number
+          error?: string | null
+          estado?: string
+          id?: string
+          personajes?: string[]
+          prompt: string
+          resultado_url?: string | null
+        }
+        Update: {
+          actualizado_at?: string
+          calendar_id?: string | null
+          creado_at?: string
+          duracion_s?: number
+          error?: string | null
+          estado?: string
+          id?: string
+          personajes?: string[]
+          prompt?: string
+          resultado_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_flow_cola_calendar_id_fkey"
+            columns: ["calendar_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_calendar"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_plan: {
+        Row: {
+          creado_at: string
+          creado_por: string
+          notas: string | null
+          objetivo: string
+          presupuesto: number
+          semana: string
+          temas: Json
+        }
+        Insert: {
+          creado_at?: string
+          creado_por?: string
+          notas?: string | null
+          objetivo: string
+          presupuesto?: number
+          semana: string
+          temas?: Json
+        }
+        Update: {
+          creado_at?: string
+          creado_por?: string
+          notas?: string | null
+          objetivo?: string
+          presupuesto?: number
+          semana?: string
+          temas?: Json
         }
         Relationships: []
       }
@@ -968,6 +1069,7 @@ export type Database = {
           lat: number | null
           lon: number | null
           notes: string | null
+          origen: string | null
           payment_id: string | null
           payment_method: string | null
           payment_status: string | null
@@ -1014,6 +1116,7 @@ export type Database = {
           lat?: number | null
           lon?: number | null
           notes?: string | null
+          origen?: string | null
           payment_id?: string | null
           payment_method?: string | null
           payment_status?: string | null
@@ -1060,6 +1163,7 @@ export type Database = {
           lat?: number | null
           lon?: number | null
           notes?: string | null
+          origen?: string | null
           payment_id?: string | null
           payment_method?: string | null
           payment_status?: string | null
@@ -1697,6 +1801,24 @@ export type Database = {
           },
         ]
       }
+      visitas_por_origen: {
+        Row: {
+          dia: string
+          src: string
+          visitas: number
+        }
+        Insert: {
+          dia: string
+          src: string
+          visitas?: number
+        }
+        Update: {
+          dia?: string
+          src?: string
+          visitas?: number
+        }
+        Relationships: []
+      }
       waitlist_signups: {
         Row: {
           created_at: string
@@ -1949,7 +2071,48 @@ export type Database = {
       }
       crear_cuenta: {
         Args: { p_bono: number; p_cliente: Json }
-        Returns: Database["public"]["Tables"]["customers"]["Row"]
+        Returns: {
+          acquisition_source: string | null
+          ad_tracking_opt_out: boolean
+          address_count: number | null
+          birthday: string | null
+          birthday_pts_year: number | null
+          challenge_claimed_month: string | null
+          created_at: string | null
+          credit_balance: number
+          discovery_claimed_month: string | null
+          dni: string | null
+          email: string | null
+          failed_login_count: number
+          google_id: string | null
+          last_address: string | null
+          last_winback_sent: string | null
+          locked_until: string | null
+          monthly_recap_ym: number
+          name: string
+          notif_prefs: Json
+          pending_points: number | null
+          phone: string
+          pin: string
+          points: number | null
+          preferred_payment: string | null
+          referral_bonus_granted: boolean
+          referral_code: string | null
+          referral_milestone_granted: number
+          referred_by: string | null
+          reset_token: string | null
+          reset_token_expires: string | null
+          session_version: number
+          total_orders: number | null
+          total_redeemed: number | null
+          total_referrals: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "customers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       crear_pedido: {
         Args: { p_cuenta?: Json; p_pedido: Json; p_rangos?: Json }
@@ -2090,6 +2253,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      registrar_visita: { Args: { p_src: string }; Returns: undefined }
       release_promo_redemption: {
         Args: { p_order_ref: string; p_phone: string; p_promo_id: string }
         Returns: undefined
@@ -2136,7 +2300,12 @@ export type Database = {
       }
       verify_pin: { Args: { p_phone: string; plain: string }; Returns: boolean }
       vincular_pedido_de_invitado: {
-        Args: { p_cuenta: Json; p_phone: string; p_rangos?: Json; p_ref: string }
+        Args: {
+          p_cuenta: Json
+          p_phone: string
+          p_rangos?: Json
+          p_ref: string
+        }
         Returns: Json
       }
     }

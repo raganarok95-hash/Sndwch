@@ -22,13 +22,15 @@ import { unSignature } from "./carta.ts";
 // Un Signature vigente cualquiera: la prueba no depende de qué sándwich haya en la carta.
 const UN_SIGNATURE = unSignature();
 
-const SQL = Deno.readTextFileSync(new URL("../supabase/migrations/20260924173551_crear_pedido_transaccional.sql", import.meta.url));
+// La versión VIGENTE de la función (2026-10-07 agregó `origen`): comparar contra una vieja dejaría
+// pasar un campo nuevo que la base no lee.
+const SQL = Deno.readTextFileSync(new URL("../supabase/migrations/20261007153004_crear_pedido_con_origen.sql", import.meta.url));
 
 const P = {
   ref: "R1", phone: "999", contactPhone: "999", name: "Ana", email: "", address: "Av. X 1", summary: "1x", notes: null,
   total: 42.5, deliveryFee: 6, deliveryKm: 3.2, deliveryZone: null, paymentStatus: "paid", paymentId: "chr_1",
   paymentMethod: "card", items: [{ type: "sig", sigId: UN_SIGNATURE, size: "15", qty: 1 }], scheduledFor: null,
-  reward: { pts: 160, label: "BEBIDA GRATIS" }, useCredit: false, lat: -8.1, lon: -79, groupCode: "G1", recurringId: null,
+  reward: { pts: 160, label: "BEBIDA GRATIS" }, useCredit: false, lat: -8.1, lon: -79, groupCode: "G1", recurringId: null, origen: "video-philly-1",
 };
 
 Deno.test("cada campo que el servidor arma lo lee crear_pedido, y viceversa", () => {
@@ -39,6 +41,12 @@ Deno.test("cada campo que el servidor arma lo lee crear_pedido, y viceversa", ()
   const lee = cols.filter((c) => c !== "status" && c !== "customer_rank").sort();
   const arma = Object.keys(filaDelPedido(P as any, { desde: null, hasta: null })).sort();
   assertEquals(arma, lee);
+});
+
+// El origen del pedido (?src=) es lo que mide el equipo de marketing: si se pierde, cada pedido
+// queda «sin origen» y el análisis decide sobre nada.
+Deno.test("el pedido guarda de dónde vino", () => {
+  assertEquals((filaDelPedido(P as any, { desde: null, hasta: null }) as any).origen, "video-philly-1");
 });
 
 Deno.test("la cuenta: gana puntos solo por la comida y descuenta la recompensa", () => {

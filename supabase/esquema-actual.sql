@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20261007103833
+-- foto-tomada-tras-migracion: 20261007153004
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -277,7 +277,38 @@ create table public.marketing_calendar (
   published_ref text,
   media_type text default 'image'::text not null,
   video_url text,
-  video_idea text
+  video_idea text,
+  plantilla text,
+  gancho text,
+  src text,
+  rol text,
+  revision text default 'pendiente'::text not null,
+  motivo_revision text,
+  datos jsonb default '{}'::jsonb not null,
+  metricas jsonb default '{}'::jsonb not null
+);
+
+create table public.marketing_flow_cola (
+  id uuid default gen_random_uuid() not null,
+  calendar_id uuid,
+  prompt text not null,
+  personajes text[] default '{}'::text[] not null,
+  duracion_s integer default 8 not null,
+  estado text default 'pendiente'::text not null,
+  resultado_url text,
+  error text,
+  creado_at timestamp with time zone default now() not null,
+  actualizado_at timestamp with time zone default now() not null
+);
+
+create table public.marketing_plan (
+  semana date not null,
+  objetivo text not null,
+  presupuesto numeric(10,2) default 0 not null,
+  temas jsonb default '[]'::jsonb not null,
+  notas text,
+  creado_por text default 'director'::text not null,
+  creado_at timestamp with time zone default now() not null
 );
 
 create table public.marketing_touches (
@@ -348,7 +379,8 @@ create table public.orders (
   delivery_km numeric,
   promised_from timestamp with time zone,
   promised_to timestamp with time zone,
-  recurring_id uuid
+  recurring_id uuid,
+  origen text
 );
 
 create table public.pending_charges (
@@ -538,6 +570,12 @@ create table public.transactions (
   created_at timestamp with time zone default now()
 );
 
+create table public.visitas_por_origen (
+  dia date not null,
+  src text not null,
+  visitas integer default 0 not null
+);
+
 create table public.waitlist_signups (
   id uuid default gen_random_uuid() not null,
   phone text not null,
@@ -640,6 +678,14 @@ alter table public.marketing_calendar add constraint marketing_calendar_media_ty
 
 alter table public.marketing_calendar add constraint marketing_calendar_pkey PRIMARY KEY (id);
 
+alter table public.marketing_calendar add constraint marketing_calendar_revision_check CHECK ((revision = ANY (ARRAY['pendiente'::text, 'aprobada'::text, 'bloqueada'::text])));
+
+alter table public.marketing_flow_cola add constraint marketing_flow_cola_estado_check CHECK ((estado = ANY (ARRAY['pendiente'::text, 'en_curso'::text, 'listo'::text, 'fallo'::text])));
+
+alter table public.marketing_flow_cola add constraint marketing_flow_cola_pkey PRIMARY KEY (id);
+
+alter table public.marketing_plan add constraint marketing_plan_pkey PRIMARY KEY (semana);
+
 alter table public.marketing_touches add constraint marketing_touches_pkey PRIMARY KEY (id);
 
 alter table public.order_problems add constraint order_problems_motivo_check CHECK ((motivo = ANY (ARRAY['falto'::text, 'frio'::text, 'distinto'::text, 'otro'::text])));
@@ -714,6 +760,8 @@ alter table public.store_hours add constraint store_hours_weekday_check CHECK ((
 
 alter table public.transactions add constraint transactions_pkey PRIMARY KEY (id);
 
+alter table public.visitas_por_origen add constraint visitas_por_origen_pkey PRIMARY KEY (dia, src);
+
 alter table public.waitlist_signups add constraint waitlist_signups_pkey PRIMARY KEY (id);
 
 alter table public.zone_waitlist add constraint zone_waitlist_pkey PRIMARY KEY (id);
@@ -725,6 +773,8 @@ alter table public.credit_ledger add constraint credit_ledger_customer_phone_fke
 alter table public.favorites add constraint favorites_customer_phone_fkey FOREIGN KEY (customer_phone) REFERENCES customers(phone);
 
 alter table public.group_order_items add constraint group_order_items_group_order_id_fkey FOREIGN KEY (group_order_id) REFERENCES group_orders(id) ON DELETE CASCADE;
+
+alter table public.marketing_flow_cola add constraint marketing_flow_cola_calendar_id_fkey FOREIGN KEY (calendar_id) REFERENCES marketing_calendar(id) ON DELETE SET NULL;
 
 alter table public.order_problems add constraint order_problems_order_id_fkey FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE;
 
@@ -802,7 +852,11 @@ CREATE INDEX login_codes_expires_idx ON public.login_codes USING btree (expires_
 
 CREATE INDEX marketing_calendar_scheduled_date_idx ON public.marketing_calendar USING btree (scheduled_date);
 
+CREATE UNIQUE INDEX marketing_calendar_src_unico ON public.marketing_calendar USING btree (src) WHERE (src IS NOT NULL);
+
 CREATE INDEX marketing_calendar_status_idx ON public.marketing_calendar USING btree (status);
+
+CREATE INDEX marketing_flow_cola_estado_idx ON public.marketing_flow_cola USING btree (estado, creado_at);
 
 CREATE INDEX orders_delivery_time_idx ON public.orders USING btree (delivery_time) WHERE (delivery_time IS NOT NULL);
 
@@ -810,11 +864,14 @@ CREATE UNIQUE INDEX orders_delivery_token_idx ON public.orders USING btree (deli
 
 CREATE INDEX orders_group_code_idx ON public.orders USING btree (group_code) WHERE (group_code IS NOT NULL);
 
+CREATE INDEX orders_origen_idx ON public.orders USING btree (origen) WHERE (origen IS NOT NULL);
+
 CREATE UNIQUE INDEX orders_payment_id_unique ON public.orders USING btree (payment_id) WHERE (payment_id IS NOT NULL);
 
 CREATE INDEX orders_receipt_hash_idx ON public.orders USING btree (receipt_hash) WHERE (receipt_hash IS NOT NULL);
 
 CREATE INDEX orders_receipt_op_number_idx ON public.orders USING btree (receipt_op_number) WHERE (receipt_op_number IS NOT NULL);
+
 CREATE UNIQUE INDEX orders_receipt_op_number_unico ON public.orders USING btree (receipt_op_number) WHERE (receipt_op_number IS NOT NULL);
 
 CREATE INDEX orders_recurring_id_idx ON public.orders USING btree (recurring_id) WHERE (recurring_id IS NOT NULL);
@@ -1225,13 +1282,13 @@ begin
     promised_from, promised_to, ref, customer_phone, contact_phone, customer_name, customer_email,
     customer_address, lat, lon, group_code, recurring_id, summary, notes, total, delivery_fee,
     delivery_km, delivery_zone, status, payment_status, payment_id, payment_method, items,
-    delivery_time, redeemed_reward, redeemed_reward_pts, customer_rank
+    delivery_time, redeemed_reward, redeemed_reward_pts, customer_rank, origen
   )
   select
     x.promised_from, x.promised_to, x.ref, x.customer_phone, x.contact_phone, x.customer_name, x.customer_email,
     x.customer_address, x.lat, x.lon, x.group_code, x.recurring_id, x.summary, x.notes, x.total, x.delivery_fee,
     x.delivery_km, x.delivery_zone, 'RECIBIDO', x.payment_status, x.payment_id, x.payment_method, x.items,
-    x.delivery_time, x.redeemed_reward, x.redeemed_reward_pts, v_cuenta->>'rango'
+    x.delivery_time, x.redeemed_reward, x.redeemed_reward_pts, v_cuenta->>'rango', x.origen
   from jsonb_populate_record(null::public.orders, p_pedido) x
   returning * into v_pedido;
 
@@ -1706,6 +1763,18 @@ begin
     where phone = p_phone;
   end if;
 end;
+$function$
+;
+
+CREATE OR REPLACE FUNCTION public.registrar_visita(p_src text)
+ RETURNS void
+ LANGUAGE sql
+ SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+  insert into public.visitas_por_origen (dia, src, visitas)
+  values ((now() at time zone 'America/Lima')::date, left(coalesce(nullif(trim(p_src), ''), 'directo'), 60), 1)
+  on conflict (dia, src) do update set visitas = public.visitas_por_origen.visitas + 1;
 $function$
 ;
 
@@ -2248,6 +2317,8 @@ revoke all on function public.redeem_promo_code(p_promo_id uuid, p_phone text, p
 
 revoke all on function public.register_login_failure(p_phone text, p_max_attempts integer, p_lockout_minutes integer) from public; grant execute on function public.register_login_failure(p_phone text, p_max_attempts integer, p_lockout_minutes integer) to postgres; grant execute on function public.register_login_failure(p_phone text, p_max_attempts integer, p_lockout_minutes integer) to service_role;
 
+revoke all on function public.registrar_visita(p_src text) from public; grant execute on function public.registrar_visita(p_src text) to postgres; grant execute on function public.registrar_visita(p_src text) to service_role;
+
 revoke all on function public.release_promo_redemption(p_promo_id uuid, p_phone text, p_order_ref text) from public; grant execute on function public.release_promo_redemption(p_promo_id uuid, p_phone text, p_order_ref text) to postgres; grant execute on function public.release_promo_redemption(p_promo_id uuid, p_phone text, p_order_ref text) to service_role;
 
 revoke all on function public.reponer_tanda(p_items jsonb) from public; grant execute on function public.reponer_tanda(p_items jsonb) to postgres; grant execute on function public.reponer_tanda(p_items jsonb) to service_role;
@@ -2320,6 +2391,10 @@ alter table public.login_codes enable row level security;
 
 alter table public.marketing_calendar enable row level security;
 
+alter table public.marketing_flow_cola enable row level security;
+
+alter table public.marketing_plan enable row level security;
+
 alter table public.marketing_touches enable row level security;
 
 alter table public.order_problems enable row level security;
@@ -2353,6 +2428,8 @@ alter table public.secret_signature enable row level security;
 alter table public.store_hours enable row level security;
 
 alter table public.transactions enable row level security;
+
+alter table public.visitas_por_origen enable row level security;
 
 alter table public.waitlist_signups enable row level security;
 
@@ -2402,6 +2479,10 @@ grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on
 
 grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.marketing_calendar to service_role;
 
+grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.marketing_flow_cola to service_role;
+
+grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.marketing_plan to service_role;
+
 grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.marketing_touches to service_role;
 
 grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.order_problems to service_role;
@@ -2435,6 +2516,8 @@ grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on
 grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.store_hours to service_role;
 
 grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.transactions to service_role;
+
+grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.visitas_por_origen to service_role;
 
 grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.waitlist_signups to service_role;
 

@@ -13,7 +13,7 @@
 // ese procesamiento, solo publica lo que ya llega listo. El cron auto-publish-calendar
 // (cron.job en Supabase, cada 15 min) publica solas las entradas 'scheduled' cuya fecha
 // ya llegó, sin que nadie toque "Publicar ahora" a mano.
-import { sbGet, sbUpdate, sbInsert, storageUpload, leer } from "../db.ts";
+import { sbGet, sbUpdate, sbInsert, storageUpload, leer, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
@@ -315,4 +315,18 @@ export async function actAdminMetaAds(b: Entrada<"admin-meta-ads">): Promise<Sal
     await logAdminAction(admin?.phone || "?", "meta-ads-" + b.que, undefined, { campanas: plan.cambiar.map((c) => c.id) });
   }
   return { cuenta: META_AD_ACCOUNT_ID, campanas: await campanasDeLaCuenta(), pausadasPorBoton: pausadas, pausadasAt };
+}
+
+// Una visita a la app, contada por su origen (?src=) y por día, sin datos personales (equipo de
+// marketing, 2026-10-07: sin esto no se sabe cuánta gente entra y no compra). El cliente la manda
+// una vez por sesión; el tope por IP evita que alguien infle los números a mano. Nunca falla
+// hacia el cliente: una visita no contada no puede romper la carga de la app.
+export async function actRegistrarVisita(b: Entrada<"registrar-visita"> & { _ip?: string }) {
+  try {
+    const permitido = await rpc("check_rate_limit", { p_key: `visita:${b._ip || "?"}`, p_limit: 20, p_window_minutes: 60 });
+    if (permitido) await rpc("registrar_visita", { p_src: String(b.src || "").trim() || "directo" });
+  } catch (e) {
+    console.error("registrar-visita:", e);
+  }
+  return { success: true };
 }

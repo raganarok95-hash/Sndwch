@@ -261,6 +261,7 @@ export type FinalizeOrderParams = {
   /** Código del pedido grupal del que salió este pedido, si vino de uno. Solo sirve para
    *  poder medir cuánta venta genera ese canal (una entrega, varios sándwiches). */
   groupCode?: string | null;
+  origen?: string | null;
   /** Pedido fijo del que salió este pedido, ya verificado como del cliente (fijoPropio). Gasta
    *  el lugar apartado de ese día y, pagado, cuenta como una confirmación (franja.ts). */
   recurringId?: string | null;
@@ -308,7 +309,7 @@ export function filaDeReserva(campos: Record<string, unknown>, b: unknown): Reco
   return { ...campos, ...readCoords(b) };
 }
 
-function readMetaAttribution(b: any): { fbp: string | null; fbc: string | null; clientUserAgent: string | null; groupCode: string | null } {
+function readMetaAttribution(b: any): { fbp: string | null; fbc: string | null; clientUserAgent: string | null; groupCode: string | null; origen: string | null } {
   const clean = (v: unknown, max: number) => {
     const s = typeof v === "string" ? v.trim().slice(0, max) : "";
     return s || null;
@@ -320,6 +321,8 @@ function readMetaAttribution(b: any): { fbp: string | null; fbc: string | null; 
     // Se normaliza igual que en group.ts (mayúsculas, sin espacios) para que coincida con
     // el código real del pedido grupal aunque el cliente lo mande de otra forma.
     groupCode: (typeof b?.groupCode === "string" ? b.groupCode.trim().toUpperCase().slice(0, 24) : "") || null,
+    // De dónde vino el pedido (?src= del enlace): lo mide el equipo de marketing. Sin datos personales.
+    origen: clean(b?.src, 60),
   };
 }
 
@@ -505,6 +508,7 @@ export function filaDelPedido(p: FinalizeOrderParams, promesa: { desde: string |
     lat: p.lat,
     lon: p.lon,
     group_code: p.groupCode || null,
+    origen: p.origen || null,
     recurring_id: p.recurringId || null,
     summary: p.summary || "",
     notes: p.notes,
@@ -1080,7 +1084,7 @@ async function avisarCobroSinPedido(chargeId: string, ref: string, montoSoles: n
 //
 // `recuperado`: lo llama el cron cuando el cliente pagó y nunca volvió a confirmar (cerró
 // la pestaña, perdió la señal). El pedido se crea igual — es lo que pagó.
-async function actConfirmCulqiOrder(chargeId: string, ref: string, opts: { recuperado?: boolean } = {}) {
+async function actConfirmCulqiOrder(chargeId: string, ref: string, opts: { recuperado?: boolean; origen?: string | null } = {}) {
   if (!chargeId || !ref) throw new ApiError("Faltan datos del pedido.");
   const rows = await sbGet("pending_charges", `ref=eq.${encodeURIComponent(ref)}&select=*`);
   const pc = rows[0];
@@ -1157,6 +1161,7 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string, opts: { recup
       lat: pc.lat ?? null,
       lon: pc.lon ?? null,
       recurringId: pc.recurring_id || null,
+      origen: opts.origen || null,
     });
     orderInserted = true;
     // El código promocional (si se usó uno) ya quedó reclamado de forma atómica desde
@@ -1205,7 +1210,7 @@ async function actConfirmCulqiOrder(chargeId: string, ref: string, opts: { recup
 
 export async function actPlaceOrder(b: Entrada<"place-order"> & { _ip?: string }) {
   const chargeId = b.chargeId ? String(b.chargeId).trim() : "";
-  if (chargeId) return actConfirmCulqiOrder(chargeId, String(b.ref || "").trim());
+  if (chargeId) return actConfirmCulqiOrder(chargeId, String(b.ref || "").trim(), { origen: readMetaAttribution(b).origen });
 
   const ref = String(b.ref || "").trim();
   const name = String(b.name || "").trim();
