@@ -9,22 +9,30 @@ cuenta de Google (`docs/FLOW_EN_TU_LAPTOP.md`). Las imágenes de Flow sí son gr
 1. `claude mcp add --scope user google-flow -- npx -y google-flow-browser-mcp`
 2. En la carpeta del repo, abre Claude Code y pégale esto:
 
-> Lee `docs/marketing/FLOW_LANZAMIENTO.md`. Genera en Flow cada imagen de la tabla con tus
-> personajes @SANDO y @WICHO como referencia, formato vertical 4:5, sin texto en la imagen.
+> Lee `docs/marketing/FLOW_LANZAMIENTO.md`. Genera en Flow cada imagen de la tabla usando los
+> personajes SANDO y WICHO que ya están creados en Flow (no los describas con texto), formato
+> vertical 4:5, sin texto en la imagen.
 > Guarda cada una como `docs/marketing/lanzamiento/flow/<archivo>.png`, commitea y haz push a la
 > rama `claude/business-app-analysis-axbhx0`. No publiques nada.
 
 3. La sesión de la nube compone las piezas con esas imágenes y te las muestra.
 
-## El bloque fijo (va al final de cada prompt)
+## Los personajes: los de Flow, no descripciones (dueño, 2026-10-07)
+
+Dueño: «¿Por qué no usas el proceso de personajes del propio Flow en lugar de esas referencias?».
+**Cada imagen usa los personajes ya creados en tu Flow** (SANDO y WICHO como personajes/ingredientes
+del proyecto), seleccionados en la generación. El prompt **no describe** cómo son: solo la escena.
+Describirlos con palabras compite con el personaje guardado y lo deforma.
+
+Si el MCP instalado (`hitjcl`) no puede elegir un personaje guardado de Flow, se cambia por
+[`felipedamacenoteodoro/mcp-google-flow`](https://github.com/felipedamacenoteodoro/mcp-google-flow),
+que maneja personajes y voces de Flow; no se vuelve a describirlos con texto.
+
+## El bloque fijo (va al final de cada prompt; solo escena)
 
 ```
-Vertical 4:5. Illustration in the exact style of the reference characters, not photographic
-for the characters. The two brothers keep their own art styles: SANDO (dark olive chimp,
-olive bomber jacket with orange lining, calm, heavy eyelids, mouth closed) and WICHO
-(sky-blue brush-textured chimp, lilac spiral eyes, open grin, grey-blue contour-line tee).
-Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black.
-No text, no letters, no logos, no watermark. Leave the top 30% calm for a headline.
+Vertical 4:5. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to
+black. No text, no letters, no logos, no watermark. Leave the top 30% calm for a headline.
 Any sandwich shown is a long sub/hoagie roll with exactly the real recipe stated.
 ```
 
