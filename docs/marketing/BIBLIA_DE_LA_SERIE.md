@@ -40,7 +40,7 @@ de los dos tiene siempre la razón. Eso es la carta (los Signatures de SANDO) co
   propio sándwich, y si siempre pierde, la serie le dice al cliente que armar está mal.
 - **Su frase**: «¿Y si le ponemos…?» · «Esto tiene nombre.»
 
-### MAFE · la hermana del medio (aparece cuando exista su imagen)
+### MAFE · la hermana del medio (**después**: dueño, 2026-10-07, «MAFE luego»)
 - **Qué quiere**: nada. Ya terminó. Sirve las bebidas y se va.
 - **Cómo habla**: casi no habla. Una línea seca al final, media sonrisa de un lado.
 - **Su objeto**: la botella alta de infusión rosada (en la carta, las bebidas).
@@ -60,13 +60,14 @@ misma voz en todos los episodios**: por eso conviene el MCP de Flow con bibliote
   Siempre es de noche ahí. Es el escenario de casi todo.
 - **La mesa del cliente** (§4.2, escena 6): luz fría y neutra, sin color de marca. **El cambio de
   luz es la entrega**: cuando la escena pasa a esa luz, el sándwich ya es de alguien.
-- **La foto real** es el único sándwich que se muestra de cerca. Los personajes pueden sostener
-  uno dibujado, siempre en su estilo de ilustración, **nunca fotorrealista**.
+- **El sándwich se puede generar** (dueño, 2026-10-07), en ilustración o fotorrealista, siempre
+  **fiel a la receta y a la porción reales** de la carta: mismos ingredientes, mismo pan, nada de
+  relleno de más (INDECOPI sanciona la imagen que promete más de lo que llega).
 
 ## 4 · Lo que la serie nunca hace
 
-1. **Inventar una foto de producto** (CLAUDE.md, restricciones permanentes). El remate es la
-   foto real.
+1. **Mostrar un sándwich que no es el que llega**: el generado lleva la receta y la porción
+   reales; nunca un ingrediente que no tiene ni más relleno del que tiene.
 2. **Escribir un número a mano**: precios, puntos y la regla del grupo se interpolan del código.
    El resto (ganchos, diálogos, chistes) sí se escribe.
 3. **Contar qué lleva el menú secreto** ni nombrar mecanismos apagados. Del secreto se habla en
@@ -132,7 +133,7 @@ Entre llaves, lo que se interpola. Ninguno se publica sin pasar por el Revisor.
    Remate: Meatball Marinara.
 9. **El último** — WICHO llega corriendo; SANDO sostiene el último del día. Solo si el inventario
    real se agotó ese día.
-10. **Ya terminé** (debut de MAFE, cuando exista su imagen) — los dos discuten; MAFE deja la
+10. **Ya terminé** (debut de MAFE, **más adelante**) — los dos discuten; MAFE deja la
     botella en la mesa: «Ya terminé.» Y se va.
 
 ## 8 · Cómo se produce y cómo se decide qué sigue
@@ -153,5 +154,4 @@ Entre llaves, lo que se interpola. Ninguno se publica sin pasar por el Revisor.
 1. **Tu visto bueno** a esta biblia (o lo que cambies).
 2. **El MCP de Flow en tu laptop** (`docs/FLOW_EN_TU_LAPTOP.md`; para voces fijas,
    `felipedamacenoteodoro/mcp-google-flow`).
-3. **La imagen de MAFE**, si quieres que entre en el primer mes.
 4. **El token de la página** (P33), para que lo publicado salga solo.

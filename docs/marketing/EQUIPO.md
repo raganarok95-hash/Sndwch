@@ -68,8 +68,8 @@ deja su entregable en la base (`marketing_*`) o en el repo, y el siguiente lo to
 - **Trabajo**: carruseles, historias, portadas, escenas.
 - **Herramientas**: Canva, Adobe (Express/Firefly), Figma, Gamma; la marca (`//` dorado y
   celeste, tipografías del sistema).
-- **Regla dura**: la IA crea **escenas, fondos, personajes y tipografía**; el sándwich de cada
-  pieza es **siempre la foto real**. Nunca se genera una foto falsa del producto.
+- **Regla** (cambiada por el dueño el 2026-10-07): la IA crea escenas, fondos, personajes y
+  **también el sándwich**, siempre fiel a la receta y la porción reales de la carta.
 
 ### 6 · Editor de video
 - **Trabajo**: los videos.
@@ -137,7 +137,7 @@ deja su entregable en la base (`marketing_*`) o en el repo, y el siguiente lo to
 ## 4 · Límites que ningún rol puede cruzar
 
 - **Plata**: tope de pauta aprobado (S/350 hasta el 9 nov). Más, solo con aprobación del dueño.
-- **Producto**: nunca una foto falsa del sándwich.
+- **Producto**: el sándwich generado se permite (dueño, 2026-10-07), fiel a la receta y la porción reales (INDECOPI).
 - **Precios y premios**: siempre de la base; Calidad bloquea si no coinciden.
 - **Legal**: nada de datos legales inventados; textos legales intocables.
 - **Marca**: el `//` es el corte del pan, dorado y celeste; SND//WCH no tiene identidad regional.
