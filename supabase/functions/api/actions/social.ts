@@ -203,13 +203,18 @@ export async function actAdminPublishSocial(b: Entrada<"admin-publish-social"> &
 // programada ya llegó — sin esperar a que nadie toque "Publicar ahora". Un error en una
 // entrada no bloquea las demás; cada fallo queda en debug_logs vía el catch de nivel
 // superior del handler.
+// Qué publica solo el cron. `revision=neq.bloqueada` (2026-10-07): lo que el Revisor del equipo
+// de marketing bloqueó no sale nunca, aunque algo lo deje en 'scheduled' por error. Lo pendiente
+// del Productor no llega acá: entra como 'draft' y solo el Revisor lo programa
+// (scripts/video-auto/diario.mjs).
+export function loQueSaleSolo(today: string): string {
+  return `status=eq.scheduled&revision=neq.bloqueada&scheduled_date=lte.${today}&channel=in.(instagram,facebook)&select=*&limit=500`;
+}
+
 export async function actAutoPublishCalendar(b: Entrada<"auto-publish-calendar"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const today = new Date().toISOString().slice(0, 10);
-  const due = await sbGet(
-    "marketing_calendar",
-    `status=eq.scheduled&scheduled_date=lte.${today}&channel=in.(instagram,facebook)&select=*&limit=500`,
-  );
+  const due = await sbGet("marketing_calendar", loQueSaleSolo(today));
   const results: { id: string; ok: boolean; error?: string }[] = [];
   for (const entry of due) {
     // Reclama antes de publicar — si el admin ya la publicó a mano (o una corrida

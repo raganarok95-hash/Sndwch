@@ -146,9 +146,15 @@ deja su entregable en la base (`marketing_*`) o en el repo, y el siguiente lo to
 
 ## 5 · Cómo se construye (fases)
 
-1. **Cimientos (antes del 13 oct)**: tablas `marketing_ideas`, `marketing_piezas`,
-   `marketing_metricas`; visitas por origen; eventos completos a Meta; render de video en GitHub.
+1. **Cimientos (antes del 13 oct)** — **hecho el 2026-10-07**: `marketing_calendar` ampliada
+   (plantilla, gancho, `src`, rol, revisión, datos, métricas) en vez de tablas nuevas;
+   `marketing_plan`, `marketing_flow_cola`, `visitas_por_origen`; `orders.origen` (el `?src=`
+   viaja con el pedido); ViewContent e InitiateCheckout al píxel; **video del día** en GitHub
+   (`.github/workflows/video-diario.yml` → `scripts/video-auto/diario.mjs`), que deja un borrador
+   pendiente de revisión. El cron de publicación ya no toma nada `bloqueado`.
 2. **Producción diaria**: rutinas de Creativo → Diseñador/Editor → Calidad → Publicador.
+   Playbooks de las rutinas en `docs/marketing/roles/` (`revisor.md` diario 11:15,
+   `analista.md` domingo 20:00). Para ahorrar créditos, varios roles comparten una rutina.
 3. **Bucles**: tarjeta para compartir, WhatsApp gratis, tarjeta de Rappi, reseñas.
 4. **Pauta** (27 oct): Media buyer con los S/350.
 5. **Analista y bandido**; retrospectiva semanal.
