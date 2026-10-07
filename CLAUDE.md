@@ -187,4 +187,6 @@ como `row_to_json(t)::text`; la lista de tablas se descubre en cada corrida. Det
     `gap:.16em`), **la izquierda dorada `#CBA258` (SANDO), la derecha celeste `#8CC8EC` (WICHO),
     planas**. Siempre significó el corte del pan, nunca algo "tech". Todo lo demás (paleta,
     tipografía, marco) es libre de proponer con concepto antes que código. **SND//WCH no tiene
-    identidad trujillana ni regional.** Detalle e historia en el manual.
+    identidad trujillana ni regional.** Detalle e historia en el manual. **En el contenido
+    (videos, posts) el `//` NO es obligatorio ni es la base del concepto creativo** (dueño,
+    2026-10-07): se usa donde sume, no como muletilla.

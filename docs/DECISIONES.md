@@ -1271,3 +1271,19 @@ preguntar antes de pagar. El dueño dudó de que tres pasos antes de pagar no fr
   escrito en los campos de Entrar y de la losa lleva su color con `!important`, porque la regla
   global `input{color:#EFEDE4 !important}` lo dejaba crema sobre papel crema. Lo vigila
   `tests/puerta-entrar-aviso.spec.ts`.
+
+
+## 2026-10-07 · El contenido de marketing: qué es regla y qué no
+- **El `//` en el contenido**: dueño, «las dos barras ya no son necesarias para usarlas siempre,
+  ya no son la base del concepto». Sigue siendo la marca (logo, app); en videos y posts se usa
+  donde sume.
+- **«El pedido raro de la semana»**: dueño, «me parece algo que podemos hacer todas las semanas,
+  buena idea». Formato fijo semanal, con el armado más raro de los pedidos reales, **sin nombre
+  ni dato del cliente**.
+- **Lo que la regla de textos dice de verdad** (corrección mía): CLAUDE.md pide interpolar las
+  CIFRAS que el código conoce (precios, puntos, umbrales) y derivar el nombre de lo canjeable. No
+  prohíbe escribir. El primer video tomó «ningún texto se escribe» como regla y por eso el gancho
+  era la descripción del menú. Guiones, ganchos y diálogos se escriben; los números, no.
+- **La foto del producto**: «Nunca inventar … fotos de producto» (CLAUDE.md, Restricciones
+  permanentes). Los personajes y las escenas pueden ser generados; el sándwich que se vende es
+  siempre la foto real.
