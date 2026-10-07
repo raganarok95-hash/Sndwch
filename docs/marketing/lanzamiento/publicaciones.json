@@ -1,0 +1,95 @@
+[
+  {
+    "pieza": "06-tira-la-sexta-salsa",
+    "laminas": [
+      "06-tira-la-sexta-salsa.jpg"
+    ],
+    "texto": "La tira n.º 1: la sexta salsa.\n¿Quién tiene razón? Te leemos.\nPide en sndwch.app · enlace en el perfil.",
+    "src": "ig-tira-1",
+    "fijar": false
+  },
+  {
+    "pieza": "08-turkey",
+    "laminas": [
+      "08-turkey.jpg"
+    ],
+    "texto": "Llena sin pesar: el almuerzo que no te tumba la tarde.\nTurkey: pavo, lechuga, tomate, cebolla, pimiento, oil & vinegar.\nPide en sndwch.app · enlace en el perfil.",
+    "src": "ig-turkey",
+    "fijar": false
+  },
+  {
+    "pieza": "04-arma-el-tuyo",
+    "laminas": [
+      "04-arma-el-tuyo-1.jpg",
+      "04-arma-el-tuyo-2.jpg"
+    ],
+    "texto": "Arma el tuyo en 6 pasos: tamaño, pan, proteína, queso, vegetales, salsas.\nLas reglas las pones tú. — WICHO\nPide en sndwch.app · enlace en el perfil.",
+    "src": "ig-arma",
+    "fijar": false
+  },
+  {
+    "pieza": "09-para-la-oficina",
+    "laminas": [
+      "09-para-la-oficina.jpg"
+    ],
+    "texto": "«Somos seis. Bueno, siete.» — WICHO\nPide en grupo para la oficina: desde 5 sándwiches, quien organiza se lleva gratis el 15CM más barato. El menú secreto no entra.\nPide en sndwch.app · enlace en el perfil.",
+    "src": "ig-grupo",
+    "fijar": false
+  },
+  {
+    "pieza": "05-philly",
+    "laminas": [
+      "05-philly.jpg"
+    ],
+    "texto": "Es el que pides cuando el hambre va en serio.\nPhilly Cheesesteak: res, cebolla, pimiento, cheddar.\nPide en sndwch.app · enlace en el perfil.",
+    "src": "ig-philly",
+    "fijar": false
+  },
+  {
+    "pieza": "07-abrimos",
+    "laminas": [
+      "07-abrimos.jpg"
+    ],
+    "texto": "Abrimos el martes 13 de octubre, desde las 11:00.\nSándwiches armados al momento, a domicilio.\nPide en sndwch.app · enlace en el perfil.",
+    "src": "ig-abrimos",
+    "fijar": false
+  },
+  {
+    "pieza": "03-los-hermanos",
+    "laminas": [
+      "03-los-hermanos-1.jpg",
+      "03-los-hermanos-2.jpg",
+      "03-los-hermanos-3.jpg"
+    ],
+    "texto": "Son hermanos. No se parecen en nada.\nSANDO cura: una salsa, la justa. WICHO arma: todo a la vez.\nEntre los dos hacen la carta y el «arma el tuyo».\nPide en sndwch.app · enlace en el perfil.",
+    "src": "ig-hermanos",
+    "fijar": true
+  },
+  {
+    "pieza": "02-la-carta",
+    "laminas": [
+      "02-la-carta-1.jpg",
+      "02-la-carta-2.jpg",
+      "02-la-carta-3.jpg",
+      "02-la-carta-4.jpg",
+      "02-la-carta-5.jpg",
+      "02-la-carta-6.jpg",
+      "02-la-carta-7.jpg"
+    ],
+    "texto": "La carta: 6 Signatures. Cada uno, como tiene que ser. — SANDO\n\nPhilly Cheesesteak · 15CM S/22.90 · 30CM S/33.90\nMeatball Marinara · 15CM S/21.90 · 30CM S/32.90\nTurkey · 15CM S/23.90 · 30CM S/34.90\nTuna Melt · 15CM S/22.90 · 30CM S/33.90\nItalian Hoagie · 15CM S/23.90 · 30CM S/34.90\nClassic Tuna · 15CM S/20.90 · 30CM S/31.90\n\nPide en sndwch.app · enlace en el perfil.",
+    "src": "ig-carta",
+    "fijar": true
+  },
+  {
+    "pieza": "01-como-se-pide",
+    "laminas": [
+      "01-como-se-pide-1.jpg",
+      "01-como-se-pide-2.jpg",
+      "01-como-se-pide-3.jpg",
+      "01-como-se-pide-4.jpg"
+    ],
+    "texto": "Cómo se pide, en tres pasos y sin descargar nada.\n1. Entra a sndwch.app desde el celular.\n2. Elige un Signature o arma el tuyo.\n3. Paga con Yape o tarjeta. Envío según distancia, desde S/5.00.\n\nMartes a domingo · 11:00–22:00. Lunes cerrado.\nPide en sndwch.app · enlace en el perfil.",
+    "src": "ig-como",
+    "fijar": true
+  }
+]

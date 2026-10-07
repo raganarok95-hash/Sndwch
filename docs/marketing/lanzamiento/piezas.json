@@ -1,0 +1,33 @@
+{
+  "piezas": [
+    "01-como-se-pide-1",
+    "01-como-se-pide-2",
+    "01-como-se-pide-3",
+    "01-como-se-pide-4",
+    "02-la-carta-1",
+    "02-la-carta-2",
+    "02-la-carta-3",
+    "02-la-carta-4",
+    "02-la-carta-5",
+    "02-la-carta-6",
+    "02-la-carta-7",
+    "03-los-hermanos-1",
+    "03-los-hermanos-2",
+    "03-los-hermanos-3",
+    "04-arma-el-tuyo-1",
+    "04-arma-el-tuyo-2",
+    "05-philly",
+    "06-tira-la-sexta-salsa",
+    "07-abrimos",
+    "08-turkey",
+    "09-para-la-oficina"
+  ],
+  "destacadas": [
+    "destacada-pide",
+    "destacada-carta",
+    "destacada-arma",
+    "destacada-grupo",
+    "destacada-zonas",
+    "destacada-ellos"
+  ]
+}
