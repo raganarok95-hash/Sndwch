@@ -29,6 +29,19 @@ const faltan = await p.evaluate(async () => {
 });
 if (faltan.length) throw new Error('No cargaron las fuentes: ' + faltan.join(', '));
 await p.evaluate(async () => { await document.fonts.ready; await Promise.all([...document.images].map((i) => i.decode().catch(() => 0))); });
+// Que nada se pise: un video roto publicado cuesta más que un día sin video. Se mide con todo a
+// la vista (gancho al inicio; nombre, chips, precio y SANDO juntos al segundo 8).
+await p.evaluate(() => window.render(0.8));
+const altoGancho = await p.evaluate(() => document.getElementById('gancho').getBoundingClientRect().height);
+if (altoGancho > 4 * 96 * 1.02 + 2) throw new Error(`El gancho ocupa más de 4 líneas (${Math.round(altoGancho)} px)`);
+await p.evaluate(() => window.render(8));
+const choques = await p.evaluate(() => {
+  const r = (id) => document.getElementById(id).getBoundingClientRect();
+  const cruzan = (a, b) => a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+  const pares = [['nombre', 'precio'], ['chips', 'precio'], ['chips', 'sando'], ['nombre', 'chips']];
+  return pares.filter(([a, b]) => cruzan(r(a), r(b))).map((x) => x.join(' × '));
+});
+if (choques.length) throw new Error('Se pisan: ' + choques.join(', '));
 for (let i = 0; i < FPS * DURA; i++) {
   await p.evaluate((t) => window.render(t), i / FPS);
   await p.screenshot({ path: join(dir, String(i).padStart(4, '0') + '.jpg'), type: 'jpeg', quality: 90 });

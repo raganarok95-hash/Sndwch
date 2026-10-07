@@ -8,10 +8,13 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:#1a130b}
 #velo{position:absolute;inset:0;background:linear-gradient(180deg,rgba(26,19,11,.55) 0%,rgba(26,19,11,0) 30%,rgba(26,19,11,0) 55%,rgba(26,19,11,.85) 100%)}
 .cap{position:absolute;left:72px;right:72px;font:400 120px/0.95 Anton,sans-serif;text-transform:uppercase;letter-spacing:-.01em}
 #gancho{top:200px;font-size:96px;line-height:1.02}
-#nombre{bottom:560px;right:72px}
-#chips{position:absolute;left:72px;right:400px;bottom:300px;display:flex;flex-wrap:wrap;gap:16px}
+/* Nombre y chips en un solo bloque anclado abajo: un nombre largo o muchos ingredientes lo hacen
+   crecer hacia arriba en vez de pisarse (pasó con el Meatball Marinara, 2026-10-07). */
+#pie{position:absolute;left:72px;right:72px;bottom:300px;display:flex;flex-direction:column;gap:28px}
+#pie .cap{position:static}
+#chips{display:flex;flex-wrap:wrap;gap:16px;margin-right:330px}
 .chip{font:600 34px/1 'IBM Plex Mono',monospace;background:#FBF4E6;color:#33230F;padding:16px 22px;border-radius:12px;opacity:0}
-#precio{position:absolute;right:72px;top:820px;transform:rotate(-6deg);border:8px solid #FBF4E6;padding:18px 28px 10px;text-align:center;opacity:0}
+#precio{position:absolute;right:72px;top:520px;transform:rotate(-6deg);border:8px solid #FBF4E6;padding:18px 28px 10px;text-align:center;opacity:0}
 #precio b{display:block;font:400 110px/1 Anton,sans-serif}#precio s{text-decoration:none;font:600 30px/1 'IBM Plex Mono',monospace;letter-spacing:.2em}
 #sando{position:absolute;right:-30px;bottom:-40px;width:430px}
 #cta{position:absolute;inset:0;background:#1F1609;color:#FBF4E6;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:40px;opacity:0}
@@ -25,8 +28,8 @@ html,body{width:1080px;height:1920px;overflow:hidden;background:#1a130b}
 <div id="foto"></div><div id="velo"></div>
 <div class="cap" id="gancho"></div>
 <div id="precio"><b></b><s>15CM</s></div>
-<div class="cap" id="nombre"></div>
-<div id="chips"></div>
+<div id="pie"><div class="cap" id="nombre"></div>
+<div id="chips"></div></div>
 <img id="sando" src="../../img/sando2_sonrie.png" alt="">
 <div id="cta"><div class="wm">SND<span class="mk"><i></i><i></i></span>WCH</div><div class="url">sndwch.app</div><div class="sub">Pídelo hoy · delivery</div><img id="wicho" src="../../img/wicho_rie.png" alt=""></div>
 </div>
