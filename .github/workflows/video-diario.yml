@@ -26,7 +26,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: sudo apt-get install -y ffmpeg >/dev/null
+      # El runner suele traerlo; apt tardó 5 min el 2026-10-07, así que solo si falta.
+      - run: command -v ffmpeg || sudo apt-get install -y ffmpeg >/dev/null
       - name: Armar, subir y anotar el video
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
