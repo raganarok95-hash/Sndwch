@@ -12,34 +12,19 @@
 // 'scheduled' solo el Revisor, al aprobarla.
 //
 // Uso: node scripts/video-auto/diario.mjs [--sin-subir]   (FFMPEG, PLAYWRIGHT_CHROMIUM_PATH opcionales)
-import { writeFileSync, readFileSync, mkdtempSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { SB, BUCKET, conectar, hoyEnLima, precio } from './produccion.mjs';
 
-const REF = 'rjosezuoyngiadunfzyn';
-const SB = `https://${REF}.supabase.co`;
-const BUCKET = 'marketing-images';
 const sinSubir = process.argv.includes('--sin-subir');
-const tok = process.env.SUPABASE_ACCESS_TOKEN;
-if (!tok) throw new Error('Falta SUPABASE_ACCESS_TOKEN');
-
-const keys = await (await fetch(`https://api.supabase.com/v1/projects/${REF}/api-keys?reveal=true`, { headers: { Authorization: `Bearer ${tok}` } })).json();
-const servicio = (keys.find((k) => k.name === 'service_role') || {}).api_key;
-if (!servicio) throw new Error('No se obtuvo la llave de servicio');
-console.log(`::add-mask::${servicio}`);
-const h = { apikey: servicio, Authorization: `Bearer ${servicio}` };
-const pedir = async (url, init = {}) => {
-  const r = await fetch(url, { ...init, headers: { ...h, ...(init.headers || {}) } });
-  if (!r.ok) throw new Error(`${init.method || 'GET'} ${url.replace(SB, '')} → ${r.status} ${await r.text()}`);
-  return r.status === 204 ? null : r.json();
-};
-
-// Fecha de Lima (UTC-5, sin horario de verano).
-const hoy = new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 10);
+const { pedir, accion } = await conectar();
+const hoy = hoyEnLima();
 
 // 1 · La carta REAL: la misma respuesta que recibe el celular del cliente.
-const cat = await pedir(`${SB}/functions/v1/api`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'get-catalog' }) });
+const cat = await accion('get-catalog');
 const items = cat.sigItems || {};
 const inv = cat.inventory || {};
 const agotado = (code) => code && inv[code] && inv[code].inStock === false;
@@ -78,7 +63,6 @@ execFileSync('node', ['scripts/video-auto/render.mjs', join(tmp, 'datos.json'), 
 
 // El texto del post: interpolado, nunca escrito (regla del repo). El enlace lleva su `src`:
 // así el analista sabe cuántas visitas y pedidos trajo ESTE video.
-const precio = (n) => 'S/' + (Number.isInteger(n) ? n : n.toFixed(2));
 const caption = [
   `${datos.gancho}.`,
   '',

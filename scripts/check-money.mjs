@@ -20,6 +20,8 @@ try {
   // de Deno de acá y la de Playwright del navegador, para que la fórmula del cliente y la
   // del servidor no puedan divergir. Sin copiarla, la prueba de Deno no la encuentra.
   cpSync(join(ROOT, 'tests/fixtures'), join(tmp, 'tests/fixtures'), { recursive: true });
+  // Las reglas del Revisor de marketing (scripts/video-auto) son JS puro sin dependencias.
+  cpSync(join(ROOT, 'scripts/video-auto'), join(tmp, 'scripts/video-auto'), { recursive: true });
   const deno = join(ROOT, 'node_modules', '.bin', 'deno');
   execFileSync(deno, ['test', '--allow-read', '--allow-env', '--no-check', 'tests-api/'], {
     cwd: tmp,
