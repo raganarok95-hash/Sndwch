@@ -286,3 +286,18 @@ cargos Culqi pendientes, Plan Semanal sin confirmar, conciliación de cargos Cul
 huérfanos (cobro real sin pedido/Plan Semanal detrás). Ver el mapa completo de acciones
 en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
 (`select * from cron.job` vía `execute_sql`) para horarios exactos.
+
+## Agregado 2026-10-02 → 10-07
+
+- **Yape se confirma solo** cuando la captura cuadra: el celular del cliente la lee al subirla y el
+  servidor decide (monto, operación nueva, celular de destino, fecha de hoy, tope S/80). El panel
+  la relee y avisa si no coincide.
+- **Tarjeta**: el cobro usa el correo que el cliente da en la ventana de Culqi; mínimo S/1 avisado
+  antes de abrirla.
+- **Libro de Reclamaciones en tres pasos** (con cuenta, los datos llegan llenos y el pedido se
+  elige de «Tus pedidos»).
+- **La mesa del grupo**: cuánto paga cada uno antes de cobrar (calculado por el servidor), cambiar
+  dirección/teléfono en una hoja, y la mesa cobrando (PAGÓ/FALTA, recordar por WhatsApp).
+- **Versión nueva sola**: la app se actualiza al volver a primer plano o cada 10 min.
+- **Stock del día**: «Abro con N porciones» en el panel; el cliente ve «Quedan N hoy».
+- **Lectura de capturas reales** desde GitHub (`capturas-reales.yml`), sin pedir pagos de prueba.

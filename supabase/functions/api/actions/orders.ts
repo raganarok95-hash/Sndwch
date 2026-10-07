@@ -1758,7 +1758,9 @@ export function parseTransferReceipt(text: string): ReceiptFields {
   // «28 set. 2026» (Yape real): el punto del mes va seguido de un espacio.
   // Año de 4 dígitos y el día sin otro número pegado delante: si no, «710.10 02…» (monto + día)
   // se leía como la fecha «0.10 02».
-  const fecha = t.match(/(?<![0-9.,])([0-3]?[0-9][\/\-. ]\s*(?:[0-1]?[0-9]|ene|feb|mar|abr|may|jun|jul|ago|set|sep|[o0]ct|nov|dic)[a-z]*[.,]?[\/\-. ]\s*[0-9]{4})/i);
+  // Con el mes en letras el espacio puede no estar: la captura real del 2026-10-02 se lee
+  // «02oct.2026». Con el mes en número, el separador sigue siendo obligatorio.
+  const fecha = t.match(/(?<![0-9.,])([0-3]?[0-9](?:[\/\-. ]\s*[0-1]?[0-9][\/\-. ]|[\/\-. ]?\s*(?:ene|feb|mar|abr|may|jun|jul|ago|set|sep|[o0]ct|nov|dic)[a-z]*[.,]?[\/\-. ]?)\s*[0-9]{4})/i);
   if (fecha) dateText = fecha[1].trim();
 
   // CELULAR QUE RECIBIÓ. Yape enmascara: «Nro. de celular *** *** 640», y el OCR lee los
