@@ -1,25 +1,37 @@
 // SND//WCH — scripts/ficha-google
-// Revisa la ficha de Google del negocio (dueño, 2026-10-07: «revísala»): la busca en Google
-// Places con la llave del propio servidor (la entrega get-store-hours) y muestra lo que ve un
-// cliente: nombre, dirección, horario, categoría, reseñas, fotos, web y teléfono. Solo lee.
-// Corre en GitHub (el proxy de las sesiones bloquea supabase.co).
-const API = 'https://rjosezuoyngiadunfzyn.supabase.co/functions/v1/api';
-const h = await (await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'get-store-hours' }) })).json();
-const key = h.googleMapsKey || h.mapsKey || (h.google && h.google.mapsKey);
-if (!key) { console.log('get-store-hours no trajo la llave. Campos:', Object.keys(h).join(', ')); process.exit(1); }
-const ref = { Referer: 'https://sndwch.app/' };
+// Revisa la ficha de Google del negocio (dueño, 2026-10-07: «revísala»). La llave de Maps está
+// restringida a sndwch.app (no sirve para la API web directa), así que se abre sndwch.app en un
+// navegador y se busca con la misma librería de Google que usa la app. Solo lee.
+// Corre en GitHub (el proxy de las sesiones bloquea sndwch.app).
+import { chromium } from '@playwright/test';
+
 const consultas = (process.env.CONSULTAS || 'SND//WCH Trujillo|SNDWCH Trujillo|SND WCH sandwich Trujillo').split('|');
-const vistos = new Set();
-for (const q of consultas) {
-  const r = await (await fetch(`https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(q)}&language=es&key=${key}`, { headers: ref })).json();
-  console.log(`\nBúsqueda «${q}»: ${r.status} · ${(r.results || []).length} resultado(s)${r.error_message ? ' · ' + r.error_message : ''}`);
-  for (const c of (r.results || []).slice(0, 5)) {
-    console.log(`  · ${c.name} — ${c.formatted_address} (${c.place_id})`);
-    if (vistos.has(c.place_id) || !/snd|wch|sand/i.test(c.name)) continue;
-    vistos.add(c.place_id);
-    const f = 'name,formatted_address,formatted_phone_number,website,url,opening_hours,business_status,types,rating,user_ratings_total,photos,editorial_summary,delivery,serves_lunch,serves_dinner';
-    const d = (await (await fetch(`https://maps.googleapis.com/maps/api/place/details/json?place_id=${c.place_id}&fields=${f}&language=es&key=${key}`, { headers: ref })).json()).result || {};
-    console.log(JSON.stringify({ ...d, photos: (d.photos || []).length }, null, 2));
-    console.log(`  enlace de reseña: https://search.google.com/local/writereview?placeid=${c.place_id}`);
+const b = await chromium.launch();
+const p = await b.newPage();
+await p.goto('https://sndwch.app/');
+await p.waitForFunction(() => typeof window.loadGoogleMaps === 'function', null, { timeout: 30000 }).catch(() => {});
+const r = await p.evaluate(async (qs) => {
+  const w = window;
+  try { await w.loadGoogleMaps(); } catch (e) { return { error: 'Maps no cargó: ' + e.message }; }
+  const { Place } = await w.google.maps.importLibrary('places');
+  const campos = ['id', 'displayName', 'formattedAddress', 'businessStatus', 'primaryTypeDisplayName', 'rating', 'userRatingCount',
+    'regularOpeningHours', 'websiteURI', 'nationalPhoneNumber', 'googleMapsURI', 'photos', 'editorialSummary'];
+  const out = [];
+  for (const q of qs) {
+    try {
+      const { places } = await Place.searchByText({ textQuery: q, fields: campos, language: 'es', region: 'pe', maxResultCount: 5 });
+      out.push({ q, encontrados: places.map((x) => ({
+        id: x.id, nombre: x.displayName, direccion: x.formattedAddress, estado: x.businessStatus, tipo: x.primaryTypeDisplayName,
+        rating: x.rating, resenas: x.userRatingCount, web: x.websiteURI, telefono: x.nationalPhoneNumber, mapa: x.googleMapsURI,
+        fotos: (x.photos || []).length, resumen: x.editorialSummary,
+        horario: x.regularOpeningHours ? x.regularOpeningHours.weekdayDescriptions : null,
+      })) });
+    } catch (e) { out.push({ q, error: String(e.message || e) }); }
   }
+  return out;
+}, consultas);
+console.log(JSON.stringify(r, null, 2));
+for (const c of [].concat(...(Array.isArray(r) ? r : []).map((x) => x.encontrados || []))) {
+  console.log(`enlace de reseña de «${c.nombre}»: https://search.google.com/local/writereview?placeid=${c.id}`);
 }
+await b.close();
