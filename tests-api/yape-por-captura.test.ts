@@ -78,3 +78,19 @@ Deno.test("el lector encuentra la fecha aunque confunda la o con un 0 o el punto
     assertEquals(fechaDelComprobante(parseTransferReceipt("¡Yapeaste!\n710.10\n" + linea).dateText), HOY, linea);
   }
 });
+
+// Las dos capturas reales del dueño (2026-10-02), leídas en GitHub con el mismo lector del celular
+// (workflow capturas-reales.yml). El nombre del titular va cambiado. La fecha sale PEGADA
+// («02oct.2026»): antes no se leía y la regla de «captura de hoy» no se podía aplicar.
+const REAL_0310 = ["LATE NN ZE AN [ a. | ye (1 =1 | Mé =/) a 7 1,", "\"La Es EN A.", "¡Yapeaste!", "70.10", "Nombre Apell*", "E 02oct.2026 | O 04:12 p.m.", "CÓDIGO DE SEGURIDAD", "TZ 6", "DATOS DE LA TRANSACCIÓN", "Nro. de celular A 640", "Destino Yape", "Nro. de operación 24729126"].join("\n");
+Deno.test("captura real: se lee la fecha pegada y se confirma el mismo día", () => {
+  const f = parseTransferReceipt(REAL_0310);
+  assertEquals(fechaDelComprobante(f.dateText), "2026-10-02");
+  assertEquals(f.opNumber, "24729126");
+  assertEquals(f.celularFinal, "640");
+  const o = { ...yape, total: 0.1 };
+  const d = (hoy: string) => decisionAutomatica({ checks: receiptChecks(f, 0.1, []), fields: f, order: o, hoyLima: hoy, tope: 80, numeroCobro: "930957640" });
+  assertEquals(d("2026-10-02").confirmar, true);
+  // Y una captura de otro día ya no pasa: es lo que la fecha estaba para atajar.
+  assertEquals(d("2026-10-05").confirmar, false);
+});

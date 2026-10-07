@@ -113,3 +113,32 @@ La portada de Administrar es un solo resumen: lo que pide atención hoy (lo que 
   de la cuenta 221839797 y anota cuáles; Prender reactiva solo esas. Las publicaciones
   programadas del calendario ya se publicaban solas (cron cada 15 min).
 - Pruebas: `tests/cocina-abierta.spec.ts`, `tests-api/anuncios-boton.test.ts` (defectos inyectados).
+
+## 7 · Pedido nuevo: remodelación TOTAL enfocada en productividad (2026-10-03) — SIN EMPEZAR
+
+Dueño, 2026-10-03: «el panel admin necesita una remodelación total para enfocarse en
+productividad, lo habíamos hablado». Lo construido en §6 (Cocina abierta + 5 cajones) es el
+primer paso; lo que pide ahora es repensarlo entero (**REPENSAR**, no ARREGLO: ver
+`docs/COMO_DISENAR_ACA.md` — archivo nuevo, en blanco, tres respuestas estructuralmente
+distintas antes de dibujar).
+
+Lo que ya está decidido y NO se reabre (§5): dos modos (operar / administrar), celular primero
+(360 px) y laptop después, sin estado «Listo», el reparto lo hace un tercero avisado por WhatsApp
+(«Pedir motorizado»), el motorizado NO toca links (`IDEAS_A_FUTURO.md`), «no bonito sino
+funcional y ordenado».
+
+Lo que hay que resolver en la propuesta (concepto antes que código, regla 3):
+1. **Productividad = menos toques por pedido.** Contar hoy los toques de punta a punta (entra →
+   pago confirmado → armando → pedir motorizado → salió → entregado) y proponer cómo bajarlos.
+   Yape ya se confirma solo cuando la captura cuadra (lector en el celular del cliente).
+2. **Qué ve el dueño al abrir el panel** en cada momento del día (antes de abrir, servicio,
+   cierre) sin navegar: lo que pide acción arriba, todo lo demás a un toque.
+3. **Administrar**: las ~35 pantallas en 5 cajones siguen siendo muchas. Medir cuáles se usan
+   (no hay datos de uso: proponer cómo medirlo o decidir con el dueño) y cuáles sobran.
+4. **«Abro con N porciones»** (stock del día) debería ser parte natural de abrir la cocina, no
+   una hoja aparte: hoy la tabla `inventory` está vacía y el cliente no ve «Quedan N».
+5. Entregable: lámina con 3 opciones estructurales (como `propuestas/cocina-abierta.html`), hoy
+   del panel actual con capturas, y una recomendación. Nada se construye sin aprobación.
+
+Código actual: `src/app/09-admin-operacion.ts` (cocina, `sAdminCocina`), `10-admin-negocio.ts`
+(administrar), auditoría previa en `docs/AUDITORIA_PANEL_ADMIN.md`.

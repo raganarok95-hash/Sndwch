@@ -35,9 +35,9 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 
 | # | Qué | Qué me dices después |
 |---|---|---|
-| P30 | **Dirección guardada**: cerrar y abrir sndwch.app, agregar un sándwich, ver que «Dónde» ya trae «Casa» con el envío, y tocar Pagar | Si te vuelve a pedir el mapa (la app me reporta qué recibió) |
+| ~~P30~~ | ~~Dirección guardada~~ — **cerrado sin pruebas tuyas** (dueño, 2026-10-03: «debe solucionarlo sin pruebas mías»): cubierto por `tests/direccion-guardada-sin-pin.spec.ts` (4 pruebas, incluida «con una guardada con pin, el carrito queda listo para pagar sin tocar nada») | — |
 | ~~P31~~ | ~~Mover el pin de «Casa»~~ — **no hace falta** (dueño, 2026-10-02): el pin que ya tiene se respeta; una guardada con pin se usa de un toque, sin mapa | — |
-| P32 | **Tarjeta**: Pagar → «Prefiero tarjeta» → «Ir a pagar». Si la ventana no aparece, Pagar lo dice y me llega el registro | Avísame que lo intentaste y leo `debug_logs` |
+| ~~P32~~ | ~~Tarjeta~~ — **arreglado 2026-10-03 sin pruebas tuyas**: el cobro iba sin correo para invitados y cuentas sin correo (create-charge lo rechazaba tras escribir la tarjeta); ahora usa el correo que el cliente da en Culqi. Verificado en producción: la reserva tiene todas sus columnas y la ventana de Culqi abre con el formulario. La primera compra real con tarjeta lo confirma: se ve en `debug_logs` (`tarjeta:*`) si falla | — |
 
 ## 1. Antes de abrir — sin esto no se puede operar
 
