@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp } from './helpers';
+import { gotoApp, elegirSando, pedirUnSignature, ponerRecibe, ponerDireccion } from './helpers';
 
 // EL PÍXEL DE META SE CALLA CUANDO EL CLIENTE SE OPONE (Ley 29733)
 //
@@ -70,4 +70,28 @@ test('la política dice cómo ejercer el derecho, y nombra la ley', async ({ pag
   // Lo que NO se manda tiene que seguir diciéndose: es la mitad tranquilizadora, y la que
   // dejaría de ser cierta si alguien agrega el DNI al evento "para mejorar la coincidencia".
   expect(txt).toMatch(/NO le llegan tu DNI/);
+});
+
+// EL EMBUDO COMPLETO LLEGA A META (2026-10-07). La pauta del 27 de octubre optimiza con lo que
+// el píxel ve: si solo ve compras, con ~20 por prueba no aprende nada. Modo de fallo: SILENCIO
+// — si «vio el producto» o «empezó a pagar» dejan de dispararse, nada se rompe en pantalla y
+// los S/350 se gastan a ciegas. Y si «empezó a pagar» se repite cada vez que el cliente vuelve
+// atrás, la tasa de conversión que lee el analista sale falsa.
+test('abrir un Signature y empezar a pagar llegan al píxel, una vez cada uno', async ({ page }) => {
+  // Con el horario por defecto de los mocks (abierto): el `fbq` se suplanta igual que arriba.
+  await gotoApp(page);
+  await page.evaluate(() => { const w = window as any; w._eventos = []; w.fbq = (_m: string, ev: string) => { w._eventos.push(ev); }; });
+  await elegirSando(page);
+  await pedirUnSignature(page);
+  await ponerRecibe(page);
+  await ponerDireccion(page);
+  await page.locator('.m30-go .oro').click();
+  await page.locator('.m31').waitFor();
+  await page.locator('.m31 .sal').click();
+  await page.locator('.m30').waitFor();
+  await page.locator('.m30-go .oro').click();
+  await page.locator('.m31').waitFor();
+  const eventos: string[] = await page.evaluate(() => (window as any)._eventos);
+  expect(eventos.filter((e) => e === 'ViewContent')).toHaveLength(1);
+  expect(eventos.filter((e) => e === 'InitiateCheckout'), 'volver atrás infló «empezó a pagar»').toHaveLength(1);
 });

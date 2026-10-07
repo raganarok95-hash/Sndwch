@@ -4273,7 +4273,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '1f09628027';
+var APP_BUILD = 'ceb20c2ae6';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -5732,6 +5732,10 @@ function startOrderWithSig(id) {
     mode = 'sig';
     sigId = id;
     go('o_sig');
+    // Meta: «vio el producto». Sin esto, el anuncio solo aprende de quien ya compró.
+    var s = SIGS.find(function (x) { return mismoId(x.id, id); });
+    if (s && !s.secret)
+        fbTrack('ViewContent', { currency: 'PEN', value: s.p15, content_ids: [s.id], content_type: 'product', content_name: s.n });
 }
 // editingItemQty: cuando se está editando una línea ya en el carrito (ver
 // editCartItem), guarda la cantidad original para que currentBuiltItem() la respete al
@@ -8767,6 +8771,12 @@ function irAPagar() {
         else
             showToast(FALTA_SANDWICH, 'error');
         return;
+    }
+    // Meta: «empezó a pagar», una vez por carrito (volver atrás y avanzar no lo infla).
+    var firma = cart.length + ':' + cartFinalTotal();
+    if (window._sndCheckoutVisto !== firma) {
+        window._sndCheckoutVisto = firma;
+        fbTrack('InitiateCheckout', { currency: 'PEN', value: money(cartFinalTotal()), num_items: cart.reduce(function (n, it) { return n + (it.qty || 1); }, 0) });
     }
     if (!direccionLista()) {
         go('o_dir');
