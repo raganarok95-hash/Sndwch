@@ -111,6 +111,21 @@ async function instagramDeLaPagina(pageId: string): Promise<string> {
   return (igDescubierto = id);
 }
 
+// Qué contenedores pide Instagram para una entrada: un Reel, una imagen o un CARRUSEL. El carrusel
+// (2026-10-07, lanzamiento del perfil) llega con sus láminas en `datos.laminas`, en orden; cada
+// lámina es un contenedor hijo y el padre las junta con el texto. Si una lámina se pierde o se
+// desordena, nada falla: sale publicado mal. Por eso es una función aparte y probada
+// (tests-api/carrusel-de-instagram.test.ts).
+export function contenedoresDeInstagram(entry: any, caption: string): { hijos: Record<string, string>[]; padre: Record<string, string> } {
+  if (entry.media_type === "video") return { hijos: [], padre: { video_url: String(entry.video_url), media_type: "REELS", caption } };
+  const laminas: string[] = Array.isArray(entry.datos?.laminas) ? entry.datos.laminas.map(String).filter(Boolean) : [];
+  if (laminas.length > 10) throw new ApiError("Instagram acepta hasta 10 láminas por carrusel.", 400);
+  if (laminas.length >= 2) {
+    return { hijos: laminas.map((u) => ({ image_url: u, is_carousel_item: "true" })), padre: { media_type: "CAROUSEL", caption } };
+  }
+  return { hijos: [], padre: { image_url: String(laminas[0] || entry.image_url), caption } };
+}
+
 // Publica una entrada del calendario en Instagram o Facebook — requiere que ya tenga
 // image_url o video_url (ver actAdminCalendarUploadImage/actAdminUploadRawVideo) y que
 // los 3 secretos de Meta estén configurados (ver env.ts). Compartida entre el botón
@@ -137,10 +152,15 @@ async function publishCalendarEntry(entry: any): Promise<string> {
     publishedRef = String(data.post_id || data.id || "");
   } else {
     const igUserId = await instagramDeLaPagina(pageId);
-    const containerParams: Record<string, string> = isVideo
-      ? { video_url: mediaUrl, media_type: "REELS", caption, access_token: META_PAGE_ACCESS_TOKEN }
-      : { image_url: mediaUrl, caption, access_token: META_PAGE_ACCESS_TOKEN };
-    const container = await metaGraphPost(`${igUserId}/media`, containerParams);
+    const plan = contenedoresDeInstagram(entry, caption);
+    // Carrusel: un contenedor por lámina, en orden, y después el padre que las junta.
+    if (plan.hijos.length) {
+      const ids: string[] = [];
+      for (const h of plan.hijos) ids.push(String((await metaGraphPost(`${igUserId}/media`, { ...h, access_token: META_PAGE_ACCESS_TOKEN })).id || ""));
+      if (ids.some((x) => !x)) throw new ApiError("Meta no devolvió un contenedor válido para una lámina del carrusel.", 502);
+      plan.padre.children = ids.join(",");
+    }
+    const container = await metaGraphPost(`${igUserId}/media`, { ...plan.padre, access_token: META_PAGE_ACCESS_TOKEN });
     const creationId = String(container.id || "");
     if (!creationId) throw new ApiError("Meta no devolvió un contenedor de media válido.", 502);
     if (isVideo) await waitForIgContainerReady(creationId);
@@ -216,7 +236,9 @@ export async function actAdminPublishSocial(b: Entrada<"admin-publish-social"> &
 // del Productor no llega acá: entra como 'draft' y solo el Revisor lo programa
 // (scripts/video-auto/diario.mjs).
 export function loQueSaleSolo(today: string): string {
-  return `status=eq.scheduled&revision=neq.bloqueada&scheduled_date=lte.${today}&channel=in.(instagram,facebook)&select=*&limit=500`;
+  // En orden de fecha y de creación: el lanzamiento del perfil se carga en el orden en que tiene
+  // que aparecer, y el cron las publica una tras otra en una misma corrida.
+  return `status=eq.scheduled&revision=neq.bloqueada&scheduled_date=lte.${today}&channel=in.(instagram,facebook)&select=*&order=scheduled_date.asc,created_at.asc&limit=500`;
 }
 
 export async function actAutoPublishCalendar(b: Entrada<"auto-publish-calendar"> & { _ip?: string }) {

@@ -1,0 +1,20 @@
+name: Subir el lanzamiento de Instagram
+
+# Sube las piezas de docs/marketing/lanzamiento al bucket y las deja en el calendario como
+# borradores pendientes, en el orden de publicación (scripts/piezas/subir.mjs). No publica nada.
+on:
+  workflow_dispatch:
+
+jobs:
+  subir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Subir y cargar
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: node scripts/piezas/subir.mjs
