@@ -1,0 +1,23 @@
+name: Revisar la ficha de Google
+
+# Dueño, 2026-10-07: «revísala». Busca la ficha del negocio en Google Places y muestra lo que ve
+# un cliente. Solo lee. Se corre a mano; CONSULTAS acepta otras búsquedas separadas por «|».
+on:
+  workflow_dispatch:
+    inputs:
+      consultas:
+        description: 'Búsquedas separadas por |'
+        required: false
+        default: 'SND//WCH Trujillo|SNDWCH Trujillo|SND WCH sandwich Trujillo'
+
+jobs:
+  ficha:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - env:
+          CONSULTAS: ${{ github.event.inputs.consultas }}
+        run: node scripts/ficha-google.mjs
