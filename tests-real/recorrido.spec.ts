@@ -14,7 +14,13 @@ const hallazgos: Hallazgo[] = [];
 let pasoActual = '';
 
 // Ruido conocido de terceros que no es de la app (se anota abajo si cambia).
-const IGNORAR = [/favicon/i, /google-analytics|googletagmanager|facebook\.net|connect\.facebook/i];
+const IGNORAR = [
+  /favicon/i,
+  /google-analytics|googletagmanager|facebook\.net|connect\.facebook/i,
+  // El botón de Google (Entrar): en un navegador sin cuenta de Google iniciada, su ventana dice
+  // que no hay cuentas y su registro se corta al cambiar de página. Visto el 2026-10-07; no es la app.
+  /Provider's accounts list is empty|accounts\.google\.com\/gsi\/button|play\.google\.com\/log/i,
+];
 
 function vigilar(page: Page) {
   page.on('pageerror', (e) => hallazgos.push({ paso: pasoActual, que: 'JS: ' + String(e.message).slice(0, 200) }));
