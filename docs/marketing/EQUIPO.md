@@ -153,8 +153,12 @@ deja su entregable en la base (`marketing_*`) o en el repo, y el siguiente lo to
    (`.github/workflows/video-diario.yml` → `scripts/video-auto/diario.mjs`), que deja un borrador
    pendiente de revisión. El cron de publicación ya no toma nada `bloqueado`.
 2. **Producción diaria**: rutinas de Creativo → Diseñador/Editor → Calidad → Publicador.
-   Playbooks de las rutinas en `docs/marketing/roles/` (`revisor.md` diario 11:15,
-   `analista.md` domingo 20:00). Para ahorrar créditos, varios roles comparten una rutina.
+   **Hecho el 2026-10-07, como código en GitHub (S/0, sin créditos)**: Productor
+   (`video-diario.yml`, 5:47) → Revisor (`revisar-marketing.yml`, 11:15; reglas en
+   `docs/marketing/roles/revisor.md`) → Publicador (el cron `auto-publish-calendar`). El Analista
+   semanal es la sección «De dónde vinieron» del correo `weekly-summary` (domingo 9 p.m.).
+   Las rutinas de Claude quedan para lo creativo (ideas, guiones, Flow): deben crearse desde
+   claude.ai → Rutinas, porque desde una sesión nacen sin repo ni conectores.
 3. **Bucles**: tarjeta para compartir, WhatsApp gratis, tarjeta de Rappi, reseñas.
 4. **Pauta** (27 oct): Media buyer con los S/350.
 5. **Analista y bandido**; retrospectiva semanal.

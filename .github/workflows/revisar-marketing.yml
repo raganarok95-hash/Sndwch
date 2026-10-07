@@ -1,0 +1,23 @@
+name: Revisar y programar el video del día
+
+# El Revisor del equipo de marketing (docs/marketing/roles/revisor.md): aprueba UN borrador del
+# Productor o lo bloquea con motivo (precio, stock, video, repetido, acumulado). Aprobar = el cron
+# auto-publish-calendar lo publica en ≤15 min, así que esta hora ES la hora de publicación.
+on:
+  schedule:
+    - cron: '15 16 * * *'   # 11:15 a.m. en Lima: arranque del almuerzo
+  workflow_dispatch:
+
+jobs:
+  revisar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Revisar los borradores
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: node scripts/video-auto/revisar.mjs

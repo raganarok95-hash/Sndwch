@@ -40,6 +40,15 @@ const ESTIMATED_DELIVERY_RANGE = [25, 40];
 // (fecha de vencimiento, rotación), pero esto NO mide velocidad de venta real.
 const OVERSTOCK_MULTIPLIER = 5;
 
+// Visitas y pedidos pagados por origen, de más a menos pedidos. «directo» = sin `?src=`.
+export function origenesDeLaSemana(visitas: { src: string; visitas: number }[], pedidos: { origen?: string | null; payment_status?: string }[]) {
+  const m = new Map<string, { src: string; visitas: number; pedidos: number }>();
+  const de = (src: string) => m.get(src) || (m.set(src, { src, visitas: 0, pedidos: 0 }), m.get(src)!);
+  for (const v of visitas) de(v.src || "directo").visitas += Number(v.visitas) || 0;
+  for (const o of pedidos) if (o.payment_status === "paid") de(o.origen || "directo").pedidos++;
+  return [...m.values()].sort((a, b) => b.pedidos - a.pedidos || b.visitas - a.visitas);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return new Response("Método no permitido", { status: 405 });
   if (!(await verifyCronSecret(req.headers.get("x-cron-secret")))) return new Response("No autorizado", { status: 401 });
@@ -55,7 +64,7 @@ Deno.serve(async (req: Request) => {
     const prevWeekStart = new Date(now - 14 * 24 * 3600000).toISOString();
 
     const [ordersThisWeek, ordersPrevWeek, customersThisWeek, inventory, cancelledThisWeek] = await Promise.all([
-      sbGet("orders", `created_at=gte.${encodeURIComponent(weekStart)}&select=total,payment_status,created_at&limit=3000`),
+      sbGet("orders", `created_at=gte.${encodeURIComponent(weekStart)}&select=total,payment_status,created_at,origen&limit=3000`),
       sbGet("orders", `created_at=gte.${encodeURIComponent(prevWeekStart)}&created_at=lt.${encodeURIComponent(weekStart)}&select=total,payment_status&limit=3000`),
       sbGet("customers", `created_at=gte.${encodeURIComponent(weekStart)}&select=phone`),
       sbGet("inventory", "select=product_code,product_name,in_stock,stock_qty,low_stock_threshold"),
@@ -65,6 +74,12 @@ Deno.serve(async (req: Request) => {
       "orders",
       `created_at=gte.${encodeURIComponent(weekStart)}&delivered_at=not.is.null&select=created_at,delivered_at&limit=3000`,
     );
+
+    // DE DÓNDE VINIERON (el Analista del equipo de marketing, 2026-10-07): visitas por `?src=`
+    // (visitas_por_origen, una por sesión) contra pedidos pagados con ese mismo origen. Es lo que
+    // dice qué video, canal o tarjeta trae clientes; sin esto se decide la pauta a ciegas.
+    const visitas = await sbGet("visitas_por_origen", `dia=gte.${weekStart.slice(0, 10)}&select=src,visitas&limit=3000`).catch(() => []);
+    const porOrigen = origenesDeLaSemana(visitas, ordersThisWeek);
 
     const paidThisWeek = ordersThisWeek.filter((o: any) => o.payment_status === "paid");
     const paidPrevWeek = ordersPrevWeek.filter((o: any) => o.payment_status === "paid");
@@ -105,6 +120,12 @@ Deno.serve(async (req: Request) => {
         ${row("Ticket promedio", "S/" + avgTicketThisWeek)}
         ${row("Clientes nuevos", String(customersThisWeek.length))}
       </table>
+      ${porOrigen.length
+        ? `<div style="margin-top:18px;padding:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px">
+            <div style="font-size:11px;color:${C["text-muted"]};letter-spacing:.1em;margin-bottom:6px">DE DÓNDE VINIERON //</div>
+            ${porOrigen.map((o) => `<div style="font-size:12px;color:${C["text-body"]};margin-bottom:4px">${o.src} — <b>${o.pedidos}</b> pedido(s) de ${o.visitas} visita(s)${o.visitas ? ` · ${Math.round((o.pedidos / o.visitas) * 100)}%` : ""}</div>`).join("")}
+          </div>`
+        : ""}
       ${needsRestock.length
         ? `<div style="margin-top:18px;padding:14px;background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.3);border-radius:8px">
             <div style="font-size:11px;color:${C.warn};letter-spacing:.1em;margin-bottom:6px">PARA COMPRAR ESTA SEMANA //</div>

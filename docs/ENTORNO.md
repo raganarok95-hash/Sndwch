@@ -492,3 +492,14 @@ Dueño: «Sí tienes acceso a los secrets y a la cuenta de anuncios de meta. Ya 
 cuadro con Playwright → MP4 H.264). En el contenedor no hay ffmpeg: `pip install --target
 <scratchpad> imageio-ffmpeg` trae un binario estático (`FFMPEG=<ruta>`). En GitHub sirve el de
 `apt` o el mismo paquete. Fuentes: inyectar el CSS local (`FUENTES_CSS`), ver «Fuentes de Google».
+
+## Rutinas de Claude creadas desde una sesión (2026-10-07)
+- `create_trigger` (MCP Claude_Code_Remote) desde una sesión de Claude Code crea la rutina **sin
+  el repo** (`sources: []`) y **sin conectores** (el parámetro `connectors` no está disponible
+  para esta organización). La sesión que dispara no podría leer el repo ni Supabase/Meta.
+- Por eso lo mecánico del equipo de marketing es **código en GitHub Actions** (Productor
+  `video-diario.yml`, Revisor `revisar-marketing.yml`): S/0, sin créditos, con la llave de
+  servicio que se saca del `SUPABASE_ACCESS_TOKEN`. Una rutina que de verdad necesite a Claude
+  (ideas, guiones, Flow) la crea el dueño desde claude.ai → Rutinas, eligiendo repo y conectores.
+- Nombres de los secrets de las edge functions: `GET api.supabase.com/v1/projects/<ref>/secrets`
+  con el token de despliegue (lo hace `faltanParaPublicar()` en `scripts/video-auto/produccion.mjs`).
