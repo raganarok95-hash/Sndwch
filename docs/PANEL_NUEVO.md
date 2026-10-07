@@ -114,7 +114,7 @@ La portada de Administrar es un solo resumen: lo que pide atención hoy (lo que 
   programadas del calendario ya se publicaban solas (cron cada 15 min).
 - Pruebas: `tests/cocina-abierta.spec.ts`, `tests-api/anuncios-boton.test.ts` (defectos inyectados).
 
-## 7 · Pedido nuevo: remodelación TOTAL enfocada en productividad (2026-10-03) — SIN EMPEZAR
+## 7 · Pedido nuevo: remodelación TOTAL enfocada en productividad (2026-10-03) — LÁMINA LISTA, ESPERA DECISIÓN
 
 Dueño, 2026-10-03: «el panel admin necesita una remodelación total para enfocarse en
 productividad, lo habíamos hablado». Lo construido en §6 (Cocina abierta + 5 cajones) es el
@@ -142,3 +142,11 @@ Lo que hay que resolver en la propuesta (concepto antes que código, regla 3):
 
 Código actual: `src/app/09-admin-operacion.ts` (cocina, `sAdminCocina`), `10-admin-negocio.ts`
 (administrar), auditoría previa en `docs/AUDITORIA_PANEL_ADMIN.md`.
+
+**2026-10-07 · lámina entregada:** `docs/maquetas/propuestas/panel-productivo.html` (+ `.png`, capturas
+de hoy en `propuestas/hoy-panel/`). Toques por pedido contados: 10 hoy → 6 (tocar el pedido = receta +
+Armando; motorizado por la hoja de compartir; Entregado se cierra solo a hora prometida + 30 min);
+dos a la misma zona en un mensaje: 20 → 8. Tres esqueletos: **A** lista de lo que te toca (recomendada),
+**B** tres momentos del día, **C** el pedido que toca + «Tu semana». Administrar 36 → 20 pantallas
+juntando, sin borrar; medir aperturas 4 semanas (hoy `admin_action_log` solo tiene 4 cambios).
+Preguntas abiertas al dueño: A/B/C o mezcla; ¿Entregado automático?; ¿juntar y medir?
