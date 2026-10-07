@@ -3,7 +3,7 @@
 // apruebe (rol 'lanzamiento'; el Revisor del video del día no las toca). Al aprobarlas se pasan a
 // 'scheduled' y el cron auto-publish-calendar las publica una tras otra, en ese orden.
 // Corre en GitHub (.github/workflows/subir-lanzamiento.yml). Es idempotente: lo ya cargado (mismo
-// `src`) no se duplica; las imágenes se reemplazan.
+// `src`) no se duplica: el borrador se actualiza; lo aprobado no se toca. Las imágenes se reemplazan.
 import { readFileSync } from 'node:fs';
 import { SB, BUCKET, conectar } from '../video-auto/produccion.mjs';
 
@@ -17,7 +17,17 @@ for (const [i, p] of pubs.entries()) {
     await pedir(`${SB}/storage/v1/object/${BUCKET}/lanzamiento/${f}`, { method: 'POST', headers: { 'Content-Type': 'image/jpeg', 'x-upsert': 'true' }, body: readFileSync(`${DIR}/${f}`) });
   }
   const ya = await pedir(`${SB}/rest/v1/marketing_calendar?src=eq.${p.src}&select=id,status`);
-  if (ya.length) { console.log(`${i + 1}. ${p.pieza}: ya estaba (${ya[0].status})`); continue; }
+  if (ya.length) {
+    // Un borrador todavía no aprobado se actualiza con la versión nueva; lo aprobado o publicado no se toca.
+    if (ya[0].status === 'draft') {
+      await pedir(`${SB}/rest/v1/marketing_calendar?id=eq.${ya[0].id}&status=eq.draft`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ caption_text: p.texto, image_url: urlDe(p.laminas[0]), datos: { pieza: p.pieza, orden: i + 1, laminas: p.laminas.map(urlDe), fijar: p.fijar }, revision: 'pendiente', updated_at: new Date().toISOString() }),
+      });
+      console.log(`${i + 1}. ${p.pieza}: borrador actualizado`);
+    } else console.log(`${i + 1}. ${p.pieza}: ya está ${ya[0].status}, no se toca`);
+    continue;
+  }
   await pedir(`${SB}/rest/v1/marketing_calendar`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
     body: JSON.stringify({

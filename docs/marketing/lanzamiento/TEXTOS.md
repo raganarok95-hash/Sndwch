@@ -36,19 +36,17 @@ Instagram pone lo último arriba a la izquierda. Para que la cuadrícula quede p
 
 Cada una con su portada (`destacada-*.jpg`) y, para empezar, estas láminas como historias:
 
-- **Pide**: las 4 de «cómo se pide» · **Carta**: las 7 de «la carta» · **Arma**: las 2 de «arma el tuyo» · **Grupo**: «para la oficina» · **Zonas**: la última de «cómo se pide» (envío y horario) · **Ellos**: las 3 de «los hermanos».
+- **Pide**: las 4 de «cómo se pide» · **Carta**: las 7 de «la carta» · **Arma**: las 2 de «arma el tuyo» · **Grupo**: «para la oficina» · **Zonas**: una historia «¿Llegamos a tu casa? Pon tu dirección en sndwch.app y ves el envío al instante» · **Ellos**: las 3 de «los hermanos».
 
 ## El texto de cada publicación
 
 ### 01-como-se-pide
 
 ```
-Cómo se pide, en tres pasos y sin descargar nada.
-1. Entra a sndwch.app desde el celular.
+Tres pasos y hoy ya no cocinas.
+1. Entra a sndwch.app desde el celular, sin descargar nada.
 2. Elige un Signature o arma el tuyo.
-3. Paga con Yape o tarjeta. Envío según distancia, desde S/5.00.
-
-Martes a domingo · 11:00–22:00. Lunes cerrado.
+3. Paga con Yape o tarjeta y te llega a donde estés.
 Pide en sndwch.app · enlace en el perfil.
 ```
 
@@ -71,8 +69,8 @@ Pide en sndwch.app · enlace en el perfil.
 
 ```
 Son hermanos. No se parecen en nada.
-SANDO cura: una salsa, la justa. WICHO arma: todo a la vez.
-Entre los dos hacen la carta y el «arma el tuyo».
+SANDO hace la carta. WICHO te deja armar el tuyo.
+¿De qué lado estás?
 Pide en sndwch.app · enlace en el perfil.
 ```
 
@@ -80,7 +78,7 @@ Pide en sndwch.app · enlace en el perfil.
 
 ```
 Abrimos el martes 13 de octubre, desde las 11:00.
-Sándwiches armados al momento, a domicilio.
+Sándwiches armados al momento, directo a tu puerta. ¿Ya sabes cuál vas a pedir?
 Pide en sndwch.app · enlace en el perfil.
 ```
 
@@ -96,14 +94,15 @@ Pide en sndwch.app · enlace en el perfil.
 
 ```
 «Somos seis. Bueno, siete.» — WICHO
-Pide en grupo para la oficina: desde 5 sándwiches, quien organiza se lleva gratis el 15CM más barato. El menú secreto no entra.
+Organiza el almuerzo de la oficina y el tuyo sale gratis: desde 5 sándwiches, quien organiza se lleva el 15CM más barato.
+No aplica al menú secreto.
 Pide en sndwch.app · enlace en el perfil.
 ```
 
 ### 04-arma-el-tuyo
 
 ```
-Arma el tuyo en 6 pasos: tamaño, pan, proteína, queso, vegetales, salsas.
+Tu sándwich, como nadie más lo pide.
 Las reglas las pones tú. — WICHO
 Pide en sndwch.app · enlace en el perfil.
 ```
