@@ -153,3 +153,50 @@ deja su entregable en la base (`marketing_*`) o en el repo, y el siguiente lo to
 4. **Pauta** (27 oct): Media buyer con los S/350.
 5. **Analista y bandido**; retrospectiva semanal.
 6. Borrar lo viejo (rotador de textos, recordatorios por push, gasto a mano).
+
+---
+
+## 6 · Flow: los personajes que ya tienes, conectados al equipo (2026-10-07)
+
+Dueño: «Recuerda que tenemos los personajes en Flow, ¿hay forma de que se conecte?».
+
+**Sí, por tu laptop.** Flow no tiene API ni conector oficial; los servidores MCP que existen
+(`hitjcl/google-flow-mcp`, ver `docs/FLOW_EN_TU_LAPTOP.md`) manejan Flow en un navegador con **tu**
+sesión de Google. Por eso el equipo en la nube no puede abrirlo, pero tu computadora sí:
+
+1. El equipo en la nube escribe cada día los encargos de video para Flow en la cola
+   `marketing_flow_cola`: prompt, personajes (`@SANDO`, `@WICHO`, los que ya armaste en Flow),
+   duración, formato vertical.
+2. Una **rutina programada en tu laptop** (Claude Code local + el MCP de Flow) toma la cola cuando
+   la laptop está prendida, genera en Flow con tus personajes, y sube el video al almacenamiento
+   de la app.
+3. El Editor de video lo recibe, le pone subtítulos, precio de la carta y cierre de marca, pasa por
+   Calidad y se publica.
+
+- **Costo**: los créditos que ya trae tu plan de Flow; la rutina **se detiene si no quedan
+  créditos**, nunca compra más.
+- **Si la laptop está apagada**: no se pierde nada. Ese día salen los videos por código (§2.6) y
+  las escenas de Canva; los de Flow salen cuando vuelva a prenderse.
+- La comida en Flow tampoco se inventa: los personajes actúan; el sándwich que se muestra es la
+  foto real, compuesta por el Editor.
+
+## 7 · Más y mejor, todo gratis
+
+Lo que agrega el equipo además de lo de arriba, sin costo:
+
+| qué | rol | por qué rinde |
+|---|---|---|
+| **Una página por Signature** en sndwch.app (`/carta/philly-cheesesteak`) con datos estructurados de menú | Growth / SEO | Google la muestra en búsquedas como «sándwich Trujillo delivery», gratis y para siempre |
+| **YouTube Shorts** con los mismos videos | Publicador | Tercera red de video corto sin producir nada extra (API gratuita; una autorización tuya una vez) |
+| **Concurso «Muestra tu sándwich»**: quien publica su pedido etiquetándonos desbloquea un premio de las reglas | Growth | Contenido de clientes reales; el sistema detecta las menciones por la API de Instagram y lo reposta |
+| **Respuestas automáticas en Instagram** (comentarios y mensajes) con precio, horario, zona y link | Comunidad | La API de mensajería de Instagram es gratis; responder en minutos multiplica las ventas por mensaje |
+| **Calendario de momentos de Trujillo**: quincena y fin de mes, partidos de la selección, Canción Criolla y Halloween (31 oct), feriados, días de calor | Investigador | El mismo contenido rinde varias veces más el día correcto |
+| **Experimentos con hipótesis**: cada semana 1 prueba con una sola variable (gancho, hora, formato, personaje) | Analista | Aprender rápido sin quemar la pauta |
+| **Espionaje semanal de la competencia**: anuncios activos y reseñas negativas de La Casera, Don Pacho, Subway… | Investigador | Sus quejas (frío, demora, poco relleno) son tus ganchos |
+| **Optimización de tu ficha en Rappi** (fotos reales, nombres, descripciones, orden) | Growth | Rappi es tu vitrina del primer mes; el equipo prepara todo para que solo lo pegues |
+| **Embajadores de oficina**: quien organiza 3 pedidos grupales recibe un premio de las reglas | Growth | El pedido grupal es el canal más barato para llegar a 5 personas nuevas de una vez |
+| **Revisión diaria de la marca**: precios, fotos y textos publicados contra la base | Calidad | Un error publicado cuesta confianza; se borra o corrige solo |
+
+Herramientas: todo con lo conectado (Canva, Adobe, Figma, Meta, Supabase, GitHub) y lo gratis
+(GitHub Actions, codificador libre, la API de Instagram, la de YouTube y la de WhatsApp dentro de
+la ventana gratis). Lo único que no es gratis es lo que ya aprobaste: los S/350 de pauta.
