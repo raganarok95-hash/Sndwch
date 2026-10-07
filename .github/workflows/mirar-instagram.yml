@@ -1,0 +1,41 @@
+name: Mirar el Instagram del negocio
+
+# Cómo se ve @snd__wch para un cliente sin cuenta: capturas, bio, contadores, publicaciones y
+# destacadas (scripts/mirar-instagram.mjs). Solo lee. Deja el resultado en la rama
+# `instagram-captura` (se reescribe en cada corrida), para que la sesión de Claude la lea con git.
+on:
+  workflow_dispatch:
+    inputs:
+      usuario:
+        description: 'Usuario de Instagram'
+        required: false
+        default: 'snd__wch'
+
+permissions:
+  contents: write
+
+jobs:
+  mirar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Mirar el perfil
+        env:
+          IG_USUARIO: ${{ github.event.inputs.usuario }}
+        run: node scripts/mirar-instagram.mjs
+      - name: Guardar en la rama instagram-captura
+        run: |
+          cp -r instagram /tmp/instagram
+          git config user.name "github-actions" && git config user.email "actions@github.com"
+          git checkout --orphan instagram-captura
+          git rm -rfq . && rm -rf ./* ./.github 2>/dev/null || true
+          cp -r /tmp/instagram ./instagram
+          git add instagram && git commit -qm "Captura del Instagram ($(date -u +%F))"
+          git push -f origin instagram-captura
