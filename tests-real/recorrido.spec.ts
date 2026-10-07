@@ -31,6 +31,8 @@ function vigilar(page: Page) {
   });
   page.on('requestfailed', (r) => {
     if (IGNORAR.some((x) => x.test(r.url()))) return;
+    // ERR_ABORTED = el navegador la canceló porque la prueba cambió de página: no es una falla.
+    if (/ERR_ABORTED/.test(r.failure()?.errorText || '')) return;
     hallazgos.push({ paso: pasoActual, que: `no cargó ${r.url().slice(0, 120)} (${r.failure()?.errorText})` });
   });
   page.on('response', async (r) => {
