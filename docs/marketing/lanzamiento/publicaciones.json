@@ -23,7 +23,7 @@
       "04-arma-el-tuyo-1.jpg",
       "04-arma-el-tuyo-2.jpg"
     ],
-    "texto": "Arma el tuyo en 6 pasos: tamaño, pan, proteína, queso, vegetales, salsas.\nLas reglas las pones tú. — WICHO\nPide en sndwch.app · enlace en el perfil.",
+    "texto": "Tu sándwich, como nadie más lo pide.\nLas reglas las pones tú. — WICHO\nPide en sndwch.app · enlace en el perfil.",
     "src": "ig-arma",
     "fijar": false
   },
@@ -32,7 +32,7 @@
     "laminas": [
       "09-para-la-oficina.jpg"
     ],
-    "texto": "«Somos seis. Bueno, siete.» — WICHO\nPide en grupo para la oficina: desde 5 sándwiches, quien organiza se lleva gratis el 15CM más barato. El menú secreto no entra.\nPide en sndwch.app · enlace en el perfil.",
+    "texto": "«Somos seis. Bueno, siete.» — WICHO\nOrganiza el almuerzo de la oficina y el tuyo sale gratis: desde 5 sándwiches, quien organiza se lleva el 15CM más barato.\nNo aplica al menú secreto.\nPide en sndwch.app · enlace en el perfil.",
     "src": "ig-grupo",
     "fijar": false
   },
@@ -50,7 +50,7 @@
     "laminas": [
       "07-abrimos.jpg"
     ],
-    "texto": "Abrimos el martes 13 de octubre, desde las 11:00.\nSándwiches armados al momento, a domicilio.\nPide en sndwch.app · enlace en el perfil.",
+    "texto": "Abrimos el martes 13 de octubre, desde las 11:00.\nSándwiches armados al momento, directo a tu puerta. ¿Ya sabes cuál vas a pedir?\nPide en sndwch.app · enlace en el perfil.",
     "src": "ig-abrimos",
     "fijar": false
   },
@@ -61,7 +61,7 @@
       "03-los-hermanos-2.jpg",
       "03-los-hermanos-3.jpg"
     ],
-    "texto": "Son hermanos. No se parecen en nada.\nSANDO cura: una salsa, la justa. WICHO arma: todo a la vez.\nEntre los dos hacen la carta y el «arma el tuyo».\nPide en sndwch.app · enlace en el perfil.",
+    "texto": "Son hermanos. No se parecen en nada.\nSANDO hace la carta. WICHO te deja armar el tuyo.\n¿De qué lado estás?\nPide en sndwch.app · enlace en el perfil.",
     "src": "ig-hermanos",
     "fijar": true
   },
@@ -88,7 +88,7 @@
       "01-como-se-pide-3.jpg",
       "01-como-se-pide-4.jpg"
     ],
-    "texto": "Cómo se pide, en tres pasos y sin descargar nada.\n1. Entra a sndwch.app desde el celular.\n2. Elige un Signature o arma el tuyo.\n3. Paga con Yape o tarjeta. Envío según distancia, desde S/5.00.\n\nMartes a domingo · 11:00–22:00. Lunes cerrado.\nPide en sndwch.app · enlace en el perfil.",
+    "texto": "Tres pasos y hoy ya no cocinas.\n1. Entra a sndwch.app desde el celular, sin descargar nada.\n2. Elige un Signature o arma el tuyo.\n3. Paga con Yape o tarjeta y te llega a donde estés.\nPide en sndwch.app · enlace en el perfil.",
     "src": "ig-como",
     "fijar": true
   }

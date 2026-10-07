@@ -96,7 +96,7 @@ pasosPedido.forEach(([t, s], i) => pieza(`01-como-se-pide-${i + 2}`, pagina(`<di
     <div class="disp" style="font-size:420px;color:${C.naranja};line-height:.8">${i + 1}</div>
     <div class="disp" style="font-size:120px;margin-top:40px">${t}</div>
     <div style="font-size:46px;line-height:1.25;margin-top:30px;max-width:820px">${s}</div>
-    ${i === 2 ? `<div class="mono" style="font-size:30px;line-height:1.6;margin-top:56px;color:${C.oliva}">Envío según distancia, desde ${precio(D.envioMinimo)}<br>${horario}<br>${cerradoTxt}</div>` : ''}
+    ${i === 2 ? `<div class="voz" style="font-size:64px;line-height:1.1;margin-top:60px">Y hoy ya no cocinas.</div>` : ''}
   </div>
   <div class="pie"><div class="mono" style="font-size:26px;color:${C.oliva}">${i + 1} / 3</div>${marca()}</div></div>`)));
 
@@ -113,8 +113,7 @@ pieza('02-la-carta-1', pagina(`<div class="p sando"><div class="forro"></div>
 D.sigs.forEach((s, i) => pieza(`02-la-carta-${i + 2}`, pagina(`<div class="p sando"><div class="forro"></div>
   <div style="position:absolute;left:22px;right:0;top:0;height:760px;background:url('${img(s.foto)}') center/cover"></div>
   <div style="position:absolute;left:96px;right:84px;top:810px">
-    <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mono" style="font-size:26px;color:${C.oliva}">${String(i + 1).padStart(2, '0')} / ${String(D.sigs.length).padStart(2, '0')}</span><span class="mono" style="font-size:26px;color:${C.oliva}">SIGNATURE</span></div>
-    <div class="disp" style="font-size:${s.nombre.length > 14 ? 96 : 120}px;margin-top:14px">${s.nombre}</div>
+    <div class="disp" style="font-size:${s.nombre.length > 14 ? 96 : 120}px">${s.nombre}</div>
     <div class="voz" style="font-size:48px;line-height:1.1;margin-top:18px">${ultimaFrase(s.pitch)}</div>
     <div class="mono" style="font-size:24px;margin-top:22px;color:${C.oliva}">${s.ingredientes.join(' · ')}</div>
   </div>
@@ -137,7 +136,7 @@ pieza('03-los-hermanos-2', pagina(`<div class="p sando"><div class="forro"></div
   </div>
   <div style="position:absolute;left:96px;width:520px;top:760px">
     <div class="voz" style="font-size:110px;line-height:1">«Uno.»</div>
-    <div style="font-size:40px;line-height:1.35;margin-top:24px">Una salsa, la justa. Todo en su sitio.<br>Habla poco. Casi siempre tiene razón.</div>
+    <div style="font-size:40px;line-height:1.35;margin-top:24px">Una salsa, la justa.<br>Sus Signatures no se tocan: pruébalos y lo entiendes.</div>
   </div>
   <div class="pie"><div class="rib" style="width:420px"></div>${marca()}</div></div>`));
 pieza('03-los-hermanos-3', pagina(`<div class="p wicho">${curvas(1080, 1350)}
@@ -148,7 +147,7 @@ pieza('03-los-hermanos-3', pagina(`<div class="p wicho">${curvas(1080, 1350)}
   </div>
   <div style="position:absolute;left:84px;width:470px;top:740px">
     <div style="font:800 72px/1.05 Archivo,sans-serif">«¿Y si le ponemos…?»</div>
-    <div style="font-size:40px;line-height:1.35;margin-top:24px">Todo abierto, todo a la vez.<br>A veces gana él.</div>
+    <div style="font-size:40px;line-height:1.35;margin-top:24px">Con él armas el tuyo.<br>Las reglas las pones tú.</div>
   </div>
   <div class="pie">${espiral(70, C.lilaOsc, 6)}${marca(C.navy)}</div></div>`));
 
@@ -162,7 +161,7 @@ pieza('04-arma-el-tuyo-1', pagina(`<div class="p wicho">${curvas(1080, 1350)}
   <div class="pie">${espiral(70, C.lilaOsc, 6)}${marca(C.navy)}</div></div>`));
 pieza('04-arma-el-tuyo-2', pagina(`<div class="p wicho">${curvas(1080, 1350)}
   <div style="position:absolute;left:84px;top:110px;right:84px">
-    <div class="mono" style="font-size:28px;letter-spacing:.18em;color:${C.lilaOsc}">LOS PASOS, EN ORDEN</div>
+    <div class="mono" style="font-size:28px;letter-spacing:.18em;color:${C.lilaOsc}">TÚ DECIDES CADA CAPA</div>
     <div style="margin-top:40px;display:flex;flex-direction:column;gap:26px">${D.pasos.map((p, i) => `<div style="display:flex;align-items:center;gap:30px"><div style="width:110px;height:110px;border-radius:999px;background:${C.durazno};border:5px solid ${C.navy};display:grid;place-items:center" class="disp"><span style="font-size:64px">${i + 1}</span></div><div class="disp" style="font-size:96px">${p.toLowerCase()}</div></div>`).join('')}</div>
   </div>
   <div class="pie"><div style="font:800 40px/1 Archivo,sans-serif">sndwch.app → Arma el tuyo</div>${marca(C.navy)}</div></div>`));
@@ -218,7 +217,6 @@ pieza('09-para-la-oficina', pagina(`<div class="p wicho">${curvas(1080, 1350)}
   </div>
   <div style="position:absolute;left:84px;width:600px;top:800px;background:${C.papel};color:${C.tinta};border:6px solid ${C.navy};border-radius:16px;padding:34px 38px">
     <div style="font-size:42px;line-height:1.25">Desde <b>${D.organizadorDesde} sándwiches</b>, quien organiza el pedido en grupo se lleva <b>gratis el 15CM más barato</b>.</div>
-    <div class="mono" style="font-size:24px;margin-top:18px;color:${C.oliva}">El menú secreto no entra.</div>
   </div>
   <img src="${img('img/wicho_saluda.png')}" style="position:absolute;right:20px;bottom:130px;height:560px">
   <div class="pie"><div style="font:800 36px/1 Archivo,sans-serif">sndwch.app → Pedir en grupo</div>${marca(C.navy)}</div></div>`));
@@ -316,13 +314,13 @@ const link = () => 'Pide en sndwch.app · enlace en el perfil.';
 const philly = D.sigs.find((s) => s.estrella) || D.sigs[0];
 const turkey = sigPorId('SIG10') || D.sigs[2];
 const TEXTOS = {
-  '01-como-se-pide': ['Cómo se pide, en tres pasos y sin descargar nada.', '1. Entra a sndwch.app desde el celular.', '2. Elige un Signature o arma el tuyo.', `3. Paga con Yape o tarjeta. Envío según distancia, desde ${precio(D.envioMinimo)}.`, '', `${horario}. ${cerradoTxt}.`, link('ig-como')],
+  '01-como-se-pide': ['Tres pasos y hoy ya no cocinas.', '1. Entra a sndwch.app desde el celular, sin descargar nada.', '2. Elige un Signature o arma el tuyo.', '3. Paga con Yape o tarjeta y te llega a donde estés.', link('ig-como')],
   '02-la-carta': [`La carta: ${D.sigs.length} Signatures. Cada uno, como tiene que ser. — SANDO`, '', ...D.sigs.map((x) => `${x.nombre} · 15CM ${precio(x.p15)} · 30CM ${precio(x.p30)}`), '', link('ig-carta')],
-  '03-los-hermanos': ['Son hermanos. No se parecen en nada.', 'SANDO cura: una salsa, la justa. WICHO arma: todo a la vez.', 'Entre los dos hacen la carta y el «arma el tuyo».', link('ig-hermanos')],
-  '07-abrimos': [`Abrimos el martes 13 de octubre, desde las ${h0.open_hour}:00.`, 'Sándwiches armados al momento, a domicilio.', link('ig-abrimos')],
+  '03-los-hermanos': ['Son hermanos. No se parecen en nada.', 'SANDO hace la carta. WICHO te deja armar el tuyo.', '¿De qué lado estás?', link('ig-hermanos')],
+  '07-abrimos': [`Abrimos el martes 13 de octubre, desde las ${h0.open_hour}:00.`, 'Sándwiches armados al momento, directo a tu puerta. ¿Ya sabes cuál vas a pedir?', link('ig-abrimos')],
   '05-philly': [`${ultimaFrase(philly.pitch)}`, `${philly.nombre}: ${philly.ingredientes.join(', ').toLowerCase()}.`, link('ig-philly')],
-  '09-para-la-oficina': ['«Somos seis. Bueno, siete.» — WICHO', `Pide en grupo para la oficina: desde ${D.organizadorDesde} sándwiches, quien organiza se lleva gratis el 15CM más barato. El menú secreto no entra.`, link('ig-grupo')],
-  '04-arma-el-tuyo': [`Arma el tuyo en ${D.pasos.length} pasos: ${D.pasos.map((x) => x.toLowerCase()).join(', ')}.`, 'Las reglas las pones tú. — WICHO', link('ig-arma')],
+  '09-para-la-oficina': ['«Somos seis. Bueno, siete.» — WICHO', `Organiza el almuerzo de la oficina y el tuyo sale gratis: desde ${D.organizadorDesde} sándwiches, quien organiza se lleva el 15CM más barato.`, 'No aplica al menú secreto.', link('ig-grupo')],
+  '04-arma-el-tuyo': ['Tu sándwich, como nadie más lo pide.', 'Las reglas las pones tú. — WICHO', link('ig-arma')],
   '08-turkey': [`${ultimaFrase(turkey.pitch)}`, `${turkey.nombre}: ${turkey.ingredientes.join(', ').toLowerCase()}.`, link('ig-turkey')],
   '06-tira-la-sexta-salsa': ['La tira n.º 1: la sexta salsa.', '¿Quién tiene razón? Te leemos.', link('ig-tira-1')],
 };
@@ -336,7 +334,7 @@ const md = [
   '## Orden de publicación', '', 'Instagram pone lo último arriba a la izquierda. Para que la cuadrícula quede por columnas (útil · producto · personajes), se publica en este orden y al final se fijan las tres primeras de la cuadrícula:', '',
   ...orden.map((x, i) => { const pref = x.replace(/-1$/, ''); const l = laminas(pref); return `${i + 1}. **${pref}** — ${l.length > 1 ? `carrusel de ${l.length} láminas` : 'una imagen'}${PERFIL.cuadricula.slice(0, 3).includes(x) ? ' · **fijar**' : ''}`; }), '',
   '## Las destacadas', '', 'Cada una con su portada (`destacada-*.jpg`) y, para empezar, estas láminas como historias:', '',
-  '- **Pide**: las 4 de «cómo se pide» · **Carta**: las 7 de «la carta» · **Arma**: las 2 de «arma el tuyo» · **Grupo**: «para la oficina» · **Zonas**: la última de «cómo se pide» (envío y horario) · **Ellos**: las 3 de «los hermanos».', '',
+  '- **Pide**: las 4 de «cómo se pide» · **Carta**: las 7 de «la carta» · **Arma**: las 2 de «arma el tuyo» · **Grupo**: «para la oficina» · **Zonas**: una historia «¿Llegamos a tu casa? Pon tu dirección en sndwch.app y ves el envío al instante» · **Ellos**: las 3 de «los hermanos».', '',
   '## El texto de cada publicación', '',
   ...Object.entries(TEXTOS).flatMap(([k, v]) => [`### ${k}`, '', '```', ...v, '```', '']),
 ].join('\n');
