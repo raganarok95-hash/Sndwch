@@ -168,7 +168,11 @@ como `row_to_json(t)::text`; la lista de tablas se descubre en cada corrida. Det
   sin pedido explícito.
 - **El DNI es obligatorio en el registro normal.** Única excepción: el registro con Google (y la
   base lo exige igual con `customers_dni_o_google`). Ampliarla requiere pedido explícito.
-- **Nunca inventar datos legales del negocio** (RUC, razón social, dirección) ni fotos de producto.
+- **Nunca inventar datos legales del negocio** (RUC, razón social, dirección).
+- **El sándwich generado con IA SÍ se permite en el contenido de marketing** (dueño, 2026-10-07:
+  «quita la restricción de no poder hacer el sándwich»), **fiel a la receta y la porción reales**:
+  INDECOPI sanciona la imagen que promete más relleno del que llega. Las fotos de la app siguen
+  siendo las reales de `img/` (`check:fotos`).
 - **Git destructivo** (force-push, reset --hard, borrar ramas) requiere confirmación explícita.
 
 1. **Responder siempre en español, con "tú", nunca voseo** — en TODO texto visible (mensajes,
@@ -187,4 +191,6 @@ como `row_to_json(t)::text`; la lista de tablas se descubre en cada corrida. Det
     `gap:.16em`), **la izquierda dorada `#CBA258` (SANDO), la derecha celeste `#8CC8EC` (WICHO),
     planas**. Siempre significó el corte del pan, nunca algo "tech". Todo lo demás (paleta,
     tipografía, marco) es libre de proponer con concepto antes que código. **SND//WCH no tiene
-    identidad trujillana ni regional.** Detalle e historia en el manual.
+    identidad trujillana ni regional.** Detalle e historia en el manual. **En el contenido
+    (videos, posts) el `//` NO es obligatorio ni es la base del concepto creativo** (dueño,
+    2026-10-07): se usa donde sume, no como muletilla.

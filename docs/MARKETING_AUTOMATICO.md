@@ -47,7 +47,7 @@ Lo que lo vuelve un motor y no un video suelto:
 | Lo que dicen los clientes | calificaciones y reseñas reales (cuando existan) |
 
 Cada día genera 1–2 videos, rota plantilla, producto, gancho y hora, y los publica en Reels
-(Instagram + Facebook) y TikTok. **Nunca se inventa una foto de producto** (regla del repo): el
+(Instagram + Facebook) y TikTok. **El sándwich generado se permite desde el 2026-10-07, fiel a la receta real** (antes era regla no hacerlo): el
 movimiento y el texto son generados; la comida es la foto real.
 
 ---
