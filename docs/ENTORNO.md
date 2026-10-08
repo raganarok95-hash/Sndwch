@@ -563,8 +563,9 @@ cuadro con Playwright → MP4 H.264). En el contenedor no hay ffmpeg: `pip insta
 ## La laptop del dueño: instalar sin pasos a mano (2026-10-08)
 - **El repo es PÚBLICO** (`api.github.com` → `"private": false`). Por eso basta una línea para
   instalar el Estudio, sin git previo:
-  `powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/raganarok95-hash/Sndwch/main/scripts/estudio/instalar.ps1 | iex"`.
-  Esa línea sirve desde Windows+R, CMD o PowerShell. Lo mismo hace que todo lo que sube la laptop
+  `powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol='Tls12'; irm https://raw.githubusercontent.com/raganarok95-hash/Sndwch/main/scripts/estudio/instalar.ps1 | iex"`.
+  Esa línea sirve desde Windows+R (211 caracteres, el límite es 259), CMD o PowerShell. Fija TLS 1.2
+  porque el PowerShell 5.1 de algunos Windows no lo usa solo y GitHub lo rechaza. Lo mismo hace que todo lo que sube la laptop
   sea público: los registros reemplazan la ruta del usuario por `~`.
 - **Los `.ps1` se validan aquí con PowerShell 7 real**: se baja
   `github.com/PowerShell/PowerShell/releases/download/v7.4.6/powershell-7.4.6-linux-x64.tar.gz` al

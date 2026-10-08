@@ -2,7 +2,7 @@
 # Autorizado por el dueno el 2026-10-08: "si, deja 100% automatico lo de Flow" y "debe ser automatico".
 #
 # Se corre con UNA linea, sin abrir carpetas ni tener nada antes (Windows+R, pegar, Enter):
-#   powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/raganarok95-hash/Sndwch/main/scripts/estudio/instalar.ps1 | iex"
+#   powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol='Tls12'; irm https://raw.githubusercontent.com/raganarok95-hash/Sndwch/main/scripts/estudio/instalar.ps1 | iex"
 #
 # Se puede correr las veces que haga falta. Revisa cada pieza y la instala si falta (Git, Node,
 # Claude Code, el MCP de Flow), deja al dia su propio clon (~\sndwch-estudio), revisa la sesion de

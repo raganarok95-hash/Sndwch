@@ -18,7 +18,7 @@ instalado antes:
 1. En la laptop, presiona **Windows + R**.
 2. Pega esta línea y presiona **Enter**:
    ```
-   powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/raganarok95-hash/Sndwch/main/scripts/estudio/instalar.ps1 | iex"
+   powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol='Tls12'; irm https://raw.githubusercontent.com/raganarok95-hash/Sndwch/main/scripts/estudio/instalar.ps1 | iex"
    ```
 3. Se abre una ventana azul que revisa cada pieza y dice **[OK]** o **[FALTA]**:
    - **Git, Node y Claude Code:** si falta alguno, lo instala solo. Si Windows pide permiso, acepta.
