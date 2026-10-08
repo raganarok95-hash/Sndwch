@@ -102,6 +102,27 @@ por nombre exacto; uno mal escrito no da error, simplemente deja la medición ap
    Meta** (`verificar-meta`): si el token vale y si puede escribirle a tu píxel, sin registrar
    ninguna venta falsa.
 
+### A3b. El píxel y el token tienen que ser del MISMO conjunto de datos (2026-10-08)
+
+Lo que pasó: el token se generó en el conjunto **«SNDWCH.APP» (`1410494047274081`)**, creado ese
+día, pero `META_PIXEL_ID` decía `1571699187700546`, que no es ese conjunto. Y la cuenta de anuncios
+`221839797` está conectada a OTRO conjunto, «SNDWCH» (`906727948871849`), que nunca recibió un
+evento. La prueba `verificar-meta` lo encontró: el token vale, pero no podía escribirle al píxel.
+Cada compra se habría perdido sin ningún error visible.
+
+Se arregla dejando todo en «SNDWCH.APP», que es el del token y vive en tu Business:
+1. **Supabase → Edge Functions → Secrets**: edita `META_PIXEL_ID` y pon `1410494047274081`.
+2. **Agrega la cuenta de anuncios a tu Business**: [Configuración del negocio](https://business.facebook.com/settings)
+   → Cuentas → **Cuentas publicitarias** → Agregar → «Agregar una cuenta publicitaria» → `221839797`.
+   (Hoy la cuenta no pertenece a ningún Business.)
+3. En la misma configuración → Orígenes de datos → **Conjuntos de datos** → «SNDWCH.APP» →
+   **Asignar / conectar recursos** → la cuenta `221839797`.
+4. **Método de pago** en la cuenta `221839797` (Meta: no tiene ninguno). Sin él, la pauta del 27
+   no arranca.
+
+Después, «Estado para abrir» tiene que decir `✓ CAPI probado contra Meta: token válido, escribe al
+píxel: sí`.
+
 ### A4. Comprueba que quedó prendido
 
 **No hace falta redesplegar el cliente.** El `META_PIXEL_ID` viaja al navegador dentro de
