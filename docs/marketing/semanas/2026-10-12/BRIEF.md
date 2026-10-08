@@ -2,9 +2,9 @@
 
 > Primer brief de la agencia nueva (`../../AGENCIA.md`). Propuesta: lo apruebas tú.
 
-1. **El objetivo de negocio.** Que lleguen **los primeros pedidos de gente que no es de tu red**:
-   pedidos con origen distinto de `lanzamiento`. Y que el 100% llegue con origen, para saber qué
-   momento funciona. *El número lo fijas tú; mi propuesta: 15 en la semana.*
+1. **El objetivo de negocio.** **La mayor cantidad de pedidos reales de gente fuera de tu red**
+   (dueño, 2026-10-08): pedidos con origen distinto de `lanzamiento`. Y que el 100% llegue con
+   origen, para saber qué momento funciona.
 2. **El problema.** El Instagram está vacío, nadie en Trujillo nos conoce y no hay pauta hasta el
    27. Lo único que trae gente nueva esta semana es lo orgánico: Reels, historias, la bolsa y tu red.
 3. **A quién.** A quien **no nos conoce** (§2.3), en dos momentos: **el almuerzo de oficina**

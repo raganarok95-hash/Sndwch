@@ -208,21 +208,19 @@ Google abierta. Si la quieres igual, es una decisión tuya (§8).
 
 ---
 
-## 8 · Lo que tienes que decidir para que esto arranque
+## 8 · Lo que decidiste (2026-10-08)
 
-1. **Aprobar esta organización** (o cambiarla).
-2. **¿Hablan los hermanos?** Hay dos documentos que se contradicen. `UNIVERSO_SNDWCH.md` §4:
-   «ninguno de los tres habla, nunca; lo que habla es el texto en pantalla», con tres razones:
-   el 85% de los reels se ve en mudo, la sincronía de labios es lo peor de la IA de video, y
-   elegir una voz es una decisión de marca. `BIBLIA_DE_LA_SERIE.md` (del 2026-10-07) les da
-   voces para Flow. **Mi recomendación: que no hablen**, por esas mismas tres razones.
-3. **La sesión del lunes** (Estrategia, Creatividad y Cuenta): lo más simple es una rutina en
-   claude.ai → Rutinas, creada por ti con el repo y Supabase conectados. Desde una sesión no
-   puedo crearla con el repo (`docs/ENTORNO.md`). Mientras no exista, la hago yo cuando me
-   escribes «lunes». Gasta de tu plan de Claude.
-4. **El Estudio: ¿con tu palabra o solo?** Hoy queda con tu palabra («Estudio»). La versión que
-   corre sola a horas fijas sería una tarea programada que abre Claude sin supervisión en tu
-   laptop; no me dejaron crearla, así que es tu decisión si la quieres y cómo.
+Dueño: «La idea de la agencia, bien, mejórala. **Todo automático.** [Los hermanos no hablan:]
+mejor no, por ahora, dado que hay más oportunidades de error de desfase de voz; vamos con texto
+en pantalla. [El objetivo:] la mayor cantidad de pedidos reales fuera de mi red». Y: «sí, deja
+100% automático lo de Flow. Si yo lo hago por los stickers, pierde el ser automático».
+
+- **Aprobada**, y sin pasos a mano: nada depende de que subas, pegues o pongas un sticker.
+- **Los hermanos no hablan**: el texto va en pantalla.
+- **La meta de siempre**: la mayor cantidad de pedidos reales de gente fuera de tu red
+  (origen distinto de `lanzamiento`). Cada brief la traduce en lo que se puede mover esa semana.
+- **Sin stickers**: la API de Instagram no los publica, así que las historias se diseñan para
+  funcionar sin ellos (el enlace del perfil y sndwch.app a la vista).
 
 ---
 

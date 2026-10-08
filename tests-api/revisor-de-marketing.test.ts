@@ -6,7 +6,7 @@
 // acumulados antes de abrir saliendo juntos el día 13 queman la cuenta.
 //
 // Correr con: npm run test:api
-import { decidir, APERTURA } from "../scripts/video-auto/reglas-del-revisor.mjs";
+import { decidir, APERTURA, horaDePublicar } from "../scripts/video-auto/reglas-del-revisor.mjs";
 import { precio } from "../scripts/video-auto/produccion.mjs";
 import { unSignature } from "./carta.ts";
 
@@ -55,4 +55,17 @@ Deno.test("si se acumularon, sale solo la más reciente", () => {
 
 Deno.test("el mismo Signature no sale dos días seguidos", () => {
   assertEquals(veredicto(base([pieza("a", "1")], { recientes: new Set([SIG]) }), "a"), "bloqueada");
+});
+
+// LA HORA DE PUBLICAR NO DEPENDE DE CUÁNDO CORRIÓ EL REVISOR (2026-10-08). GitHub corre sus horarios
+// de 5 a 9 horas tarde: el video de mañana sale a las 12:00 de Lima aunque se apruebe a cualquier
+// hora, y uno de hoy que llega tarde sale apenas se aprueba, pero nunca de noche. Modo de fallo:
+// SILENCIO — un video del almuerzo publicado a las 22:00 no trae pedidos y nadie lo nota.
+Deno.test("el video de mañana sale a las 12:00 de Lima, se apruebe a la hora que se apruebe", () => {
+  assertEquals(horaDePublicar("2026-10-14", "2026-10-13", new Date("2026-10-13T23:50:00-05:00")), "2026-10-14T17:00:00.000Z");
+});
+Deno.test("uno de hoy que se aprueba tarde sale ya, pero no después de las 20:00", () => {
+  assertEquals(horaDePublicar("2026-10-14", "2026-10-14", new Date("2026-10-14T09:00:00-05:00")), "2026-10-14T17:00:00.000Z", "salió antes del almuerzo");
+  assertEquals(horaDePublicar("2026-10-14", "2026-10-14", new Date("2026-10-14T16:30:00-05:00")), "2026-10-14T21:30:00.000Z");
+  assertEquals(horaDePublicar("2026-10-14", "2026-10-14", new Date("2026-10-14T20:30:00-05:00")), null, "salió de noche");
 });

@@ -138,6 +138,11 @@ async function instagramDeLaPagina(pagina: { id: string; token: string }): Promi
 // desordena, nada falla: sale publicado mal. Por eso es una función aparte y probada
 // (tests-api/carrusel-de-instagram.test.ts).
 export function contenedoresDeInstagram(entry: any, caption: string): { hijos: Record<string, string>[]; padre: Record<string, string> } {
+  // Historia: un cuadro por fila, sin texto (las historias no llevan caption) y sin stickers (la
+  // API no los publica: ENTORNO.md). El texto ya va dentro de la imagen.
+  if (entry.formato === "historia") {
+    return { hijos: [], padre: entry.media_type === "video" ? { video_url: String(entry.video_url), media_type: "STORIES" } : { image_url: String(entry.image_url), media_type: "STORIES" } };
+  }
   if (entry.media_type === "video") return { hijos: [], padre: { video_url: String(entry.video_url), media_type: "REELS", caption } };
   const laminas: string[] = Array.isArray(entry.datos?.laminas) ? entry.datos.laminas.map(String).filter(Boolean) : [];
   if (laminas.length > 10) throw new ApiError("Instagram acepta hasta 10 láminas por carrusel.", 400);
@@ -168,6 +173,9 @@ async function publishCalendarEntry(entry: any): Promise<string> {
   const caption = String(entry.caption_text || entry.title || "");
 
   let publishedRef: string;
+  if (entry.channel === "facebook" && entry.formato === "historia") {
+    throw new ApiError("Las historias se publican solo en Instagram.", 400);
+  }
   if (entry.channel === "facebook") {
     const data = isVideo
       ? await metaGraphPost(`${pageId}/videos`, { file_url: mediaUrl, description: caption, access_token: tok })
@@ -258,10 +266,23 @@ export async function actAdminPublishSocial(b: Entrada<"admin-publish-social"> &
 // de marketing bloqueó no sale nunca, aunque algo lo deje en 'scheduled' por error. Lo pendiente
 // del Productor no llega acá: entra como 'draft' y solo el Revisor lo programa
 // (scripts/video-auto/diario.mjs).
-export function loQueSaleSolo(today: string): string {
-  // En orden de fecha y de creación: el lanzamiento del perfil se carga en el orden en que tiene
-  // que aparecer, y el cron las publica una tras otra en una misma corrida.
-  return `status=eq.scheduled&revision=neq.bloqueada&scheduled_date=lte.${today}&channel=in.(instagram,facebook)&select=*&order=scheduled_date.asc,created_at.asc&limit=500`;
+export function loQueSaleSolo(today: string, ahora: string = new Date().toISOString()): string {
+  // En orden de fecha, de hora y de creación: el lanzamiento del perfil se carga en el orden en
+  // que tiene que aparecer, y los cuadros de una historia salen uno tras otro en la misma corrida.
+  // `publicar_desde`: la hora exacta (2026-10-08). GitHub atrasa sus horarios de 5 a 9 horas, así
+  // que la hora de publicar la decide este cron (puntual), no el momento en que algo se aprobó.
+  return `status=eq.scheduled&revision=neq.bloqueada&scheduled_date=lte.${today}` +
+    `&or=(publicar_desde.is.null,publicar_desde.lte.${ahora})` +
+    `&channel=in.(instagram,facebook)&select=*&order=scheduled_date.asc,publicar_desde.asc.nullsfirst,created_at.asc&limit=500`;
+}
+
+/** Si la pieza vende un Signature que AHORA está agotado (él o su proteína), el motivo; si no, null.
+ *  Se mira al publicar porque la pieza se aprueba un día antes, cuando el inventario de hoy todavía
+ *  no existe (tests-api/publicar-solo-lo-revisado.test.ts). */
+export function agotadoAlPublicar(entry: any, inventario: { product_code: string; in_stock: boolean | null }[]): string | null {
+  const codigos = [entry?.datos?.sig, entry?.datos?.prot].filter(Boolean).map(String);
+  const sinStock = codigos.find((c) => inventario.some((r) => String(r.product_code) === c && r.in_stock === false));
+  return sinStock ? `stock: ${sinStock} está agotado al publicar` : null;
 }
 
 export async function actAutoPublishCalendar(b: Entrada<"auto-publish-calendar"> & { _ip?: string }) {
@@ -271,7 +292,16 @@ export async function actAutoPublishCalendar(b: Entrada<"auto-publish-calendar">
   const today = fechaLima(Date.now());
   const due = await sbGet("marketing_calendar", loQueSaleSolo(today));
   const results: { id: string; ok: boolean; error?: string }[] = [];
+  const inventario = due.some((e: any) => e?.datos?.sig)
+    ? await sbGet("inventory", "select=product_code,in_stock&limit=500").catch(() => [])
+    : [];
   for (const entry of due) {
+    const agotado = agotadoAlPublicar(entry, inventario);
+    if (agotado) {
+      await sbUpdate("marketing_calendar", `id=eq.${entry.id}&status=eq.scheduled`, { revision: "bloqueada", motivo_revision: agotado, updated_at: new Date().toISOString() });
+      results.push({ id: entry.id, ok: false, error: agotado });
+      continue;
+    }
     // Reclama antes de publicar — si el admin ya la publicó a mano (o una corrida
     // anterior del cron sigue en curso, ver waitForIgContainerReady) entre el sbGet de
     // arriba y este punto, el claim devuelve null y esta entrada se salta sin duplicar.

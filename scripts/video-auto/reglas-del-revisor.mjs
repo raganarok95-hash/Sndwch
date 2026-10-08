@@ -52,3 +52,21 @@ export function decidir({ piezas, hoy, abreHoy, cat, conVideo, recientes }) {
     return { id: p.id, src: p.src, veredicto: 'aprobada' };
   });
 }
+
+// La hora en que sale el video del día: el arranque del almuerzo. La decide el cron de Supabase
+// con `publicar_desde`, no la hora en que corrió el Revisor (GitHub la atrasa de 5 a 9 horas).
+export const HORA_DEL_VIDEO = '12:00';
+export const ULTIMA_HORA = '20:00'; // pasado esto, un video de HOY ya no sale: se pierde ese día
+
+/**
+ * Desde cuándo puede publicarse una pieza aprobada para `dia` (ISO), o null si para hoy ya es tarde.
+ * @param {string} dia       AAAA-MM-DD (Lima)
+ * @param {string} hoy       AAAA-MM-DD (Lima)
+ * @param {Date}   ahora     instante actual
+ */
+export function horaDePublicar(dia, hoy, ahora) {
+  const a = (hhmm) => new Date(`${dia}T${hhmm}:00-05:00`);
+  if (dia > hoy) return a(HORA_DEL_VIDEO).toISOString();
+  if (ahora >= a(ULTIMA_HORA)) return null;
+  return new Date(Math.max(a(HORA_DEL_VIDEO).getTime(), ahora.getTime())).toISOString();
+}
