@@ -2,3 +2,4 @@
 # mientras están en boceto (los finales, con Flow, se suben cuando estén aprobados).
 */historias/*.png
 !*/historias/tablero.png
+*/historias/manifiesto.json
