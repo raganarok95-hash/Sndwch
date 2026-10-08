@@ -376,6 +376,8 @@ window.addEventListener('load',function(){sndRestoreOwnedFns();});
     if(cust)goRecurring(fijoFromUrl);
     else{sndScreen='p_home';sndTab='points';showToast('Inicia sesión para ver tu pedido fijo.');render();}
   }
+  // ?pedido=REF — el aviso de «va en camino» lleva directo a ese pedido (y a «Ya me llegó»).
+  if(pedidoFromUrl&&!deliveryTokenFromUrl)abrirPedidoDelEnlace(pedidoFromUrl);
   // ?entrega=TOKEN — el link del motorizado (#19). Va al final a propósito: si está, es lo
   // único que importa de esta visita y se lleva la pantalla entera.
   if(deliveryTokenFromUrl){

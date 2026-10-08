@@ -217,3 +217,15 @@ cliente). Dos a la misma zona: 20 → 8.
   filtra. **A las 4 semanas de abrir**:
   `select target, count(*) from admin_action_log where action='abrir-pantalla' group by 1 order by 2;`
   — lo que nadie abrió se discute con el dueño.
+
+### 2026-10-08 · lo que faltaba
+- **«Ya me llegó» para invitados**: el aviso de «va en camino» (push y correo) lleva
+  `?pedido=REF`, que abre ESE pedido aunque quien lo hizo sea invitado y haya cerrado la app
+  (`abrirPedidoDelEnlace`, 06-*). En «Tus pedidos», mientras va en camino, el botón de arriba es
+  «Ya me llegó» (en el lugar de «Pedir lo mismo»). Prueba: `tests/ya-me-llego.spec.ts` (vista fallar).
+- **La receta rehecha** (`sAdminFocus`): estilo de «Te toca», cada ingrediente se tacha con un toque
+  (guardado en el celular un día, `sw_tachado`), «N de M» arriba, alergia en rojo, la entrega debajo
+  y abajo, fijo, el siguiente paso (Mandar al motorizado + Salió; Cobró S/x en contra entrega).
+  Un producto que ya no está en la carta se nombra por su código, nunca queda en blanco.
+- Sigue pendiente: las pantallas de adentro de Administrar conservan su estilo viejo; los ~37
+  campos `crudo` del panel; probar en el celular del dueño (hoja de compartir, «Te toca» en servicio).

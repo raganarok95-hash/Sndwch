@@ -2335,7 +2335,8 @@ async function applyOrderStatusUpdate(orderId: string, status: string, etaMinute
       await sendPushToPhone(order.customer_phone, {
         title: msg.title,
         body: body + " Ref: " + order.ref,
-        url: "./index.html",
+        // Abre ESE pedido (con «Ya me llegó» cuando va en camino), también para un invitado.
+        url: "./index.html?pedido=" + encodeURIComponent(order.ref),
         tag: "sndwch-order-" + order.ref,
         renotify: true,
       });

@@ -1,6 +1,6 @@
 // SND//WCH — api / email
 // Envío del PIN de recuperación de cuenta por correo (Resend).
-import { RESEND_API_KEY, FROM_EMAIL, CONTACT_EMAIL, BUSINESS_LEGAL_NAME } from "./env.ts";
+import { RESEND_API_KEY, FROM_EMAIL, CONTACT_EMAIL, BUSINESS_LEGAL_NAME, SITE_URL } from "./env.ts";
 import { emailShell, escHtml } from "../_shared/email-shell.ts";
 import { PALETA as C } from "../_shared/paleta.ts";
 export function maskEmail(email: string): string {
@@ -85,7 +85,10 @@ export async function sendOrderStatusEmail(to: string, name: string, ref: string
     <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">Hola ${escHtml(name)},</p>
     <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Tu pedido <b style="color:${C.text}">${escHtml(ref)}</b> ahora está: <b style="color:${C.oro}">${escHtml(status)}</b></p>
     ${etaLine}
-    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">Puedes seguir el estado de tu pedido en la app, sección PUNTOS → MIS PEDIDOS.</p>
+    ${status === "EN CAMINO"
+      ? `<p style="margin:20px 0"><a href="${SITE_URL}/?pedido=${encodeURIComponent(ref)}" style="display:inline-block;background:${C.oro};color:#1a1200;font-weight:800;font-size:15px;text-decoration:none;padding:12px 18px;border-radius:10px">¿Ya llegó? Avísanos aquí</a></p>`
+      : ""}
+    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">Tu pedido está en <a href="${SITE_URL}/?pedido=${encodeURIComponent(ref)}" style="color:${C.oro}">sndwch.app</a>.</p>
   `);
   return sendResend([to], `SND//WCH — ${title} (${ref})`, html);
 }
