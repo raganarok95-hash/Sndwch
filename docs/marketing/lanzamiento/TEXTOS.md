@@ -77,7 +77,7 @@ Pide en sndwch.app · enlace en el perfil.
 ### 07-abrimos
 
 ```
-Abrimos el martes 13 de octubre, desde las 11:00.
+Abrimos el martes 20 de octubre, desde las 11:00.
 Sándwiches armados al momento, directo a tu puerta. ¿Ya sabes cuál vas a pedir?
 Pide en sndwch.app · enlace en el perfil.
 ```

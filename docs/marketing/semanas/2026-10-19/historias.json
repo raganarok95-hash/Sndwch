@@ -1,31 +1,31 @@
 {
- "semana": "2026-10-12",
+ "semana": "2026-10-19",
  "historias": [
   {
    "id": "manana",
    "titulo": "Mañana",
-   "dia": "2026-10-12",
+   "dia": "2026-10-19",
    "hora": "19:00",
    "momento": "antes de abrir",
    "nivel": "nos vio una vez",
    "por_que": "La única historia antes de abrir: deja dicho cuándo y dónde, para que el martes ya sepan.",
    "cuadros": [
     {
-     "encargo": "2026-10-12-manana-1",
+     "encargo": "2026-10-19-manana-1",
      "personaje": "WICHO",
      "texto": "¿Mañana?",
      "voz": "wicho",
      "escena": "WICHO peeking through the narrow gap of a half-open kitchen door, impatient, only half of his face visible. He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
     },
     {
-     "encargo": "2026-10-12-manana-2",
+     "encargo": "2026-10-19-manana-2",
      "personaje": "SANDO",
      "texto": "Mañana.",
      "voz": "sando",
      "escena": "SANDO standing completely still behind a long wooden cutting board, arms crossed, calm, looking slightly off-frame. Camera slightly low, slow push-in feel. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
     },
     {
-     "encargo": "2026-10-12-manana-3",
+     "encargo": "2026-10-19-manana-3",
      "personaje": null,
      "texto": "{dia_abre}, desde las {abre}.",
      "voz": "neutra",
@@ -36,28 +36,28 @@
   {
    "id": "puerta",
    "titulo": "La puerta",
-   "dia": "2026-10-13",
+   "dia": "2026-10-20",
    "hora": "10:50",
    "momento": "apertura (hero)",
    "nivel": "nos vio una vez",
    "por_que": "El hero de la semana. Tres cuadros, uno por hermano y uno abierto: presenta a los dos sin explicar nada.",
    "cuadros": [
     {
-     "encargo": "2026-10-13-puerta-1",
+     "encargo": "2026-10-20-puerta-1",
      "personaje": "WICHO",
      "texto": "Ya casi.",
      "voz": "wicho",
      "escena": "WICHO from inside the kitchen, one hand on the door handle, bouncing on his toes, about to open. He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
     },
     {
-     "encargo": "2026-10-13-puerta-2",
+     "encargo": "2026-10-20-puerta-2",
      "personaje": "SANDO",
      "texto": "{abre}.",
      "voz": "sando",
      "escena": "SANDO standing still, looking up calmly at a round wall clock with no numbers whose hands point to eleven o'clock. Slow camera push. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
     },
     {
-     "encargo": "2026-10-13-puerta-3",
+     "encargo": "2026-10-20-puerta-3",
      "personaje": null,
      "texto": "Abierto.",
      "voz": "neutra",
@@ -68,14 +68,14 @@
   {
    "id": "cual",
    "titulo": "¿La de quién?",
-   "dia": "2026-10-13",
+   "dia": "2026-10-20",
    "hora": "12:00",
    "momento": "almuerzo de oficina",
    "nivel": "no nos conoce",
    "por_que": "LA IDEA de la semana en dos cuadros: hay dos maneras de pedir bien, y cada hermano tiene la suya.",
    "cuadros": [
     {
-     "encargo": "2026-10-13-cual-1",
+     "encargo": "2026-10-20-cual-1",
      "personaje": "SANDO",
      "texto": "Hay dos maneras de pedir bien.",
      "voz": "sando",
@@ -83,7 +83,7 @@
      "escena": "SANDO standing still behind his wooden board with ONE neat, closed Italian Hoagie sub on it (white sub roll, folded Italian cold cuts, American cheese, lettuce, tomato, red onion, green pepper). Calm, ordered. Horizontal composition, he is on the left. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
     },
     {
-     "encargo": "2026-10-13-cual-2",
+     "encargo": "2026-10-20-cual-2",
      "personaje": "WICHO",
      "texto": "La de SANDO, o la tuya.",
      "voz": "wicho",
@@ -95,28 +95,28 @@
   {
    "id": "lista",
    "titulo": "La lista",
-   "dia": "2026-10-14",
+   "dia": "2026-10-21",
    "hora": "11:30",
    "momento": "almuerzo de oficina",
    "nivel": "no nos conoce",
    "por_que": "El momento con más pedido por persona: el grupo. WICHO exagera la lista; el último cuadro da la regla real.",
    "cuadros": [
     {
-     "encargo": "2026-10-14-lista-1",
+     "encargo": "2026-10-21-lista-1",
      "personaje": "WICHO",
      "texto": "¿Y la oficina?",
      "voz": "wicho",
      "escena": "WICHO walking in proudly holding a handwritten paper list so long it unrolls and drags across the whole floor behind him (the paper shows only scribbles, no readable letters). He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
     },
     {
-     "encargo": "2026-10-14-lista-2",
+     "encargo": "2026-10-21-lista-2",
      "personaje": null,
      "texto": "Cada uno elige lo suyo desde su celular.",
      "voz": "neutra",
      "escena": "Top-down view of an office desk at noon: six smartphones from different people lying in a loose circle, screens glowing with soft blurred colors (no readable content), a few pens and a coffee cup. Daylight, no characters."
     },
     {
-     "encargo": "2026-10-14-lista-3",
+     "encargo": "2026-10-21-lista-3",
      "personaje": "WICHO",
      "texto": "Con {organizadorDesde}, el más barato va gratis.",
      "voz": "wicho",
@@ -127,21 +127,21 @@
   {
    "id": "pensado",
    "titulo": "Ya lo pensé yo",
-   "dia": "2026-10-15",
+   "dia": "2026-10-22",
    "hora": "19:30",
    "momento": "noche sin cocinar",
    "nivel": "no nos conoce",
    "por_que": "SANDO le habla a la noche cansada sin decir «pide»: el curador ya decidió por ti.",
    "cuadros": [
     {
-     "encargo": "2026-10-15-pensado-1",
+     "encargo": "2026-10-22-pensado-1",
      "personaje": "SANDO",
      "texto": "No pienses.",
      "voz": "sando",
      "escena": "SANDO sitting calmly at a home dining table at night, a closed sub wrapped in white paper in front of him, not looking at the camera. Warm lamp light, the rest in shadow. Slow camera push."
     },
     {
-     "encargo": "2026-10-15-pensado-2",
+     "encargo": "2026-10-22-pensado-2",
      "personaje": "SANDO",
      "texto": "Ya lo pensé yo.",
      "voz": "sando",
@@ -152,28 +152,28 @@
   {
    "id": "arma",
    "titulo": "Arma el tuyo",
-   "dia": "2026-10-16",
+   "dia": "2026-10-23",
    "hora": "16:30",
    "momento": "el antojo de la tarde",
    "nivel": "no nos conoce",
    "por_que": "El mundo de WICHO: los pasos del armador, tal como están en la app.",
    "cuadros": [
     {
-     "encargo": "2026-10-16-arma-1",
+     "encargo": "2026-10-23-arma-1",
      "personaje": "WICHO",
      "texto": "{pasos_lista}",
      "voz": "wicho",
      "escena": "WICHO building a sub in mid-air: an open white sub roll below, and above it sliced turkey folds, thick tomato slices, red onion, pickles and a cheddar slice floating in a spiral. He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
     },
     {
-     "encargo": "2026-10-16-arma-2",
+     "encargo": "2026-10-23-arma-2",
      "personaje": "WICHO",
      "texto": "Tú decides cada capa.",
      "voz": "wicho",
      "escena": "WICHO laughing with his arms wide open while ingredients rain down around him like confetti: pickle slices, thick tomato slices, red onion rings, jalapeño slices. He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
     },
     {
-     "encargo": "2026-10-16-arma-3",
+     "encargo": "2026-10-23-arma-3",
      "personaje": "WICHO",
      "texto": "Ármalo.",
      "voz": "wicho",
@@ -184,21 +184,21 @@
   {
    "id": "cerramos",
    "titulo": "Mañana descansamos",
-   "dia": "2026-10-18",
+   "dia": "2026-10-25",
    "hora": "20:00",
    "momento": "el domingo de flojera",
    "nivel": "nos sigue",
    "por_que": "Help: el lunes cerrado sorprende a quien quiere pedir. Se dice el domingo, con la hora real de cierre.",
    "cuadros": [
     {
-     "encargo": "2026-10-18-cerramos-1",
+     "encargo": "2026-10-25-cerramos-1",
      "personaje": "SANDO",
      "texto": "Mañana descansamos.",
      "voz": "sando",
      "escena": "SANDO calmly wiping his wooden board clean at the end of the day, half of the kitchen lights already off. Slow camera push. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
     },
     {
-     "encargo": "2026-10-18-cerramos-2",
+     "encargo": "2026-10-25-cerramos-2",
      "personaje": "SANDO",
      "texto": "Hoy, hasta las {cierra}.",
      "voz": "sando",

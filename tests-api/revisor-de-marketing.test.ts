@@ -3,7 +3,7 @@
 // Cada mañana un video sale a Instagram sin que nadie lo mire: lo único entre un error y el
 // público es `decidir()`. Modo de fallo: SILENCIO, y cuesta plata y lo legal — un precio que la
 // app ya no cobra es publicidad engañosa; un video de algo agotado es pauta tirada; siete videos
-// acumulados antes de abrir saliendo juntos el día 13 queman la cuenta.
+// acumulados antes de abrir saliendo juntos el día de la apertura queman la cuenta.
 //
 // Correr con: npm run test:api
 import { decidir, APERTURA, horaDePublicar } from "../scripts/video-auto/reglas-del-revisor.mjs";
@@ -14,7 +14,9 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
   if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(msg ?? `esperaba ${JSON.stringify(expected)}, recibí ${JSON.stringify(actual)}`);
 }
 const SIG = unSignature();
-const ABIERTO = "2026-10-14";
+// Un día ya abierto: el siguiente a APERTURA (fijo hasta el 2026-10-08, cuando la apertura pasó del
+// 13 al 20 y estas pruebas, con «2026-10-14» escrito, quedaron antes de abrir).
+const ABIERTO = new Date(Date.parse(`${APERTURA}T12:00:00Z`) + 864e5).toISOString().slice(0, 10);
 const cat = (p15 = 22.9, p30 = 33.9, inStock = true) => ({ sigItems: { [SIG]: { p15, p30, prot: "P9X", active: true } }, inventory: { [SIG]: { inStock } } });
 const pieza = (src: string, creada: string, p15 = 22.9, p30 = 33.9) => ({
   id: src, src, created_at: creada, datos: { sig: SIG, p15, p30 },

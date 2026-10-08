@@ -6,11 +6,15 @@
 // `src`) no se duplica: el borrador se actualiza; lo aprobado no se toca. Las imágenes se reemplazan.
 import { readFileSync } from 'node:fs';
 import { SB, BUCKET, conectar } from '../video-auto/produccion.mjs';
+import { APERTURA } from '../video-auto/reglas-del-revisor.mjs';
 
 const DIR = 'docs/marketing/lanzamiento';
 const { pedir } = await conectar();
 const pubs = JSON.parse(readFileSync(`${DIR}/publicaciones.json`, 'utf8'));
 const urlDe = (f) => `${SB}/storage/v1/object/public/${BUCKET}/lanzamiento/${f}`;
+// La víspera de la apertura (el perfil tiene que estar lleno antes de abrir). Sale de APERTURA:
+// el 2026-10-08 la apertura pasó del 13 al 20 y con ella esta fecha.
+const VISPERA = new Date(Date.parse(`${APERTURA}T12:00:00Z`) - 864e5).toISOString().slice(0, 10);
 
 for (const [i, p] of pubs.entries()) {
   for (const f of p.laminas) {
@@ -22,7 +26,7 @@ for (const [i, p] of pubs.entries()) {
     if (ya[0].status === 'draft') {
       await pedir(`${SB}/rest/v1/marketing_calendar?id=eq.${ya[0].id}&status=eq.draft`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-        body: JSON.stringify({ caption_text: p.texto, image_url: urlDe(p.laminas[0]), datos: { pieza: p.pieza, orden: i + 1, laminas: p.laminas.map(urlDe), fijar: p.fijar }, revision: 'pendiente', updated_at: new Date().toISOString() }),
+        body: JSON.stringify({ scheduled_date: VISPERA, caption_text: p.texto, image_url: urlDe(p.laminas[0]), datos: { pieza: p.pieza, orden: i + 1, laminas: p.laminas.map(urlDe), fijar: p.fijar }, revision: 'pendiente', updated_at: new Date().toISOString() }),
       });
       console.log(`${i + 1}. ${p.pieza}: borrador actualizado`);
     } else console.log(`${i + 1}. ${p.pieza}: ya está ${ya[0].status}, no se toca`);
@@ -31,7 +35,7 @@ for (const [i, p] of pubs.entries()) {
   await pedir(`${SB}/rest/v1/marketing_calendar`, {
     method: 'POST', headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
     body: JSON.stringify({
-      scheduled_date: '2026-10-12', channel: 'instagram', status: 'draft', title: `Lanzamiento · ${p.pieza}`,
+      scheduled_date: VISPERA, channel: 'instagram', status: 'draft', title: `Lanzamiento · ${p.pieza}`,
       caption_text: p.texto, media_type: 'image', image_url: urlDe(p.laminas[0]), created_by: 'lanzamiento',
       plantilla: 'lanzamiento', src: p.src, rol: 'lanzamiento', revision: 'pendiente',
       datos: { pieza: p.pieza, orden: i + 1, laminas: p.laminas.map(urlDe), fijar: p.fijar },

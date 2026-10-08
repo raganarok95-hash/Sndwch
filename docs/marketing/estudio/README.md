@@ -18,7 +18,7 @@ se borra su carpeta en `hecho/` o se escribe uno nuevo con otro `id`.
 
 ```markdown
 ---
-id: 2026-10-13-puerta-1          # = nombre del archivo, sin .md
+id: 2026-10-20-puerta-1          # = nombre del archivo, sin .md
 pieza: historia «La puerta», cuadro 1
 tipo: imagen                      # imagen | video
 formato: "9:16"                   # 9:16 historia o reel · 4:5 feed · 1:1

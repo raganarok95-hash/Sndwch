@@ -64,7 +64,9 @@ IGV             = 0.18
 CONTRIB_NETA    = CONTRIB_PEDIDO - OVERHEAD_PEDIDO
 
 from datetime import date, timedelta  # noqa: E402
-APERTURA = date(2026, 10, 12)
+# [MEDIDO] dueño 2026-10-08: «retrasamos la apertura una semana». Abre el martes 20; se toma el
+# lunes 19 (cerrado) como en el cálculo anterior, que tomaba el lunes 12 para abrir el martes 13.
+APERTURA = date(2026, 10, 19)
 CERRADO_WEEKDAY = 0        # [MEDIDO] lunes cerrado
 MESES = 24
 

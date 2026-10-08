@@ -10,6 +10,24 @@ Dueño, 2026-10-08: «sí, deja 100% automático lo de Flow». Después de esto,
 Tú no haces nada más. Solo deja la laptop **prendida o en suspensión** (no apagada) y con tu sesión
 de Windows iniciada. Si estaba apagada a esa hora, corre apenas la prendes.
 
+## Si ya lo instalaste y «no abrió nada» (arreglo del 2026-10-08)
+
+La primera versión tenía rayas y comillas tipográficas, y el PowerShell de Windows las lee mal y no
+corre. La nueva es solo ASCII, te deja verlo todo en pantalla y sube un registro de cada corrida a
+GitHub, así veo qué pasó sin preguntarte. Tu laptop tiene la versión vieja: actualízala una vez.
+
+1. Abre **PowerShell** y pega esto (actualiza el clon y vuelve a instalar la tarea):
+   ```
+   cd $HOME\sndwch-estudio; git fetch origin; git checkout -B estudio origin/main; powershell -ExecutionPolicy Bypass -File scripts\estudio\instalar.ps1
+   ```
+2. Pruébalo **a la vista**, sin la tarea programada:
+   ```
+   powershell -ExecutionPolicy Bypass -File $HOME\sndwch-estudio\scripts\estudio\estudio.ps1 -Visible
+   ```
+   Ves cada paso en la ventana. **Si se abre una ventana para iniciar sesión en GitHub, entra con
+   tu cuenta**: es la primera vez que la laptop sube algo y después ya no lo pide.
+3. Mándame una captura de la ventana cuando termine. El registro también me llega por GitHub.
+
 ## Los pasos
 
 1. Abre **PowerShell** (tecla Windows → escribe «PowerShell» → Enter).

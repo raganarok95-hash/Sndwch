@@ -3,9 +3,9 @@
 Dueño: «Ayúdame a configurar WhatsApp Business en automático… automatiza las respuestas de IG y
 de WhatsApp. Hazlo, lo más prioritario hoy».
 
-## Qué se puede tener para el martes 13, y qué viene después
+## Qué se puede tener para el martes 20 (la apertura, movida del 13), y qué viene después
 
-| | para el 13 (gratis, sin revisión de Meta) | después (bot propio que responde con datos reales) |
+| | para el 20 (gratis, sin revisión de Meta) | después (bot propio que responde con datos reales) |
 |---|---|---|
 | **WhatsApp** | App **WhatsApp Business**: bienvenida, ausencia, respuestas rápidas, catálogo, etiquetas | API de WhatsApp en el mismo número («coexistencia»): exige **7 días de uso** del número en la app Business. Desde el 1-oct-2026 cada número tiene **1,000 mensajes de servicio gratis al mes**; luego Meta cobra ([precios de Meta](https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing)). Lo que mandas desde la app sigue gratis |
 | **Instagram / Facebook** | **Meta Business Suite**: respuesta instantánea, ausencia, preguntas frecuentes, respuestas guardadas | API de mensajería: responder a cualquier persona exige **revisión de la app por Meta** ([guía de Meta](https://developers.facebook.com/documentation/business-messaging/instagram-messaging/app-review/apps-for-your-own-business)); con el token del paso B de `CONFIGURAR_META.md` ya pedido con esos permisos |

@@ -1,4 +1,4 @@
-# Brief · semana del 12 de octubre de 2026 (la apertura)
+# Brief · semana del 19 de octubre de 2026 (la apertura)
 
 > Primer brief de la agencia nueva (`../../AGENCIA.md`). Propuesta: lo apruebas tú.
 
@@ -21,8 +21,8 @@
    historia. Horario y números interpolados. Ningún precio escrito.
 9. **Lo que NO.** «Gran inauguración» ni descuentos de apertura (los premios viven en la app).
    No prometer tiempos de entrega. Nada regional. Los hermanos no hablan: el texto va en pantalla.
-10. **Cómo se mide.** El domingo 18: pedidos y visitas con `src=ig-hist`, por día y por hora. Y
+10. **Cómo se mide.** El domingo 25: pedidos y visitas con `src=ig-hist`, por día y por hora. Y
     la encuesta del martes (la de SANDO o la tuya), que dice qué hermano lleva la semana siguiente.
 
 Los guiones: `HISTORIAS.md`. Los 18 encargos a Flow (uno por cuadro, todo nuevo):
-`../../estudio/encargos/2026-10-1*`.
+`../../estudio/encargos/2026-10-19-*` a `2026-10-25-*`.
