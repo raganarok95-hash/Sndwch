@@ -114,13 +114,16 @@ Se arregla dejando todo en «SNDWCH.APP», que es el del token y vive en tu Busi
 1. ~~Supabase → Edge Functions → Secrets: `META_PIXEL_ID` = `1410494047274081`~~ — **hecho el
    2026-10-08** con el workflow «Píxel de Meta» (el ID es público; el token nunca pasó por ahí).
    Probado: `✓ CAPI probado contra Meta: token válido, escribe al píxel: sí`.
-2. **Agrega la cuenta de anuncios a tu Business**: [Configuración del negocio](https://business.facebook.com/settings)
-   → Cuentas → **Cuentas publicitarias** → Agregar → «Agregar una cuenta publicitaria» → `221839797`.
-   (Hoy la cuenta no pertenece a ningún Business.)
-3. En la misma configuración → Orígenes de datos → **Conjuntos de datos** → «SNDWCH.APP» →
-   **Asignar / conectar recursos** → la cuenta `221839797`.
-4. **Método de pago** en la cuenta `221839797` (Meta: no tiene ninguno). Sin él, la pauta del 27
-   no arranca.
+2. ~~Agregar la cuenta de anuncios al Business~~ — al seguir este paso, Meta **creó una cuenta
+   nueva**, `1488138326460689` (nombre «221839797»), dentro del Business «Sndwch», en vez de traer
+   la vieja. La nueva es la que se usa desde el 2026-10-08; la 221839797 queda sin usar.
+3. Conjuntos de datos → «SNDWCH.APP» → **Recursos conectados / Agregar recursos** → Cuentas
+   publicitarias → la de ID `1488138326460689`. (El 2026-10-08 la API todavía no la mostraba
+   conectada.)
+4. **Método de pago** en la cuenta `1488138326460689`: desde [Facturación y pagos](https://business.facebook.com/billing_hub/payment_settings?asset_id=1488138326460689).
+   Si la tarjeta no entra: habilita en la app de tu banco las **compras por internet y en el
+   extranjero** (Meta cobra desde fuera del Perú), y usa una tarjeta Visa o Mastercard a tu nombre
+   o de la empresa (las prepago suelen rechazarse). Si Meta pide datos fiscales, son los tuyos.
 
 Después, «Estado para abrir» tiene que decir `✓ CAPI probado contra Meta: token válido, escribe al
 píxel: sí`.
