@@ -1,5 +1,8 @@
 # El equipo de marketing automático de SND//WCH (2026-10-07)
 
+> **Historia.** El manual vigente de la agencia es `AGENCIA.md` (2026-10-08, propuesta). Este
+> archivo queda como registro de cómo se pensó antes.
+
 Dueño: «falta la parte creativa, actúa como un enorme equipo de marketing, toma el flujo normal de
 un equipo así, automatízalo, baja herramientas MCP… genera todo el motor completo de marketing;
 cada cosa debe ser analizada, un equipo completo de marketing». Aprobado: **S/350 de pauta de

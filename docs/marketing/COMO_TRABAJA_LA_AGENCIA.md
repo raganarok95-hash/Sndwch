@@ -1,5 +1,8 @@
 # Cómo trabaja la agencia (2026-10-07)
 
+> **Historia.** El manual vigente de la agencia es `AGENCIA.md` (2026-10-08, propuesta). Este
+> archivo queda como registro de cómo se pensó antes.
+
 Dueño: «Esa es una idea; debemos ir produciendo más ideas así, luego se revisan y luego se
 aprueban, todo actuando como la mejor agencia de marketing».
 

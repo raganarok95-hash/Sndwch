@@ -520,3 +520,17 @@ cuadro con Playwright → MP4 H.264). En el contenedor no hay ffmpeg: `pip insta
   para la miniatura (cambiar el tamaño rompe la firma). Hay que pasar por exportar un diseño.
 - Flow (imágenes gratis, 50 créditos diarios de video) solo con el MCP en la laptop del dueño.
   Detalle: `docs/marketing/GENERAR_GRATIS.md`.
+
+## Historias de Instagram por API y agentes sin supervisión (2026-10-08)
+- **La API de Instagram publica historias (`media_type=STORIES`) pero NO stickers**: ni enlace,
+  ni encuesta, ni cuenta regresiva, ni pregunta ([Meta](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media)).
+  Una historia con sticker la sube el dueño desde el celular; la agencia le deja los cuadros
+  (`scripts/piezas/historias.mjs` los hace con y sin el sticker dibujado).
+- **El clasificador de permisos del modo automático bloquea crear un agente sin supervisión**:
+  una tarea programada de Windows que corre `claude -p` sola en la laptop del dueño fue negada
+  («Create Unsafe Agents»). Por eso el Estudio (Flow) se dispara con una palabra del dueño
+  («Estudio», `scripts/estudio/LIBRETO.md`). La versión desatendida es decisión del dueño.
+- **Los secrets de Supabase**: solo hay un proyecto (`rjosezuoyngiadunfzyn`). El Vault guarda
+  solo `sndwch_cron_secret`. Las variables de Vercel del proyecto `sndwch` no se pueden leer desde
+  aquí (403 de alcance), pero el código no lee nada de Vercel: los tokens van en Supabase →
+  Edge Functions → Secrets.

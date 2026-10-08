@@ -1,0 +1,4 @@
+# Los cuadros se regeneran con scripts/piezas/historias.mjs; se guarda solo el tablero
+# mientras están en boceto (los finales, con Flow, se suben cuando estén aprobados).
+*/historias/*.png
+!*/historias/tablero.png
