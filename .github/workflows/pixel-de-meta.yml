@@ -1,0 +1,31 @@
+name: Píxel de Meta
+
+# Pone META_PIXEL_ID (público: va en el HTML) en los secrets de las funciones y, enseguida, prueba
+# el token de CAPI contra ese píxel con «Estado para abrir». El token nunca pasa por aquí.
+on:
+  workflow_dispatch:
+    inputs:
+      pixel:
+        description: 'ID del conjunto de datos (píxel) de Meta, solo dígitos'
+        required: true
+
+jobs:
+  pixel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Poner el píxel
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PIXEL: ${{ inputs.pixel }}
+        run: node scripts/poner-pixel.mjs
+      - name: Esperar a que las funciones tomen el secret nuevo
+        run: sleep 20
+      - name: Probar CAPI contra Meta
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: node scripts/estado-apertura.mjs
