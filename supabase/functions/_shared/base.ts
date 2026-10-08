@@ -7,7 +7,7 @@
 // Regenerar después de cada migración (con la herramienta de Supabase generate_typescript_types)
 // y actualizar la línea de abajo con la versión de la última migración aplicada.
 // `npm run check:tipos-base` falla si hay una migración más nueva que esta.
-// generado-contra-migracion: 20261007153004
+// generado-contra-migracion: 20261008140228
 export type Json =
   | string
   | number
@@ -805,6 +805,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           datos: Json
+          formato: string
           gancho: string | null
           id: string
           image_url: string | null
@@ -814,6 +815,7 @@ export type Database = {
           photo_idea: string | null
           plantilla: string | null
           posted_at: string | null
+          publicar_desde: string | null
           published_ref: string | null
           revision: string
           rol: string | null
@@ -833,6 +835,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           datos?: Json
+          formato?: string
           gancho?: string | null
           id?: string
           image_url?: string | null
@@ -842,6 +845,7 @@ export type Database = {
           photo_idea?: string | null
           plantilla?: string | null
           posted_at?: string | null
+          publicar_desde?: string | null
           published_ref?: string | null
           revision?: string
           rol?: string | null
@@ -861,6 +865,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           datos?: Json
+          formato?: string
           gancho?: string | null
           id?: string
           image_url?: string | null
@@ -870,6 +875,7 @@ export type Database = {
           photo_idea?: string | null
           plantilla?: string | null
           posted_at?: string | null
+          publicar_desde?: string | null
           published_ref?: string | null
           revision?: string
           rol?: string | null

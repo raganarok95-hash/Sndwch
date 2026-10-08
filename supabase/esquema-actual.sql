@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20261007153004
+-- foto-tomada-tras-migracion: 20261008140228
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -285,7 +285,9 @@ create table public.marketing_calendar (
   revision text default 'pendiente'::text not null,
   motivo_revision text,
   datos jsonb default '{}'::jsonb not null,
-  metricas jsonb default '{}'::jsonb not null
+  metricas jsonb default '{}'::jsonb not null,
+  publicar_desde timestamp with time zone,
+  formato text default 'feed'::text not null
 );
 
 create table public.marketing_flow_cola (
@@ -673,6 +675,8 @@ alter table public.inventory add constraint inventory_shelf_life_days_positivo C
 alter table public.login_attempts add constraint login_attempts_pkey PRIMARY KEY (phone);
 
 alter table public.login_codes add constraint login_codes_pkey PRIMARY KEY (email);
+
+alter table public.marketing_calendar add constraint marketing_calendar_formato_check CHECK ((formato = ANY (ARRAY['feed'::text, 'historia'::text])));
 
 alter table public.marketing_calendar add constraint marketing_calendar_media_type_check CHECK ((media_type = ANY (ARRAY['image'::text, 'video'::text])));
 
