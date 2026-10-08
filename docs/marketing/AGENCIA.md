@@ -97,7 +97,7 @@ que **cada uno tiene un ejecutor concreto** y un entregable en un lugar fijo.
 | **1 · Cuenta** | director de cuentas | Claude, en la sesión del lunes | el resumen para ti (una pantalla) y tus decisiones convertidas en reglas | `semanas/<lunes>/RESUMEN.md`; `CLAUDE.md` |
 | **2 · Estrategia** | *planner* | la sesión del lunes | el diagnóstico y **el brief** | `semanas/<lunes>/BRIEF.md` + `marketing_plan` |
 | **3 · Creatividad** | director creativo + duplas | la sesión del lunes | 30 ideas → 7 propuestas con guion, cada una con sus **encargos a Flow** | `semanas/<lunes>/IDEAS.md`, `GUIONES.md`; `estudio/encargos/` |
-| **4 · Estudio** | productora | **tu laptop llama a Flow** cuando le dices «Estudio»; GitHub monta las piezas | imágenes y clips; piezas terminadas | `estudio/hecho/`; `marketing-images` |
+| **4 · Estudio** | productora | **tu laptop llama a Flow sola** (7:30 y 19:30); GitHub monta las piezas | imágenes y clips; piezas terminadas | `estudio/hecho/`; `marketing-images` |
 | **5 · Calidad** | *standards & practices* | código (el Revisor) | cada pieza aprobada o bloqueada, con motivo | `marketing_calendar.revision` |
 | **6 · Medios** | social, comunidad y pauta | el cron publica; las respuestas automáticas de Meta responden; la pauta va por el MCP de Meta desde el 27 oct | lo publicado, lo respondido, la campaña | Instagram, Facebook, Meta Ads |
 | **7 · Datos** | analista | código: el correo del domingo, y un archivo de datos de la semana | qué trajo pedidos y qué aprendimos | `semanas/<lunes>/DATOS.md` |
@@ -116,7 +116,7 @@ memoria de la agencia. Así cualquier sesión, en la nube o en la laptop, sabe q
 | Lunes | Creatividad | **Abrir**: 30 ideas desde el brief, sin juzgar. **Cerrar**: rúbrica → 7 propuestas con guion y encargos a Flow |
 | Lunes | Cuenta | El **resumen para ti**: el brief, las 7 ideas y lo que necesita tu decisión |
 | **Lunes, al aprobar** | **Tú** | un mensaje: «sí», o cambias o tachas ideas. Si no respondes hasta el martes a las 9:00, **se producen las que no tocan plata, lo legal ni la marca** |
-| Lunes a martes | Estudio | dices «Estudio» una vez; la laptop genera en Flow lo encargado y GitHub monta |
+| Lunes a martes | Estudio | la laptop genera en Flow lo encargado y GitHub monta y programa |
 | **Martes a domingo** | Medios + Calidad | una pieza del feed por día y las historias del día (`INSTAGRAM.md` §4) |
 | Todos los días | Medios | respuestas en minutos; lo que no se puede responder solo te llega a ti |
 
@@ -166,12 +166,14 @@ Flow no tiene API: solo funciona en tu laptop, con tu sesión de Google, a trav�
 1. **Creatividad escribe el encargo** en `docs/marketing/estudio/encargos/<id>.md`: qué imagen,
    para qué pieza, qué personaje de Flow (`@SANDO`, `@WICHO`, sin describirlos con texto),
    formato y el prompt de la escena. Formato exacto en `estudio/README.md`.
-2. **Tú lo disparas con una palabra**: en el Claude Code de tu laptop, o desde el celular con el
-   control remoto que ya conectaste, escribes **«Estudio»** (o «Lee scripts/estudio/LIBRETO.md y
-   cúmplelo»). El Estudio genera cada encargo pendiente, lo descarga, lo valida y lo sube al
-   repo. No hay nada que copiar ni pegar.
-3. **GitHub monta la pieza** con el resultado (texto, precio de la carta, marca), Calidad la
-   revisa y se publica.
+2. **Tu laptop lo cumple sola** (dueño, 2026-10-08: «sí, deja 100% automático lo de Flow»): la
+   tarea programada «SNDWCH Estudio» corre a las 7:30 y a las 19:30 (y apenas prendes la laptop
+   si se perdió una hora). Genera cada encargo pendiente, lo descarga, lo valida y lo sube a la
+   rama `estudio`. Se instala una vez: `estudio/INSTALAR.md`. Los lunes, antes, hace el ciclo de
+   la agencia (`scripts/estudio/LUNES.md`): brief, historias y encargos de la semana siguiente.
+3. **GitHub monta la pieza** (`.github/workflows/historias.yml`): une lo de la laptop a main,
+   compone cada historia completa con el texto y los datos vivos, y la programa con su hora. El
+   cron de Supabase la publica a esa hora. Un boceto nunca se publica.
 
 **Los límites del Estudio** (los tuyos, de `CLAUDE.md`): las imágenes de Flow son gratis y salen
 sin preguntar. El video, **solo dentro de los 50 créditos diarios gratis**, y nunca se compran
@@ -179,10 +181,10 @@ créditos. Si no hay créditos, si Flow cambió su página o si falla el inicio 
 encargo queda en `fallo` con el motivo y la pieza se hace con código. **Nada se pierde si no lo
 disparas**: el encargo espera.
 
-**Por qué lo disparas tú y no corre solo**: la versión 100% automática es una tarea programada
-de Windows que abre Claude sin nadie mirando. El sistema de seguridad de mi lado **no me dejó
-crearla**, y tiene sentido: sería un agente corriendo solo en tu computadora, con tu sesión de
-Google abierta. Si la quieres igual, es una decisión tuya (§8).
+**Por qué en tu laptop y no en la nube**: Flow no tiene API; solo responde a tu Chrome con tu cuenta
+de Google. Claude corre ahí con permisos mínimos: Flow, leer y escribir su propio clon, y nada de
+git (lo hace el script, y solo hacia la rama `estudio`, de la que GitHub acepta solo la carpeta
+de la agencia).
 
 ---
 
@@ -231,8 +233,8 @@ en pantalla. [El objetivo:] la mayor cantidad de pedidos reales fuera de mi red�
 | Calidad (Revisor), publicador, `?src=` en cada pedido | **corre** |
 | El video del día por código | **corre**, pero usa las fotos de la app: queda como **respaldo**. Las piezas nuevas salen de Flow |
 | El correo del domingo con «de dónde vinieron» | **corre** |
-| El Estudio: encargos + libreto para la laptop | **hecho hoy**; falta que digas «Estudio» la primera vez |
+| El Estudio y el lunes, solos en la laptop | **hecho**; falta que lo instales una vez (`estudio/INSTALAR.md`) |
 | Respuestas automáticas de Meta y WhatsApp | guía lista (`RESPUESTAS_AUTOMATICAS.md`); las activas tú |
 | `DATOS.md` semanal (pedidos por hora y por momento) | **falta**: un workflow de GitHub, después de la primera semana con pedidos |
-| El montaje de historias con las imágenes de Flow | **falta**: se hace con las primeras imágenes |
-| La sesión del lunes automática | **falta**: tu decisión (§8.3) |
+| Montar y programar las historias (sin stickers, por API) | **hecho** (`historias.yml`); sale cuando estén el token de la página (P33) y las imágenes |
+| Hora exacta de publicación (`publicar_desde`) | **hecho**: GitHub atrasa 5–9 h y ya no importa |

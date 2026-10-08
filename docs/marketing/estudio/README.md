@@ -1,13 +1,13 @@
 # El Estudio: cómo le encarga la agencia una imagen a Flow (2026-10-08)
 
 Dueño: «Ese equipo es el que debe llamar a Flow para el proceso». La agencia (`../AGENCIA.md` §5)
-deja **encargos** aquí. Tu laptop los cumple con el MCP de Flow cuando le dices «Estudio»
-(`scripts/estudio/LIBRETO.md`) y sube el resultado.
+deja **encargos** aquí. Tu laptop los cumple sola con el MCP de Flow, a las 7:30 y a las 19:30
+(`scripts/estudio/LIBRETO.md`, instalación en `INSTALAR.md`), y sube el resultado a la rama `estudio`.
 
 ```
 docs/marketing/estudio/
   encargos/<id>.md        ← lo escribe Creatividad
-  hecho/<id>/v1.png …     ← lo escribe el Estudio, en tu laptop
+  hecho/<id>/v1.png …     ← lo escribe el Estudio (tu laptop, rama estudio → main)
   hecho/<id>/estado.json  ← {"estado":"listo"|"fallo","motivo":…,"creditos":0,"hecho":"<fecha>"}
 ```
 

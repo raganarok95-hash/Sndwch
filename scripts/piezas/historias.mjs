@@ -4,18 +4,22 @@
 // esquema con la escena encargada) mientras tanto. Nunca recicla las imágenes de img/. El texto lo pone el código con las fuentes de la
 // marca y los datos vivos (horario, regla del grupo, pasos del armador): nunca va en la imagen.
 //
-// Los stickers (enlace, encuesta, cuenta regresiva, pregunta) se DIBUJAN solo para ver dónde
-// van: la API de Instagram no publica stickers, así que se ponen en la app al subir la historia.
-// Cada cuadro sale también SIN el sticker dibujado, que es el archivo que se sube.
+// SIN stickers (dueño, 2026-10-08: «si yo lo hago por los stickers, pierde el ser automático»): la
+// API de Instagram no los publica. El último cuadro de cada historia lleva un pie con sndwch.app y
+// «enlace en el perfil», que es lo que hace el trabajo del sticker de enlace.
 //
-// Uso: node scripts/piezas/historias.mjs <semana> datos.json   (HORARIO="11-22", FUENTES_CSS,
-//      PLAYWRIGHT_CHROMIUM_PATH). Deja en semanas/<semana>/historias/ los PNG y `tablero.png`.
+// Uso: node scripts/piezas/historias.mjs <semana> datos.json [--final]
+//      (HORARIO="11-22", FUENTES_CSS, PLAYWRIGHT_CHROMIUM_PATH)
+//   · sin --final: todos los cuadros (con boceto donde falte Flow) y `tablero.png`, para aprobar.
+//   · con --final: SOLO las historias con todas sus imágenes de Flow, y `manifiesto.json` para
+//     scripts/piezas/subir-historias.mjs. Un boceto nunca se publica.
 import { chromium } from '@playwright/test';
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { APERTURA } from '../video-auto/reglas-del-revisor.mjs';
 
 const [semana, datosPath] = process.argv.slice(2);
+const FINAL = process.argv.includes('--final');
 const BASE_DIR = `docs/marketing/semanas/${semana}`;
 const H = JSON.parse(readFileSync(`${BASE_DIR}/historias.json`, 'utf8')).historias;
 const D = JSON.parse(readFileSync(datosPath, 'utf8'));
@@ -70,45 +74,56 @@ function texto(c, oscuro) {
   return `<div style="position:absolute;left:90px;right:90px;top:240px;font:400 ${size}px/.95 Anton,sans-serif;text-transform:uppercase;color:${col};${sombra}text-wrap:balance">${t}</div>`;
 }
 const nombre = (c, oscuro) => c.personaje ? `<div style="position:absolute;left:90px;top:150px;font:600 26px 'IBM Plex Mono',monospace;letter-spacing:.2em;color:${oscuro ? 'rgba(239,230,212,.85)' : 'rgba(30,43,34,.6)'}">${c.personaje}</div>` : '';
-function sticker(s) {
-  if (!s) return '';
-  const caja = 'position:absolute;left:50%;transform:translateX(-50%);bottom:330px;background:#fff;color:#111;box-shadow:0 8px 30px rgba(0,0,0,.25);font-family:Archivo,sans-serif';
-  if (s.tipo === 'enlace') return `<div style="${caja};border-radius:16px;padding:22px 34px;font-weight:800;font-size:38px;color:#2563EB;letter-spacing:.02em;display:flex;gap:16px;align-items:center"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.4" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>${esc(s.texto)}</div>`;
-  if (s.tipo === 'encuesta') return `<div style="${caja};border-radius:24px;width:640px;padding:30px;text-align:center"><div style="font-weight:800;font-size:40px;margin-bottom:22px">${esc(s.pregunta)}</div>${s.opciones.map((o) => `<div style="border:2px solid #ddd;border-radius:14px;padding:18px;margin-top:12px;font-weight:700;font-size:34px">${esc(o)}</div>`).join('')}</div>`;
-  if (s.tipo === 'cuenta regresiva') return `<div style="${caja};border-radius:24px;width:600px;padding:30px;text-align:center"><div style="font-weight:800;font-size:40px">${esc(s.texto)}</div><div style="font:600 34px 'IBM Plex Mono',monospace;margin-top:14px">${esc(interpola(s.fin))}</div><div style="margin-top:18px;font-weight:700;font-size:28px;color:#2563EB">Recordarme</div></div>`;
-  if (s.tipo === 'pregunta') return `<div style="${caja};border-radius:24px;width:620px;overflow:hidden;text-align:center"><div style="background:${C.navy};color:#fff;font-weight:800;font-size:38px;padding:28px">${esc(s.pregunta)}</div><div style="padding:26px;font-size:30px;color:#999">Escribe algo…</div></div>`;
-  return '';
-}
+// El pie del último cuadro: lo que reemplaza al sticker de enlace (la API no publica stickers).
+const pie = (oscuro) => `<div style="position:absolute;left:90px;right:90px;bottom:300px;display:flex;flex-direction:column;gap:12px;color:${oscuro ? C.papel : C.tinta}">
+  <div style="font:600 58px 'IBM Plex Mono',monospace;letter-spacing:.01em">sndwch.app</div>
+  <div style="font:600 26px 'IBM Plex Mono',monospace;letter-spacing:.14em;opacity:.8">ENLACE EN EL PERFIL</div></div>`;
 const etiquetaBoceto = (c) => `<div style="position:absolute;left:0;right:0;top:0;background:${C.naranja};color:#fff;font:600 24px 'IBM Plex Mono',monospace;padding:14px 30px;letter-spacing:.06em">BOCETO · falta la imagen de Flow${c.encargo ? ` (${c.encargo})` : ''}</div>`;
 
 const b = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_PATH ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } : {});
 const fuentes = process.env.FUENTES_CSS ? readFileSync(process.env.FUENTES_CSS, 'utf8') : '';
+// Sin FUENTES_CSS (GitHub), las fuentes vienen de Google. Si alguna no carga, se corta: una historia
+// con la letra de respaldo no sale (pasó con el primer video, 2026-10-07).
+const linkFuentes = fuentes ? '' : '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;800&family=IBM+Plex+Mono:wght@500;600&family=Instrument+Serif:ital@1&display=block">';
 async function foto(html, archivo, w, h, scale = 1) {
   const tmp = resolve(OUT, `.tmp.html`);
-  writeFileSync(tmp, `<!doctype html><html><head><meta charset="utf-8"><style>${fuentes}*{box-sizing:border-box;margin:0;padding:0}body{width:${w}px;height:${h}px;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased}</style></head><body>${html}</body></html>`);
+  writeFileSync(tmp, `<!doctype html><html><head><meta charset="utf-8">${linkFuentes}<style>${fuentes}*{box-sizing:border-box;margin:0;padding:0}body{width:${w}px;height:${h}px;position:relative;overflow:hidden;-webkit-font-smoothing:antialiased}</style></head><body>${html}</body></html>`);
   const p = await b.newPage({ viewport: { width: w, height: h }, deviceScaleFactor: scale });
   await p.goto('file://' + tmp, { waitUntil: 'load' });
-  await p.evaluate(async () => { await Promise.all(['400 10px Anton', '800 10px Archivo', '600 10px "IBM Plex Mono"', 'italic 400 10px "Instrument Serif"'].map((f) => document.fonts.load(f))); await Promise.all([...document.images].map((i) => i.decode().catch(() => 0))); });
+  const faltan = await p.evaluate(async () => {
+    const caras = ['400 10px Anton', '800 10px Archivo', '600 10px "IBM Plex Mono"', 'italic 400 10px "Instrument Serif"'];
+    await Promise.all(caras.map((f) => document.fonts.load(f)));
+    await Promise.all([...document.images].map((i) => i.decode().catch(() => 0)));
+    return caras.filter((f) => !document.fonts.check(f));
+  });
+  if (faltan.length) throw new Error(`No cargaron las fuentes: ${faltan.join(', ')}`);
   await p.screenshot({ path: archivo });
   await p.close(); rmSync(tmp);
 }
 
 const filas = [];
+const manifiesto = [];
 let bocetos = 0, total = 0;
 for (const h of H) {
+  const fondos = h.cuadros.map((c) => fondo(c, h));
+  const completa = fondos.every((f) => !f.boceto);
+  if (FINAL && !completa) { console.log(`· ${h.dia} ${h.id}: faltan imágenes de Flow, no sale`); continue; }
   const miniaturas = [];
   for (const [i, c] of h.cuadros.entries()) {
-    const f = fondo(c, h);
+    const f = fondos[i];
     if (f.boceto) bocetos++;
     total++;
-    const base = f.html + nombre(c, f.oscuro) + texto(c, f.oscuro) + (f.boceto ? etiquetaBoceto(c) : '');
+    const ultimo = i === h.cuadros.length - 1;
+    const base = f.html + nombre(c, f.oscuro) + texto(c, f.oscuro) + (ultimo ? pie(f.oscuro) : '') + (f.boceto ? etiquetaBoceto(c) : '');
     const nombreArchivo = `${h.dia}-${h.id}-${i + 1}`;
     await foto(base, `${OUT}/${nombreArchivo}.png`, 1080, 1920);
-    await foto(base + sticker(c.sticker), `${OUT}/${nombreArchivo}-con-sticker.png`, 1080, 1920);
-    miniaturas.push(`${nombreArchivo}-con-sticker.png`);
+    miniaturas.push(`${nombreArchivo}.png`);
   }
   filas.push({ h, miniaturas });
+  if (completa) manifiesto.push({ id: h.id, dia: h.dia, hora: h.hora, titulo: h.titulo, archivos: miniaturas.map((m) => `${OUT}/${m}`) });
 }
+writeFileSync(`${OUT}/manifiesto.json`, JSON.stringify(manifiesto, null, 1));
+if (FINAL) { await b.close(); console.log(`✓ ${manifiesto.length} historias completas en ${OUT}/manifiesto.json`); process.exit(0); }
 // El tablero: una fila por historia, para aprobar la semana de un vistazo.
 const tablero = filas.map(({ h, miniaturas }) => `<div style="display:flex;gap:28px;padding:34px 40px;border-bottom:2px solid #d9cfbd;align-items:flex-start">
   <div style="width:360px;flex:none"><div style="font:600 20px 'IBM Plex Mono',monospace;color:${C.naranja};letter-spacing:.08em">${esc(h.dia)} · ${esc(h.hora)}</div>

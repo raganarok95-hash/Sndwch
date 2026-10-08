@@ -1,0 +1,50 @@
+name: Historias
+
+# Sin pasos a mano (docs/marketing/AGENCIA.md): cuando la laptop (el ciclo del lunes y el Estudio con
+# Flow) sube a la rama `estudio`, esto lo une a main y programa en Instagram cada historia que ya tiene todas
+# sus imágenes (scripts/piezas/subir-historias.mjs). Sale a su hora por el cron de Supabase
+# (`publicar_desde`), no por este workflow. Una vez al día por si un push no lo disparó.
+on:
+  push:
+    branches: [estudio]
+    paths: ['docs/marketing/estudio/**', 'docs/marketing/semanas/**']
+  schedule:
+    - cron: '30 13 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: historias
+
+jobs:
+  historias:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Traer lo del Estudio a main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code origin estudio >/dev/null; then
+            git fetch -q origin estudio
+            # La laptop solo puede traer lo de la agencia: la semana y el Estudio. Nada de código.
+            fuera=$(git diff --name-only origin/main...origin/estudio | grep -v -E '^docs/marketing/(estudio|semanas)/' || true)
+            if [ -n "$fuera" ]; then echo "::error::la rama estudio trae archivos fuera de la agencia: $fuera"; exit 1; fi
+            git merge --no-ff -q -m "Merge: la agencia y el Estudio" origin/estudio
+            git push -q origin HEAD:main
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Montar y programar las historias completas
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: node scripts/piezas/subir-historias.mjs
