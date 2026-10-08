@@ -17,11 +17,13 @@ import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { mkdtempSync, readFileSync } from 'node:fs';
-import { SB, BUCKET, conectar, hoyEnLima, precio } from './produccion.mjs';
+import { SB, BUCKET, conectar, mananaEnLima, precio } from './produccion.mjs';
 
 const sinSubir = process.argv.includes('--sin-subir');
 const { pedir, accion } = await conectar();
-const hoy = hoyEnLima();
+// El video es para MAÑANA (2026-10-08): GitHub atrasa sus horarios de 5 a 9 horas, así que se
+// produce y se revisa un día antes, y sale a su hora con `publicar_desde` (lo pone el Revisor).
+const hoy = mananaEnLima();
 
 // 1 · La carta REAL: la misma respuesta que recibe el celular del cliente.
 const cat = await accion('get-catalog');
@@ -49,7 +51,7 @@ const src = `v-${sig.toLowerCase()}-${hoy.replace(/-/g, '')}`;
 
 // Un día, un video: si el workflow se reintenta, no duplica (src también es único en la base).
 const ya = await pedir(`${SB}/rest/v1/marketing_calendar?src=eq.${src}&select=id`);
-if (ya.length) { console.log(`Ya existe el video de hoy (${src}).`); process.exit(0); }
+if (ya.length) { console.log(`Ya existe el video de ${hoy} (${src}).`); process.exit(0); }
 
 // 3 · Los datos del video (deno lee la carta) y el render.
 const tmp = mkdtempSync(join(tmpdir(), 'video-diario-'));
@@ -85,7 +87,7 @@ await pedir(`${SB}/rest/v1/marketing_calendar`, {
     scheduled_date: hoy, channel: 'instagram', status: 'draft', title: `${datos.nombre} — video del día`,
     caption_text: caption, media_type: 'video', video_url: videoUrl, created_by: 'productor',
     plantilla: 'signature', gancho: datos.gancho, src, rol: 'productor', revision: 'pendiente',
-    datos: { sig, p15: datos.p15, p30: datos.p30 },
+    datos: { sig, prot: items[sig]?.prot || null, p15: datos.p15, p30: datos.p30 },
   }),
 });
 console.log(`✓ ${videoUrl}\n✓ en el calendario como borrador, pendiente de revisión`);

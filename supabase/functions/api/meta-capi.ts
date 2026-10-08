@@ -185,6 +185,10 @@ export function leerRespuestaDelPixel(ok: boolean, cuerpo: any, limpio: (m: unkn
     return { puede: false, tokenInvalido: false, detalle: `píxel: (${err.code}/${err.error_subcode ?? "-"}) ${limpio(err.message)}` };
   }
   // Pasó el token y el permiso, y Meta rechazó el evento por viejo: es lo esperado.
-  if (/timestamp|event_time|too far in the past|7 days/i.test(texto)) return { puede: true, tokenInvalido: false, detalle: null };
+  // Meta responde en el idioma de la cuenta: el 2026-10-08 llegó «La fecha del evento es demasiado
+  // antigua». El subcódigo 2804003 es el mismo en cualquier idioma.
+  if (err.error_subcode === 2804003 || /timestamp|event_time|too far in the past|7 days|demasiado antigua|fecha del evento/i.test(texto)) {
+    return { puede: true, tokenInvalido: false, detalle: null };
+  }
   return { puede: null, tokenInvalido: false, detalle: `píxel, respuesta no esperada: (${err.code ?? "?"}/${err.error_subcode ?? "-"}) ${limpio(texto)}` };
 }

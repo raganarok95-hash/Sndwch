@@ -40,5 +40,6 @@ export async function faltanParaPublicar() {
 // Lima es UTC-5 todo el año.
 export const ahoraEnLima = () => new Date(Date.now() - 5 * 3600e3);
 export const hoyEnLima = () => ahoraEnLima().toISOString().slice(0, 10);
+export const mananaEnLima = () => new Date(ahoraEnLima().getTime() + 86400e3).toISOString().slice(0, 10);
 
 export const precio = (n) => 'S/' + (Number.isInteger(n) ? n : Number(n).toFixed(2));

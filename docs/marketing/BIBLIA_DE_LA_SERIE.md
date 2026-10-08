@@ -49,10 +49,10 @@ de los dos tiene siempre la razón. Eso es la carta (los Signatures de SANDO) co
   no existe). Sin referencia no hay estilo (regla 5 de PROMPTS_PERSONAJES): primero se pide su
   imagen con el prompt de §3.3, se elige una variante y después entra a la serie.
 
-### Las voces (para Flow)
-Español neutro latinoamericano, con **tú**, sin modismos regionales marcados (la marca no tiene
-identidad regional). SANDO grave y pausado; WICHO agudo y acelerado; MAFE baja y aburrida. **La
-misma voz en todos los episodios**: por eso conviene el MCP de Flow con biblioteca de voces.
+### Sin voces: el texto va en pantalla (dueño, 2026-10-08)
+Dueño: «Mejor no, por ahora, dado que hay más oportunidades de error de desfase de voz. Vamos
+con texto en pantalla». **Los hermanos no hablan** (`UNIVERSO_SNDWCH.md` §4): lo que dicen va
+escrito en pantalla, grande, y se lee sin sonido.
 
 ## 3 · El mundo
 

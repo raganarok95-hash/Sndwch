@@ -25,5 +25,12 @@ Deno.test("una imagen sola sigue saliendo como imagen, y un video como Reel", ()
 });
 
 Deno.test("las piezas salen en el orden en que se cargaron", () => {
-  assertEquals(new URLSearchParams(loQueSaleSolo("2026-10-12")).get("order"), "scheduled_date.asc,created_at.asc");
+  assertEquals(new URLSearchParams(loQueSaleSolo("2026-10-12")).get("order"), "scheduled_date.asc,publicar_desde.asc.nullsfirst,created_at.asc");
+});
+
+// Una historia sale como historia: sin texto y sin hijos. Modo de fallo: SILENCIO — si sale como
+// post, queda en el feed para siempre, delante de cada cliente nuevo.
+Deno.test("una historia sale como STORIES, sin texto", () => {
+  assertEquals(contenedoresDeInstagram({ formato: "historia", media_type: "image", image_url: URLS[0] }, "t"), { hijos: [], padre: { image_url: URLS[0], media_type: "STORIES" } });
+  assertEquals(contenedoresDeInstagram({ formato: "historia", media_type: "video", video_url: "v.mp4" }, "t").padre.media_type, "STORIES");
 });

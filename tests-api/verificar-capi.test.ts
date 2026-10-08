@@ -18,6 +18,12 @@ Deno.test("el evento rechazado por viejo cuenta como permiso confirmado", () => 
   assertEquals(leerRespuestaDelPixel(false, viejo).puede, true);
 });
 
+Deno.test("el rechazo por viejo también se reconoce cuando Meta responde en español", () => {
+  // Así respondió Meta el 2026-10-08 (subcódigo 2804003): la prueba lo marcó «?» y no «sí».
+  const es = { error: { message: "Invalid parameter", code: 100, error_subcode: 2804003, error_user_title: "La fecha del evento es demasiado antigua", error_user_msg: "La fecha de este evento es demasiado antigua." } };
+  assertEquals(leerRespuestaDelPixel(false, es).puede, true);
+});
+
 Deno.test("sin permiso sobre el píxel NO cuenta como bien", () => {
   const sinPermiso = { error: { message: "Unsupported post request. Object with ID '123' does not exist, cannot be loaded due to missing permissions, or does not support this operation.", code: 100, error_subcode: 33 } };
   assertEquals(leerRespuestaDelPixel(false, sinPermiso).puede, false, "un píxel ajeno pasó como bueno");
