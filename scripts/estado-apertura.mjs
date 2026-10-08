@@ -20,6 +20,26 @@ console.log('## Secrets (solo nombres)');
 for (const [k, v] of Object.entries(CLAVE)) console.log(`${v.every((n) => hay.has(n)) ? '✓' : '✗'} ${k}: ${v.map((n) => `${n}${hay.has(n) ? '' : ' (falta)'}`).join(', ')}`);
 console.log('Otros nombres presentes:', [...hay].filter((n) => !Object.values(CLAVE).flat().includes(n) && !n.startsWith('SUPABASE_')).join(', '));
 
+// El token de CAPI, probado DE VERDAD contra Meta (no basta con que el nombre exista): la
+// acción verificar-meta pide el secreto del cron, que vive en el Vault de la base.
+if (hay.has('META_CAPI_TOKEN')) {
+  const q = await fetch(`https://api.supabase.com/v1/projects/${REF}/database/query`, {
+    method: 'POST', headers: { Authorization: `Bearer ${process.env.SUPABASE_ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query: "select decrypted_secret as s from vault.decrypted_secrets where name = 'sndwch_cron_secret'" }),
+  });
+  const cronSecret = q.ok ? (await q.json())?.[0]?.s : null;
+  if (!cronSecret) console.log('? CAPI: no pude leer el secreto del cron para probar el token');
+  else {
+    console.log(`::add-mask::${cronSecret}`);
+    try {
+      const v = await accion('verificar-meta', { cronSecret });
+      const ok = v.tokenValido && v.puedeEscribirAlPixel;
+      console.log(`${ok ? '✓' : '✗'} CAPI probado contra Meta: token ${v.tokenValido ? 'válido' : v.tokenValido === false ? 'NO VÁLIDO' : '?'}, ` +
+        `escribe al píxel: ${v.puedeEscribirAlPixel ? 'sí' : v.puedeEscribirAlPixel === false ? 'NO' : '?'}${v.detalle ? ` — ${v.detalle}` : ''}`);
+    } catch (e) { console.log('? CAPI: la prueba falló —', String(e.message || e).slice(0, 200)); }
+  }
+}
+
 const h = await accion('get-store-hours');
 console.log('\n## Lo que recibe el cliente');
 console.log('business_launched:', h.businessLaunched, '· pausa:', h.pausedUntil || 'no', '· píxel:', h.metaPixelId ? 'sí' : 'NO', '· Google:', h.googleClientId ? 'sí' : 'NO');

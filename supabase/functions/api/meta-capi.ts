@@ -120,3 +120,68 @@ export async function sendPurchaseEvent(p: CapiPurchase): Promise<void> {
     console.error("Meta CAPI Purchase lanzó excepción:", e);
   }
 }
+
+// ── Prueba del token sin registrar nada (2026-10-08) ─────────────────────────────────────
+// Dueño: «Meta CAPI ya está colocado como secret. Revísalo bien». Que el secret EXISTA no dice
+// que sirva: un token vencido, de otra cuenta o sin acceso a ESTE píxel hace que cada compra
+// falle con un console.error que nadie lee, y la pauta optimiza a ciegas. Esto lo prueba de
+// verdad contra Meta, en dos pasos:
+//   1. GET /me — si el token vale (190 = vencido o mal copiado).
+//   2. POST /{píxel}/events con UN evento propio fechado hace 8 días: Meta revisa el token y el
+//      permiso sobre el píxel ANTES de mirar el evento, y después lo rechaza por viejo (acepta
+//      hasta 7). Así se prueba el permiso de escritura sin sumar nada a las estadísticas.
+// Nunca devuelve el token ni lo escribe en un log.
+export type VerificacionCapi = {
+  pixel: boolean;
+  token: boolean;
+  tokenValido: boolean | null;
+  puedeEscribirAlPixel: boolean | null;
+  detalle: string | null;
+};
+
+export async function verificarCapi(): Promise<VerificacionCapi> {
+  const v: VerificacionCapi = { pixel: !!META_PIXEL_ID, token: !!META_CAPI_TOKEN, tokenValido: null, puedeEscribirAlPixel: null, detalle: null };
+  if (!v.token) return v;
+  const limpio = (m: unknown) => String(m || "").split(META_CAPI_TOKEN!).join("[token]").slice(0, 220);
+  const base = `https://graph.facebook.com/${META_GRAPH_VERSION}`;
+  const tk = `access_token=${encodeURIComponent(META_CAPI_TOKEN!)}`;
+  try {
+    const me = await fetch(`${base}/me?fields=id&${tk}`);
+    const dm = await me.json().catch(() => ({}));
+    v.tokenValido = me.ok;
+    if (!me.ok) {
+      v.detalle = `token: (${dm?.error?.code ?? me.status}) ${limpio(dm?.error?.message)}`;
+      return v;
+    }
+    if (!v.pixel) return v;
+    const viejo = Math.floor(Date.now() / 1000) - 8 * 86400;
+    const r = await fetch(`${base}/${META_PIXEL_ID}/events?${tk}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: [{ event_name: "SndwchVerificacion", event_time: viejo, action_source: "website", user_data: { external_id: ["verificacion"] } }] }),
+    });
+    const lectura = leerRespuestaDelPixel(r.ok, await r.json().catch(() => ({})), limpio);
+    v.puedeEscribirAlPixel = lectura.puede;
+    if (lectura.tokenInvalido) v.tokenValido = false;
+    v.detalle = lectura.detalle;
+  } catch (e) {
+    v.detalle = "no se pudo llegar a Meta: " + limpio(e);
+  }
+  return v;
+}
+
+/** Lee la respuesta del evento de prueba. Aparte y pura para poder probarla: si confunde
+ *  «sin permiso» con «evento viejo», la verificación diría que todo está bien mientras cada
+ *  compra real se pierde (tests-api/verificar-capi.test.ts). */
+export function leerRespuestaDelPixel(ok: boolean, cuerpo: any, limpio: (m: unknown) => string = String): { puede: boolean | null; tokenInvalido: boolean; detalle: string | null } {
+  if (ok) return { puede: true, tokenInvalido: false, detalle: null };
+  const err = cuerpo?.error || {};
+  const texto = `${err.message || ""} ${err.error_user_title || ""} ${err.error_user_msg || ""}`.trim();
+  if (err.code === 190) return { puede: null, tokenInvalido: true, detalle: `token: (190) ${limpio(err.message)}` };
+  if (err.error_subcode === 33 || err.code === 10 || err.code === 200 || /permission|permiso/i.test(texto)) {
+    return { puede: false, tokenInvalido: false, detalle: `píxel: (${err.code}/${err.error_subcode ?? "-"}) ${limpio(err.message)}` };
+  }
+  // Pasó el token y el permiso, y Meta rechazó el evento por viejo: es lo esperado.
+  if (/timestamp|event_time|too far in the past|7 days/i.test(texto)) return { puede: true, tokenInvalido: false, detalle: null };
+  return { puede: null, tokenInvalido: false, detalle: `píxel, respuesta no esperada: (${err.code ?? "?"}/${err.error_subcode ?? "-"}) ${limpio(texto)}` };
+}

@@ -14,7 +14,7 @@ import { validarEntrada } from "./entrada.ts";
 // vivía en un único archivo de ~2000 líneas — dividirlo no cambia ningún comportamiento,
 // solo hace más fácil ubicar y tocar una sola pieza sin tener que releer todo el archivo.
 
-import { actPing } from "./actions/health.ts";
+import { actPing, actVerificarMeta } from "./actions/health.ts";
 import { actGetCatalog, actAdminCatalogSetPrice, actAdminCatalogItemsGet, actAdminCatalogItemsSet } from "./actions/catalog.ts";
 import {
   actRegister, actReclamarPedido, actLogin, actSessionCheck, actDeleteAccount,
@@ -228,6 +228,7 @@ const ACTIONS: ConContrato & SinContrato = {
   "admin-upload-raw-video": actAdminUploadRawVideo,
   "admin-list-raw-uploads": actAdminListRawUploads,
   "auto-publish-calendar": actAutoPublishCalendar,
+  "verificar-meta": actVerificarMeta,
   "registrar-visita": actRegistrarVisita,
   "admin-publish-social": actAdminPublishSocial,
   "admin-meta-ads": actAdminMetaAds,
