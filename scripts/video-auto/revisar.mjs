@@ -3,7 +3,8 @@
 // motivo (.github/workflows/revisar-marketing.yml).
 //
 // La hora de publicar NO es la hora de este paso (2026-10-08): GitHub atrasa sus horarios de 5 a 9
-// horas en este repo. Aprobar = 'scheduled' con `publicar_desde` (las 12:00 de Lima de su día): el
+// horas en este repo. Aprobar = 'scheduled' con `publicar_desde` (la franja de su día, 12:00 o 18:00
+// de Lima: horaDelVideo) y esa franja en `datos.franja`, para medir cuál trae más pedidos. El
 // cron de Supabase, que sí es puntual, la publica a esa hora. Por eso se revisa un día antes, y
 // también lo de hoy que haya llegado tarde (si todavía es hora). El stock se mira al publicar
 // (agotadoAlPublicar en api/actions/social.ts): un día antes no se sabe.
@@ -11,7 +12,7 @@
 // Por qué código y no una sesión de Claude: todas las reglas son mecánicas (el texto del post ya
 // sale interpolado de la carta), cuesta S/0 y no gasta créditos. Reglas en reglas-del-revisor.mjs.
 import { SB, BUCKET, conectar, hoyEnLima, mananaEnLima, faltanParaPublicar } from './produccion.mjs';
-import { decidir, horaDePublicar } from './reglas-del-revisor.mjs';
+import { decidir, horaDePublicar, horaDelVideo } from './reglas-del-revisor.mjs';
 
 const { pedir, accion } = await conectar();
 const hoy = hoyEnLima();
@@ -48,8 +49,10 @@ for (const dia of [hoy, manana]) {
     const tarde = v.veredicto === 'aprobada' && !desdeCuando;
     console.log(`${dia} ${v.src} → ${tarde ? 'espera (tarde para hoy)' : v.veredicto}${v.motivo ? ` (${v.motivo})` : ''}`);
     if (v.veredicto === 'espera' || tarde) continue;
+    // `datos` se reemplaza entero al hacer PATCH: va lo que ya tenía más la franja.
+    const datos = { ...(delDia.find((p) => p.id === v.id)?.datos || {}), franja: horaDelVideo(dia) };
     const patch = v.veredicto === 'aprobada'
-      ? { revision: 'aprobada', status: 'scheduled', scheduled_date: dia, publicar_desde: desdeCuando, updated_at: new Date().toISOString() }
+      ? { revision: 'aprobada', status: 'scheduled', scheduled_date: dia, publicar_desde: desdeCuando, datos, updated_at: new Date().toISOString() }
       : { revision: 'bloqueada', motivo_revision: v.motivo, updated_at: new Date().toISOString() };
     // Solo si SIGUE pendiente: si alguien la tocó a mano entretanto, manda lo suyo.
     await pedir(`${SB}/rest/v1/marketing_calendar?id=eq.${v.id}&revision=eq.pendiente`, {

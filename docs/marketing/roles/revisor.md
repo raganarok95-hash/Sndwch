@@ -8,9 +8,13 @@ mañana** (el Productor ya produce para mañana) y le aplica `decidir()` de
 `scripts/video-auto/reglas-del-revisor.mjs` (probada en `tests-api/revisor-de-marketing.test.ts`).
 Aprueba **una** pieza por día o las bloquea con motivo.
 
-Aprobar = `revision='aprobada'`, `status='scheduled'` y **`publicar_desde`** = las 12:00 de Lima de
-su día (`horaDePublicar()`): el cron `auto-publish-calendar` de Supabase, que sí es puntual, la
-publica a esa hora. Una de hoy aprobada tarde sale apenas se aprueba, nunca después de las 20:00.
+Aprobar = `revision='aprobada'`, `status='scheduled'` y **`publicar_desde`** = la franja de Lima de
+su día (`horaDelVideo()` y `horaDePublicar()`): el cron `auto-publish-calendar` de Supabase, que sí
+es puntual, la publica a esa hora. **La franja** (dueño, 2026-10-08): las 18:00, y las dos primeras
+semanas desde `APERTURA`, un día a las 12:00 y otro a las 18:00, cruzado para que cada día de la
+semana pruebe las dos. La franja queda en `datos.franja`. **Al terminar las dos semanas**, se suman
+los pedidos de cada franja: son los `?src=` de los videos de cada una. Se queda la que traiga más, y
+para cambiarla se edita `HORA_DEL_VIDEO`. Una de hoy aprobada tarde sale apenas se aprueba, nunca después de las 20:00.
 **El stock se mira al publicar** (`agotadoAlPublicar()` en `api/actions/social.ts`): un día antes
 no se sabe qué se agota.
 

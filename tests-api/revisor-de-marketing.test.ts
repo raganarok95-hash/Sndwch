@@ -6,7 +6,7 @@
 // acumulados antes de abrir saliendo juntos el día de la apertura queman la cuenta.
 //
 // Correr con: npm run test:api
-import { decidir, APERTURA, horaDePublicar } from "../scripts/video-auto/reglas-del-revisor.mjs";
+import { decidir, APERTURA, horaDePublicar, horaDelVideo } from "../scripts/video-auto/reglas-del-revisor.mjs";
 import { precio } from "../scripts/video-auto/produccion.mjs";
 import { unSignature } from "./carta.ts";
 
@@ -60,14 +60,33 @@ Deno.test("el mismo Signature no sale dos días seguidos", () => {
 });
 
 // LA HORA DE PUBLICAR NO DEPENDE DE CUÁNDO CORRIÓ EL REVISOR (2026-10-08). GitHub corre sus horarios
-// de 5 a 9 horas tarde: el video de mañana sale a las 12:00 de Lima aunque se apruebe a cualquier
+// de 5 a 9 horas tarde: el video de mañana sale a SU franja de Lima aunque se apruebe a cualquier
 // hora, y uno de hoy que llega tarde sale apenas se aprueba, pero nunca de noche. Modo de fallo:
 // SILENCIO — un video del almuerzo publicado a las 22:00 no trae pedidos y nadie lo nota.
-Deno.test("el video de mañana sale a las 12:00 de Lima, se apruebe a la hora que se apruebe", () => {
-  assertEquals(horaDePublicar("2026-10-14", "2026-10-13", new Date("2026-10-13T23:50:00-05:00")), "2026-10-14T17:00:00.000Z");
+const dia = (n: number) => new Date(Date.parse(`${APERTURA}T12:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
+const lima = (d: string, hhmm: string) => new Date(`${d}T${hhmm}:00-05:00`);
+const enLima = (d: string, hhmm: string) => lima(d, hhmm).toISOString();
+Deno.test("el video de mañana sale a su franja de Lima, se apruebe a la hora que se apruebe", () => {
+  assertEquals(horaDePublicar(dia(0), dia(-1), lima(dia(-1), "23:50")), enLima(dia(0), horaDelVideo(dia(0))));
+  assertEquals(horaDePublicar(dia(1), dia(0), lima(dia(0), "23:50")), enLima(dia(1), horaDelVideo(dia(1))));
 });
 Deno.test("uno de hoy que se aprueba tarde sale ya, pero no después de las 20:00", () => {
-  assertEquals(horaDePublicar("2026-10-14", "2026-10-14", new Date("2026-10-14T09:00:00-05:00")), "2026-10-14T17:00:00.000Z", "salió antes del almuerzo");
-  assertEquals(horaDePublicar("2026-10-14", "2026-10-14", new Date("2026-10-14T16:30:00-05:00")), "2026-10-14T21:30:00.000Z");
-  assertEquals(horaDePublicar("2026-10-14", "2026-10-14", new Date("2026-10-14T20:30:00-05:00")), null, "salió de noche");
+  const d = dia(0);
+  assertEquals(horaDelVideo(d), "12:00", "el día de la apertura el video sale al almuerzo");
+  assertEquals(horaDePublicar(d, d, lima(d, "09:00")), enLima(d, "12:00"), "salió antes del almuerzo");
+  assertEquals(horaDePublicar(d, d, lima(d, "16:30")), enLima(d, "16:30"));
+  assertEquals(horaDePublicar(d, d, lima(d, "20:30")), null, "salió de noche");
+});
+
+// LA PRUEBA DE HORA ES PAREJA (dueño, 2026-10-08: «sí me parece bien lo del video»). Las dos
+// primeras semanas abiertas, el video alterna 12:00 y 18:00; después queda 18:00. Modo de fallo:
+// SILENCIO — si una franja cae siempre en los mismos días (los viernes a las 18:00, los martes a
+// las 12:00), gana el día y no la hora, y nos quedamos con la hora equivocada sin saberlo.
+Deno.test("las dos primeras semanas alternan 12:00 y 18:00, parejas y cruzadas por día; después, 18:00", () => {
+  const abiertos = Array.from({ length: 14 }, (_, n) => n).filter((n) => new Date(`${dia(n)}T12:00:00Z`).getUTCDay() !== 1);
+  assertEquals(abiertos.filter((n) => horaDelVideo(dia(n)) === "12:00").length * 2, abiertos.length, "una franja tiene más días que la otra");
+  for (const n of abiertos.filter((n) => n < 7)) {
+    assertEquals(horaDelVideo(dia(n)) !== horaDelVideo(dia(n + 7)), true, `el ${dia(n)} y el ${dia(n + 7)} prueban la misma hora`);
+  }
+  assertEquals([horaDelVideo(dia(14)), horaDelVideo(dia(30))], ["18:00", "18:00"], "la prueba no terminó a las dos semanas");
 });
