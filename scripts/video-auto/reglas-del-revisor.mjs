@@ -57,8 +57,21 @@ export function decidir({ piezas, hoy, abreHoy, cat, conVideo, recientes }) {
 
 // La hora en que sale el video del día: el arranque del almuerzo. La decide el cron de Supabase
 // con `publicar_desde`, no la hora en que corrió el Revisor (GitHub la atrasa de 5 a 9 horas).
-export const HORA_DEL_VIDEO = '12:00';
+// La hora del video del día (dueño, 2026-10-08: «sí me parece bien lo del video»). Sale a las 18:00,
+// porque en Perú el pico de pedidos de delivery es la cena. Las dos primeras semanas abiertas
+// alterna con las 12:00: día por medio desde APERTURA, así que cada día de la semana prueba las dos
+// horas. Cada video lleva su `?src=` y su franja queda en `datos.franja` (revisar.mjs). Desde la
+// tercera semana se queda la hora que haya traído más pedidos.
+export const HORA_DEL_VIDEO = '18:00';
+export const HORA_ALTERNA = '12:00';
+export const DIAS_DE_PRUEBA = 14;
 export const ULTIMA_HORA = '20:00'; // pasado esto, un video de HOY ya no sale: se pierde ese día
+
+/** La franja del video de `dia` (AAAA-MM-DD, Lima): 12:00 o 18:00. */
+export function horaDelVideo(dia) {
+  const n = Math.round((Date.parse(`${dia}T12:00:00Z`) - Date.parse(`${APERTURA}T12:00:00Z`)) / 864e5);
+  return n >= 0 && n < DIAS_DE_PRUEBA && n % 2 === 0 ? HORA_ALTERNA : HORA_DEL_VIDEO;
+}
 
 /**
  * Desde cuándo puede publicarse una pieza aprobada para `dia` (ISO), o null si para hoy ya es tarde.
@@ -68,7 +81,8 @@ export const ULTIMA_HORA = '20:00'; // pasado esto, un video de HOY ya no sale: 
  */
 export function horaDePublicar(dia, hoy, ahora) {
   const a = (hhmm) => new Date(`${dia}T${hhmm}:00-05:00`);
-  if (dia > hoy) return a(HORA_DEL_VIDEO).toISOString();
+  const hora = horaDelVideo(dia);
+  if (dia > hoy) return a(hora).toISOString();
   if (ahora >= a(ULTIMA_HORA)) return null;
-  return new Date(Math.max(a(HORA_DEL_VIDEO).getTime(), ahora.getTime())).toISOString();
+  return new Date(Math.max(a(hora).getTime(), ahora.getTime())).toISOString();
 }
