@@ -32,10 +32,13 @@ if (hay.has('META_CAPI_TOKEN')) {
   else {
     console.log(`::add-mask::${cronSecret}`);
     try {
-      const v = await accion('verificar-meta', { cronSecret });
+      const v = await accion('verificar-meta', { cronSecret, pixeles: process.env.PIXELES || '' });
       const ok = v.tokenValido && v.puedeEscribirAlPixel;
       console.log(`${ok ? '✓' : '✗'} CAPI probado contra Meta: token ${v.tokenValido ? 'válido' : v.tokenValido === false ? 'NO VÁLIDO' : '?'}, ` +
         `escribe al píxel: ${v.puedeEscribirAlPixel ? 'sí' : v.puedeEscribirAlPixel === false ? 'NO' : '?'}${v.detalle ? ` — ${v.detalle}` : ''}`);
+      for (const [id, c] of Object.entries(v.candidatos || {})) {
+        console.log(`  · el token contra el conjunto ${id}: ${c.puedeEscribirAlPixel ? 'SÍ puede escribir' : c.puedeEscribirAlPixel === false ? 'no tiene permiso' : '?'}${c.detalle ? ` — ${c.detalle.slice(0, 120)}` : ''}`);
+      }
     } catch (e) { console.log('? CAPI: la prueba falló —', String(e.message || e).slice(0, 200)); }
   }
 }

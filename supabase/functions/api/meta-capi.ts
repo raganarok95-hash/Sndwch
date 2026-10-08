@@ -139,8 +139,11 @@ export type VerificacionCapi = {
   detalle: string | null;
 };
 
-export async function verificarCapi(): Promise<VerificacionCapi> {
-  const v: VerificacionCapi = { pixel: !!META_PIXEL_ID, token: !!META_CAPI_TOKEN, tokenValido: null, puedeEscribirAlPixel: null, detalle: null };
+export async function verificarCapi(pixelPrueba?: string): Promise<VerificacionCapi> {
+  // Sin argumento prueba el píxel del secret; con uno, ese otro (para encontrar a cuál conjunto
+  // de datos pertenece el token cuando no coinciden: 2026-10-08).
+  const pixelId = pixelPrueba || META_PIXEL_ID;
+  const v: VerificacionCapi = { pixel: !!pixelId, token: !!META_CAPI_TOKEN, tokenValido: null, puedeEscribirAlPixel: null, detalle: null };
   if (!v.token) return v;
   const limpio = (m: unknown) => String(m || "").split(META_CAPI_TOKEN!).join("[token]").slice(0, 220);
   const base = `https://graph.facebook.com/${META_GRAPH_VERSION}`;
@@ -155,7 +158,7 @@ export async function verificarCapi(): Promise<VerificacionCapi> {
     }
     if (!v.pixel) return v;
     const viejo = Math.floor(Date.now() / 1000) - 8 * 86400;
-    const r = await fetch(`${base}/${META_PIXEL_ID}/events?${tk}`, {
+    const r = await fetch(`${base}/${pixelId}/events?${tk}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ data: [{ event_name: "SndwchVerificacion", event_time: viejo, action_source: "website", user_data: { external_id: ["verificacion"] } }] }),

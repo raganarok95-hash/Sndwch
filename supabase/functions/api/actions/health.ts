@@ -37,7 +37,12 @@ export async function actPing(_b: any) {
 // cron: cada llamada le habla a Meta con el token del negocio, y abierta al público serviría
 // para gastarle el límite de llamadas justo al token que reporta las ventas. La usa
 // scripts/estado-apertura.mjs desde GitHub.
-export async function actVerificarMeta(b: Entrada<"verificar-meta">): Promise<VerificacionCapi> {
+export async function actVerificarMeta(b: Entrada<"verificar-meta">): Promise<VerificacionCapi & { candidatos: Record<string, VerificacionCapi> }> {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
-  return await verificarCapi();
+  // `pixeles`: IDs de conjuntos de datos a probar además del secret (separados por coma). Solo
+  // dígitos: van dentro de la URL de Graph.
+  const ids = String(b.pixeles || "").split(",").map((x) => x.trim()).filter((x) => /^\d{6,20}$/.test(x)).slice(0, 5);
+  const candidatos: Record<string, VerificacionCapi> = {};
+  for (const id of ids) candidatos[id] = await verificarCapi(id);
+  return { ...(await verificarCapi()), candidatos };
 }
