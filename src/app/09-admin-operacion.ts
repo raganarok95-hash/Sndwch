@@ -551,142 +551,109 @@ function focusStep(delta){
   focusIdx=i;focusRef=ao[i].id;
   render();
 }
+// ══ LA RECETA (2026-10-08, lámina `panel-productivo.html` C, dueño: «una mezcla») ═══════════
+// Rehecha desde cero con el lenguaje de «Te toca»: lo que se arma arriba y en grande, cada
+// ingrediente se TACHA con un toque (con las manos ocupadas no hay que acordarse de por dónde
+// iba), la entrega debajo, y el siguiente paso fijo bajo el pulgar. Lo tachado vive en este
+// celular un día: si entra otro pedido y vuelves, sigue tachado donde lo dejaste.
+function tachados():Record<string,number>{try{return JSON.parse(localStorage.getItem('sw_tachado')||'{}')||{};}catch(e){return{};}}
+function tacharIngrediente(clave:string){
+  try{
+    var t=tachados(),ahora=Date.now();
+    Object.keys(t).forEach(function(k){if(ahora-t[k]>86400000)delete t[k];});
+    if(t[clave])delete t[clave];else t[clave]=ahora;
+    localStorage.setItem('sw_tachado',JSON.stringify(t));
+  }catch(e){}
+  render();
+}
+// Las líneas que se tachan, por producto. Una bebida o un acompañamiento es UNA línea: se
+// sirve, no se arma.
+function lineasParaArmar(o){
+  return(o.items||[]).map(function(it:any,i:number){
+    // Un producto que ya no está en la carta no puede quedar como una línea en blanco: se
+    // nombra por su código para que se vea que falta algo.
+    var nombre=itemLabel(it).trim()||('Producto '+(it.code||it.sigId||it.prot||'sin nombre'));
+    var titulo=(it.qty>1?it.qty+'× ':'')+nombre;
+    var lineas=it.type==='side'?[titulo]:itemRecipeLines(it);
+    return{titulo:titulo,side:it.type==='side',lineas:lineas.map(function(l:string,j:number){return{texto:l,clave:String(o.id)+':'+i+':'+j};})};
+  }).filter(function(b:any){return b.lineas.length;});
+}
+function botonesDeLaReceta(o){
+  var manualPending=(o.payment_method==='yape'||o.payment_method==='plin')&&o.payment_status!=='paid';
+  if(manualPending)return'<button class="coc-b pago" data-accion="confirmar-pago" onclick="confirmAndAdvance(\''+o.id+'\')">Pago recibido · armar →</button>'
+    +'<button class="rec-solo" onclick="confirmOrderPayment(\''+o.id+'\')">solo confirmar el pago</button>';
+  if(o.status==='RECIBIDO')return'<button class="coc-b cola" data-accion="empezar" onclick="updateStatus(\''+o.id+'\',\'PREPARANDO\')">Armar →</button>';
+  if(o.status==='PREPARANDO')return'<div class="coc-par">'
+    +'<button class="coc-b '+(motoAvisos()[String(o.id)]?'gh':'cola')+'" data-accion="pedir-motorizado" onclick="pedirMotorizado(\''+o.id+'\')">'+etiquetaMotorizado(o)+'</button>'
+    +'<button class="coc-b arm" data-accion="salio" onclick="updateStatus(\''+o.id+'\',\'EN CAMINO\')">Salió →</button></div>';
+  if(o.status==='EN CAMINO')return cobraContraEntrega(o)
+    ?'<button class="coc-b cam" data-accion="cobrado" onclick="updateStatus(\''+o.id+'\',\'ENTREGADO\')">Cobró '+soles(o.total)+' ✓</button>'
+    :'<button class="coc-b gh" data-accion="entregado" onclick="updateStatus(\''+o.id+'\',\'ENTREGADO\')">Entregado</button>';
+  return'';
+}
 function sAdminFocus(){
   var ao=sortedActiveOrders();
-  var barBg='var(--sw-bg,#17130E)';
-  // ⚠ UNA SOLA BARRA, NO DOS. Medido a 360×640 (gama baja): las dos barras de antes —el
-  // rótulo "Modo // cocina" arriba y "‹ Pedido 1 de 4 ›" debajo— se comían 100 px de 640,
-  // el 16% de la pantalla, para decir una cosa que el dueño ya sabe (en qué pantalla está)
-  // y otra que sí importa (en qué pedido va). Fundidas en una quedan 56 px y el rótulo se
-  // va: en un celular dedicado a operar, nadie necesita que le recuerden dónde está.
-  // Esos 44 px recuperados son casi una línea entera de receta.
-  var navBtn=function(delta,glyph,label){
-    // 56 px reales: se tocan de pie, con la mano ocupada o con guante, sin apuntar. Antes
-    // eran 20 px de glifo con 4 de padding — un blanco de ~28 px, muy por debajo del mínimo
-    // de 44, en la única pantalla que se usa con las manos sucias.
-    return'<button onclick="focusStep('+delta+')" aria-label="'+label+'" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:28px;line-height:1;color:'+(ao.length>1?GOLD:'var(--sw-text-muted3,#3A4A44)')+';width:56px;height:56px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;flex:none">'+glyph+'</button>';
-  };
-  var salirBtn='<button onclick="exitFocusMode()" aria-label="Salir del modo cocina" style="all:unset;cursor:pointer;font-family:\'EB Garamond\',serif;font-size:15px;color:'+GOLD+';min-width:56px;height:56px;display:inline-flex;align-items:center;justify-content:center;flex:none">← Salir</button>';
-  var topBar='<div style="padding:0 8px;border-bottom:1px solid var(--sw-border,#2C3228);display:flex;justify-content:space-between;align-items:center">'
-    +salirBtn
-    +'<span style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">Modo<span class="cut-sep" style="color:'+GOLD+'"> // </span>cocina</span>'
-    +'<span style="width:56px"></span>'
-    +'</div>';
+  var volver='<button class="rec-x" data-accion="volver-a-te-toca" onclick="exitFocusMode()">← Te toca</button>';
   if(!ao.length){
-    return'<div style="min-height:100vh;display:flex;flex-direction:column;background:'+barBg+'">'+topBar
-      +'<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:40px 20px" class="fi">'+icon('check',32,'var(--sw-ok,#25D366)')+'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:12px">Sin pedidos activos — todo en orden //</div></div></div>';
+    return'<div class="coc"><div class="rec-top">'+volver+'</div>'+VACIO_COCINA()+'</div>';
   }
   var pos=focusPos(ao);
   focusIdx=pos;
   var o=ao[pos];
-  // Se re-ancla en cada render para que el ancla siga viva tras una entrega o cancelación.
   focusRef=o.id;
-  // Cuántos pedidos se metieron DELANTE del que está mirando. No se le cambia la pantalla
-  // —eso es justo lo que había que dejar de hacer— pero tampoco se le esconde: quien
-  // cocina tiene que enterarse de que entró algo urgente, y decidir él cuándo mirarlo.
-  var delante=pos;
-  var s=STATUSES[o.status]||STATUSES['RECIBIDO'];
-  var manualPending=(o.payment_method==='yape'||o.payment_method==='plin')&&o.payment_status!=='paid';
-  var manualLabel='Yape/Plin';
-  var mins=minutesAgo(o.created_at);
-  var minsDue=minutesAgo(orderDueTime(o));
-  var isScheduledAhead=o.delivery_time&&new Date(o.delivery_time).getTime()>Date.now();
-  var isStale=(o.status==='RECIBIDO'||manualPending)&&!isScheduledAhead&&minsDue!==null&&minsDue>=10;
-  // La barra ÚNICA: salir, flechas, contador y estado, todo en 56 px. El nombre del cliente
-  // sale de acá y baja con la dirección — para ARMAR el sándwich no sirve; sirve para
-  // entregarlo, que es un momento distinto.
-  var nav='<div style="display:flex;justify-content:space-between;align-items:center;padding:0 8px;border-bottom:1px solid var(--sw-border,#2C3228);gap:4px">'
-    +salirBtn
-    +navBtn(-1,'‹','Pedido anterior')
-    +'<span style="flex:1;text-align:center;min-width:0;font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:var(--sw-text-muted,#9DA096);letter-spacing:.08em">'+(pos+1)+' de '+ao.length+'</span>'
-    +navBtn(1,'›','Pedido siguiente')
+  var et=etapaCocina(o);
+  var mins=minutesAgo(orderDueTime(o));
+  var luego=o.delivery_time&&new Date(o.delivery_time).getTime()>Date.now();
+  var t=tachados();
+  var bloques=lineasParaArmar(o);
+  var total=0,hechas=0;
+  bloques.forEach(function(b:any){b.lineas.forEach(function(l:any){total++;if(t[l.clave])hechas++;});});
+  var etiqueta={pago:'PAGO POR CONFIRMAR',cola:'EN COLA',armando:'ARMANDO',camino:'EN CAMINO',luego:'PROGRAMADO'}[et];
+  var tel=o.contact_phone||o.customer_phone;
+  var nota=o.notes?(noteNeedsAttention(o.notes)
+    ?'<div class="rec-alergia" data-aviso="alergia"><b>⚠ ALERGIA O RESTRICCIÓN</b>'+esc(o.notes)+'</div>'
+    :'<div class="rec-dato">Referencia: '+esc(o.notes)+'</div>'):'';
+  return'<div class="coc rec">'
+    +'<div class="rec-top">'+volver
+    +'<button class="rec-flecha" aria-label="Pedido anterior" '+(ao.length>1?'':'disabled')+' onclick="focusStep(-1)">‹</button>'
+    +'<span class="rec-pos">'+(pos+1)+' de '+ao.length+'</span>'
+    +'<button class="rec-flecha" aria-label="Pedido siguiente" '+(ao.length>1?'':'disabled')+' onclick="focusStep(1)">›</button></div>'
+    // Aviso, no salto: quien arma decide cuándo mirar lo que entró antes.
+    +(pos>0?'<button class="coc-abro" data-accion="ir-al-primero" onclick="focusFirst()"><span>'+pos+' pedido'+(pos===1?'':'s')+' antes que este</span><u>Ver</u></button>':'')
+    +'<div class="rec-cab"><b>'+esc(o.ref||'')+'</b><span class="tag">'+etiqueta+'</span><span class="min">'+(luego?'para las '+horaLima(new Date(o.delivery_time).getTime()):mins===null?'':'hace '+mins+' min')+'</span></div>'
+    +(et==='pago'?'<div class="rec-aviso">Pago '+(o.payment_method==='plin'?'Plin':'Yape')+' sin confirmar: revisa tu app antes de armar.</div>'+receiptOcrHTML(o):'')
+    +(o.redeemed_reward?'<div class="rec-dato ok">Canjea: '+esc(o.redeemed_reward)+'</div>':'')
+    +nota
+    +'<div class="rec-armar">'
+    +(total?'<div class="rec-progreso"><span>Para armar</span><b>'+hechas+' de '+total+'</b></div>':'')
+    +bloques.map(function(b:any){
+      return'<div class="rec-item">'+(b.side?'':'<h2>'+esc(b.titulo)+'</h2>')
+        +b.lineas.map(function(l:any){
+          var hecho=!!t[l.clave];
+          var i=l.texto.indexOf(': '),k=i>0?l.texto.slice(0,i):'',v=i>0?l.texto.slice(i+2):l.texto;
+          return'<button class="rec-linea'+(hecho?' hecha':'')+'" data-linea="'+esc(l.clave)+'" aria-pressed="'+hecho+'" onclick="tacharIngrediente(\''+esc(l.clave)+'\')"><i aria-hidden="true"></i>'
+            +(k?'<s>'+esc(k)+'</s>':'')+'<b>'+esc(v)+'</b></button>';
+        }).join('')+'</div>';
+    }).join('')
+    +(bloques.length?'':'<div class="rec-dato">'+esc(o.summary||'')+'</div>')
     +'</div>'
-    // Aviso, no salto. Antes el pedido nuevo se ponía solo en pantalla; ahora se anuncia y
-    // quien cocina decide cuándo. Es tocable: lleva al primero de la cola de un toque.
-    +(delante>0?'<button onclick="focusFirst()" style="all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;background:rgba(255,165,0,.14);border-bottom:1px solid rgba(255,165,0,.35);padding:11px 16px;min-height:44px;font-family:\'EB Garamond\',serif;font-weight:600;font-size:13px;color:var(--sw-warn,#ffa500);text-align:center">'+delante+(delante===1?' pedido entró antes que este':' pedidos entraron antes que este')+' — ver →</button>':'');
-  // ORDEN DE LECTURA EN COCINA: primero QUÉ SE ARMA, después a quién se le manda.
-  // Antes el cuerpo abría con nombre + dirección + pin + referencia + línea de ref, y la
-  // receta —lo único que se necesita mientras se arma— quedaba debajo del pliegue, en
-  // 11px. Dirección, pin y teléfono importan al DESPACHAR, no al armar; bajan.
-  var body='<div style="flex:1;padding:14px 18px 180px;overflow-y:auto" class="fi">'
-    // Estado y referencia en UNA línea, no en tres bloques. El nombre del cliente en 28 px
-    // bajó a "Para entregar": medido, el 40% de la altura se gastaba antes de la primera
-    // palabra útil, y el nombre y el monto no sirven para armar — sirven para despachar.
-    +'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">'
-    +stBadge(o.status)
-    +'<span style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:'+(isStale?STATUSES.RECIBIDO.c:'var(--sw-text-muted,#9DA096)')+';display:inline-flex;align-items:center;gap:6px">'+(isStale?'<span class="pulse" style="width:8px;height:8px;border-radius:50%;background:'+STATUSES.RECIBIDO.c+';display:inline-block;flex-shrink:0"></span>':'')+'<span>'+esc(o.ref)+(mins!==null?' · hace '+mins+' min':'')+'</span></span>'
+    +'<div class="rec-entrega"><h3>Para entregar</h3>'
+    +'<b class="nom">'+esc(o.customer_name||'')+'</b><span class="tot">'+soles(o.total)+'</span>'
+    +'<div class="dir">'+esc(o.customer_address||'')+'</div>'
+    +(typeof o.lat==='number'&&typeof o.lon==='number'?'<a class="rec-link" href="https://maps.google.com/?q='+o.lat+','+o.lon+'" target="_blank" rel="noopener">Abrir el pin en el mapa</a>':'')
+    +(o.status==='EN CAMINO'&&o.eta_minutes?'<button class="rec-link" onclick="editEta(\''+o.id+'\','+o.eta_minutes+')">Llega en ~'+o.eta_minutes+' min · cambiar</button>':'')
+    +(cobraContraEntrega(o)?'<div class="rec-aviso">Contra entrega: el motorizado cobra '+soles(o.total)+'.</div>'
+      :(o.payment_status==='paid'&&PAYMENT_METHOD_BADGE[o.payment_method]?'<div class="rec-dato">'+PAYMENT_METHOD_BADGE[o.payment_method]+'</div>':''))
+    +'<div class="coc-par">'
+    +'<button class="coc-b gh" onclick="printTicket(\''+o.id+'\')">Ticket</button>'
+    +(tel?'<button class="coc-b gh" onclick="waAdmin(\''+o.id+'\')">WhatsApp</button>':'')
     +'</div>'
-    // La receta, en escala de cocina, arriba de todo lo demás.
-    +orderRecipeHTML(o.items,true)
-    +(isScheduledAhead?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:'+GOLD+';margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('horario',16,GOLD)+'<span>Programado para '+esc(new Date(o.delivery_time).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'2-digit',minute:'2-digit'}))+'</span></div>':'')
-    +(manualPending?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-warn,#ffa500);margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('warning',16,'var(--sw-warn,#ffa500)')+'<span>Pago '+manualLabel+' sin confirmar — revisa tu app antes de continuar</span></div>':'')
-    +(o.redeemed_reward?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-ok,#25D366);margin-bottom:14px;display:flex;align-items:center;gap:8px">'+icon('gift',16,'var(--sw-ok,#25D366)')+'<span>'+esc(o.redeemed_reward)+'</span></div>':'')
-    +'<div style="height:1px;background:var(--sw-border,#2C3228);margin:18px 0"></div>'
-    +'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+GOLD+';letter-spacing:.18em;margin-bottom:10px">Para entregar //</div>'
-    // El nombre vive acá desde el 2026-09-12, no encima de la receta: es el dato del
-    // DESPACHO. En 22 px y no en 28 — los 28 los gana la receta, que es lo que se lee con
-    // las manos ocupadas.
-    +'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:6px">'+esc(o.customer_name)+' <span style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:15px;color:var(--sw-text-muted,#9DA096)">· '+SOLES+pz(o.total)+'</span></div>'
-    +'<div style="font-family:\'EB Garamond\',serif;font-size:18px;color:var(--sw-text-body,#EFEDE4);line-height:1.5">'+esc(o.customer_address)+'</div>'
-    // Pin exacto que el cliente confirmó en el mapa al pedir. En Trujillo la dirección en
-    // texto no siempre ubica (numeración irregular, referencias en vez de número), así
-    // que abrir el punto directo en Maps es la diferencia entre entregar y dar vueltas.
-    // Solo aparece si el pedido trae coordenadas — los pedidos viejos no las tienen.
-    +(typeof o.lat==='number'&&typeof o.lon==='number'
-      ?'<a href="https://maps.google.com/?q='+o.lat+','+o.lon+'" target="_blank" rel="noopener" style="font-family:\'EB Garamond\',serif;font-size:15px;color:'+GOLD+';margin-top:10px;display:inline-flex;align-items:center;gap:8px;text-decoration:none;min-height:44px;align-items:center">'+icon('moto',16,GOLD)+'<span>Abrir pin exacto en Maps</span></a>'
-      :'')
-    // La referencia que escribe el cliente ("portón azul", "3er piso") viajaba como
-    // o.notes y solo se veía en el TICKET IMPRESO, etiquetada "NOTA:" — o sea en el papel
-    // de cocina, que es justo donde no sirve. Quien despacha la necesita en pantalla.
-    // #30 — Una nota que dice "soy alérgico" no puede pintarse igual que "portón azul".
-    // El bloque rojo no es decoración: esta tarjeta se lee de reojo con las manos ocupadas,
-    // y ahí lo único que funciona es que el aviso no se parezca a lo de al lado.
-    +(o.notes?(noteNeedsAttention(o.notes)
-      ?'<div style="background:rgba(255,85,85,.12);border:1px solid rgba(255,85,85,.5);border-radius:8px;padding:12px 14px;margin-top:10px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:13px;font-weight:600;color:var(--sw-danger,#ff8888);letter-spacing:.08em">⚠ ALERGIA O RESTRICCIÓN</div><div style="font-family:\'EB Garamond\',serif;font-size:18px;color:var(--sw-text,#FFFFFF);margin-top:4px;line-height:1.4">'+esc(o.notes)+'</div></div>'
-      :'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:'+GOLD+';margin-top:8px">Referencia: '+esc(o.notes)+'</div>'):'')
-    +(o.status==='EN CAMINO'&&o.eta_minutes?'<div onclick="event.stopPropagation();editEta(\''+o.id+'\','+o.eta_minutes+')" style="font-family:\'EB Garamond\',serif;font-size:15px;color:#3A86FF;margin-top:10px;display:flex;align-items:center;gap:8px;cursor:pointer;min-height:44px">'+icon('moto',16,'#3A86FF')+'<span>ETA ~'+o.eta_minutes+' min · editar</span></div>':'')
-    +(o.payment_method==='cod'&&o.payment_status!=='paid'?'<div style="font-family:\'EB Garamond\',serif;font-size:15px;color:var(--sw-warn,#ffa500);margin-top:12px;display:flex;align-items:center;gap:8px">'+icon('cash',16,'var(--sw-warn,#ffa500)')+'<span>Cobrar '+SOLES+pz(o.total)+' al entregar</span></div>':'')
-    +(o.payment_status==='paid'&&PAYMENT_METHOD_BADGE[o.payment_method]?'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:15px;color:var(--sw-text-muted2,#868A7E);margin-top:12px">'+PAYMENT_METHOD_BADGE[o.payment_method]+'</div>':'')
-    +'<div style="font-family:\'EB Garamond\',serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:12px">'+esc(o.date)+' · '+esc(o.summary)+'</div>'
-    +'<div style="display:flex;gap:10px;margin-top:22px">'
-    +'<button onclick="printTicket(\''+o.id+'\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(139,175,154,.12);border:1px solid rgba(139,175,154,.4);color:var(--sw-text-muted,#9DA096);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.04em;padding:19px 4px;border-radius:8px">'+iconTxt('printer','Ticket','#9DA096')+'</button>'
-    +((o.contact_phone||o.customer_phone)?'<button onclick="waAdmin(\''+o.id+'\')" style="all:unset;cursor:pointer;flex:1;text-align:center;background:rgba(203,162,88,.12);border:1px solid rgba(203,162,88,.4);color:'+GOLD+';font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.04em;padding:19px 4px;border-radius:8px">'+iconTxt('chat','WhatsApp',GOLD)+'</button>':'')
-    // «Link al motorizado» salió el 2026-10-07: el motorizado es de un tercero y no toca links
-    // (docs/IDEAS_A_FUTURO.md). Lo cierra el cliente con «Ya me llegó».
+    +'<button class="rec-cancelar" data-accion="cancelar" onclick="cancelOrder(\''+o.id+'\')">Cancelar pedido</button>'
     +'</div>'
-    +'<button onclick="cancelOrder(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:transparent;border:1px solid rgba(255,85,85,.4);color:var(--sw-danger,#ff8888);font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;letter-spacing:.06em;padding:15px 0;border-radius:8px;text-align:center;margin-top:12px">'+iconTxt('close','Cancelar pedido'+(manualPending?' (nunca pagó)':''),'var(--sw-danger,#ff8888)')+'</button>'
+    +'<div class="rec-barra sw-barra">'+botonesDeLaReceta(o)+'</div>'
     +'</div>';
-  // El botón real anclado a la zona del pulgar: position:fixed sobre todo el viewport,
-  // no relativo a la tarjeta. Con env(safe-area-inset-bottom) para no quedar tapado por
-  // la barra de gestos de iOS/Android en el celular real del dueño.
-  // Degradado por ENCIMA de la barra fija. Medido a 360×640: el contenido de un pedido mide
-  // ~1 240 px contra una ventana útil de 429, y la barra cortaba la receta a media palabra
-  // —en "Proteína:" del 30CM— con un corte tan limpio que parecía el borde de la tarjeta.
-  // No hay forma de saber que falta algo; veinte píxeles de degradado lo dicen sin ocupar
-  // sitio ni pedir un gesto. `pointer-events:none` para que no robe el toque del botón.
-  //
-  // Va DENTRO de la barra, anclado a su borde superior con translateY(-100%), y no a una
-  // distancia fija del fondo: la barra cambia de alto según el pedido (el pago sin confirmar
-  // le agrega una segunda línea), así que cualquier número escrito a mano queda desalineado
-  // en la mitad de los casos — y un degradado corrido hacia adentro del propio botón no
-  // avisa de nada.
-  var fade='<div aria-hidden="true" style="position:absolute;left:0;right:0;top:0;transform:translateY(-100%);height:20px;pointer-events:none;background:linear-gradient(to top, var(--sw-bg,#17130E), rgba(0,0,0,0))"></div>';
-  var fixedBar='<div class="sw-barra" style="position:fixed;left:0;right:0;bottom:0;padding:14px 20px calc(14px + env(safe-area-inset-bottom));background:'+barBg+';border-top:1px solid var(--sw-border,#2C3228);box-shadow:0 -6px 20px rgba(0,0,0,.25)">'+fade
-    // Armando: avisar al motorizado desde la misma receta, sin volver a la lista (2026-10-07).
-    +(o.status==='PREPARANDO'?'<button class="coc-b '+(motoAvisos()[String(o.id)]?'gh':'cola')+'" style="margin:0 0 10px" data-accion="pedir-motorizado" onclick="pedirMotorizado(\''+o.id+'\')">'+etiquetaMotorizado(o)+'</button>':'')
-    +(manualPending
-      ?'<button onclick="confirmAndAdvance(\''+o.id+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+GOLD+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:700;letter-spacing:.04em;padding:20px 0;border-radius:10px;text-align:center">'+iconTxt('check','Confirmar pago y preparar','#000')+'</button>'
-        // min-height 44: era la ÚNICA zona táctil de esta pantalla por debajo del mínimo de
-        // WCAG 2.5.5 (medía 20 px de alto), y está pegada al botón grande — errarle significa
-        // tocar "confirmar y preparar" sin querer, que avanza el pedido.
-        +'<button onclick="confirmOrderPayment(\''+o.id+'\')" style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;min-height:44px;text-align:center;color:var(--sw-text-muted2,#868A7E);font-family:\'EB Garamond\',serif;font-size:11px;padding:8px 0 0">solo confirmar el pago, sin avanzar todavía</button>'
-      :(s.next?'<button onclick="updateStatus(\''+o.id+'\',\''+s.next+'\')" style="all:unset;cursor:pointer;display:block;width:100%;background:'+STATUSES[s.next].c+';color:#000;font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:700;letter-spacing:.04em;padding:20px 0;border-radius:10px;text-align:center">'+(STATUSES[s.next].icon&&ICONS[STATUSES[s.next].icon]?icon(STATUSES[s.next].icon,16,'#000')+' ':'')+'Marcar como '+STATUSES[s.next].label.toLowerCase()+' →</button>':'<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:var(--sw-ok,#25D366);text-align:center;padding:10px">'+iconTxt('check','Completado','var(--sw-ok,#25D366)')+'</div>'))
-    +'</div>';
-  // Sin `topBar`: `nav` ya lleva el botón de salir. Las dos juntas eran justamente los
-  // 100 px de rótulo que había que recuperar — `topBar` sobrevive solo para el estado vacío,
-  // donde no hay contador de pedidos que mostrar.
-  return'<div style="min-height:100vh;display:flex;flex-direction:column;background:'+barBg+'">'+nav+body+fixedBar+'</div>';
 }
+function VACIO_COCINA(){return'<div class="coc-vacio">No hay pedidos en curso. Cuando entre uno, suena y vibra.</div>';}
 
 // ══ COCINA ABIERTA (2026-10-01, docs/PANEL_NUEVO.md · opción A con la receta de C) ═══════
 // Una sola lista con todo lo que está en curso, el que vence primero arriba (el mismo orden

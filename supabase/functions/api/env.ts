@@ -165,6 +165,8 @@ export const VAPID_SUBJECT = "mailto:contacto@sndwch.com";
 // directo en la respuesta (ver actRecover). Comparte el mismo secreto de proyecto que
 // usa la función send-order-email — configúralo con: supabase secrets set RESEND_API_KEY=...
 export const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+// Dirección pública de la app: los enlaces de los correos la necesitan entera.
+export const SITE_URL = (Deno.env.get("SITE_URL") || "https://sndwch.app").replace(/\/+$/, "");
 export const FROM_EMAIL = Deno.env.get("FROM_EMAIL") || "SND//WCH <pedidos@sndwch.app>";
 
 // Publicación real en Instagram/Facebook (Meta Graph API) — ver actAdminPublishSocial en

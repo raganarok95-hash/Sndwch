@@ -512,6 +512,43 @@ body.kb-open #app{padding-bottom:0}
 .coc-fila span{flex:1;min-width:0}.coc-fila b{display:block;font-size:15px}
 .coc-fila s{display:block;text-decoration:none;font-size:13px;color:var(--sw-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .coc-fila .coc-b{width:auto;flex:none;margin:0;padding:10px 14px;min-height:44px}
+.rec{padding-bottom:calc(var(--sw-barra,96px) + 16px)}
+.rec-top{display:flex;align-items:center;gap:4px;padding:4px 8px;border-bottom:1px solid var(--sw-border)}
+.rec-x{all:unset;cursor:pointer;min-height:48px;padding:0 8px;font-size:15px;font-weight:700;color:var(--sw-text)}
+.rec-pos{margin-left:auto;font-size:13px;font-weight:700;color:var(--sw-text-muted)}
+.rec-flecha{all:unset;cursor:pointer;width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;font-size:28px;color:var(--sw-text)}
+.rec-flecha:disabled{opacity:.3;cursor:default}
+.rec-cab{display:flex;align-items:baseline;gap:8px;padding:12px 12px 0}
+.rec-cab b{font-size:22px;font-weight:800}
+.rec-cab .tag{font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px;background:var(--sw-border)}
+.rec-cab .min{margin-left:auto;font-size:13px;font-weight:700;color:var(--sw-text-muted)}
+.rec-aviso{margin:10px 12px 0;padding:10px 12px;border-radius:10px;background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.4);font-size:15px}
+.rec-alergia{margin:10px 12px 0;padding:12px;border-radius:10px;background:rgba(255,85,85,.14);border:1px solid rgba(255,85,85,.55);font-size:15px;line-height:1.4}
+.rec-alergia b{display:block;font-size:13px;letter-spacing:.06em;color:var(--sw-danger,#ff8888);margin-bottom:4px}
+.rec-dato{margin:10px 12px 0;font-size:15px;color:var(--sw-text-muted)}
+.rec-dato.ok{color:var(--sw-ok,#25D366)}
+.rec-armar{margin:14px 12px 0}
+.rec-progreso{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--sw-text-muted)}
+.rec-progreso b{font-size:15px;color:var(--sw-text)}
+.rec-item{margin-top:12px;background:var(--sw-card);border-radius:12px;padding:6px 12px 8px}
+.rec-item h2{font-size:22px;font-weight:800;margin:8px 0 4px;line-height:1.2}
+.rec-linea{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:8px 0;border-top:1px solid var(--sw-border)}
+.rec-item h2+.rec-linea,.rec-item .rec-linea:first-child{border-top:0}
+.rec-linea i{width:24px;height:24px;flex:none;border-radius:999px;border:2px solid var(--sw-text-muted)}
+.rec-linea s{text-decoration:none;font-size:13px;color:var(--sw-text-muted);min-width:72px}
+.rec-linea b{font-size:18px;font-weight:700;line-height:1.3}
+.rec-linea.hecha i{background:var(--sw-ok,#25D366);border-color:var(--sw-ok,#25D366)}
+.rec-linea.hecha b{text-decoration:line-through;color:var(--sw-text-muted);font-weight:500}
+.rec-entrega{margin:18px 12px 0;padding-top:12px;border-top:1px solid var(--sw-border)}
+.rec-entrega h3{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--sw-text-muted);margin:0 0 6px}
+.rec-entrega .nom{font-size:18px;font-weight:800}
+.rec-entrega .tot{margin-left:8px;font-size:15px;color:var(--sw-text-muted)}
+.rec-entrega .dir{font-size:15px;margin-top:4px;line-height:1.4}
+.rec-link{all:unset;cursor:pointer;display:block;min-height:44px;line-height:44px;font-size:15px;font-weight:700;color:var(--sw-warn,#ffa500);text-decoration:none}
+.rec-cancelar{all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;text-align:center;margin-top:18px;min-height:48px;border:1px solid rgba(255,85,85,.45);border-radius:10px;color:var(--sw-danger,#ff8888);font-size:15px;font-weight:700}
+.rec-barra{position:fixed;left:0;right:0;bottom:0;padding:8px 12px calc(12px + env(safe-area-inset-bottom));background:var(--sw-bg);border-top:1px solid var(--sw-border);box-shadow:0 -6px 20px rgba(0,0,0,.25)}
+.rec-barra .coc-b{min-height:56px;font-size:18px}
+.rec-solo{all:unset;cursor:pointer;display:block;width:100%;text-align:center;min-height:44px;font-size:13px;color:var(--sw-text-muted)}
 @media (min-width:900px){.coc-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}.adm{max-width:1100px;margin:0 auto}}
 /* LOS MOMENTOS TENSOS CON UN HERMANO (#24, 2026-10-01): una franja, no una pantalla nueva.
    Fondo propio para que se lea igual sobre kraft, sobre el lado WICHO o sobre la cuenta. */
@@ -4257,6 +4294,8 @@ var adminAddressFlags = null;
 // sesión ni exige cuenta: quien reparte no tiene una. El token en sí es la autorización,
 // igual que `ref` para un invitado que quiere ver o cancelar su pedido.
 var deliveryTokenFromUrl = null, deliveryConfirmState = null;
+// ?pedido=REF: el enlace del aviso «va en camino» (abrirPedidoDelEnlace, 06-*).
+var pedidoFromUrl = null;
 // Guard contra doble-tap en las acciones que mutan un pedido desde la cola admin —
 // updateStatus/confirmOrderPayment/confirmAndAdvance no tenían ninguna protección (a
 // diferencia de doOrder(), que sí usa _payingInProgress), así que dos taps rápidos en
@@ -4273,7 +4312,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'ceb20c2ae6';
+var APP_BUILD = 'c462f4777f';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -4424,6 +4463,9 @@ var fijoFromUrl = null, franjaFromUrl = null;
         var dt = qp.get('entrega');
         if (dt)
             deliveryTokenFromUrl = dt.trim();
+        var pe = qp.get('pedido');
+        if (pe)
+            pedidoFromUrl = pe.trim().slice(0, 40);
         var fj = qp.get('fijo');
         if (fj)
             fijoFromUrl = fj.trim();
@@ -10910,9 +10952,13 @@ function sPOrders() {
         + '<button class="tx" onclick="_sndOd=\'' + ult.id + '\';rtStars=0;rtMsg=\'\';sndScreen=\'p_ord_detail\';render()">'
         + '<em>El último' + (fu ? ' · ' + cuandoFue(fu) : '') + '</em><b>' + esc(ult.summary || 'Tu pedido') + '</b>'
         + '<s>' + esc(estado) + ' · ' + SOLES_TXT + pz(ult.total || 0) + '</s></button></div>'
-        + (repetible
-            ? '<button class="repetir" onclick="loadCart(myOrders[0].items)"><span>Pedir lo mismo</span><b>' + SOLES_TXT + pz(precioDeRepetir(ult)) + '</b></button>'
-            : '')
+        // Mientras va en camino, el botón de arriba es «Ya me llegó» (2026-10-07): es lo que el
+        // cliente viene a hacer acá, y «Pedir lo mismo» con el pedido todavía en la moto sobra.
+        + (puedeDecirQueLlego(ult)
+            ? '<button class="repetir" data-accion="ya-me-llego" onclick="doYaMeLlego(\'' + esc(String(ult.id)) + '\',\'' + esc(String(ult.ref)) + '\')"><span>Ya me llegó</span><b>' + esc(String(ult.ref || '')) + '</b></button>'
+            : repetible
+                ? '<button class="repetir" onclick="loadCart(myOrders[0].items)"><span>Pedir lo mismo</span><b>' + SOLES_TXT + pz(precioDeRepetir(ult)) + '</b></button>'
+                : '')
         + '<div class="cuerpo"><div class="veces"><em>Has comido acá</em><b>' + comidos.length + (comidos.length === 1 ? ' vez' : ' veces') + '</b></div>'
         + '<div class="sellos">' + sellos + '</div>'
         + '<p class="pie">Toca un sello y se abre ese pedido.' + (dato ? '<br>' + esc(dato) : '') + '</p></div>'
@@ -10972,7 +11018,7 @@ function sOrdDetail() {
         + (repetible && o.status !== 'CANCELADO' ? '<button class="ac" onclick="loadCart(myOrders.find(function(x){return mismoId(x.id,_sndOd);}).items)"><span>Pedir lo mismo</span><s>' + SOLES_TXT + pz(precioDeRepetir(o)) + ' hoy</s></button>' : '')
         // «Ya me llegó» (2026-10-07): quien sabe que llegó es el cliente, no el dueño que cocina.
         // Un contra entrega sin cobrar no: cerrarlo registra el cobro, y ese lo cierra el local.
-        + (o.status === 'EN CAMINO' && !(o.payment_method === 'cod' && o.payment_status !== 'paid') ? '<button class="ac" data-accion="ya-me-llego" onclick="doYaMeLlego(\'' + esc(String(o.id)) + '\',\'' + esc(String(o.ref)) + '\')"><span>Ya me llegó</span><s>y cuéntanos qué tal</s></button>' : '')
+        + (puedeDecirQueLlego(o) ? '<button class="ac" data-accion="ya-me-llego" onclick="doYaMeLlego(\'' + esc(String(o.id)) + '\',\'' + esc(String(o.ref)) + '\')"><span>Ya me llegó</span><s>y cuéntanos qué tal</s></button>' : '')
         + (o.status === 'RECIBIDO' ? '<button class="ac" onclick="doCancelMyOrder(\'' + esc(String(o.id)) + '\',\'' + esc(String(o.ref)) + '\')"><span>Cancelar pedido</span><s>antes de que la cocina empiece</s></button>' : '')
         + (puedeReportarPedido(o) && cust ? '<button class="ac" onclick="abrirAlgoSalioMal(\'' + esc(String(o.ref)) + '\')"><span>Algo salió mal</span><s>hasta ' + REPORTE_PLAZO_HORAS + ' h después</s></button>' : '')
         + '<button class="ac" onclick="window.print()"><span>Guardar el recibo</span><s>PDF · no es boleta</s></button>';
@@ -11017,6 +11063,37 @@ async function doCancelMyOrder(ordId, ref) {
         _cancelMyOrderInProgress = false;
         showToast(e.message);
     }
+}
+// La misma regla que el servidor (porQueNoPuedeCerrarElCliente): en camino y no un contra
+// entrega sin cobrar. El servidor decide; esto solo evita ofrecer un botón que diría que no.
+function puedeDecirQueLlego(o) { return !!o && o.status === 'EN CAMINO' && !(o.payment_method === 'cod' && o.payment_status !== 'paid'); }
+// ?pedido=REF — el enlace del aviso «va en camino» (push y correo). Abre ESE pedido aunque quien
+// lo hizo sea invitado y haya cerrado la app: el ref es la misma llave con la que ya lo veía.
+async function abrirPedidoDelEnlace(ref) {
+    if (!cust) {
+        try {
+            localStorage.setItem('sw_last_ref', ref);
+        }
+        catch (e) { }
+    }
+    sndScreen = 'p_orders';
+    listLoading = true;
+    render();
+    try {
+        myOrders = cust ? (await api('my-orders', { token: token })).orders : (await api('my-orders', { ref: ref })).orders;
+    }
+    catch (e) {
+        myOrders = [];
+    }
+    listLoading = false;
+    var o = (myOrders || []).find(function (x) { return x.ref === ref; });
+    if (o) {
+        _sndOd = o.id;
+        rtStars = 0;
+        rtMsg = '';
+        sndScreen = 'p_ord_detail';
+    }
+    render();
 }
 var _yaMeLlegoEnCurso = false;
 async function doYaMeLlego(ordId, ref) {
@@ -13039,6 +13116,9 @@ window.addEventListener('load', function () { sndRestoreOwnedFns(); });
             render();
         }
     }
+    // ?pedido=REF — el aviso de «va en camino» lleva directo a ese pedido (y a «Ya me llegó»).
+    if (pedidoFromUrl && !deliveryTokenFromUrl)
+        abrirPedidoDelEnlace(pedidoFromUrl);
     // ?entrega=TOKEN — el link del motorizado (#19). Va al final a propósito: si está, es lo
     // único que importa de esta visita y se lleva la pantalla entera.
     if (deliveryTokenFromUrl) {

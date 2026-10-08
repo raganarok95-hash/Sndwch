@@ -162,7 +162,11 @@ function sPOrders(){
     +'<button class="tx" onclick="_sndOd=\''+ult.id+'\';rtStars=0;rtMsg=\'\';sndScreen=\'p_ord_detail\';render()">'
     +'<em>El último'+(fu?' · '+cuandoFue(fu):'')+'</em><b>'+esc(ult.summary||'Tu pedido')+'</b>'
     +'<s>'+esc(estado)+' · '+SOLES_TXT+pz(ult.total||0)+'</s></button></div>'
-    +(repetible
+    // Mientras va en camino, el botón de arriba es «Ya me llegó» (2026-10-07): es lo que el
+    // cliente viene a hacer acá, y «Pedir lo mismo» con el pedido todavía en la moto sobra.
+    +(puedeDecirQueLlego(ult)
+      ?'<button class="repetir" data-accion="ya-me-llego" onclick="doYaMeLlego(\''+esc(String(ult.id))+'\',\''+esc(String(ult.ref))+'\')"><span>Ya me llegó</span><b>'+esc(String(ult.ref||''))+'</b></button>'
+      :repetible
       ?'<button class="repetir" onclick="loadCart(myOrders[0].items)"><span>Pedir lo mismo</span><b>'+SOLES_TXT+pz(precioDeRepetir(ult))+'</b></button>'
       :'')
     +'<div class="cuerpo"><div class="veces"><em>Has comido acá</em><b>'+comidos.length+(comidos.length===1?' vez':' veces')+'</b></div>'
@@ -221,7 +225,7 @@ function sOrdDetail(){
     +(repetible&&o.status!=='CANCELADO'?'<button class="ac" onclick="loadCart(myOrders.find(function(x){return mismoId(x.id,_sndOd);}).items)"><span>Pedir lo mismo</span><s>'+SOLES_TXT+pz(precioDeRepetir(o))+' hoy</s></button>':'')
     // «Ya me llegó» (2026-10-07): quien sabe que llegó es el cliente, no el dueño que cocina.
     // Un contra entrega sin cobrar no: cerrarlo registra el cobro, y ese lo cierra el local.
-    +(o.status==='EN CAMINO'&&!(o.payment_method==='cod'&&o.payment_status!=='paid')?'<button class="ac" data-accion="ya-me-llego" onclick="doYaMeLlego(\''+esc(String(o.id))+'\',\''+esc(String(o.ref))+'\')"><span>Ya me llegó</span><s>y cuéntanos qué tal</s></button>':'')
+    +(puedeDecirQueLlego(o)?'<button class="ac" data-accion="ya-me-llego" onclick="doYaMeLlego(\''+esc(String(o.id))+'\',\''+esc(String(o.ref))+'\')"><span>Ya me llegó</span><s>y cuéntanos qué tal</s></button>':'')
     +(o.status==='RECIBIDO'?'<button class="ac" onclick="doCancelMyOrder(\''+esc(String(o.id))+'\',\''+esc(String(o.ref))+'\')"><span>Cancelar pedido</span><s>antes de que la cocina empiece</s></button>':'')
     +(puedeReportarPedido(o)&&cust?'<button class="ac" onclick="abrirAlgoSalioMal(\''+esc(String(o.ref))+'\')"><span>Algo salió mal</span><s>hasta '+REPORTE_PLAZO_HORAS+' h después</s></button>':'')
     +'<button class="ac" onclick="window.print()"><span>Guardar el recibo</span><s>PDF · no es boleta</s></button>';
@@ -259,6 +263,22 @@ async function doCancelMyOrder(ordId,ref){
     showToast('Pedido cancelado.','success');
     _cancelMyOrderInProgress=false;render();
   }catch(e){_cancelMyOrderInProgress=false;showToast(e.message);}
+}
+// La misma regla que el servidor (porQueNoPuedeCerrarElCliente): en camino y no un contra
+// entrega sin cobrar. El servidor decide; esto solo evita ofrecer un botón que diría que no.
+function puedeDecirQueLlego(o){return!!o&&o.status==='EN CAMINO'&&!(o.payment_method==='cod'&&o.payment_status!=='paid');}
+// ?pedido=REF — el enlace del aviso «va en camino» (push y correo). Abre ESE pedido aunque quien
+// lo hizo sea invitado y haya cerrado la app: el ref es la misma llave con la que ya lo veía.
+async function abrirPedidoDelEnlace(ref){
+  if(!cust){try{localStorage.setItem('sw_last_ref',ref);}catch(e){}}
+  sndScreen='p_orders';listLoading=true;render();
+  try{
+    myOrders=cust?(await api('my-orders',{token:token})).orders:(await api('my-orders',{ref:ref})).orders;
+  }catch(e){myOrders=[];}
+  listLoading=false;
+  var o=(myOrders||[]).find(function(x:any){return x.ref===ref;});
+  if(o){_sndOd=o.id;rtStars=0;rtMsg='';sndScreen='p_ord_detail';}
+  render();
 }
 var _yaMeLlegoEnCurso=false;
 async function doYaMeLlego(ordId,ref){

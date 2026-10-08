@@ -1056,6 +1056,8 @@ var adminAddressFlags=null;
 // sesión ni exige cuenta: quien reparte no tiene una. El token en sí es la autorización,
 // igual que `ref` para un invitado que quiere ver o cancelar su pedido.
 var deliveryTokenFromUrl=null,deliveryConfirmState=null;
+// ?pedido=REF: el enlace del aviso «va en camino» (abrirPedidoDelEnlace, 06-*).
+var pedidoFromUrl:string|null=null;
 // Guard contra doble-tap en las acciones que mutan un pedido desde la cola admin —
 // updateStatus/confirmOrderPayment/confirmAndAdvance no tenían ninguna protección (a
 // diferencia de doOrder(), que sí usa _payingInProgress), así que dos taps rápidos en
@@ -1202,7 +1204,7 @@ var wantsNewGroup=false;
 // aviso ofreció cuando la de siempre se llenó: se respeta, para que el toque haga lo que el
 // aviso dijo.
 var fijoFromUrl:string|null=null,franjaFromUrl:string|null=null;
-(function(){try{var qp=new URLSearchParams(location.search);var rc=qp.get('ref');if(rc)refCode=rc.trim();var gc=qp.get('group');if(gc)groupCodeFromUrl=gc.trim().toUpperCase();var ng=qp.get('grupo');if(ng)wantsNewGroup=true;var dt=qp.get('entrega');if(dt)deliveryTokenFromUrl=dt.trim();
+(function(){try{var qp=new URLSearchParams(location.search);var rc=qp.get('ref');if(rc)refCode=rc.trim();var gc=qp.get('group');if(gc)groupCodeFromUrl=gc.trim().toUpperCase();var ng=qp.get('grupo');if(ng)wantsNewGroup=true;var dt=qp.get('entrega');if(dt)deliveryTokenFromUrl=dt.trim();var pe=qp.get('pedido');if(pe)pedidoFromUrl=pe.trim().slice(0,40);
   var fj=qp.get('fijo');if(fj)fijoFromUrl=fj.trim();var fr=qp.get('franja');if(fr&&/^[0-2][0-9]:[0-5][0-9]$/.test(fr))franjaFromUrl=fr;
   // ?src=... en el link de un anuncio (ver plan de campaña) — se guarda apenas se detecta
   // y sobrevive aunque el registro pase en otra visita, así un clic de anuncio que hoy solo
