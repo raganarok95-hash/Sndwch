@@ -1,0 +1,39 @@
+name: Foto del esquema
+
+# Tras una migración: rehace supabase/esquema-actual.sql y _shared/base.ts contra la base real y
+# los guarda en la rama pedida (scripts/pg-local/foto-remota.mjs). Así 180 KB no pasan por el
+# chat. Se dispara a mano, con la rama donde va la migración.
+on:
+  workflow_dispatch:
+    inputs:
+      rama:
+        description: 'Rama donde guardar la foto'
+        required: true
+        default: 'main'
+
+permissions:
+  contents: write
+
+jobs:
+  foto:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.rama }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Sacar la foto
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: node scripts/pg-local/foto-remota.mjs
+      - name: Guardar si cambió
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add supabase/esquema-actual.sql supabase/functions/_shared/base.ts
+          if git diff --cached --quiet; then echo "Sin cambios."; exit 0; fi
+          git commit -m "Foto del esquema y tipos tras la última migración"
+          git push origin HEAD:${{ inputs.rama }}
