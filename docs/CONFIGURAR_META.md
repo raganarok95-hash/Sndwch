@@ -185,11 +185,48 @@ nombre `META_PAGE_ACCESS_TOKEN`, valor el token. Guardar. No hace falta redesple
 Avísame y corro el workflow **«Estado para abrir»**: debe salir ✓ en «Publicar en
 Instagram/Facebook». Las 9 publicaciones del lanzamiento salen apenas las apruebes.
 
-### B6. Además, para la pauta del 27: vincular a la cuenta de anuncios
-**Configuración del negocio → Cuentas → Cuentas publicitarias** → la 221839797 → **Asignar
-activos**: la página «Snd//wch» y tu Instagram. Hoy la cuenta de anuncios no tiene ninguno.
+### B6. Para la pauta del 27
+Ver §C, pasos C1, C2 y C5 (la cuenta de anuncios es la `1488138326460689`).
 
 ---
+
+## C · Lo que falta en Meta, en orden y comprobado (revisado el 2026-10-08 contra la API)
+
+**Estado verificado**: CAPI ✓ (el token le escribe a «SNDWCH.APP»); el conjunto «SNDWCH.APP»
+`1410494047274081` ✓ conectado a la cuenta de anuncios `1488138326460689` y ya recibe eventos del
+navegador y del servidor. **Falta**: el Business «Sndwch» **no tiene ninguna página** (la página
+«Snd//wch», ID `1188463894356831`, es tuya pero está fuera del Business); la cuenta de anuncios no
+tiene ni página ni Instagram; no tiene método de pago (el botón sale en gris); y no existe
+`META_PAGE_ACCESS_TOKEN`, así que nada se publica solo.
+
+⚠ En cada menú «**+ Agregar**» de Meta hay varias opciones. **Nunca elijas «Crear…»**: así nació la
+cuenta de anuncios nueva. Todo se hace en [Configuración del negocio](https://business.facebook.com/settings).
+
+**C1 · La página al Business.** Cuentas → **Páginas** → **+ Agregar** → **«Agregar una página»**
+(no «Crear una página nueva», no «Solicitar acceso») → escribe el ID `1188463894356831` →
+Agregar página. *Comprobación: Claude ve la página en el Business.*
+
+**C2 · Instagram al Business.** Cuentas → **Cuentas de Instagram** → **+ Agregar** → «Conectar tu
+cuenta de Instagram» → inicias sesión con la cuenta del negocio. Después, en la misma pantalla,
+elige la cuenta → **Activos conectados** → conecta la página «Snd//wch» y la cuenta publicitaria
+`1488138326460689`.
+
+**C3 · Tus permisos (por esto el pago sale en gris).**
+1. Usuarios → **Personas** → tu nombre → **Asignar activos** → Cuentas publicitarias → la
+   `1488138326460689` → **Control total** (administrar la cuenta). Guardar.
+2. En tu mismo nombre → permisos del portafolio → **opciones avanzadas** → sección **Finanzas**:
+   activa todo. Guardar. Recarga la página (Ctrl+F5).
+
+**C4 · El método de pago.** **Facturación y pagos** → elige la cuenta `1488138326460689` →
+**Métodos de pago** → **Agregar método de pago**. Si la tarjeta no entra, habilita en la app del
+banco las compras por internet y en el extranjero. *Comprobación: Claude ve «tiene método de pago».*
+
+**C5 · La página en la cuenta de anuncios.** Cuentas → **Páginas** → «Snd//wch» → **Activos
+conectados** → **Conectar activos** → la cuenta publicitaria `1488138326460689`.
+
+**C6 · El token permanente para publicar** (§B, pasos B1 a B4): ahora sí se puede, porque la página
+y el Instagram ya están en el Business. *Comprobación: «Estado para abrir» → ✓ Publicar en
+Instagram/Facebook.*
 
 ## Lo legal ya está resuelto (2026-09-10)
 
