@@ -111,7 +111,9 @@ evento. La prueba `verificar-meta` lo encontró: el token vale, pero no podía e
 Cada compra se habría perdido sin ningún error visible.
 
 Se arregla dejando todo en «SNDWCH.APP», que es el del token y vive en tu Business:
-1. **Supabase → Edge Functions → Secrets**: edita `META_PIXEL_ID` y pon `1410494047274081`.
+1. ~~Supabase → Edge Functions → Secrets: `META_PIXEL_ID` = `1410494047274081`~~ — **hecho el
+   2026-10-08** con el workflow «Píxel de Meta» (el ID es público; el token nunca pasó por ahí).
+   Probado: `✓ CAPI probado contra Meta: token válido, escribe al píxel: sí`.
 2. **Agrega la cuenta de anuncios a tu Business**: [Configuración del negocio](https://business.facebook.com/settings)
    → Cuentas → **Cuentas publicitarias** → Agregar → «Agregar una cuenta publicitaria» → `221839797`.
    (Hoy la cuenta no pertenece a ningún Business.)
