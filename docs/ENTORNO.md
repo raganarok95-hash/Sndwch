@@ -526,10 +526,14 @@ cuadro con Playwright → MP4 H.264). En el contenedor no hay ffmpeg: `pip insta
   ni encuesta, ni cuenta regresiva, ni pregunta ([Meta](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media)).
   Una historia con sticker la sube el dueño desde el celular; la agencia le deja los cuadros
   (`scripts/piezas/historias.mjs` los hace con y sin el sticker dibujado).
-- **El clasificador de permisos del modo automático bloquea crear un agente sin supervisión**:
-  una tarea programada de Windows que corre `claude -p` sola en la laptop del dueño fue negada
-  («Create Unsafe Agents»). Por eso el Estudio (Flow) se dispara con una palabra del dueño
-  («Estudio», `scripts/estudio/LIBRETO.md`). La versión desatendida es decisión del dueño.
+- **El clasificador de permisos del modo automático bloqueó crear un agente sin supervisión**
+  («Create Unsafe Agents») mientras el dueño no lo había pedido. Con su autorización explícita
+  («sí, deja 100% automático lo de Flow», 2026-10-08) se escribió `scripts/estudio/estudio.ps1` e
+  `instalar.ps1`, con permisos mínimos para Claude; la tarea la instala el dueño en su laptop.
+- **GitHub atrasa los horarios (`schedule`) de este repo de 5 a 9 horas** (medido el 2026-10-08:
+  el video de las 10:47 UTC y el respaldo de las 08:10 UTC no habían corrido a las 14:00). Nada que
+  dependa de la hora va en un `schedule` de GitHub: la hora de publicar vive en la base
+  (`publicar_desde`) y la cumple el cron de Supabase. Un `push` sí dispara al instante.
 - **Los secrets de Supabase**: solo hay un proyecto (`rjosezuoyngiadunfzyn`). El Vault guarda
   solo `sndwch_cron_secret`. Las variables de Vercel del proyecto `sndwch` no se pueden leer desde
   aquí (403 de alcance), pero el código no lee nada de Vercel: los tokens van en Supabase →

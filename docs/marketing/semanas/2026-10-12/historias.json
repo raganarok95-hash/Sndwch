@@ -8,7 +8,7 @@
    "hora": "19:00",
    "momento": "antes de abrir",
    "nivel": "nos vio una vez",
-   "por_que": "La única historia antes de abrir. La cuenta regresiva con recordatorio es el único sticker que trae a la gente de vuelta el martes sin pauta.",
+   "por_que": "La única historia antes de abrir: deja dicho cuándo y dónde, para que el martes ya sepan.",
    "cuadros": [
     {
      "encargo": "2026-10-12-manana-1",
@@ -29,11 +29,6 @@
      "personaje": null,
      "texto": "{dia_abre}, desde las {abre}.",
      "voz": "neutra",
-     "sticker": {
-      "tipo": "cuenta regresiva",
-      "texto": "Abrimos",
-      "fin": "2026-10-13 {abre}"
-     },
      "escena": "A closed kitchen door seen from outside at night, warm light leaking from the gap underneath onto a dark floor. No characters. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
     }
    ]
@@ -66,11 +61,6 @@
      "personaje": null,
      "texto": "Abierto.",
      "voz": "neutra",
-     "sticker": {
-      "tipo": "enlace",
-      "texto": "PIDE",
-      "url": "https://sndwch.app/?src=ig-hist"
-     },
      "escena": "The double doors of a small kitchen wide open, warm golden light spilling out toward the viewer; on the counter, ONE Philly Cheesesteak sub on white paper: white sub roll, thin seared beef, sautéed onion, green pepper strips, melted cheddar, no sauce. No characters."
     }
    ]
@@ -82,7 +72,7 @@
    "hora": "12:00",
    "momento": "almuerzo de oficina",
    "nivel": "no nos conoce",
-   "por_que": "LA IDEA de la semana en dos cuadros. La encuesta da el dato que decide quién lleva la semana siguiente (la «sección de comentarios es el brief», Duolingo).",
+   "por_que": "LA IDEA de la semana en dos cuadros: hay dos maneras de pedir bien, y cada hermano tiene la suya.",
    "cuadros": [
     {
      "encargo": "2026-10-13-cual-1",
@@ -98,14 +88,6 @@
      "texto": "La de SANDO, o la tuya.",
      "voz": "wicho",
      "mitad": "abajo",
-     "sticker": {
-      "tipo": "encuesta",
-      "pregunta": "¿Cuál pides?",
-      "opciones": [
-       "La de SANDO",
-       "La mía"
-      ]
-     },
      "escena": "WICHO at an open counter full of separate ingredients (sliced turkey, thick tomato slices, red onion, pickles, cheddar slices, a white sub roll), arms wide open, chaotic joy. Horizontal composition, he is on the right. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
     }
    ]
@@ -117,7 +99,7 @@
    "hora": "11:30",
    "momento": "almuerzo de oficina",
    "nivel": "no nos conoce",
-   "por_que": "El momento con más pedido por persona: el grupo. WICHO exagera la lista; el último cuadro da la regla y el enlace que abre el grupo.",
+   "por_que": "El momento con más pedido por persona: el grupo. WICHO exagera la lista; el último cuadro da la regla real.",
    "cuadros": [
     {
      "encargo": "2026-10-14-lista-1",
@@ -138,11 +120,6 @@
      "personaje": "WICHO",
      "texto": "Con {organizadorDesde}, el más barato va gratis.",
      "voz": "wicho",
-     "sticker": {
-      "tipo": "enlace",
-      "texto": "PEDIR EN GRUPO",
-      "url": "https://sndwch.app/?grupo=1&src=ig-hist"
-     },
      "escena": "WICHO jumping with joy on top of an office desk, next to five subs wrapped in white paper lined up in a neat row (no filling visible). He moves, the camera does not. Bright midday office light."
     }
    ]
@@ -154,7 +131,7 @@
    "hora": "19:30",
    "momento": "noche sin cocinar",
    "nivel": "no nos conoce",
-   "por_que": "SANDO le habla a la noche cansada sin decir «pide»: el curador ya decidió por ti. Termina en la carta.",
+   "por_que": "SANDO le habla a la noche cansada sin decir «pide»: el curador ya decidió por ti.",
    "cuadros": [
     {
      "encargo": "2026-10-15-pensado-1",
@@ -168,11 +145,6 @@
      "personaje": "SANDO",
      "texto": "Ya lo pensé yo.",
      "voz": "sando",
-     "sticker": {
-      "tipo": "enlace",
-      "texto": "LA CARTA",
-      "url": "https://sndwch.app/?src=ig-hist"
-     },
      "escena": "SANDO close-up portrait, a calm knowing half-smile, looking straight at the camera for the first time. Warm lamp light from one side, the rest in shadow. Slow camera push."
     }
    ]
@@ -184,7 +156,7 @@
    "hora": "16:30",
    "momento": "el antojo de la tarde",
    "nivel": "no nos conoce",
-   "por_que": "El mundo de WICHO. La caja de preguntas junta lo que la gente se pondría: es material para la semana siguiente.",
+   "por_que": "El mundo de WICHO: los pasos del armador, tal como están en la app.",
    "cuadros": [
     {
      "encargo": "2026-10-16-arma-1",
@@ -198,10 +170,6 @@
      "personaje": "WICHO",
      "texto": "Tú decides cada capa.",
      "voz": "wicho",
-     "sticker": {
-      "tipo": "pregunta",
-      "pregunta": "¿Qué le pondrías tú?"
-     },
      "escena": "WICHO laughing with his arms wide open while ingredients rain down around him like confetti: pickle slices, thick tomato slices, red onion rings, jalapeño slices. He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
     },
     {
@@ -209,11 +177,6 @@
      "personaje": "WICHO",
      "texto": "Ármalo.",
      "voz": "wicho",
-     "sticker": {
-      "tipo": "enlace",
-      "texto": "ARMA EL TUYO",
-      "url": "https://sndwch.app/?src=ig-hist"
-     },
      "escena": "WICHO holding his finished sub with both hands, about to take the first bite, delighted: white sub roll, folded sliced turkey, thick tomato slices, red onion, pickles, one cheddar slice. Real portion. He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
     }
    ]
@@ -239,11 +202,6 @@
      "personaje": "SANDO",
      "texto": "Hoy, hasta las {cierra}.",
      "voz": "sando",
-     "sticker": {
-      "tipo": "enlace",
-      "texto": "PIDE",
-      "url": "https://sndwch.app/?src=ig-hist"
-     },
      "escena": "SANDO standing still behind the counter under the warm bulb, looking calmly at the camera; the kitchen is still open and one sub wrapped in white paper waits on the counter. Slow camera push. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
     }
    ]

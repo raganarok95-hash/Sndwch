@@ -110,8 +110,8 @@ relatos están en `docs/MANUAL_DETALLADO.md`** (copia íntegra del archivo anter
   una prueba vieja, se migra). Si se rompe por un texto, se arregla el selector, no el texto.
 - **Cada prueba abre con su promesa y su modo de fallo**; un error que reporta el dueño se
   REPRODUCE antes de arreglarlo. Detalle y lista completa: `docs/COMO_PROBAR.md`.
-- **«Estudio»** (el dueño, en el Claude Code de su laptop) = cumplir `scripts/estudio/LIBRETO.md`: los
-  encargos a Flow de la agencia (`docs/marketing/AGENCIA.md` §5).
+- **La laptop del dueño corre sola el Estudio (Flow) y el lunes de la agencia** (`scripts/estudio/`,
+  autorizado 2026-10-08); sube a la rama `estudio` y `historias.yml` lo une a main y lo programa.
 - **El dueño NO reparte**: lo hace un tercero (50+ motorizados) avisado en un grupo de WhatsApp
   (`docs/NEGOCIO.md`). No se le pregunta otra vez: se lee antes de diseñar entrega o cocina.
 
