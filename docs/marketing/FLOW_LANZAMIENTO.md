@@ -47,7 +47,7 @@ Any sandwich shown is a long sub/hoagie roll with exactly the real recipe stated
 | `sexta-salsa-4` | La tira, viñeta 4 | SANDO calmly holding up ONE sauce bottle, unimpressed; behind him a tidy wooden board. |
 | `arma-portada` | Arma el tuyo | WICHO building a sub in mid-air: bread open, slices of turkey, tomato, onion, pepper and cheese floating in a spiral above it. |
 | `oficina` | ¿Pides para la oficina? | WICHO walking in with a paper list so long it drags on the floor, a tower of delivery bags in the other arm, proud. |
-| `abrimos` | Abrimos el martes 13 | SANDO and WICHO opening the kitchen doors from inside, warm light spilling out toward the viewer, WICHO peeking, SANDO steady. |
+| `abrimos` | Abrimos el martes 20 | SANDO and WICHO opening the kitchen doors from inside, warm light spilling out toward the viewer, WICHO peeking, SANDO steady. |
 | `philly-anatomia` | Anatomía del Philly | Exploded vertical view of a Philly Cheesesteak sub, PHOTOREALISTIC food: bottom bun, thin seared beef, sautéed onion, green pepper strips, melted cheddar, top bun, each layer floating slightly apart. No sauce. Real portion, not oversized. Dark background. |
 
 La última es el sándwich generado: **fiel a la receta** (res laminada, cebolla, pimiento, cheddar,

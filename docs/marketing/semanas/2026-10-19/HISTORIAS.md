@@ -1,4 +1,4 @@
-# Historias · semana del 12 de octubre (propuesta para aprobar)
+# Historias · semana del 19 de octubre (propuesta para aprobar)
 
 Hechas por la agencia nueva desde `BRIEF.md`. **Cada cuadro es una imagen nueva de Flow**; mientras
 no existe, el tablero muestra el esquema de la escena encargada. **El tablero de un vistazo:**
@@ -7,13 +7,13 @@ no existe, el tablero muestra el esquema de la escena encargada. **El tablero de
 
 | día y hora | historia | momento | cuadros |
 |---|---|---|---|
-| lun 12 · 19:00 | **Mañana** | antes de abrir | WICHO «¿Mañana?» → SANDO «Mañana.» → la puerta con luz: «Martes, desde las 11:00.» |
-| mar 13 · 10:50 | **La puerta** | apertura (hero) | WICHO «Ya casi.» → SANDO mira el reloj: «11:00.» → la puerta abierta: «Abierto.» |
-| mar 13 · 12:00 | **¿La de quién?** | almuerzo de oficina | SANDO «Hay dos maneras de pedir bien.» → WICHO «La de SANDO, o la tuya.» |
-| mié 14 · 11:30 | **La lista** | almuerzo de oficina | WICHO con la lista hasta el piso: «¿Y la oficina?» → los celulares: «Cada uno elige lo suyo desde su celular.» → «Con 5, el más barato va gratis.» |
-| jue 15 · 19:30 | **Ya lo pensé yo** | noche sin cocinar | SANDO en la mesa: «No pienses.» → «Ya lo pensé yo.» |
-| vie 16 · 16:30 | **Arma el tuyo** | el antojo de la tarde | WICHO arma en el aire: «Tamaño. Pan. Proteína. Queso. Vegetales. Salsas.» → «Tú decides cada capa.» → «Ármalo.» |
-| dom 18 · 20:00 | **Mañana descansamos** | domingo | SANDO limpia su tabla: «Mañana descansamos.» → «Hoy, hasta las 22:00.» |
+| lun 19 · 19:00 | **Mañana** | antes de abrir | WICHO «¿Mañana?» → SANDO «Mañana.» → la puerta con luz: «Martes, desde las 11:00.» |
+| mar 20 · 10:50 | **La puerta** | apertura (hero) | WICHO «Ya casi.» → SANDO mira el reloj: «11:00.» → la puerta abierta: «Abierto.» |
+| mar 20 · 12:00 | **¿La de quién?** | almuerzo de oficina | SANDO «Hay dos maneras de pedir bien.» → WICHO «La de SANDO, o la tuya.» |
+| mié 21 · 11:30 | **La lista** | almuerzo de oficina | WICHO con la lista hasta el piso: «¿Y la oficina?» → los celulares: «Cada uno elige lo suyo desde su celular.» → «Con 5, el más barato va gratis.» |
+| jue 22 · 19:30 | **Ya lo pensé yo** | noche sin cocinar | SANDO en la mesa: «No pienses.» → «Ya lo pensé yo.» |
+| vie 23 · 16:30 | **Arma el tuyo** | el antojo de la tarde | WICHO arma en el aire: «Tamaño. Pan. Proteína. Queso. Vegetales. Salsas.» → «Tú decides cada capa.» → «Ármalo.» |
+| dom 25 · 20:00 | **Mañana descansamos** | domingo | SANDO limpia su tabla: «Mañana descansamos.» → «Hoy, hasta las 22:00.» |
 
 **El último cuadro de cada historia** lleva el pie «sndwch.app · enlace en el perfil». Las cifras y
 horas **no están escritas**: salen del horario de la base, de `REGLAS.organizadorDesde` y de los

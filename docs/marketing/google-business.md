@@ -22,7 +22,7 @@ manejan las rutinas: publicaciones, fotos y respuestas a reseñas.
 | Horario | Martes a domingo 11:00–22:00 · Lunes cerrado |
 | Sitio web / enlace para pedir | https://sndwch.app/?src=google |
 | Teléfono | El WhatsApp del negocio que usa la app |
-| Apertura | 13 de octubre de 2026 |
+| Apertura | 20 de octubre de 2026 (movida del 13 el 2026-10-08) |
 
 **Descripción** (750 caracteres máx.):
 > Sándwiches armados al momento, para delivery en Trujillo. Pide un Signature —el Philly

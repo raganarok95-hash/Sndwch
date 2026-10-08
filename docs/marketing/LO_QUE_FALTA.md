@@ -3,9 +3,9 @@
 Dueño: «El Instagram está vacío: no hay nada más que una foto de perfil. ¿Qué más necesita el
 proceso de marketing?». Con la cuenta vacía cambia el orden: **quien llegue desde un video, un
 anuncio o la bolsa va a ver un perfil sin nada, y se va**. Antes que producir más, hay que
-llenar la vitrina. Abrimos el **martes 13**: quedan 6 días.
+llenar la vitrina. Abrimos el **martes 20** (el dueño la movió del 13 el 2026-10-08).
 
-## 1 · Antes del 13 (lo que bloquea)
+## 1 · Antes del 20 (lo que bloquea)
 
 | # | qué | quién | por qué bloquea |
 |---|---|---|---|
@@ -15,13 +15,13 @@ llenar la vitrina. Abrimos el **martes 13**: quedan 6 días.
 | 4 | **Token de la página (P33)** y la página + Instagram vinculados a la cuenta de anuncios | **tú** (10 min) | sin token no se publica nada solo; sin vínculo no hay pauta el 27 |
 | 5 | **Cómo apruebas desde el celular**: hoy las propuestas viven en documentos | yo (una lista en el panel, o te la mando por aquí con un «sí» por pieza) | el ciclo de la agencia se traba si aprobar cuesta |
 
-## 2 · La primera semana abierta (13–19 oct)
+## 2 · La primera semana abierta (20–26 oct)
 
 | # | qué | quién |
 |---|---|---|
-| 6 | **Calendario editorial** del 13 oct al 9 nov: qué sale cada día, en qué formato y a qué hora | yo, sobre `IDEAS.md` aprobadas |
+| 6 | **Calendario editorial** del 20 oct al 16 nov: qué sale cada día, en qué formato y a qué hora | yo, sobre `IDEAS.md` aprobadas |
 | 7 | **Kit de plantillas** de la marca para carrusel, póster, historia y portada de Reel: todo se ve como un mismo sistema | yo, para que tú apruebes una vez |
-| 8 | **La campaña de apertura**: el concepto del 13 (qué se dice, en qué piezas). Una oferta de apertura **solo si la decides tú** (es plata) | yo propongo, tú decides |
+| 8 | **La campaña de apertura**: el concepto del 20 (qué se dice, en qué piezas). Una oferta de apertura **solo si la decides tú** (es plata) | yo propongo, tú decides |
 | 9 | **Primeros seguidores**: con 0 seguidores, el alcance orgánico arranca casi en cero. Reels sí llega a no seguidores; además: tu red personal, la tarjeta de la bolsa con QR, los clientes de Rappi | yo diseño, tú invitas a tu red |
 | 10 | **TikTok creado y conectado** (dijiste que lo habilitas tú) · **Google Business verificado** · **WhatsApp Business** con catálogo y respuestas rápidas (P7) | **tú** |
 

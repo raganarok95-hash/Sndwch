@@ -5,7 +5,9 @@ import { precio } from './produccion.mjs';
 
 // La primera publicación pública. Antes de esta fecha nada sale: el video dice «Pídelo hoy».
 // (`business_launched` ya está prendido desde antes de abrir, así que no sirve para esto.)
-export const APERTURA = '2026-10-13';
+// El dueño la movió del 13 al 20 de octubre el 2026-10-08 («retrasamos la apertura una semana»).
+// Todo texto que nombra el día de apertura la lee de aquí (lanzamiento.mjs, historias.mjs).
+export const APERTURA = '2026-10-20';
 
 /**
  * @param {object} c

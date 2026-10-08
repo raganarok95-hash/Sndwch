@@ -81,7 +81,7 @@ con la hora de cada pedido real desde el día 13.
 
 | capa | qué es | cuánto |
 |---|---|---|
-| **Hero** | la apertura del 13, el primer mes y los momentos de la ciudad | 1 o 2 al mes |
+| **Hero** | la apertura del 20, el primer mes y los momentos de la ciudad | 1 o 2 al mes |
 | **Hub** | la serie de los hermanos: formatos fijos que vuelven cada semana | la mayoría del feed |
 | **Help** | cómo pedir, la carta, la zona, el grupo, el horario | fijo en destacadas y carruseles; en historias, todos los días |
 

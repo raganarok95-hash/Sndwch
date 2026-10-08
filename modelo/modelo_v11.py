@@ -61,7 +61,7 @@ FIJOS_MES       = 500.0   # [MEDIDO] opera desde casa, sin planilla
 CAP_POR_PERSONA = 40      # [MEDIDO] cocina por tandas; en servicio solo arma
 SUELDO          = 1500.0  # [DECISIÓN] dueño 2026-09-02
 COSTO_REFERIDO  = 7.65    # [MEDIDO] insumo del 15CM de R06 + bebida de R05
-APERTURA        = date(2026, 10, 12)  # [MEDIDO] techo que puso el dueño; el 12 es lunes (cerrado)
+APERTURA        = date(2026, 10, 19)  # [MEDIDO] dueño 2026-10-08: abre el martes 20; el 19 es lunes (cerrado)
 CERRADO_WEEKDAY = 0       # [MEDIDO] lunes cerrado
 
 META_M3, MES_M3 = 4000.0, 3   # [DECISIÓN] dueño 2026-09-02: desde el mes 3, neto ≥ S/4,000
@@ -324,7 +324,7 @@ if __name__ == "__main__":
 
     sep('SND//WCH — MODELO v11 · PROYECCIÓN A 3 Y 6 MESES · 20,000 ESCENARIOS')
     print(f"""
-  Apertura: {APERTURA:%d de %B de %Y} (el techo que puso el dueño). Lunes cerrado.
+  Apertura: {APERTURA:%d de %B de %Y} (lunes; se abre el martes siguiente). Lunes cerrado.
   Mes 3 = {ETIQ[DESDE_M3]}  ·  Mes 6 = {ETIQ[DESDE_M6]}   ← derivados del calendario, no escritos a mano
   Objetivo [DECISIÓN del dueño]: neto >= {s(META_M3)} desde el mes 3 y >= {s(META_M6)} desde el mes 6,
   TODOS los meses. No es un pico: basta un mes por debajo para romperlo.

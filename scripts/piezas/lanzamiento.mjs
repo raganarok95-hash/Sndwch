@@ -11,6 +11,7 @@
 import { chromium } from '@playwright/test';
 import { readFileSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { APERTURA } from '../video-auto/reglas-del-revisor.mjs';
 
 const [datosPath, horarioPath, OUT = 'docs/marketing/lanzamiento'] = process.argv.slice(2);
 const D = JSON.parse(readFileSync(datosPath, 'utf8'));
@@ -21,6 +22,9 @@ const img = (p) => 'file://' + resolve(ROOT, p);
 const precio = (n) => 'S/' + Number(n).toFixed(2);
 const ultimaFrase = (t) => t.split('.').map((x) => x.trim()).filter(Boolean).pop() + '.';
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+// El día de apertura sale de APERTURA, nunca escrito: el 2026-10-08 pasó del 13 al 20.
+const AB = { dia: DIAS[new Date(`${APERTURA}T12:00:00Z`).getUTCDay()], num: Number(APERTURA.slice(8, 10)), mes: MESES[Number(APERTURA.slice(5, 7)) - 1] };
 const abiertos = H.filter((d) => !d.closed).map((d) => d.weekday);
 const cerrados = H.filter((d) => d.closed).map((d) => DIAS[d.weekday]);
 const h0 = H.find((d) => !d.closed);
@@ -193,14 +197,14 @@ pieza('06-tira-la-sexta-salsa', pagina(`<div class="p" style="background:${C.pap
   </div>
   <div class="pie" style="bottom:52px"><div class="mono" style="font-size:26px;color:${C.oliva}">LA TIRA · N.º 1 · LA SEXTA SALSA</div>${marca()}</div></div>`));
 
-// 7 · ABRIMOS EL MARTES 13 — el aviso que se ve de lejos.
+// 7 · ABRIMOS EL <día de APERTURA> — el aviso que se ve de lejos.
 pieza('07-abrimos', pagina(`<div class="p" style="display:flex">
   <div class="sando" style="position:relative;width:50%;height:100%"><div class="forro"></div></div>
   <div class="wicho" style="position:relative;width:50%;height:100%;overflow:hidden">${curvas(540, 1350)}</div>
   <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center">
     <div class="mono" style="font-size:34px;letter-spacing:.2em;color:${C.tinta}">ABRIMOS EL</div>
-    <div class="disp" style="font-size:330px;margin-top:10px;color:${C.tinta}">Martes<br><span style="color:${C.naranja}">13</span></div>
-    <div class="mono" style="font-size:32px;letter-spacing:.16em;margin-top:30px;color:${C.tinta};background:${C.papel};padding:10px 22px;border-radius:8px">DE OCTUBRE · DESDE LAS ${String(h0.open_hour).padStart(2, '0')}:00</div>
+    <div class="disp" style="font-size:330px;margin-top:10px;color:${C.tinta}">${AB.dia[0].toUpperCase() + AB.dia.slice(1)}<br><span style="color:${C.naranja}">${AB.num}</span></div>
+    <div class="mono" style="font-size:32px;letter-spacing:.16em;margin-top:30px;color:${C.tinta};background:${C.papel};padding:10px 22px;border-radius:8px">DE ${AB.mes.toUpperCase()} · DESDE LAS ${String(h0.open_hour).padStart(2, '0')}:00</div>
   </div>
   <img src="${img('img/sando2_asoma.png')}" style="position:absolute;left:30px;bottom:30px;height:230px">
   <img src="${img('img/wicho_asoma.png')}" style="position:absolute;right:30px;bottom:30px;height:230px">
@@ -317,7 +321,7 @@ const TEXTOS = {
   '01-como-se-pide': ['Tres pasos y hoy ya no cocinas.', '1. Entra a sndwch.app desde el celular, sin descargar nada.', '2. Elige un Signature o arma el tuyo.', '3. Paga con Yape o tarjeta y te llega a donde estés.', link('ig-como')],
   '02-la-carta': [`La carta: ${D.sigs.length} Signatures. Cada uno, como tiene que ser. — SANDO`, '', ...D.sigs.map((x) => `${x.nombre} · 15CM ${precio(x.p15)} · 30CM ${precio(x.p30)}`), '', link('ig-carta')],
   '03-los-hermanos': ['Son hermanos. No se parecen en nada.', 'SANDO hace la carta. WICHO te deja armar el tuyo.', '¿De qué lado estás?', link('ig-hermanos')],
-  '07-abrimos': [`Abrimos el martes 13 de octubre, desde las ${h0.open_hour}:00.`, 'Sándwiches armados al momento, directo a tu puerta. ¿Ya sabes cuál vas a pedir?', link('ig-abrimos')],
+  '07-abrimos': [`Abrimos el ${AB.dia} ${AB.num} de ${AB.mes}, desde las ${h0.open_hour}:00.`, 'Sándwiches armados al momento, directo a tu puerta. ¿Ya sabes cuál vas a pedir?', link('ig-abrimos')],
   '05-philly': [`${ultimaFrase(philly.pitch)}`, `${philly.nombre}: ${philly.ingredientes.join(', ').toLowerCase()}.`, link('ig-philly')],
   '09-para-la-oficina': ['«Somos seis. Bueno, siete.» — WICHO', `Organiza el almuerzo de la oficina y el tuyo sale gratis: desde ${D.organizadorDesde} sándwiches, quien organiza se lleva el 15CM más barato.`, 'No aplica al menú secreto.', link('ig-grupo')],
   '04-arma-el-tuyo': ['Tu sándwich, como nadie más lo pide.', 'Las reglas las pones tú. — WICHO', link('ig-arma')],

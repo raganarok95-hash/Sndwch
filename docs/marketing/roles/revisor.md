@@ -23,7 +23,7 @@ no se sabe qué se agota.
 ## Las reglas (una que falla = bloqueada, con motivo)
 | regla | qué mira |
 |---|---|
-| espera | antes de `APERTURA` (2026-10-13) o un día que el horario de la base dice cerrado (lunes) o en pausa: no se toca nada |
+| espera | antes de `APERTURA` (2026-10-20; era el 13 hasta el 2026-10-08) o un día que el horario de la base dice cerrado (lunes) o en pausa: no se toca nada |
 | carta | el Signature sigue en la carta y activo |
 | stock | **al publicar**, no al revisar: ni el Signature ni su proteína agotados (lo mira el cron) |
 | precio | el precio del video = el que cobra la app hoy (`get-catalog`) |
