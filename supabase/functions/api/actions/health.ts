@@ -7,6 +7,9 @@ import { SESSION_SECRET, RESEND_API_KEY, CULQI_SECRET_KEY, VAPID_PRIVATE_KEY, GO
 import { sbGet } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { debugLog } from "../logging.ts";
+import { verifyCronSecret } from "../session.ts";
+import { verificarCapi, type VerificacionCapi } from "../meta-capi.ts";
+import type { Entrada } from "../../_shared/contrato.ts";
 
 export async function actPing(_b: any) {
   const checks = {
@@ -28,4 +31,13 @@ export async function actPing(_b: any) {
   // HTTP, no el cuerpo — por eso esto lanza en vez de devolver {ok:false} con 200.
   if (!ok) throw new ApiError("unhealthy: " + JSON.stringify(checks), 503);
   return { ok, checks };
+}
+
+// Prueba REAL del token de CAPI (ver verificarCapi en meta-capi.ts). Solo con el secreto del
+// cron: cada llamada le habla a Meta con el token del negocio, y abierta al público serviría
+// para gastarle el límite de llamadas justo al token que reporta las ventas. La usa
+// scripts/estado-apertura.mjs desde GitHub.
+export async function actVerificarMeta(b: Entrada<"verificar-meta">): Promise<VerificacionCapi> {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  return await verificarCapi();
 }
