@@ -259,7 +259,7 @@ export const CONTRATO = {
   'send-retention-report': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
   'remind-marketing-content': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
   'auto-publish-calendar': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
-  'verificar-meta': accion<{ pixel: boolean; token: boolean; tokenValido: boolean | null; puedeEscribirAlPixel: boolean | null; detalle: string | null; candidatos: Record<string, { pixel: boolean; token: boolean; tokenValido: boolean | null; puedeEscribirAlPixel: boolean | null; detalle: string | null }> }>()(e.objeto({ ...CAMPOS_CRON, pixeles: e.textoOpcional(120) })),
+  'verificar-meta': accion<{ pixel: boolean; token: boolean; tokenValido: boolean | null; puedeEscribirAlPixel: boolean | null; detalle: string | null; candidatos: Record<string, { pixel: boolean; token: boolean; tokenValido: boolean | null; puedeEscribirAlPixel: boolean | null; detalle: string | null }>; publicacion: { token: boolean; pagina: string | null; instagram: string | null; puedePublicar: boolean | null; detalle: string | null } }>()(e.objeto({ ...CAMPOS_CRON, pixeles: e.textoOpcional(120) })),
   'alert-complaint-deadlines': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
   'remind-unclaimed-challenge': accion<Record<string, unknown>>()(e.objeto(CAMPOS_CRON)),
   'remind-peak-hour': accion<Record<string, unknown>>()(e.objeto({ ...CAMPOS_CRON, slot: e.sinRevisar() })),

@@ -132,6 +132,31 @@ async function instagramDeLaPagina(pagina: { id: string; token: string }): Promi
   return (igDescubierto = id);
 }
 
+// Prueba REAL del token de la página, sin publicar nada (2026-10-08): que encuentre la página, que
+// la página tenga su Instagram profesional y que el token pueda publicar en él. El límite de
+// publicación de Instagram solo responde si el token trae `instagram_content_publish`: leerlo
+// prueba el permiso sin crear ningún contenedor. La usa verificar-meta (Estado para abrir).
+export type VerificacionPublicacion = { token: boolean; pagina: string | null; instagram: string | null; puedePublicar: boolean | null; detalle: string | null };
+export async function verificarPublicacion(): Promise<VerificacionPublicacion> {
+  const v: VerificacionPublicacion = { token: !!META_PAGE_ACCESS_TOKEN, pagina: null, instagram: null, puedePublicar: null, detalle: null };
+  if (!v.token) return v;
+  try {
+    const pagina = await paginaDelToken();
+    if (pagina.id === "me") { v.puedePublicar = false; v.detalle = "el token no ve ninguna página (¿le asignaste «Snd//wch» al usuario del sistema?)"; return v; }
+    const p = await metaGraphGet(pagina.id, { fields: "name,instagram_business_account{username}", access_token: pagina.token });
+    v.pagina = `${p?.name || "?"} (${pagina.id})`;
+    const ig = p?.instagram_business_account;
+    if (!ig?.id) { v.puedePublicar = false; v.detalle = "la página no tiene un Instagram profesional vinculado"; return v; }
+    v.instagram = `@${ig.username || "?"} (${ig.id})`;
+    await metaGraphGet(`${ig.id}/content_publishing_limit`, { fields: "quota_usage", access_token: pagina.token });
+    v.puedePublicar = true;
+  } catch (e: any) {
+    v.puedePublicar = false;
+    v.detalle = String(e?.message || e).slice(0, 220);
+  }
+  return v;
+}
+
 // Qué contenedores pide Instagram para una entrada: un Reel, una imagen o un CARRUSEL. El carrusel
 // (2026-10-07, lanzamiento del perfil) llega con sus láminas en `datos.laminas`, en orden; cada
 // lámina es un contenedor hijo y el padre las junta con el texto. Si una lámina se pierde o se
