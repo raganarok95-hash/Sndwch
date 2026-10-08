@@ -559,3 +559,17 @@ cuadro con Playwright → MP4 H.264). En el contenedor no hay ffmpeg: `pip insta
   renueva con `refresh_access_token`). Es la vía de respaldo si Meta no deja vincular.
 - `instagram_business_account` vacío en la página puede ser falta de vínculo **o** un token sin
   `instagram_basic`: se distingue mirando en la app de Instagram si «Página» dice «Snd//wch».
+
+## La laptop del dueño: instalar sin pasos a mano (2026-10-08)
+- **El repo es PÚBLICO** (`api.github.com` → `"private": false`). Por eso basta una línea para
+  instalar el Estudio, sin git previo:
+  `powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/raganarok95-hash/Sndwch/main/scripts/estudio/instalar.ps1 | iex"`.
+  Esa línea sirve desde Windows+R, CMD o PowerShell. Lo mismo hace que todo lo que sube la laptop
+  sea público: los registros reemplazan la ruta del usuario por `~`.
+- **Los `.ps1` se validan aquí con PowerShell 7 real**: se baja
+  `github.com/PowerShell/PowerShell/releases/download/v7.4.6/powershell-7.4.6-linux-x64.tar.gz` al
+  scratchpad y se usa `[System.Management.Automation.Language.Parser]::ParseFile`. El git del
+  Estudio se simula con un remoto falso y un `claude` falso. Lo que no se puede probar aquí:
+  `winget`, `Register-ScheduledTask` y el login de Flow (solo Windows).
+- En PowerShell 5.1, un `--` pasado a un programa externo puede perderse. Para
+  `claude mcp add … -- cmd /c npx …` se usa `Start-Process -ArgumentList @(...)`.
