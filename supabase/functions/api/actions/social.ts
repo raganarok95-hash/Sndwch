@@ -19,6 +19,7 @@ import { requireAdmin, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { SB_URL, META_PAGE_ACCESS_TOKEN, META_PAGE_ID, META_IG_USER_ID, META_GRAPH_VERSION, META_AD_ACCOUNT_ID, META_ADS_TOKEN } from "../env.ts";
 import type { Entrada, Salida } from "../../_shared/contrato.ts";
+import { fechaLima } from "../franja.ts";
 
 const IMAGE_MAX_BYTES = 4 * 1024 * 1024;
 const IMAGE_MIME_EXT: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
@@ -265,7 +266,9 @@ export function loQueSaleSolo(today: string): string {
 
 export async function actAutoPublishCalendar(b: Entrada<"auto-publish-calendar"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
-  const today = new Date().toISOString().slice(0, 10);
+  // El día de LIMA, no el de UTC: con la fecha UTC, desde las 19:00 de Lima salía lo programado
+  // para el día siguiente (2026-10-08).
+  const today = fechaLima(Date.now());
   const due = await sbGet("marketing_calendar", loQueSaleSolo(today));
   const results: { id: string; ok: boolean; error?: string }[] = [];
   for (const entry of due) {

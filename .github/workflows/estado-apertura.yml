@@ -4,6 +4,11 @@ name: Estado para abrir
 # el cliente (píxel, Google, horario, carta, inventario) y los pedidos que hay en la base.
 on:
   workflow_dispatch:
+    inputs:
+      pixeles:
+        description: 'IDs de conjuntos de datos de Meta a probar contra el token de CAPI (separados por coma)'
+        required: false
+        default: ''
 
 jobs:
   estado:
@@ -17,4 +22,5 @@ jobs:
       - name: Revisar
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PIXELES: ${{ inputs.pixeles }}
         run: node scripts/estado-apertura.mjs
