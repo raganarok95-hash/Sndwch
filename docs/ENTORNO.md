@@ -538,3 +538,24 @@ cuadro con Playwright → MP4 H.264). En el contenedor no hay ffmpeg: `pip insta
   solo `sndwch_cron_secret`. Las variables de Vercel del proyecto `sndwch` no se pueden leer desde
   aquí (403 de alcance), pero el código no lee nada de Vercel: los tokens van en Supabase →
   Edge Functions → Secrets.
+
+## Vincular Instagram a la página: lo que se sabe (2026-10-08, tarde)
+- **`developers.facebook.com` está bloqueado por el proxy de la sesión.** Las docs de la plataforma
+  de Instagram se leen por Context7: `/llmstxt/developers_facebook_instagram-platform_llms_txt`.
+  La ayuda de negocios de Meta se lee con `ads_get_help_article` del MCP `Meta_Ads`.
+- **El MCP de Meta no puede vincular Instagram a una página** ni ver a qué portafolio pertenece un
+  Instagram: `ads_get_ig_accounts` da `[]` tanto en `1488138326460689` como en `221839797`, y la
+  identidad del dueño ve un solo portafolio («Sndwch», `1098135606108831`).
+- **Desde 2024, Meta exige que la página y el Instagram estén en el MISMO portafolio** para
+  vincularlos ([ayuda 898752960195806](https://www.facebook.com/business/help/898752960195806)).
+  Con la página ya dentro de «Sndwch», vincular = meter el Instagram al portafolio, y eso es lo que
+  falla («No se pudo agregar tu página y cuenta de Instagram a una cuenta comercial»). Causas que
+  lista Meta ([ayuda 567938347644871](https://www.facebook.com/business/help/567938347644871)):
+  falta control total, otro administrador debe aprobar, restricción, o el Instagram ya está en
+  OTRO portafolio. Su salida documentada para el último caso: pasar el Instagram a personal,
+  volverlo profesional y conectarlo a la página en ese momento.
+- **La «Instagram API with Instagram Login» publica sin página y sin portafolio**
+  (`graph.instagram.com`, permiso `instagram_business_content_publish`, token de 60 días que se
+  renueva con `refresh_access_token`). Es la vía de respaldo si Meta no deja vincular.
+- `instagram_business_account` vacío en la página puede ser falta de vínculo **o** un token sin
+  `instagram_basic`: se distingue mirando en la app de Instagram si «Página» dice «Snd//wch».
