@@ -20,13 +20,12 @@ saber si el CAC real es S/8 (la meta es alcanzable) o S/25 (no existe).
 
 ## A · Medición — el píxel y la Conversions API
 
-> **Estado al 2026-09-10 — dónde estás parado.**
+> **Estado al 2026-10-08 — verificado contra Supabase** (workflow «Estado para abrir»).
 >
 > | | |
 > |---|---|
-> | `META_PIXEL_ID` | ✅ conseguido: `1571699187700546` |
-> | Secret en Supabase | ⬜ **falta ponerlo** (paso A3) |
-> | `META_CAPI_TOKEN` | ⬜ **falta generarlo** (paso A2) |
+> | `META_PIXEL_ID` | ✅ puesto en Supabase; el cliente lo recibe |
+> | `META_CAPI_TOKEN` | ⬜ **falta generarlo y ponerlo** (pasos A2 y A3) — antes de la pauta del 27 |
 > | Texto legal | ✅ corregido, ya no contradice al píxel |
 >
 > **Poner solo el `META_PIXEL_ID` ya sirve** — el píxel se prende solo, sin desplegar nada, y
@@ -116,56 +115,45 @@ Tres comprobaciones, de más rápida a más completa:
 
 ---
 
-## B · Publicación automática en Instagram y Facebook
+## B · Publicación automática y respuestas (UN token permanente) — reescrito 2026-10-08
 
-Esto ya está construido, pero necesita tres datos más. Requisitos previos: una **Página de
-Facebook**, una cuenta de **Instagram Business** vinculada a esa Página, y una **app** en
-[Meta for Developers](https://developers.facebook.com/).
+Un solo secret: **`META_PAGE_ACCESS_TOKEN`**. El servidor saca de ahí la página y el Instagram
+(`paginaDelToken()` en `api/actions/social.ts`); `META_PAGE_ID` y `META_IG_USER_ID` ya no hacen
+falta. El recomendado es el de un **usuario del sistema**, porque **no vence nunca**.
 
-### B1. Token con los permisos correctos
+### B1. Ten una app de Meta (una sola vez)
+1. Entra a **developers.facebook.com** → **Mis apps** → **Crear app**.
+2. Caso de uso: **Otro** → tipo **Empresa** (Business). Nombre: `SNDWCH`. Portafolio comercial:
+   el de tu negocio. Crear.
 
-1. Entra al **[Explorador de la API Graph](https://developers.facebook.com/tools/explorer/)**.
-2. Arriba a la derecha elige **tu app**, y en "User or Page Access Token" elige tu usuario.
-3. **Agregar permisos**, y marca estos cuatro:
-   - `pages_show_list`
-   - `pages_read_engagement`
-   - `pages_manage_posts`
-   - `instagram_basic`
-   - `instagram_content_publish`
-4. **Generar token de acceso** y acepta el diálogo.
+### B2. Crea el usuario del sistema y dale la página y el Instagram
+1. Entra a **business.facebook.com** → ⚙ **Configuración** (Configuración del negocio).
+2. **Usuarios → Usuarios del sistema → Agregar**. Nombre `sndwch-bot`, rol **Administrador**.
+3. Con `sndwch-bot` elegido: **Asignar activos** →
+   - **Páginas** → «Snd//wch» → **Control total**.
+   - **Cuentas de Instagram** → tu cuenta → **Control total**.
+   - **Apps** → `SNDWCH` → **Control total**.
 
-### B2. Consigue el ID de la Página y el de Instagram
+### B3. Genera el token (no vence)
+1. En `sndwch-bot`: **Generar token** → app `SNDWCH` → vencimiento **Nunca**.
+2. Marca estos permisos:
+   `pages_show_list` · `pages_read_engagement` · `pages_manage_posts` · `instagram_basic` ·
+   `instagram_content_publish` · `business_management` — y, para el bot de respuestas que viene
+   después: `pages_messaging` · `instagram_manage_messages` · `instagram_manage_comments`.
+3. **Generar**. Copia el texto largo (empieza con `EAA`). **Es una contraseña**: no lo mandes por
+   chat ni por correo.
 
-Con ese token puesto en el Explorador:
+### B4. Pégalo en Supabase
+**supabase.com** → tu proyecto → **Edge Functions** → **Secrets** → **Add new secret**:
+nombre `META_PAGE_ACCESS_TOKEN`, valor el token. Guardar. No hace falta redesplegar.
 
-- Consulta `me/accounts` → te devuelve tus Páginas. El campo `id` de la tuya es
-  **`META_PAGE_ID`**, y su `access_token` es un **token de Página**.
-- Consulta `{PAGE_ID}?fields=instagram_business_account` → el `id` que devuelve es
-  **`META_IG_USER_ID`**.
+### B5. Comprobar
+Avísame y corro el workflow **«Estado para abrir»**: debe salir ✓ en «Publicar en
+Instagram/Facebook». Las 9 publicaciones del lanzamiento salen apenas las apruebes.
 
-### B3. Convierte el token en uno de larga duración
-
-El token del Explorador **caduca en horas**. Para que no se apague solo, cámbialo por uno de
-larga duración con la herramienta **[Depurador de tokens](https://developers.facebook.com/tools/debug/accesstoken/)**:
-pega el token, y abajo usa **"Extender token de acceso"**.
-
-Un **token de Página** de larga duración normalmente **no expira** mientras no cambies la clave
-ni revoques permisos. Ése es el que va como **`META_PAGE_ACCESS_TOKEN`**.
-
-⚠ **Verifica la fecha de expiración en el Depurador antes de darlo por bueno.** Si dice que
-expira en 60 días, guardaste el de usuario y no el de Página — y la publicación se va a apagar
-sola dos meses después, sin aviso.
-
-### B4. Ponlos en Supabase
-
-```
-META_PAGE_ACCESS_TOKEN = EAAG...(el token de Página, largo)
-META_PAGE_ID           = 1234567890
-META_IG_USER_ID        = 17841400000000000
-```
-
-Mientras falten, el panel te devuelve un **error claro** al intentar publicar; no falla en
-silencio y no rompe nada más.
+### B6. Además, para la pauta del 27: vincular a la cuenta de anuncios
+**Configuración del negocio → Cuentas → Cuentas publicitarias** → la 221839797 → **Asignar
+activos**: la página «Snd//wch» y tu Instagram. Hoy la cuenta de anuncios no tiene ninguno.
 
 ---
 

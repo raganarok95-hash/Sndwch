@@ -79,8 +79,9 @@ y el bucle 2 aplica a cada integrante del grupo.
 
 ## 4 · WhatsApp gratis
 
-La API de WhatsApp **no cobra los mensajes de servicio** si la conversación la empieza el
-cliente: durante 24 horas, todo lo que le respondes es gratis. Diseño:
+**Corrección 2026-10-08:** desde el 1-oct-2026 Meta da **1,000 mensajes de servicio gratis al mes
+por número** y cobra los siguientes; lo que se manda desde la app WhatsApp Business sigue gratis
+(`docs/marketing/RESPUESTAS_AUTOMATICAS.md`). Diseño original (vale dentro de ese tope):
 
 - En el pedido, un botón «Sigue tu pedido por WhatsApp». Abre WhatsApp con un mensaje ya escrito
   («Hola, quiero seguir mi pedido ORD-…»). El cliente lo envía: **él abre la ventana gratis**.
