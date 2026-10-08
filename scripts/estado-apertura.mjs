@@ -13,7 +13,7 @@ const CLAVE = {
   'Píxel de Meta': ['META_PIXEL_ID'],
   'Compras a Meta desde el servidor (CAPI)': ['META_CAPI_TOKEN'],
   'Publicar en Instagram/Facebook': ['META_PAGE_ACCESS_TOKEN'],
-  'Pauta (lectura de gasto)': ['META_ADS_TOKEN', 'META_AD_ACCOUNT_ID'],
+  'Pauta (lectura de gasto; si falta, usa el token de la página)': ['META_ADS_TOKEN'],
   'Google (entrar y mapa)': ['GOOGLE_CLIENT_ID', 'GOOGLE_MAPS_KEY'],
 };
 console.log('## Secrets (solo nombres)');
