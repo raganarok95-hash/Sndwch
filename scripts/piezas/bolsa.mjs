@@ -1,4 +1,5 @@
-// SND//WCH — piezas/bolsa: el empaque completo (propuesta 2026-10-08, docs/marketing/bolsa/).
+// SND//WCH — piezas/bolsa: la bolsa a una tinta (2026-10-08, docs/marketing/bolsa/) y, en
+// `mas-adelante/`, las piezas que el dueño dejó para después.
 // La tarjeta que va dentro (dos versiones), el sticker de cierre, el arte de la bolsa y el patrón
 // del papel manteca, en PDF para imprenta (medidas reales en mm, con 3 mm de sangrado) y en PNG
 // para verlas, más una maqueta de cómo llega todo junto.
@@ -37,7 +38,9 @@ const BASE = `*{box-sizing:border-box;margin:0;padding:0}body{font-family:Archiv
 .disp{font-family:Anton,sans-serif;text-transform:uppercase;line-height:.92}.voz{font-family:'Instrument Serif',serif;font-style:italic}.mono{font-family:'IBM Plex Mono',monospace;font-weight:600}`;
 // Cada pieza: ancho y alto FINALES en mm; se agrega 3 mm de sangrado por lado.
 const piezas = [];
-const pieza = (archivo, w, h, cuerpo) => piezas.push({ archivo, w, h, cuerpo });
+// Dueño, 2026-10-08: «No puedo mandar tarjetas por cada uno por ahora: debe ser todo en la bolsa,
+// a una sola tinta». Lo de ahora es la bolsa; lo demás queda diseñado en `mas-adelante/`.
+const pieza = (archivo, w, h, cuerpo, ahora = false) => piezas.push({ archivo, w, h, cuerpo, dir: ahora ? OUT : `${OUT}/mas-adelante` });
 const S = 3; // sangrado
 
 // ── 1 · Tarjeta de la bolsa: pedidos propios → pedido en grupo (mundo de WICHO) ──────────────
@@ -95,24 +98,31 @@ pieza('etiqueta-sandwich', 50, 30, `<div style="position:absolute;inset:0;backgr
   </div>
   <div style="position:absolute;right:${S + 3.5}mm;bottom:${S + 2.6}mm">${marca(C.tinta, '2.4mm')}</div></div>`);
 
-// ── 4 · Arte de la bolsa — para cuando se imprima: 3 tintas planas sobre kraft (la tinta y las ──
-//        dos barras del «//»). La cara de los hermanos va en el sticker, que se imprime a color.
+// ── 4 · La bolsa, a UNA tinta sobre kraft (lo que se imprime ahora) ───────────────────────────
+//        El «//» va dorado y celeste o no va (CLAUDE.md, regla 10): a una tinta no se puede, así
+//        que el nombre en la bolsa es sndwch.app, que además es donde se pide. La cara de los
+//        hermanos ya va en el papel manteca. El dorso hace el trabajo de la tarjeta: el grupo.
 const costillas = (alto) => `<div style="height:${alto}mm;background:repeating-linear-gradient(90deg,${C.tinta} 0 1.6mm,transparent 1.6mm 4.2mm)"></div>`;
-const DOBLEZ = 60; // mm de arriba que quedan bajo la solapa al cerrar la bolsa
-pieza('bolsa-frente', 240, 300, `<div style="position:absolute;inset:0;background:${C.kraft};overflow:hidden">
-  <div style="position:absolute;left:0;right:0;top:${S + DOBLEZ + 4}mm;height:44mm;overflow:hidden">${curvas(246, 44, C.tinta, 8, 2.6, 0.6)}</div>
-  <div style="position:absolute;left:${S}mm;right:${S}mm;top:${S + DOBLEZ + 66}mm;display:flex;flex-direction:column;align-items:center;gap:7mm;color:${C.tinta}">
-    ${marca(C.tinta, '34mm')}
-    <div class="voz" style="font-size:15mm">Armado al momento.</div>
+const DOBLEZ = 60; // mm de arriba que quedan bajo la solapa al cerrar la bolsa: ahí no va nada
+pieza('bolsa-frente', 240, 300, `<div style="position:absolute;inset:0;background:${C.kraft};color:${C.tinta};overflow:hidden">
+  <div style="position:absolute;left:0;right:0;top:${S + DOBLEZ + 4}mm;height:40mm;overflow:hidden">${curvas(246, 40, C.tinta, 7, 2.6, 0.7)}</div>
+  <div style="position:absolute;left:${S + 22}mm;right:${S + 22}mm;top:${S + DOBLEZ + 64}mm">
+    <div class="voz" style="font-size:36mm;line-height:.98">Alguien<br>pidió bien.</div>
   </div>
-  <div class="mono" style="position:absolute;left:0;right:0;bottom:${S + 34}mm;text-align:center;font-size:7mm;letter-spacing:.1em;color:${C.tinta}">sndwch.app</div>
-  <div style="position:absolute;left:0;right:0;bottom:0;height:${S + 22}mm">${costillas(S + 22)}</div></div>`);
+  <div class="mono" style="position:absolute;left:${S + 22}mm;bottom:${S + 38}mm;font-size:12mm;letter-spacing:.03em">sndwch.app</div>
+  <div style="position:absolute;left:0;right:0;bottom:0;height:${S + 22}mm">${costillas(S + 22)}</div></div>`, true);
 pieza('bolsa-dorso', 240, 300, `<div style="position:absolute;inset:0;background:${C.kraft};color:${C.tinta};overflow:hidden">
-  <div style="position:absolute;left:${S + 22}mm;right:${S + 22}mm;top:${S + DOBLEZ + 40}mm">
-    <div class="voz" style="font-size:30mm;line-height:1">Alguien<br>pidió bien.</div>
+  <div style="position:absolute;left:${S + 22}mm;right:${S + 22}mm;top:${S + DOBLEZ + 10}mm">
+    <div class="disp" style="font-size:30mm">¿Y la<br>oficina?</div>
+    <div style="font:800 9mm/1.15 Archivo,sans-serif;margin-top:6mm">«Somos seis. Bueno, siete.»</div>
   </div>
-  <div class="mono" style="position:absolute;left:${S + 22}mm;bottom:${S + 34}mm;font-size:7mm;letter-spacing:.1em">sndwch.app</div>
-  <div style="position:absolute;left:0;right:0;bottom:0;height:${S + 22}mm">${costillas(S + 22)}</div></div>`);
+  <div style="position:absolute;left:${S + 22}mm;top:${S + DOBLEZ + 112}mm;width:52mm;height:52mm">${await qr(URL_GRUPO)}</div>
+  <div style="position:absolute;left:${S + 84}mm;right:${S + 20}mm;top:${S + DOBLEZ + 112}mm">
+    <div class="disp" style="font-size:13mm">Pide<br>en grupo</div>
+    <div style="font-size:6.2mm;line-height:1.3;margin-top:4mm">Cada uno elige lo suyo desde su celular. Con ${D.organizadorDesde}, el más barato va gratis.</div>
+  </div>
+  <div class="mono" style="position:absolute;left:${S + 22}mm;top:${S + DOBLEZ + 168}mm;font-size:6mm">sndwch.app</div>
+  <div style="position:absolute;left:0;right:0;bottom:0;height:${S + 22}mm">${costillas(S + 22)}</div></div>`, true);
 
 // ── 5 · Papel manteca: patrón a UNA tinta (así se imprime), sin el «//» que pide dos colores ──
 //        La espiral es de WICHO, las costillas de SANDO; la frase es la promesa.
@@ -135,46 +145,38 @@ const b = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_PATH ? { executa
 const fuentes = process.env.FUENTES_CSS ? readFileSync(process.env.FUENTES_CSS, 'utf8') : null;
 const MM = 96 / 25.4;
 for (const x of piezas) {
+  mkdirSync(x.dir, { recursive: true });
   const W = x.w + 2 * S, H = x.h + 2 * S;
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>${BASE}html,body{width:${W}mm;height:${H}mm;overflow:hidden}@page{size:${W}mm ${H}mm;margin:0}</style></head><body><div style="position:relative;width:${W}mm;height:${H}mm;overflow:hidden">${x.cuerpo}</div></body></html>`;
-  const tmp = resolve(OUT, `.${x.archivo}.html`); writeFileSync(tmp, html);
+  const tmp = resolve(x.dir, `.${x.archivo}.html`); writeFileSync(tmp, html);
   const p = await b.newPage({ viewport: { width: Math.ceil(W * MM), height: Math.ceil(H * MM) }, deviceScaleFactor: x.w > 100 ? 1.2 : 4 });
   await p.goto('file://' + tmp, { waitUntil: 'load' });
   if (fuentes) await p.addStyleTag({ content: fuentes });
   else await p.addStyleTag({ url: 'https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;700;800&family=IBM+Plex+Mono:wght@600&family=Instrument+Serif:ital@1&display=block' });
   await p.evaluate(async () => { await Promise.all(['400 10px Anton', '800 10px Archivo', '600 10px "IBM Plex Mono"', 'italic 400 10px "Instrument Serif"'].map((f) => document.fonts.load(f))); await Promise.all([...document.images].map((i) => i.decode().catch(() => 0))); });
-  await p.pdf({ path: `${OUT}/${x.archivo}.pdf`, width: `${W}mm`, height: `${H}mm`, printBackground: true, pageRanges: '1' });
-  await p.screenshot({ path: `${OUT}/${x.archivo}.png`, clip: { x: 0, y: 0, width: W * MM, height: H * MM } });
+  await p.pdf({ path: `${x.dir}/${x.archivo}.pdf`, width: `${W}mm`, height: `${H}mm`, printBackground: true, pageRanges: '1' });
+  await p.screenshot({ path: `${x.dir}/${x.archivo}.png`, clip: { x: 0, y: 0, width: W * MM, height: H * MM } });
   await p.close(); rmSync(tmp);
 }
-// ── Maqueta: cómo llega todo junto (la bolsa lisa del 13 y la impresa de después) ────────────
+// ── Maqueta: la bolsa por sus dos caras, doblada (sin sticker: todo va impreso) ──────────────
 {
   const MS = 3;
   const recorte = (archivo, fw, fh, wpx, estilo = '') => {
     const hpx = (wpx * fh) / fw, k = wpx / fw;
     return `<div style="position:absolute;width:${wpx}px;height:${hpx}px;overflow:hidden;${estilo}"><img src="${img(`${OUT}/${archivo}.png`)}" style="position:absolute;left:${-MS * k}px;top:${-MS * k}px;width:${(fw + 2 * MS) * k}px"></div>`;
   };
-  const sello = (d, x, y) => `<div style="position:absolute;left:${x}px;top:${y}px;width:${d}px;height:${d}px;border-radius:50%;overflow:hidden;box-shadow:0 3px 6px rgba(0,0,0,.3)"><img src="${img(`${OUT}/sticker-cierre.png`)}" style="position:absolute;left:${(-d * MS) / 60}px;top:${(-d * MS) / 60}px;width:${(d * 66) / 60}px"></div>`;
-  const solapa = (w) => `<div style="position:absolute;left:0;top:0;width:${w}px;height:96px;background:linear-gradient(#A47650,#B08257);box-shadow:0 6px 8px -2px rgba(0,0,0,.35)"></div>`;
-  const bolsa = (x, cara) => `<div style="position:absolute;left:${x}px;top:110px;width:380px;height:475px;background:${C.kraft};box-shadow:0 26px 40px rgba(40,25,10,.35);overflow:hidden">
-    ${cara ? recorte('bolsa-frente', 240, 300, 380, 'left:0;top:0') : '<div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.06),transparent 18%,transparent 82%,rgba(0,0,0,.08))"></div>'}
-    ${solapa(380)}</div>${sello(118, x + 131, 110 + 96 - 59)}`;
+  const solapa = (w, alto) => `<div style="position:absolute;left:0;top:0;width:${w}px;height:${alto}px;background:linear-gradient(#A47650,#B08257);box-shadow:0 6px 8px -2px rgba(0,0,0,.35)"></div>`;
+  const W = 440, Hb = 550, sol = Math.round((Hb * DOBLEZ) / 300) - 8;
+  const bolsa = (x, cara) => `<div style="position:absolute;left:${x}px;top:110px;width:${W}px;height:${Hb}px;background:${C.kraft};box-shadow:0 26px 40px rgba(40,25,10,.35);overflow:hidden">
+    ${recorte(cara, 240, 300, W, 'left:0;top:0')}${solapa(W, sol)}</div>`;
   const nota = (x, y, t) => `<div class="mono" style="position:absolute;left:${x}px;top:${y}px;font-size:15px;letter-spacing:.06em;color:#5A4E40">${t}</div>`;
   const escena = `<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 40% 30%,#E4DCCF,#C7BCAA)">
-    ${bolsa(120)}${bolsa(560, true)}
-    ${nota(120, 600, 'PARA EL MARTES 13: BOLSA LISA + STICKER')}${nota(560, 600, 'CUANDO SE IMPRIMA LA BOLSA')}
-    <div style="position:absolute;left:190px;top:690px;width:600px;height:150px;border-radius:64px;transform:rotate(-3deg);overflow:hidden;box-shadow:0 22px 30px rgba(40,25,10,.3)">
-      <div style="position:absolute;inset:0;background:url('${img(`${OUT}/papel-manteca-patron.png`)}') 0 0/300px 300px"></div>
-      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.25),transparent 30%,transparent 62%,rgba(0,0,0,.22))"></div>
-      ${recorte('etiqueta-sandwich', 50, 30, 210, 'left:200px;top:22px;transform:rotate(2deg);box-shadow:0 2px 4px rgba(0,0,0,.25)')}
-    </div>
-    ${recorte('tarjeta-grupo-frente', 90, 55, 400, 'left:1030px;top:120px;transform:rotate(5deg);box-shadow:0 16px 26px rgba(40,25,10,.3)')}
-    ${recorte('tarjeta-grupo-dorso', 90, 55, 400, 'left:1080px;top:420px;transform:rotate(-4deg);box-shadow:0 16px 26px rgba(40,25,10,.3)')}
-    ${recorte('tarjeta-rappi-frente', 90, 55, 400, 'left:1010px;top:720px;transform:rotate(3deg);box-shadow:0 16px 26px rgba(40,25,10,.3)')}
+    ${bolsa(170, 'bolsa-frente')}${bolsa(700, 'bolsa-dorso')}
+    ${nota(170, 690, 'FRENTE · UNA TINTA')}${nota(700, 690, 'DORSO · EL QR ABRE UN PEDIDO EN GRUPO')}
   </div>`;
   const tmp = resolve(OUT, '.maqueta.html');
-  writeFileSync(tmp, `<!doctype html><html><head><meta charset="utf-8"><style>${BASE}body{width:1540px;height:1000px;overflow:hidden;position:relative}</style></head><body>${escena}</body></html>`);
-  const p = await b.newPage({ viewport: { width: 1540, height: 1000 }, deviceScaleFactor: 1.5 });
+  writeFileSync(tmp, `<!doctype html><html><head><meta charset="utf-8"><style>${BASE}body{width:1310px;height:760px;overflow:hidden;position:relative}</style></head><body>${escena}</body></html>`);
+  const p = await b.newPage({ viewport: { width: 1310, height: 760 }, deviceScaleFactor: 1.5 });
   await p.goto('file://' + tmp, { waitUntil: 'load' });
   if (fuentes) await p.addStyleTag({ content: fuentes });
   await p.evaluate(async () => { await document.fonts.load('600 10px "IBM Plex Mono"'); await Promise.all([...document.images].map((i) => i.decode().catch(() => 0))); });
@@ -182,4 +184,4 @@ for (const x of piezas) {
   await p.close(); rmSync(tmp);
 }
 await b.close();
-console.log(`✓ ${piezas.length} piezas en ${OUT} (PDF con 3 mm de sangrado + PNG)`);
+console.log(`✓ bolsa en ${OUT}, ${piezas.length - 2} piezas en ${OUT}/mas-adelante (PDF con 3 mm de sangrado + PNG)`);

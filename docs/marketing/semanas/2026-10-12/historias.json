@@ -1,0 +1,252 @@
+{
+ "semana": "2026-10-12",
+ "historias": [
+  {
+   "id": "manana",
+   "titulo": "Mañana",
+   "dia": "2026-10-12",
+   "hora": "19:00",
+   "momento": "antes de abrir",
+   "nivel": "nos vio una vez",
+   "por_que": "La única historia antes de abrir. La cuenta regresiva con recordatorio es el único sticker que trae a la gente de vuelta el martes sin pauta.",
+   "cuadros": [
+    {
+     "encargo": "2026-10-12-manana-1",
+     "personaje": "WICHO",
+     "texto": "¿Mañana?",
+     "voz": "wicho",
+     "escena": "WICHO peeking through the narrow gap of a half-open kitchen door, impatient, only half of his face visible. He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
+    },
+    {
+     "encargo": "2026-10-12-manana-2",
+     "personaje": "SANDO",
+     "texto": "Mañana.",
+     "voz": "sando",
+     "escena": "SANDO standing completely still behind a long wooden cutting board, arms crossed, calm, looking slightly off-frame. Camera slightly low, slow push-in feel. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
+    },
+    {
+     "encargo": "2026-10-12-manana-3",
+     "personaje": null,
+     "texto": "{dia_abre}, desde las {abre}.",
+     "voz": "neutra",
+     "sticker": {
+      "tipo": "cuenta regresiva",
+      "texto": "Abrimos",
+      "fin": "2026-10-13 {abre}"
+     },
+     "escena": "A closed kitchen door seen from outside at night, warm light leaking from the gap underneath onto a dark floor. No characters. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
+    }
+   ]
+  },
+  {
+   "id": "puerta",
+   "titulo": "La puerta",
+   "dia": "2026-10-13",
+   "hora": "10:50",
+   "momento": "apertura (hero)",
+   "nivel": "nos vio una vez",
+   "por_que": "El hero de la semana. Tres cuadros, uno por hermano y uno abierto: presenta a los dos sin explicar nada.",
+   "cuadros": [
+    {
+     "encargo": "2026-10-13-puerta-1",
+     "personaje": "WICHO",
+     "texto": "Ya casi.",
+     "voz": "wicho",
+     "escena": "WICHO from inside the kitchen, one hand on the door handle, bouncing on his toes, about to open. He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
+    },
+    {
+     "encargo": "2026-10-13-puerta-2",
+     "personaje": "SANDO",
+     "texto": "{abre}.",
+     "voz": "sando",
+     "escena": "SANDO standing still, looking up calmly at a round wall clock with no numbers whose hands point to eleven o'clock. Slow camera push. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
+    },
+    {
+     "encargo": "2026-10-13-puerta-3",
+     "personaje": null,
+     "texto": "Abierto.",
+     "voz": "neutra",
+     "sticker": {
+      "tipo": "enlace",
+      "texto": "PIDE",
+      "url": "https://sndwch.app/?src=ig-hist"
+     },
+     "escena": "The double doors of a small kitchen wide open, warm golden light spilling out toward the viewer; on the counter, ONE Philly Cheesesteak sub on white paper: white sub roll, thin seared beef, sautéed onion, green pepper strips, melted cheddar, no sauce. No characters."
+    }
+   ]
+  },
+  {
+   "id": "cual",
+   "titulo": "¿La de quién?",
+   "dia": "2026-10-13",
+   "hora": "12:00",
+   "momento": "almuerzo de oficina",
+   "nivel": "no nos conoce",
+   "por_que": "LA IDEA de la semana en dos cuadros. La encuesta da el dato que decide quién lleva la semana siguiente (la «sección de comentarios es el brief», Duolingo).",
+   "cuadros": [
+    {
+     "encargo": "2026-10-13-cual-1",
+     "personaje": "SANDO",
+     "texto": "Hay dos maneras de pedir bien.",
+     "voz": "sando",
+     "mitad": "arriba",
+     "escena": "SANDO standing still behind his wooden board with ONE neat, closed Italian Hoagie sub on it (white sub roll, folded Italian cold cuts, American cheese, lettuce, tomato, red onion, green pepper). Calm, ordered. Horizontal composition, he is on the left. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
+    },
+    {
+     "encargo": "2026-10-13-cual-2",
+     "personaje": "WICHO",
+     "texto": "La de SANDO, o la tuya.",
+     "voz": "wicho",
+     "mitad": "abajo",
+     "sticker": {
+      "tipo": "encuesta",
+      "pregunta": "¿Cuál pides?",
+      "opciones": [
+       "La de SANDO",
+       "La mía"
+      ]
+     },
+     "escena": "WICHO at an open counter full of separate ingredients (sliced turkey, thick tomato slices, red onion, pickles, cheddar slices, a white sub roll), arms wide open, chaotic joy. Horizontal composition, he is on the right. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
+    }
+   ]
+  },
+  {
+   "id": "lista",
+   "titulo": "La lista",
+   "dia": "2026-10-14",
+   "hora": "11:30",
+   "momento": "almuerzo de oficina",
+   "nivel": "no nos conoce",
+   "por_que": "El momento con más pedido por persona: el grupo. WICHO exagera la lista; el último cuadro da la regla y el enlace que abre el grupo.",
+   "cuadros": [
+    {
+     "encargo": "2026-10-14-lista-1",
+     "personaje": "WICHO",
+     "texto": "¿Y la oficina?",
+     "voz": "wicho",
+     "escena": "WICHO walking in proudly holding a handwritten paper list so long it unrolls and drags across the whole floor behind him (the paper shows only scribbles, no readable letters). He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
+    },
+    {
+     "encargo": "2026-10-14-lista-2",
+     "personaje": null,
+     "texto": "Cada uno elige lo suyo desde su celular.",
+     "voz": "neutra",
+     "escena": "Top-down view of an office desk at noon: six smartphones from different people lying in a loose circle, screens glowing with soft blurred colors (no readable content), a few pens and a coffee cup. Daylight, no characters."
+    },
+    {
+     "encargo": "2026-10-14-lista-3",
+     "personaje": "WICHO",
+     "texto": "Con {organizadorDesde}, el más barato va gratis.",
+     "voz": "wicho",
+     "sticker": {
+      "tipo": "enlace",
+      "texto": "PEDIR EN GRUPO",
+      "url": "https://sndwch.app/?grupo=1&src=ig-hist"
+     },
+     "escena": "WICHO jumping with joy on top of an office desk, next to five subs wrapped in white paper lined up in a neat row (no filling visible). He moves, the camera does not. Bright midday office light."
+    }
+   ]
+  },
+  {
+   "id": "pensado",
+   "titulo": "Ya lo pensé yo",
+   "dia": "2026-10-15",
+   "hora": "19:30",
+   "momento": "noche sin cocinar",
+   "nivel": "no nos conoce",
+   "por_que": "SANDO le habla a la noche cansada sin decir «pide»: el curador ya decidió por ti. Termina en la carta.",
+   "cuadros": [
+    {
+     "encargo": "2026-10-15-pensado-1",
+     "personaje": "SANDO",
+     "texto": "No pienses.",
+     "voz": "sando",
+     "escena": "SANDO sitting calmly at a home dining table at night, a closed sub wrapped in white paper in front of him, not looking at the camera. Warm lamp light, the rest in shadow. Slow camera push."
+    },
+    {
+     "encargo": "2026-10-15-pensado-2",
+     "personaje": "SANDO",
+     "texto": "Ya lo pensé yo.",
+     "voz": "sando",
+     "sticker": {
+      "tipo": "enlace",
+      "texto": "LA CARTA",
+      "url": "https://sndwch.app/?src=ig-hist"
+     },
+     "escena": "SANDO close-up portrait, a calm knowing half-smile, looking straight at the camera for the first time. Warm lamp light from one side, the rest in shadow. Slow camera push."
+    }
+   ]
+  },
+  {
+   "id": "arma",
+   "titulo": "Arma el tuyo",
+   "dia": "2026-10-16",
+   "hora": "16:30",
+   "momento": "el antojo de la tarde",
+   "nivel": "no nos conoce",
+   "por_que": "El mundo de WICHO. La caja de preguntas junta lo que la gente se pondría: es material para la semana siguiente.",
+   "cuadros": [
+    {
+     "encargo": "2026-10-16-arma-1",
+     "personaje": "WICHO",
+     "texto": "{pasos_lista}",
+     "voz": "wicho",
+     "escena": "WICHO building a sub in mid-air: an open white sub roll below, and above it sliced turkey folds, thick tomato slices, red onion, pickles and a cheddar slice floating in a spiral. He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
+    },
+    {
+     "encargo": "2026-10-16-arma-2",
+     "personaje": "WICHO",
+     "texto": "Tú decides cada capa.",
+     "voz": "wicho",
+     "sticker": {
+      "tipo": "pregunta",
+      "pregunta": "¿Qué le pondrías tú?"
+     },
+     "escena": "WICHO laughing with his arms wide open while ingredients rain down around him like confetti: pickle slices, thick tomato slices, red onion rings, jalapeño slices. He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
+    },
+    {
+     "encargo": "2026-10-16-arma-3",
+     "personaje": "WICHO",
+     "texto": "Ármalo.",
+     "voz": "wicho",
+     "sticker": {
+      "tipo": "enlace",
+      "texto": "ARMA EL TUYO",
+      "url": "https://sndwch.app/?src=ig-hist"
+     },
+     "escena": "WICHO holding his finished sub with both hands, about to take the first bite, delighted: white sub roll, folded sliced turkey, thick tomato slices, red onion, pickles, one cheddar slice. Real portion. He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
+    }
+   ]
+  },
+  {
+   "id": "cerramos",
+   "titulo": "Mañana descansamos",
+   "dia": "2026-10-18",
+   "hora": "20:00",
+   "momento": "el domingo de flojera",
+   "nivel": "nos sigue",
+   "por_que": "Help: el lunes cerrado sorprende a quien quiere pedir. Se dice el domingo, con la hora real de cierre.",
+   "cuadros": [
+    {
+     "encargo": "2026-10-18-cerramos-1",
+     "personaje": "SANDO",
+     "texto": "Mañana descansamos.",
+     "voz": "sando",
+     "escena": "SANDO calmly wiping his wooden board clean at the end of the day, half of the kitchen lights already off. Slow camera push. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
+    },
+    {
+     "encargo": "2026-10-18-cerramos-2",
+     "personaje": "SANDO",
+     "texto": "Hoy, hasta las {cierra}.",
+     "voz": "sando",
+     "sticker": {
+      "tipo": "enlace",
+      "texto": "PIDE",
+      "url": "https://sndwch.app/?src=ig-hist"
+     },
+     "escena": "SANDO standing still behind the counter under the warm bulb, looking calmly at the camera; the kitchen is still open and one sub wrapped in white paper waits on the counter. Slow camera push. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
+    }
+   ]
+  }
+ ]
+}

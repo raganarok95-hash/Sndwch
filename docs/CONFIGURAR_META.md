@@ -76,9 +76,11 @@ nunca sale del servidor y no debe ir a un chat, un correo ni una captura.
 
 La vía más simple, sin instalar nada:
 
-1. Entra al **panel de Supabase** → tu proyecto → **Edge Functions** → **Secrets**
-   (o **Project Settings → Edge Functions → Secrets**, según la versión).
-2. Agrega los dos, con **exactamente** estos nombres:
+1. Abre directo **[Supabase → Edge Functions → Secrets](https://supabase.com/dashboard/project/rjosezuoyngiadunfzyn/functions/secrets)**.
+   > ⚠ **Ahí, y solo ahí** (2026-10-08: el dueño lo puso y no estaba). **No** es Base de datos →
+   > Vault, **ni** Project Settings → API, **ni** las variables de Vercel o de GitHub. El código
+   > solo lee los secrets de las Edge Functions.
+2. **Add new secret** (Agregar secreto). Agrega los dos, con **exactamente** estos nombres:
 
 ```
 META_PIXEL_ID     = 1234567890123456
@@ -93,6 +95,12 @@ supabase secrets set META_PIXEL_ID=1234567890123456 META_CAPI_TOKEN=EAAG...
 
 ⚠ **Los nombres tienen que ser idénticos**, en mayúsculas y con guion bajo. El código los lee
 por nombre exacto; uno mal escrito no da error, simplemente deja la medición apagada.
+
+3. Pulsa **Save** (Guardar) y espera a que el secret aparezca en la lista con su nombre. Si
+   pegaste el valor y cerraste sin guardar, no quedó.
+4. **Avísale a Claude**: corre «Estado para abrir» y te dice si quedó bien **probándolo contra
+   Meta** (`verificar-meta`): si el token vale y si puede escribirle a tu píxel, sin registrar
+   ninguna venta falsa.
 
 ### A4. Comprueba que quedó prendido
 
