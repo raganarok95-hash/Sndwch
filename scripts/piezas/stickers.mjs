@@ -75,7 +75,7 @@ const pieza = (archivo, w, h, forma, cuerpo) => piezas.push({ archivo, w, h, for
 //        Dos arcos que se leen derechos (arriba y abajo) y el «//» de la marca a cada costado.
 //        `selloRedondo` lo dibuja con centro en (cx, cy) mm de su contenedor; lo usan el cierre
 //        redondo y la tira larga.
-function selloRedondo(cx, cy, id) {
+function selloRedondo(cx, cy, id, abajo = 'SI LLEGA ABIERTO, AVÍSANOS') {
   const rA = 20.9, rB = 22.9; // el texto queda a 2 mm del corte de un círculo de 50
   const barras = (x, y) => `<g transform="translate(${x} ${y})">${[[C.oro, -0.62], [C.celeste, 0.62]].map(([col, dx]) => `<rect x="${dx - 0.22}" y="-1.35" width="0.44" height="2.7" rx="0.12" fill="${col}" transform="skewX(-16)"/>`).join('')}</g>`;
   return `<svg style="position:absolute;left:${cx - 25}mm;top:${cy - 25}mm;overflow:visible" width="50mm" height="50mm" viewBox="${-25} ${-25} 50 50">
@@ -87,7 +87,7 @@ function selloRedondo(cx, cy, id) {
     <circle r="17.6" fill="none" stroke="${C.oro}" stroke-width="0.35"/>
     <g font-family="IBM Plex Mono" font-weight="600" font-size="3.1" fill="${C.papel}" letter-spacing="0.35">
       <text text-anchor="middle"><textPath href="#${id}-a" startOffset="50%">ARMADO AL MOMENTO</textPath></text>
-      <text text-anchor="middle"><textPath href="#${id}-b" startOffset="50%">SI LLEGA ABIERTO, AVÍSANOS</textPath></text>
+      <text text-anchor="middle"><textPath href="#${id}-b" startOffset="50%">${abajo}</textPath></text>
     </g>
     ${barras(-21.3, 0)}${barras(21.3, 0)}
   </svg>
@@ -131,16 +131,28 @@ pieza('2-qr-bolsa', 70, 100, 'rect4', await ladoQR(S, S, 70, 100, S));
 //        baja 75 mm por el FRENTE con el sello redondo (cruza el doblez: si llega abierto, se ve),
 //        pasa 10 mm por arriba y baja 115 mm por el DORSO con el QR. En el pliego, el tramo del
 //        frente va de cabeza: al doblarla, las dos caras quedan derechas.
-const TIRA = { frente: 75, boca: 10, dorso: 115 };
-const tramoFrente = (x0, y0) => `<div style="position:absolute;left:${x0}mm;top:${y0}mm;width:70mm;height:${TIRA.frente}mm;background:${C.tinta}"></div>${selloRedondo(x0 + 35, y0 + 42, 'tira' + Math.round(x0 * 10 + y0))}`;
+//        Precorte (dueño: «usualmente se jode al sacar el sticker»): la tira NO se despega; se
+//        rasga por una línea precortada justo en el borde del doblez. El kraft no se rompe, el QR
+//        queda entero en el dorso para la próxima, y un precorte roto delata si la abrieron. La
+//        frase que rota va impresa en la tira (tres versiones en el mismo tiraje): no cuesta sellos.
+const TIRA = { frente: 90, boca: 10, dorso: 115, precorte: 26 };
+const FRASES_TIRA = ['Hoy comes mejor que tu jefe.', 'Esto no se comparte.', 'Pediste bien. Cuéntalo.'];
+let idTira = 0;
+const tramoFrente = (x0, y0, frase = FRASES_TIRA[0]) => `<div style="position:absolute;left:${x0}mm;top:${y0}mm;width:70mm;height:${TIRA.frente}mm;background:${C.tinta}"></div>
+  <div class="mono" style="position:absolute;left:${x0}mm;width:70mm;top:${y0 + TIRA.precorte - 6.6}mm;text-align:center;font-size:2.5mm;letter-spacing:.14em;color:${C.papel}">↓ RASGA AQUÍ PARA ABRIR ↓</div>
+  <div style="position:absolute;left:${x0 + 2.5}mm;width:65mm;top:${y0 + TIRA.precorte}mm;border-top:0.4mm dashed ${C.papel}"></div>
+  ${selloRedondo(x0 + 35, y0 + TIRA.precorte + 28, 'tira' + ++idTira, 'SI LLEGA RASGADO, AVÍSANOS')}
+  <div style="position:absolute;left:${x0}mm;width:70mm;top:${y0 + TIRA.precorte + 55.6}mm;text-align:center;font:italic 500 4.2mm/1 Archivo,sans-serif;color:${C.papel};white-space:nowrap">«${frase}»</div>`;
 const tramoBoca = (x0, y0) => `<div style="position:absolute;left:${x0}mm;top:${y0}mm;width:70mm;height:${TIRA.boca}mm;background:${C.tinta};display:flex;align-items:center;justify-content:center;gap:1.1mm">${[C.oro, C.celeste].map((col) => `<i style="display:block;width:0.9mm;height:5mm;border-radius:0.2mm;background:${col};transform:skewX(-16deg)"></i>`).join('')}</div>`;
 {
   const largo = TIRA.frente + TIRA.boca + TIRA.dorso;
-  piezas.push({ archivo: '4-tira-cierre-qr', w: 70, h: largo, forma: 'rect4', cuerpo: `
+  for (const [n, frase] of FRASES_TIRA.entries()) {
+    piezas.push({ archivo: `4-tira-${n + 1}`, w: 70, h: largo, forma: 'rect4', cuerpo: `
     <div style="position:absolute;left:0;top:0;width:${70 + 2 * S}mm;height:${TIRA.frente + S}mm;transform:rotate(180deg);overflow:hidden">
-      <div style="position:absolute;inset:0;background:${C.tinta}"></div>${tramoFrente(S, 0)}</div>
+      <div style="position:absolute;inset:0;background:${C.tinta}"></div>${tramoFrente(S, 0, frase)}</div>
     <div style="position:absolute;left:0;top:${S + TIRA.frente}mm;width:${70 + 2 * S}mm;height:${TIRA.boca}mm;background:${C.tinta}"></div>${tramoBoca(S, S + TIRA.frente)}
     <div style="position:absolute;left:0;top:${S + TIRA.frente + TIRA.boca}mm;width:${70 + 2 * S}mm;height:${TIRA.dorso + S}mm;overflow:hidden">${await ladoQR(S, 0, 70, TIRA.dorso, S)}</div>` });
+  }
 }
 
 // ── Los sellos de la bolsa lisa (2026-10-09, dueño: «rediséñala bien, dame ejemplos») ──────
@@ -198,15 +210,15 @@ const dato = (tipo, a, b, color) => `<div style="display:flex;gap:2.4mm;align-it
 // La bolsa para que la suban (dueño, 2026-10-09: «basándote en marketing, en que la bolsa sea
 // viral, en ganar más clientes» → «listo, trabajemos en eso, hazlo»):
 //   1 · pide la historia: una pastilla grande con @snd__wch («súbela y etiquétanos»);
-//   2 · frases coleccionables: la frase es un sello chico aparte y se rota entre FRASES;
-//   3 · el dorso le habla a la oficina, con la regla del pedido de grupo leída del código;
-//   4 · una sorpresa al abrirla: un sello en la parte que esconde el doblez.
+//   2 · frases coleccionables: van IMPRESAS en la tira (FRASES_TIRA), no en sellos;
+//   3 · el dorso le habla a la oficina, con la regla del pedido de grupo leída del código.
+//   (Dueño: «cada sello cuesta dinero» → tres sellos: cabecera, pie y dorso. La sorpresa adentro
+//   del doblez se quitó: al abrir se rompía con el sticker.)
 const GRUPO = (() => {
   const m = /organizadorDesde:\s*(\d+)/.exec(readFileSync('supabase/functions/_shared/dinero.ts', 'utf8'));
   if (!m) throw new Error('no encontré organizadorDesde en _shared/dinero.ts');
   return Number(m[1]);
 })();
-const FRASES = ['Alguien pidió bien.', 'Hoy comes mejor que tu jefe.', 'Esto no se comparte. Bueno, intenta.', 'Pediste bien. Ahora cuéntalo.'];
 const CARTEL = { ancho: 182, nombre: 146, alto: 21, logo: 120, frase: 8.5, pastilla: 15 };
 CARTEL.cara = CARTEL.logo * LOGO_PROP;
 CARTEL.pie = CARTEL.cara + 5 + CARTEL.pastilla;
@@ -229,17 +241,11 @@ const pie = (color) => `<div style="width:${CARTEL.ancho}mm;height:${CARTEL.pie.
 const oficina = (color) => `<div style="width:166mm;display:flex;flex-direction:column;align-items:center;gap:3.6mm;color:${color}">
   <svg width="146mm" height="15mm" viewBox="0 0 146 15" style="overflow:visible"><text x="0" y="15" style="font-family:Archivo;font-weight:900;font-stretch:125%" font-size="20.6" fill="${color}" textLength="146" lengthAdjust="spacingAndGlyphs">¿Y LA OFICINA?</text></svg>
   <div style="font:italic 500 6.2mm/1.3 Archivo,sans-serif;text-align:center">Pidan juntos en sndwch.app. Con ${GRUPO} sándwiches,<br>quien organiza se lleva gratis el 15CM más barato.</div></div>`;
-// Adentro: va en la franja de arriba del frente que tapa el doblez; aparece al abrirla.
-const adentro = (color) => `<div style="width:130mm;display:flex;flex-direction:column;align-items:center;gap:2.2mm;color:${color}">
-  <svg width="58mm" height="11mm" viewBox="0 0 58 11" style="overflow:visible"><text x="0" y="11" style="font-family:Archivo;font-weight:900;font-stretch:125%" font-size="15.1" fill="${color}" textLength="58" lengthAdjust="spacingAndGlyphs">¡LLEGÓ!</text></svg>
-  <div style="font:italic 500 5mm/1 Archivo,sans-serif">Ahora sí: buen provecho. — Wicho</div></div>`;
 const sello = (archivo, w, h, cuerpo) => piezas.push({ archivo, w, h, forma: 'rect', dir: SELLOS, sinSangrado: true, cuerpo: `<div style="position:absolute;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4mm">${cuerpo}</div>` });
 sello('6-mezcla-150x130', 150, 130, mezcla('#000'));
-sello('7-nombre-186x26', 186, 26, nombreCartel('#000'));
-FRASES.forEach((f, i) => sello(`7-frase-${i + 1}-160x14`, 160, 14, fraseCartel(f, '#000')));
+sello('7-cabecera-186x40', 186, 40, `${nombreCartel('#000')}${fraseCartel('Alguien pidió bien.', '#000')}`);
 sello(`7-pie-186x${Math.ceil(CARTEL.pie + 6)}`, 186, Math.ceil(CARTEL.pie + 6), pie('#000'));
 sello('7-dorso-oficina-172x46', 172, 46, oficina('#000'));
-sello('7-adentro-134x24', 134, 24, adentro('#000'));
 sello('1-letrero-120x90', 120, 90, `<div style="width:112mm;display:flex;flex-direction:column;gap:6mm">${frase(27, '#000')}${web(8, '#000')}</div>`);
 sello('2-cara-90x115', 90, 115, `${logoTinta(86, '#000')}${web(8, '#000')}`);
 sello('3-costado-160x22', 160, 22, costado(156, 20, '#000'));
@@ -381,53 +387,59 @@ const nota = (sellos, por) => `<div class="mono" style="font-size:13px;color:${C
   const marca = (y, texto) => `<div style="position:absolute;left:-6px;width:calc(${px(70)} + 12px);top:${px(y)};border-top:2px dashed ${C.naranja}"></div><div class="mono" style="position:absolute;left:${L};top:calc(${px(y)} - 9px);font-size:13px;color:${C.naranja};white-space:nowrap">${texto}</div>`;
   const plana = `<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:${(70 * 2.3 + 150).toFixed(0)}px">
     <div style="position:relative;width:${px(70)};height:${px(largo)}">
-      <img src="${img(`${OUT}/4-tira-cierre-qr.png`)}" style="position:absolute;left:${-S * 2.3}px;top:${-S * 2.3}px;width:${(70 + 2 * S) * 2.3}px;clip-path:inset(${S * 2.3}px round 6px)">
-      ${marca(TIRA.frente, 'doblez')}${marca(TIRA.frente + TIRA.boca, 'doblez')}
+      <img src="${img(`${OUT}/4-tira-1.png`)}" style="position:absolute;left:${-S * 2.3}px;top:${-S * 2.3}px;width:${(70 + 2 * S) * 2.3}px;clip-path:inset(${S * 2.3}px round 6px)">
+      ${marca(TIRA.frente - TIRA.precorte, 'precorte: se rasga aquí')}${marca(TIRA.frente, 'doblez')}${marca(TIRA.frente + TIRA.boca, 'doblez')}
       <div class="mono" style="position:absolute;left:${L};top:calc(${px(TIRA.frente / 2)} - 16px);font-size:13px;color:${C.tinta};white-space:nowrap">↑ FRENTE<br><span style="color:${C.oliva}">(va de cabeza)</span></div>
       <div class="mono" style="position:absolute;left:${L};top:calc(${px(TIRA.frente + TIRA.boca + TIRA.dorso / 2)} - 8px);font-size:13px;color:${C.tinta};white-space:nowrap">↓ DORSO</div>
     </div>
     <div class="disp" style="font-size:22px;color:${C.tinta}">La tira, extendida</div>
-    <div class="mono" style="font-size:13px;color:${C.oliva}">70 × 200 mm<br>un solo sticker</div></div>`;
+    <div class="mono" style="font-size:13px;color:${C.oliva}">70 × ${largo} mm<br>un solo sticker</div></div>`;
   await foto('docs/marketing/bolsa/maqueta-bolsa-tira.png', 1600, 1120, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:54px 60px">
     <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:22px">OPCIÓN B · UN SOLO STICKER: CIERRA LA BOLSA Y LLEVA EL QR</div>
     <div style="display:flex;gap:56px;align-items:flex-start">
       ${plana}
-      ${k.cara('Frente', nota('1 sello + la tira', 'La tira baja 7.5 cm sobre el doblez con el sello redondo: si llega abierta, se nota. El sello de la mezcla, más abajo.'), frenteTira + f.c(k).replace(`top:${px(AL * 0.42 - MEZCLA.alto / 2)}`, `top:${px(AL * 0.56 - MEZCLA.alto / 2)}`), true, false)}
+      ${k.cara('Frente', nota('1 sello + la tira', 'La tira baja 9 cm: el precorte cae justo en el borde del doblez y se rasga para abrir; si llega rasgada, la abrieron.'), frenteTira + f.c(k).replace(`top:${px(AL * 0.42 - MEZCLA.alto / 2)}`, `top:${px(AL * 0.56 - MEZCLA.alto / 2)}`), true, false)}
       ${k.cara('Dorso', nota('la misma tira', 'Sigue por arriba y baja 11.5 cm con el QR: lo primero que ve quien la recibe al girarla.'), dorsoTira, false)}
     </div></div>`);
 }
 {
-  // La bolsa para que la suban: frente, dorso y al abrirla. Y las cuatro frases coleccionables.
+  // La bolsa para que la suban: la tira extendida (con el precorte), el frente y el dorso. Y las
+  // tres versiones de la tira, con su frase.
   const k = kitBolsa(2.0), px = k.px;
   const frenteTira = k.pegado((AN - 70) / 2, 0, 70, TIRA.frente, tramoFrente(0, 0));
   const dorsoTira = k.pegado((AN - 70) / 2, 0, 70, TIRA.dorso, await ladoQR(0, 0, 70, TIRA.dorso));
   const X = (AN - CARTEL.ancho) / 2;
   const bloque = CARTEL.alto + 5 + CARTEL.frase + 8 + CARTEL.pie;
   const y0 = TIRA.frente + (AL - 16 - TIRA.frente - bloque) / 2;
-  const frenteSellos = (dy) => k.sellado(X, y0 + dy, nombreCartel(T)) +
-    k.sellado(X, y0 + dy + CARTEL.alto + 5, `<div style="width:${CARTEL.ancho}mm;display:flex;justify-content:center">${fraseCartel(FRASES[0], T)}</div>`) +
-    k.sellado(X, y0 + dy + CARTEL.alto + 5 + CARTEL.frase + 8, pie(T));
+  const frente = frenteTira + k.sellado(X, y0, `<div style="width:${CARTEL.ancho}mm;display:flex;flex-direction:column;align-items:center;gap:5mm">${nombreCartel(T)}${fraseCartel('Alguien pidió bien.', T)}</div>`) +
+    k.sellado(X, y0 + CARTEL.alto + 5 + CARTEL.frase + 8, pie(T));
   const dorso = dorsoTira + k.sellado((AN - 166) / 2, TIRA.dorso + 52, oficina(T));
-  // Al abrirla: la boca desdoblada (2.6 cm más de bolsa arriba) y el mensaje que tapaba el doblez.
-  const abierta = k.sellado((AN - 130) / 2, 9, adentro(T)) + frenteSellos(SOLAPA + 8);
-  await foto('docs/marketing/bolsa/maqueta-bolsa-cartel.png', 1560, 1020, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:48px 64px">
-    <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:20px">LA BOLSA PARA QUE LA SUBAN · KRAFT LISA #20 · SELLOS Y UN SOLO STICKER</div>
-    <div style="display:flex;gap:56px">
-      ${k.cara('Frente', nota('nombre · frase que rota · pie · tira', 'La pastilla pide la historia con @snd__wch bien grande, legible en una foto. La frase cambia cada día: hay cuatro.'), frenteTira + frenteSellos(0), true, false)}
-      ${k.cara('Dorso', nota('la tira + sello «¿Y la oficina?»', `Lo lee el de al lado. Con ${GRUPO} sándwiches, quien organiza se lleva gratis el 15CM más barato (regla de la app).`), dorso, false)}
-      ${k.cara('Al abrirla', nota('sello adentro del doblez', 'Lo que tapaba el doblez aparece al abrir: el momento que se graba.'), abierta, false)}
+  const largo = TIRA.frente + TIRA.boca + TIRA.dorso, L = `${(70 * 2.0 + 16).toFixed(0)}px`;
+  const marca = (y, texto, col = C.naranja) => `<div style="position:absolute;left:-6px;width:calc(${px(70)} + 12px);top:${px(y)};border-top:2px dashed ${col}"></div><div class="mono" style="position:absolute;left:${L};top:calc(${px(y)} - 9px);font-size:12.5px;color:${col};white-space:nowrap">${texto}</div>`;
+  const plana = `<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:${(70 * 2.0 + 175).toFixed(0)}px">
+    <div style="position:relative;width:${px(70)};height:${px(largo)}">
+      <img src="${img(`${OUT}/4-tira-1.png`)}" style="position:absolute;left:${-S * 2.0}px;top:${-S * 2.0}px;width:${(70 + 2 * S) * 2.0}px;clip-path:inset(${S * 2.0}px round 6px)">
+      ${marca(TIRA.frente - TIRA.precorte, 'PRECORTE · se rasga aquí', '#B4441E')}${marca(TIRA.frente, 'doblez')}${marca(TIRA.frente + TIRA.boca, 'doblez')}
+      <div class="mono" style="position:absolute;left:${L};top:calc(${px((TIRA.frente - TIRA.precorte) / 2)} - 16px);font-size:12.5px;color:${C.tinta};white-space:nowrap">↑ FRENTE<br><span style="color:${C.oliva}">(va de cabeza)</span></div>
+      <div class="mono" style="position:absolute;left:${L};top:calc(${px(TIRA.frente + TIRA.boca + TIRA.dorso / 2)} - 8px);font-size:12.5px;color:${C.tinta};white-space:nowrap">↓ DORSO</div>
+    </div>
+    <div class="disp" style="font-size:22px;color:${C.tinta}">La tira</div>
+    <div style="font:400 14px/1.4 Archivo,sans-serif;color:#4A4A40">70 × ${largo} mm. No se despega: se rasga por el precorte, justo en el borde del doblez. El QR queda entero atrás.</div></div>`;
+  await foto('docs/marketing/bolsa/maqueta-bolsa-cartel.png', 1460, 1020, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:48px 60px">
+    <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:20px">LA BOLSA PARA QUE LA SUBAN · KRAFT LISA #20 · 3 SELLOS Y 1 STICKER</div>
+    <div style="display:flex;gap:48px;align-items:flex-start">
+      ${plana}
+      ${k.cara('Frente', nota('2 sellos: cabecera y pie', 'La pastilla pide la historia con @snd__wch, legible en una foto. La frase que rota va impresa en la tira.'), frente, true, false)}
+      ${k.cara('Dorso', nota('1 sello: «¿Y la oficina?»', `Lo lee el de al lado. Con ${GRUPO} sándwiches, quien organiza se lleva gratis el 15CM más barato (regla de la app).`), dorso, false)}
     </div></div>`);
-  // Las cuatro frases, como salen en la bolsa (una por día).
-  const kf = kitBolsa(2.6), pf = kf.px;
-  const tira = (f, n) => `<div style="display:flex;flex-direction:column;gap:8px">
-    <div style="position:relative;width:${pf(170)};height:${pf(26)};overflow:hidden;border-radius:4px;box-shadow:0 8px 16px -6px rgba(40,25,10,.35)">
-      <div style="position:absolute;inset:0;background:linear-gradient(90deg,#B98B5E,#C29468 50%,#B98B5E)"></div>
-      <svg style="position:absolute;inset:0;mix-blend-mode:multiply" width="100%" height="100%"><rect width="100%" height="100%" filter="url(#fibra)"/></svg>
-      ${kf.sellado(5, 8.5, fraseCartel(f, T))}</div>
-    <div class="mono" style="font-size:13px;color:${C.oliva}">sello ${n} · 7-frase-${n}-160x14.pdf</div></div>`;
-  await foto('docs/marketing/bolsa/frases-coleccionables.png', 1060, 400, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:44px 64px;display:flex;flex-direction:column;gap:22px">
-    <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva}">LAS FRASES COLECCIONABLES · UNA POR DÍA · «¿CUÁL TE TOCÓ?»</div>
-    <div style="display:grid;grid-template-columns:auto auto;gap:24px 40px;justify-content:start">${FRASES.map((f, n) => tira(f, n + 1)).join('')}</div></div>`);
+  // Las tres versiones de la tira, por su frente (lo que se ve en la bolsa).
+  const kf = kitBolsa(2.6);
+  const version = (n, f) => `<div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">
+    <div style="position:relative;width:${kf.px(70)};height:${kf.px(TIRA.frente)}">${kf.pegado(0, 0, 70, TIRA.frente, tramoFrente(0, 0, f))}</div>
+    <div class="mono" style="font-size:13px;color:${C.oliva}">versión ${n} · 4-tira-${n}.pdf</div></div>`;
+  await foto('docs/marketing/bolsa/frases-coleccionables.png', 760, 400, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:40px 56px;display:flex;flex-direction:column;gap:20px">
+    <div class="mono" style="font-size:14px;letter-spacing:.08em;color:${C.oliva}">LA TIRA EN TRES VERSIONES · «¿CUÁL TE TOCÓ?»</div>
+    <div style="display:flex;gap:36px">${FRASES_TIRA.map((f, n) => version(n + 1, f)).join('')}</div></div>`);
 }
 await b.close();
 console.log(`✓ stickers y lámina en ${OUT}; sellos en docs/marketing/bolsa/sellos; la bolsa y sus ejemplos en docs/marketing/bolsa/`);

@@ -18,29 +18,32 @@ Va centrado a media altura. Al ser un solo sello no hay nada que alinear: se sel
 
 ## La bolsa para que la suban (2026-10-09)
 Dueño: «basándote en marketing, en que la bolsa sea viral, en ganar más clientes» → «listo,
-trabajemos en eso, hazlo». Sobre el cartel (abajo) se agregan cuatro cosas:
+trabajemos en eso, hazlo» → «cada sello cuesta dinero, pero puede evaluarse; no entiendo bien cómo
+al abrirla se verá eso, usualmente se jode al sacar el sticker».
 
 ![la bolsa para que la suban](maqueta-bolsa-cartel.png)
 
 1. **Pide la historia.** Una pastilla grande: «Súbela y etiquétanos **@snd__wch**», legible en una
-   foto de historia. Cada historia que suben se repostea: prueba social gratis (así llegó la
-   referencia de Patricio). El IG sale de la columna de datos y queda solo en la pastilla.
-2. **Frases coleccionables.** La frase es un sello chico aparte y se rota una por día: «¿cuál te
-   tocó?». Cuatro sellos de 16 × 1.4 cm:
+   foto de historia. Cada historia que suben se repostea: prueba social gratis.
+2. **Frases que rotan, impresas en la tira** (tres versiones del mismo sticker, sin sellos extra):
 
    ![frases](frases-coleccionables.png)
 
 3. **El dorso le habla a la oficina:** «¿Y la oficina? Pidan juntos en sndwch.app. Con 5
    sándwiches, quien organiza se lleva gratis el 15CM más barato.» El 5 se lee de
-   `REGLAS.organizadorDesde` (dinero.ts) y la condición es la de la app. Lo ve el de al lado, que
-   es el cliente nuevo más fácil.
-4. **Una sorpresa al abrirla:** «¡Llegó! Ahora sí: buen provecho. — Wicho», sellado en la franja
-   de arriba del frente que tapa el doblez. Aparece al abrir: el momento que se graba.
+   `REGLAS.organizadorDesde` (dinero.ts) y la condición es la de la app.
+4. **La tira se rasga, no se despega:** un precorte justo en el borde del doblez. El kraft no se
+   rompe y el QR queda entero atrás (detalle en `docs/marketing/stickers/`).
 
-**Sellos** (`sellos/`): `7-nombre-186x26`, `7-frase-1…4-160x14`, `7-pie-186x…` (datos, cara y
-pastilla), `7-dorso-oficina-172x46` y `7-adentro-134x24`. Se sellan en tanda antes del servicio;
-al despachar solo se dobla y se pega la tira. Cómo saber si funciona: pedidos con `?src=bolsa`,
-canjes del código DIRECTO y menciones a @snd__wch en historias, cada semana.
+Se quitó la «sorpresa al abrirla» (iba bajo el doblez y se rompía con el sticker).
+
+**Tres sellos** (`sellos/`): `7-cabecera-186x40` (nombre, etiquetas y «Alguien pidió bien.»),
+`7-pie-186x137` (datos, cara y pastilla) y `7-dorso-oficina-172x46`. Se sellan en tanda antes del
+servicio; al despachar solo se dobla y se pega la tira. Si hay que ahorrar más, el del dorso es el
+que se puede dejar para después.
+
+Cómo saber si funciona: pedidos con `?src=bolsa`, canjes de DIRECTO y menciones a @snd__wch en
+historias, cada semana.
 
 ## El cartel (2026-10-09, sobre una referencia del dueño)
 Dueño, con la foto de una bolsa kraft impresa a una tinta: «probemos un diseño parecido a este»,
@@ -73,9 +76,9 @@ cierre, largo, y contenga el QR. Algo así» (con un dibujo de una tira sobre la
 
 ![opción B](maqueta-bolsa-tira.png)
 
-Una **tira de 70 × 200 mm** (`../stickers/4-tira-cierre-qr.pdf`) pasa por encima de la boca:
-- **frente, 7.5 cm:** el sello redondo sobre fondo verde casi negro, cruzando el doblez (si la
-  abren, se nota);
+Una **tira de 70 × 215 mm** (`../stickers/4-tira-1…3.pdf`, con precorte) pasa por encima de la boca:
+- **frente, 9 cm:** el precorte en el borde del doblez («rasga aquí para abrir»), el sello
+  redondo y la frase de la versión;
 - **arriba, 1 cm:** el `//` dorado y celeste, justo en el canto;
 - **dorso, 11.5 cm:** el QR en el mundo de WICHO, con el código DIRECTO.
 El sello de la mezcla baja un poco en el frente para dejarle aire a la tira. **Ventaja:** un solo
