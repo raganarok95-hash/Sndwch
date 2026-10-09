@@ -6,6 +6,23 @@ bolsa bien». **Es una propuesta**: nada se compra ni se imprime sin tu OK.
 
 ![la bolsa](maqueta-bolsa-lisa.png)
 
+## Cinco frentes para elegir (2026-10-09, dueño: «rediséñala bien, dame ejemplos»)
+Lo único que cambia entre ellos es lo **sellado**; el cierre, el dorso con el QR y la bolsa son
+los mismos. La maqueta de arriba muestra el 1 hasta que elijas.
+
+![cinco frentes](ejemplos-bolsa.png)
+
+| | sellos (arte en `sellos/`, negro, a tamaño real) | lo bueno | lo flojo |
+|---|---|---|---|
+| **1 · El letrero** | `1-letrero-120x90.pdf` | la frase se lee de lejos y suena a la marca | sin cara, no se reconoce a los hermanos |
+| **2 · La cara** | `2-cara-90x115.pdf` | lo más reconocible a 10 metros: los dos hermanos | no dice nada; depende de que ya los conozcan |
+| **3 · De costado** | `3-costado-160x22.pdf` + `3-costado-logo-50x60.pdf` | la más «de diseño»; la frase como cinta | dos sellos y alinearlos cada vez |
+| **4 · Mínima** | `4-minima-100x30.pdf` | la más barata y limpia | casi no se ve en la calle |
+| **5 · La firma** | `5-firma-110x140.pdf` | la cara **y** la frase: escudo + lo que dice | el sello más grande (el más caro de los cinco) |
+
+El logo a una tinta sale de `scripts/piezas/logo_a_sello.py` (umbral sobre el logo de los
+hermanos: SANDO queda sólido y WICHO en línea, con su espiral).
+
 **Cada cara hace un solo trabajo.** El frente es el letrero que ve todo el que se cruza con la
 bolsa (el sello) y lleva el cierre. El dorso le habla a quien la recibe (el sticker del QR). Así
 nada compite: antes estaba todo apilado en la misma cara.
@@ -15,7 +32,7 @@ nada compite: antes estaba todo apilado en la misma cara.
 | pieza | medida | dónde va | archivo | costo por pedido |
 |---|---|---|---|---|
 | **Bolsa** kraft lisa #20, 60 g | 21 × 40 × 12.5 cm | — | — | ~S/0.26 (S/220 el millar + IGV, offi.pe) |
-| **Sello** «Alguien pidió bien.» | 12 × 9 cm | frente, a media altura, a 2.2 cm del borde izquierdo | `opcion-barata/sello-frente.pdf` | ~S/0.01 de tinta (el sello se compra una vez) |
+| **Sello** (según el frente elegido) | de 10 × 3 a 11 × 14 cm | frente | `sellos/` | ~S/0.01 de tinta (el sello se compra una vez) |
 | **Sticker de cierre** | Ø 50 mm | cruzando el doblez de la boca, al centro | `../stickers/1-cierre.pdf` | por cotizar |
 | **Sticker del QR** | 70 × 100 mm | dorso, centrado, a 6 cm del doblez | `../stickers/2-qr-bolsa.pdf` | por cotizar |
 | Papel manteca | — | adentro, en cada sándwich | (el que ya tienes) | S/0.075 |
