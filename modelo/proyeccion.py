@@ -66,7 +66,7 @@ ARMADOR = {"P04": (22.90, 33.90), "P06": (21.90, 32.90), "P08": (23.90, 34.90), 
 
 
 def costo_sandwich(prot, i, salsas, queso, veg, queso_frac=1.0):
-    c = I.PORCION_EN_USO[prot][i] + I.por_sandwich(I.PAN_SUB, i=i) + I.por_sandwich(I.EMPAQUE_CONSERVADOR)
+    c = I.PORCION_EN_USO[prot][i] + I.por_sandwich(I.PAN_SUB, i=i) + I.por_sandwich(I.EMPAQUE_PEDIDO, sand_por_pedido=1)
     c += salsas * I.por_sandwich(I.SALSA_PORCION, i=i)
     c += sum(g * G * (1 if i == 0 else 2) * f.valor for g, f in veg)
     if queso:
@@ -100,6 +100,9 @@ TARJETA, CULQI = 0.30, 0.055   # [SUPUESTO] 30% paga con tarjeta; [MEDIDO] CULQI
 RECOMPENSAS = 0.014   # [DERIVADO] docs/hechos: las recompensas devuelven ~1.4% de lo gastado
 
 
+SOBREPRECIO_APPS = 0.10   # [DECISIÓN del dueño 2026-10-09] la carta en Rappi y PedidosYa, 10% más cara
+
+
 def pedido(mix15=0.80, bebida=0.25):
     """Ticket, costo de insumos y lo que deja un pedido PROPIO y uno por app (antes de comisión).
 
@@ -108,9 +111,12 @@ def pedido(mix15=0.80, bebida=0.25):
     pb, cb = bebida_media()
     ticket = ps + bebida * (pb - COMBO)
     costo = cs + bebida * cb
-    app = ticket - costo - GASTO_PEDIDO                       # en la app no hay tarjeta ni puntos
-    propio = app - TARJETA * CULQI * ticket - RECOMPENSAS * ticket
-    return dict(ticket=ticket, costo=costo, propio=propio, app=app)
+    propio = ticket - costo - GASTO_PEDIDO - TARJETA * CULQI * ticket - RECOMPENSAS * ticket
+    # En las apps la carta va SOBREPRECIO_APPS más cara; no hay tarjeta ni puntos. `app` es antes
+    # de la comisión, que se cobra sobre `ticket_app`.
+    ticket_app = ticket * (1 + SOBREPRECIO_APPS)
+    app = ticket_app - costo - GASTO_PEDIDO
+    return dict(ticket=ticket, ticket_app=ticket_app, costo=costo, propio=propio, app=app)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -244,9 +250,9 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
         ped[c] *= escala
 
     com_rappi = np.where(np.arange(T) < 30, 0.0, x["rappi_comision"])
-    deja = (ped["propio"] * eco["propio"] + ped["rappi"] * (eco["app"] - com_rappi * eco["ticket"])
-            + ped["pya"] * (eco["app"] - x["pya_comision"] * eco["ticket"]))
-    ventas = total * escala * eco["ticket"]
+    deja = (ped["propio"] * eco["propio"] + ped["rappi"] * (eco["app"] - com_rappi * eco["ticket_app"])
+            + ped["pya"] * (eco["app"] - x["pya_comision"] * eco["ticket_app"]))
+    ventas = ped["propio"] * eco["ticket"] + (ped["rappi"] + ped["pya"]) * eco["ticket_app"]
     compras = total * escala * eco["costo"]
     refer = nuevos_ref[:T]
 
@@ -300,7 +306,7 @@ def que_pesa(res):
 
 def equilibrio(meta, canal="propio", comision=0.0):
     e = pedido()
-    deja = e["propio"] if canal == "propio" else e["app"] - comision * e["ticket"]
+    deja = e["propio"] if canal == "propio" else e["app"] - comision * e["ticket_app"]
     return (meta + FIJOS_MES + 20) / (deja * 25.5)
 
 
@@ -321,7 +327,7 @@ if __name__ == "__main__":
                          ensure_ascii=False))
         sys.exit(0)
     print(f"Un pedido: ticket S/{e['ticket']:.2f}, insumos S/{e['costo']:.2f}. Deja S/{e['propio']:.2f} propio; "
-          f"por app S/{e['app']:.2f} menos la comisión (con 25%: S/{e['app'] - .25 * e['ticket']:.2f}).")
+          f"por app S/{e['app']:.2f} menos la comisión (con 25%: S/{e['app'] - .25 * e['ticket_app']:.2f}).")
     print(f"Pedidos/día para cubrir costos: {equilibrio(0):.1f} propios, o {equilibrio(0, 'app', .25):.1f} por app al 25%.")
     print(f"Un cliente por Meta (mediana): S/{np.median(hoy['cac']):.0f}")
     for nombre, r in (("HOY, con lo que ya hay", hoy), ("CON LAS SOLUCIONES 3, 4 y 5", con)):

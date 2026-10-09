@@ -140,3 +140,37 @@ clientes/día. Con eso, HOY = **S/1,007 en 6 meses**, marzo S/514/mes, 3.1 pedid
 **Todo junto: S/6,986 en 6 meses (S/4,686 a S/10,016), marzo S/2,169 al mes y 8.5 pedidos al día.**
 Adelantar la prueba no cambia la plata (la pauta queda casi pareja); lo que da es saber dos semanas
 antes si conviene, a cambio de perder la medición de cuánta gente llega sola.
+
+## Actualización (2026-10-09, cierre): empaque real y apps +10%
+Dueño: «1. Sí [apps +10%] 2. Cotizados en total salen 2.50 soles [empaque] 3. Siii [anuncio de oficinas]».
+- **Empaque real S/2.50 por pedido** (`insumos.EMPAQUE_PEDIDO`; antes se costeaba S/1.30). Un pedido
+  propio deja ahora **S/15.39** (antes S/16.59).
+- **Rappi y PedidosYa al +10%** (`SOBREPRECIO_APPS`): ticket por app S/28.80; al 25% de comisión
+  deja S/11.61. Equilibrio: 1.3 pedidos propios al día, o 1.8 por app.
+- Los dos efectos casi se anulan: **HOY = S/1,018 en 6 meses** (antes S/1,007), marzo S/510 al
+  mes. **Todo junto = S/6,541** (S/4,342 a S/9,222), marzo S/1,981 al mes, 8.5 pedidos al día.
+- Pendiente: `modelo/rentabilidad_por_parte.py` y `modelo_v14.py` siguen con el techo de S/1.30.
+
+| palanca (sola, sobre HOY) | 6 meses | marzo, al mes |
+|---|---|---|
+| Oficinas (+0.5 clientes/día, supuesto) | +S/1,889 | +S/482 |
+| TikTok con los mismos videos | +S/969 | +S/256 |
+| Rappi trabajado (+30%) | +S/576 | +S/128 |
+| Pauta S/600/mes con tácticas, si la prueba sale ≤ S/30 | +S/523 | +S/225 |
+| Referidos con botón de WhatsApp | +S/194 | +S/60 |
+| Oferta de 1.er pedido en anuncios (bebida) | +S/181 | +S/130 |
+| Recompra: avisos sin cuenta (hecho) | +S/139 | +S/41 |
+| PedidosYa desde el 3-nov | +S/118 | +S/6 |
+
+### Precios para Rappi y PedidosYa (+10%, redondeado a .90)
+Los pone el dueño en el portal de cada app (no hay acceso desde aquí). El menú secreto no va a las apps.
+
+| producto | 15CM | 30CM |
+|---|---|---|
+| Philly Cheesesteak | S/25.90 | S/37.90 |
+| Meatball Marinara | S/24.90 | S/36.90 |
+| Turkey | S/26.90 | S/38.90 |
+| Tuna Melt | S/25.90 | S/37.90 |
+| Italian Hoagie | S/26.90 | S/38.90 |
+| Classic Tuna | S/23.90 | S/35.90 |
+| Bebidas: The Bloom / The Midnight / The Cool | S/6.90 / S/5.90 / S/6.90 | |
