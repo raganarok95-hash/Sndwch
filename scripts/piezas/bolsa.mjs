@@ -128,6 +128,17 @@ pieza('bolsa-dorso', 240, 300, `<div style="position:absolute;inset:0;background
   <div style="position:absolute;left:${S + 22}mm;right:${S + 20}mm;top:${S + DOBLEZ + 180}mm;font:800 6.6mm/1.25 Archivo,sans-serif">Tu primera vez en la web, la bebida va gratis: código ${CODIGO}.</div>
   <div style="position:absolute;left:0;right:0;bottom:0;height:${S + 22}mm">${costillas(S + 22)}</div></div>`, true);
 
+// ── 4b · Opción barata (2026-10-09, dueño: «C modificar el empaque»): bolsa kraft LISA y el sticker
+//        de cierre, que ya va en cada pedido, hace el trabajo del dorso: QR + código. Una tinta.
+const URL_STICKER = `https://sndwch.app/?src=sticker&codigo=${CODIGO}`;
+piezas.push({ archivo: 'sticker-qr', w: 60, h: 60, dir: `${OUT}/opcion-barata`, cuerpo: `<div style="position:absolute;inset:0;background:#fff"></div>
+  <div style="position:absolute;left:${S}mm;top:${S}mm;width:60mm;height:60mm;border-radius:50%;background:${C.papel};color:${C.tinta};overflow:hidden;text-align:center">
+    <div class="disp" style="position:absolute;left:0;right:0;top:6.5mm;font-size:5.2mm">Pide directo</div>
+    <div style="position:absolute;left:16mm;top:13.5mm;width:28mm;height:28mm">${await qr(URL_STICKER)}</div>
+    <div style="position:absolute;left:7mm;right:7mm;top:43.5mm;font:800 3.3mm/1.2 Archivo,sans-serif">Tu primera vez en la web,<br>la bebida va gratis:</div>
+    <div class="mono" style="position:absolute;left:0;right:0;top:51.5mm;font-size:3.6mm;letter-spacing:.08em">código ${CODIGO}</div>
+  </div>` });
+
 // ── 5 · Papel manteca: patrón a UNA tinta (así se imprime), sin el «//» que pide dos colores ──
 //        La espiral es de WICHO, las costillas de SANDO; la frase es la promesa.
 {
@@ -188,4 +199,4 @@ for (const x of piezas) {
   await p.close(); rmSync(tmp);
 }
 await b.close();
-console.log(`✓ bolsa en ${OUT}, ${piezas.length - 2} piezas en ${OUT}/mas-adelante (PDF con 3 mm de sangrado + PNG)`);
+console.log(`✓ bolsa en ${OUT}, ${piezas.filter((x) => x.dir.endsWith('mas-adelante')).length} piezas en ${OUT}/mas-adelante y la opción barata en ${OUT}/opcion-barata (PDF con 3 mm de sangrado + PNG)`);

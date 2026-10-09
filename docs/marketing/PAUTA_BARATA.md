@@ -75,7 +75,7 @@ meses: un cliente de marzo sigue pidiendo en abril, y eso no se ve aquí.
 | fechas | lunes 3 al domingo 30 de noviembre (después de 14 días sin pauta) |
 | presupuesto | S/350 → ~S/12.50 por día, en una campaña con un solo conjunto |
 | optimiza por | iniciar pago (se mide aparte el pedido pagado) |
-| dónde | Reels e Historias de Instagram y Facebook |
+| dónde | **solo Instagram**: Feed, Historias y Reels (dueño, 2026-10-09: «toda la publicidad y balas irán allí, Facebook actualmente está más usado con señores») |
 | a quién | radio de 4–5 km de la cocina, 18–45 años, sin intereses (que Meta busque) |
 | cuándo | 11:00–14:00 y 18:00–21:00 |
 | piezas | 3: el carrusel de la carta, un Reel de Flow y la foto real del Philly |
@@ -104,6 +104,18 @@ partir S/350 en dos conjuntos hace que Meta aprenda peor (regla 6). El conjunto 
 `estudio/encargos/2026-11-03-oficina-1.md` (SANDO y WICHO entrando con bolsas a una oficina;
 sándwiches envueltos, sin relleno a la vista). Texto sugerido: «¿Almuerzo para la oficina? Pide
 4 y llegan juntos.» Se crea con las otras tres cuando Meta vincule @snd__wch.
+
+## Solo Instagram (2026-10-09)
+Dueño: «Lo importante va a ser Instagram, toda la publicidad y balas irán allí; Facebook
+actualmente está más usado con señores». El conjunto `120252427034590076` quedó con
+`publisher_platforms: instagram` y Feed + Historias + Reels (sigue en pausa).
+
+## Audiencias creadas (2026-10-09, tras aceptar los términos)
+- `120252435956920076` «Visitaron sndwch.app (30 días)» — píxel.
+- `120252435957110076` «Iniciaron pago y no compraron (14 días)» — píxel; las más baratas.
+- `120252435958900076` «Interactuaron con la página (90 días)» — Facebook; **no se usa** (el
+  público es Instagram). Cuando Meta vincule @snd__wch se crea la de Instagram (`ig_business`).
+Se llenan solas con el tráfico; no gastan nada hasta que haya pauta.
 
 ## Audiencias para bajar el costo (2026-10-09, dueño: «Si aprueba todo»)
 Dos audiencias de retargeting, gratis hasta que se pauta: «visitaron sndwch.app (30 días)» e

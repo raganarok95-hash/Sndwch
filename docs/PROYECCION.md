@@ -176,3 +176,34 @@ Los pone el dueño en el portal de cada app (no hay acceso desde aquí). El men�
 | Italian Hoagie | S/26.90 | S/38.90 |
 | Classic Tuna | S/23.90 | S/35.90 |
 | Bebidas: The Bloom / The Midnight / The Cool | S/6.90 / S/5.90 / S/6.90 | |
+
+## Empaque y precio: ¿subir o abaratar? (2026-10-09, noche)
+Dueño: «C, modificar el empaque, o analicemos bien, porque los precios ya están volando; analiza
+si no hace más difícil la compra».
+
+**Dónde estamos de precio.** En Trujillo, en Rappi y PedidosYa, un sándwich sencillo va de S/11 a
+S/15 y uno especial de S/18 a S/25 (Sanguchería Trujillo hasta S/24.90; Juguería San Agustín
+S/14.30–20.50; Xinona S/13.50–15.50; La Casera, club a S/32). Nuestro 15CM (S/20.90–23.90) ya está
+en el tramo alto, y con envío (mínimo S/5) un 15CM llega a ~S/28. Subirlo a S/25.90 lo saca del
+rango local: **no se suben precios**. Fuente: listados de Rappi y PedidosYa vía búsqueda; sin
+fecha, hay que confirmarlos en la app.
+
+**El empaque es lo que sobra.** S/2.50 por pedido es ~10% del ticket. Una bolsa kraft impresa en
+Lima cuesta S/1.10–2.95 a 500 unidades y S/0.85–1.65 a 5,000 (imprentaperuana.com); la lisa,
+~S/0.35. Simulado (mediana de 6 meses, mismos clientes):
+
+| escenario | 6 meses | marzo | deja un pedido propio |
+|---|---|---|---|
+| hoy: empaque S/2.50, apps +10% | S/1,018 | S/510 | S/15.39 |
+| empaque S/1.20 (bolsa impresa a 1,000+, una cara) | S/1,471 | S/614 | S/16.69 |
+| **empaque S/0.60 (bolsa lisa + sticker con QR)** | **S/1,681** | **S/662** | **S/17.29** |
+
+Con el empaque a S/1.86 o menos por pedido, todo el catálogo vuelve bajo el techo de 45% sin
+tocar un precio.
+
+**El +10% en las apps es una apuesta.** Con empaque S/0.60: sin +10% S/1,245; con +10% y sin
+perder clientes S/1,681; si espanta al 10% de los de app, S/1,358; si espanta al 20%, S/1,054 (y
+53 pedidos menos). Gana solo si pierde menos de ~15% de los pedidos de app. Como el primer mes
+de Rappi es 0% de comisión, la recomendación es **abrir en Rappi al precio de la web** y poner el
++10% el día 31, cuando empieza la comisión, comparando pedidos por día antes y después. Cuesta
+~S/50 (unos 20 pedidos de app × S/2.60).
