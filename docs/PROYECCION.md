@@ -149,7 +149,9 @@ Dueño: «1. Sí [apps +10%] 2. Cotizados en total salen 2.50 soles [empaque] 3.
   deja S/11.61. Equilibrio: 1.3 pedidos propios al día, o 1.8 por app.
 - Los dos efectos casi se anulan: **HOY = S/1,018 en 6 meses** (antes S/1,007), marzo S/510 al
   mes. **Todo junto = S/6,541** (S/4,342 a S/9,222), marzo S/1,981 al mes, 8.5 pedidos al día.
-- Pendiente: `modelo/rentabilidad_por_parte.py` y `modelo_v14.py` siguen con el techo de S/1.30.
+- `modelo/rentabilidad_por_parte.py` sigue con el techo de S/1.30 **a propósito, por ahora**: con el
+  empaque real, tres 30CM pasan el techo de 45% de costo (`check:costos`): Italian Hoagie y Pavo
+  (46.8%, precio mínimo S/36.30) y Atún (45.2%, mínimo S/34.05). Subir precio es decisión del dueño.
 
 | palanca (sola, sobre HOY) | 6 meses | marzo, al mes |
 |---|---|---|

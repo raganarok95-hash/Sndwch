@@ -574,3 +574,10 @@ cuadro con Playwright → MP4 H.264). En el contenedor no hay ffmpeg: `pip insta
   `winget`, `Register-ScheduledTask` y el login de Flow (solo Windows).
 - En PowerShell 5.1, un `--` pasado a un programa externo puede perderse. Para
   `claude mcp add … -- cmd /c npx …` se usa `Start-Process -ArgumentList @(...)`.
+
+- **Audiencias personalizadas de Meta (2026-10-09):** `ads_create_custom_audience` falla con el
+  error 2663 hasta que el dueño acepta los términos en
+  https://www.facebook.com/customaudiences/app/tos/?act=1488138326460689. No es falta de acceso.
+- **La foto del esquema tras una migración** no pasa por el chat: se dispara
+  `foto-del-esquema.yml` con la rama (`mcp__github__actions_run_trigger`), que la comitea ahí.
+  Sin ella, el hook de commit se bloquea (`check:tipos-base`).
