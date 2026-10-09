@@ -1,4 +1,47 @@
-# La bolsa, a una tinta (propuesta 2026-10-08)
+# La bolsa (propuesta 2026-10-09): kraft lisa + sello + dos stickers
+
+Dueño: «C, modificar el empaque», «compre bolsas lisas y luego con sello le coloco el frontal.
+Invertiría solo en sellos y tinta», «el QR no debe ir en el sticker de cierre» y «reestructura la
+bolsa bien». **Es una propuesta**: nada se compra ni se imprime sin tu OK.
+
+![la bolsa](maqueta-bolsa-lisa.png)
+
+**Cada cara hace un solo trabajo.** El frente es el letrero que ve todo el que se cruza con la
+bolsa (el sello) y lleva el cierre. El dorso le habla a quien la recibe (el sticker del QR). Así
+nada compite: antes estaba todo apilado en la misma cara.
+
+## Las piezas
+
+| pieza | medida | dónde va | archivo | costo por pedido |
+|---|---|---|---|---|
+| **Bolsa** kraft lisa #20, 60 g | 21 × 40 × 12.5 cm | — | — | ~S/0.26 (S/220 el millar + IGV, offi.pe) |
+| **Sello** «Alguien pidió bien.» | 12 × 9 cm | frente, a media altura, a 2.2 cm del borde izquierdo | `opcion-barata/sello-frente.pdf` | ~S/0.01 de tinta (el sello se compra una vez) |
+| **Sticker de cierre** | Ø 50 mm | cruzando el doblez de la boca, al centro | `../stickers/1-cierre.pdf` | por cotizar |
+| **Sticker del QR** | 70 × 100 mm | dorso, centrado, a 6 cm del doblez | `../stickers/2-qr-bolsa.pdf` | por cotizar |
+| Papel manteca | — | adentro, en cada sándwich | (el que ya tienes) | S/0.075 |
+
+Total estimado: **~S/0.65 por pedido** (contra S/3.90 de la bolsa impresa a 100 unidades).
+
+## Cómo se arma (para que despachar no tarde más)
+1. **En tanda, antes del servicio:** se sellan 50 bolsas y se les pega el sticker del QR atrás.
+   Son unos minutos y se hace con las manos limpias, lejos de la plancha.
+2. **Al despachar:** pedido adentro, la boca se dobla **dos veces** hacia el frente y el sticker de
+   cierre cruza el doblez, al centro. Nada más.
+3. Tinta del sello: para papel y kraft, base agua, en **verde casi negro** (`#1E2B22`) o negro.
+   Se deja secar un minuto antes de apilar.
+
+El QR del sticker lleva `sndwch.app/?src=bolsa&codigo=WICHO`: abre la web con el código WICHO ya
+puesto (la bebida más barata gratis, una vez por celular). Se verificó con un lector.
+
+Se regenera con `node scripts/piezas/stickers.mjs` (los stickers y esta maqueta) y
+`node scripts/piezas/bolsa.mjs <datos.json> docs/marketing/bolsa` (el sello).
+
+---
+
+## Antes: la bolsa impresa a una tinta (2026-10-08) — descartada por costo
+Impresa salía S/3.90 la bolsa a 100 unidades (cotización del dueño). Queda el diseño por si algún
+día el volumen la abarata.
+
 
 Dueño: «Diseña toda la bolsa». Y después: «Papel manteca ya tengo, está con el logo como cara;
 a futuro podríamos cambiarlo. No puedo mandar tarjetas por cada uno por ahora: **debe ser todo
@@ -27,9 +70,9 @@ propios y en los de Rappi, así que no dice nada que en Rappi no sea cierto.
 - **«¿Y la oficina? / Somos seis. Bueno, siete.»** Lo dice WICHO, que exagera y cuenta mal. El
   dorso da la regla real: «Con 5, el más barato va gratis» (sale de `REGLAS.organizadorDesde`;
   si cambia, se regenera).
-- **El QR** lleva `https://sndwch.app/?grupo=1&src=bolsa&codigo=BOLSA`: abre un pedido en grupo
+- **El QR** lleva `https://sndwch.app/?grupo=1&src=bolsa&codigo=WICHO`: abre un pedido en grupo
   nuevo, el análisis sabe cuántos pedidos trae la bolsa, y el checkout ofrece ya escrito el código.
-- **«Tu primera vez en la web, la bebida va gratis: código BOLSA.»** (2026-10-09, dueño: «Si aprueba
+- **«Tu primera vez en la web, la bebida va gratis: código WICHO.»** (2026-10-09, dueño: «Si aprueba
   todo»). Es la razón para que quien pidió por Rappi o PedidosYa pida directo la próxima vez:
   allí cada pedido deja S/3.78 más. El código vale una vez por celular y regala la bebida más
   barata del carrito (tipo «bebida», migración 20261009025200).
@@ -52,15 +95,8 @@ y un papel manteca de patrón. Quedan listos para cuando quieras cambiar el pape
 
 Se regenera con `node scripts/piezas/bolsa.mjs <datos.json> docs/marketing/bolsa`.
 
-## Opción barata: bolsa lisa + sello + stickers (2026-10-09)
-Dueño: «C, modificar el empaque» y después: «compre bolsas lisas y luego con sello le coloco el
-frontal». La bolsa kraft #20 **lisa** (~S/0.26) lleva el frente con **sello** y se cierra con
-**dos stickers aparte**: el de cierre y el del QR (diseño y medidas en `docs/marketing/stickers/`).
-### El sello del frente (2026-10-09, idea del dueño)
-Bolsa lisa + **sello** con el frente («Alguien pidió bien.» y sndwch.app) + el **sticker de cierre**
-y el **sticker del QR** (`docs/marketing/stickers/`). Arte del sello en negro, a tamaño real 12 × 9 cm: `opcion-barata/sello-frente.pdf`
-(se lo mandas a la sellería tal cual). **El QR no va en el sello**: en kraft la tinta se corre y
-deja de leerse. Se sella en tanda antes del servicio (50 bolsas en unos minutos), no al despachar.
-Tinta: para sellos sobre papel/kraft, base agua, color negro o verde muy oscuro.
+## El arte del sello
+En negro, a tamaño real 12 × 9 cm: `opcion-barata/sello-frente.pdf` (se lo mandas a la sellería
+tal cual). **El QR no va en el sello**: en kraft la tinta se corre y deja de leerse.
 
 ![sello](opcion-barata/sello-frente.png)
