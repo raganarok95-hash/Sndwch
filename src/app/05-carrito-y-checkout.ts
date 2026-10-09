@@ -36,6 +36,8 @@ function toggleReward(id){
 // tiene varios campos de texto que el usuario puede seguir tipeando mientras esto corre
 // (nombre/dirección/etc, ver syncConfirmFields) — un re-render completo aquí los borraría
 // a medio tipear, el mismo bug que syncConfirmFields ya existe para evitar en otros lados.
+// El código que trajo el QR de la bolsa (?codigo=, ver 01-*), o ''.
+function codigoGuardado(){try{return localStorage.getItem('sw_codigo')||'';}catch(e){return'';}}
 function renderPromoStatus(){var el=document.getElementById('o-promo-status');if(el)el.textContent=promoStatus;}
 async function applyPromoCode(){
   var el=(document.getElementById('o-promo') as HTMLInputElement|null);
@@ -358,7 +360,7 @@ function sOCart(){
         :en30('Puntos','Tienes '+(cust.points||0)+' · '+rw2.n.toLowerCase(),'Usar',"toggleReward('"+rw2.id+"')"))
       :'')
     +(!appliedReward
-      ?(appliedPromo?en30('Código',appliedPromo.code,'Quitar','removePromoCode()'):en30('Código','¿Tienes uno?','Poner',"hoja30='codigo';hojaErr='';render()"))
+      ?(appliedPromo?en30('Código',appliedPromo.code,'Quitar','removePromoCode()'):en30('Código',codigoGuardado()||'¿Tienes uno?','Poner',"hoja30='codigo';hojaErr='';render()"))
       :'');
   var t=payableTotal();
   var sinEnvio=!dirOk||envio===0;
@@ -409,7 +411,7 @@ function hoja30HTML(){
       +'<div class="nota" style="margin-top:14px">Las tachadas ya están llenas.<br>Te llega en la media hora que elijas.</div>';
   }else if(hoja30==='codigo'){
     cuerpo='<em>Descuento</em><h3>¿Tienes un<br>código?</h3>'
-      +'<label class="campo"><s>El código</s><input id="o-promo" type="text" autocapitalize="characters" value=""></label>'
+      +'<label class="campo"><s>El código</s><input id="o-promo" type="text" autocapitalize="characters" value="'+esc(codigoGuardado())+'"></label>'
       +'<div class="err" id="o-promo-status" role="alert">'+esc(hojaErr||promoStatus||'')+'</div>'
       +'<div class="nota">Se aplica sobre la comida, no sobre el envío.<br>Si no vale, te decimos por qué.</div>';
   }else if(hoja30==='linea'){
@@ -935,6 +937,8 @@ function finalizeOrderSuccess(res,po,chargeId){
   window._lOrderCreatedAt=Date.now();
   window._lRef=po.ref;avisoPaso='aviso';aErr='';
   window._lOrderId=res.order&&res.order.id?String(res.order.id):'';
+  // El código del QR ya se usó (vale una vez por celular): no se vuelve a ofrecer escrito.
+  if(po.promoCode){try{localStorage.removeItem('sw_codigo');}catch(e){}}
   // La hora que el servidor dejó prometida al crear el pedido (ventanaPrometida en env.ts).
   window._lVentana=ventanaDelPedido(res.order);
   receiptUploadState=null;

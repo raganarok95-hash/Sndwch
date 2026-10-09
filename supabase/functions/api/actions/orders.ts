@@ -651,6 +651,8 @@ async function computePromoDiscount(
   codeRaw: string,
   phone: string,
   foodTotal: number,
+  // Lo que regala un código «bebida» sobre este carrito (deriveCart → ahorroDeUnaBebida).
+  ahorroBebida: number,
 ): Promise<{ promoCodeId: string; code: string; discount: number }> {
   const code = codeRaw.trim().toUpperCase();
   if (!code) throw new ApiError("Ingresa un código promocional.", 400);
@@ -688,7 +690,14 @@ async function computePromoDiscount(
   );
   if (already.length) throw new ApiError("Ya usaste ese código promocional antes.", 409);
 
-  let raw = promo.discount_type === "percent" ? foodTotal * (Number(promo.value) / 100) : Number(promo.value);
+  // «bebida» (2026-10-09, el QR de la bolsa): regala la bebida más barata del carrito, con
+  // `value` como tope. Sin bebida no hay qué regalar: se dice, en vez de aplicar S/0.
+  if (promo.discount_type === "bebida" && !(ahorroBebida > 0)) {
+    throw new ApiError("Este código te regala una bebida: agrega una al carrito.", 400);
+  }
+  let raw = promo.discount_type === "percent" ? foodTotal * (Number(promo.value) / 100)
+    : promo.discount_type === "bebida" ? Math.min(ahorroBebida, Number(promo.value))
+    : Number(promo.value);
   if (promo.discount_type === "percent" && promo.max_discount !== null) raw = Math.min(raw, Number(promo.max_discount));
   const discount = Math.round(Math.min(raw, foodTotal) * 100) / 100;
   return { promoCodeId: promo.id, code, discount };
@@ -709,9 +718,10 @@ async function claimPromoDiscount(
   codeRaw: string,
   phone: string,
   foodTotal: number,
+  ahorroBebida: number,
   orderRef: string,
 ): Promise<{ promoCodeId: string; code: string; discount: number }> {
-  const result = await computePromoDiscount(codeRaw, phone, foodTotal);
+  const result = await computePromoDiscount(codeRaw, phone, foodTotal, ahorroBebida);
   try {
     await rpc("redeem_promo_code", { p_promo_id: result.promoCodeId, p_phone: phone, p_order_ref: orderRef, p_discount: result.discount });
   } catch (e) {
@@ -766,8 +776,8 @@ export async function actValidatePromoCode(b: Entrada<"validate-promo-code"> & {
   // Mismo cálculo que el cobro real, incluido el sándwich gratis del organizador — si el
   // preview lo ignorara, alguien con un pedido grupal vería un descuento distinto acá que
   // el que termina pagando.
-  const { expectedTotal: foodTotal } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b) /* contrato-campos: b pasa entero a organizerWaiverFor, que lee groupCode, token */);
-  const result = await computePromoDiscount(code, phone, foodTotal);
+  const { expectedTotal: foodTotal, ahorroBebida } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b) /* contrato-campos: b pasa entero a organizerWaiverFor, que lee groupCode, token */);
+  const result = await computePromoDiscount(code, phone, foodTotal, ahorroBebida);
   return { valid: true, code: result.code, discount: result.discount };
 }
 
@@ -904,7 +914,7 @@ export async function actPrepareOrder(b: Entrada<"prepare-order"> & { _ip?: stri
   await assertHourCapacity(scheduledFor ? new Date(scheduledFor) : new Date(), recurringId);
 
   await loadCatalogPrices();
-  const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b) /* contrato-campos: b pasa entero a organizerWaiverFor, readCoords y readMetaAttribution, que lee groupCode, token, lat, lon, fbp, fbc, ua */);
+  const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems, ahorroBebida } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b) /* contrato-campos: b pasa entero a organizerWaiverFor, readCoords y readMetaAttribution, que lee groupCode, token, lat, lon, fbp, fbc, ua */);
   assertTraeSandwich(sanitizedItems);
   // Un carrito hecho SOLO de productos que no cobran envío (catalog_items.sin_envio) va sin envío.
   const deliveryFee = carritoSinEnvio(sanitizedItems) ? 0 : envioCalculado;
@@ -945,7 +955,7 @@ export async function actPrepareOrder(b: Entrada<"prepare-order"> & { _ip?: stri
   let promoCodeId: string | null = null;
   let promoDiscount = 0;
   if (promoCodeRaw) {
-    const promo = await claimPromoDiscount(promoCodeRaw, promoPhone, foodExpectedTotal, ref);
+    const promo = await claimPromoDiscount(promoCodeRaw, promoPhone, foodExpectedTotal, ahorroBebida, ref);
     promoCodeId = promo.promoCodeId;
     promoDiscount = promo.discount;
   }
@@ -1294,7 +1304,7 @@ export async function actPlaceOrder(b: Entrada<"place-order"> & { _ip?: string }
   // Precios vigentes (pueden haber cambiado desde el panel admin sin redeploy) —
   // ver loadCatalogPrices/catalog_prices.
   await loadCatalogPrices();
-  const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b) /* contrato-campos: b pasa entero a organizerWaiverFor, readCoords y readMetaAttribution, que lee groupCode, token, lat, lon, fbp, fbc, ua */);
+  const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems, ahorroBebida } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b) /* contrato-campos: b pasa entero a organizerWaiverFor, readCoords y readMetaAttribution, que lee groupCode, token, lat, lon, fbp, fbc, ua */);
   assertTraeSandwich(sanitizedItems);
   // Un carrito hecho SOLO de productos que no cobran envío (catalog_items.sin_envio) va sin envío.
   const deliveryFee = carritoSinEnvio(sanitizedItems) ? 0 : envioCalculado;
@@ -1317,7 +1327,7 @@ export async function actPlaceOrder(b: Entrada<"place-order"> & { _ip?: string }
   let promoCodeId: string | null = null;
   let promoDiscount = 0;
   if (promoCodeRaw) {
-    const promo = await claimPromoDiscount(promoCodeRaw, promoPhone, foodExpectedTotal, ref);
+    const promo = await claimPromoDiscount(promoCodeRaw, promoPhone, foodExpectedTotal, ahorroBebida, ref);
     promoCodeId = promo.promoCodeId;
     promoDiscount = promo.discount;
   }

@@ -4312,7 +4312,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '2d7d6c5510';
+var APP_BUILD = '5aef4109d2';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -4478,6 +4478,11 @@ var fijoFromUrl = null, franjaFromUrl = null;
         var sc2 = qp.get('src');
         if (sc2)
             localStorage.setItem('sw_src', sc2.trim().slice(0, 60));
+        // ?codigo=... — el QR de la bolsa trae su código (2026-10-09): se guarda y el checkout lo
+        // ofrece ya escrito. Igual lo valida el servidor al aplicarlo; acá solo se ahorra tipearlo.
+        var cd = qp.get('codigo');
+        if (cd)
+            localStorage.setItem('sw_codigo', cd.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 20));
         // ?legal=... — enlace DIRECTO a cada texto legal. Hasta el 2026-09-12 los tres solo se
         // alcanzaban tocando dentro de la app, así que el negocio no tenía ninguna URL pública que
         // dar cuando alguien la pide por escrito. Y la piden: Google no publica la pantalla de
@@ -8206,6 +8211,13 @@ function toggleReward(id) {
 // tiene varios campos de texto que el usuario puede seguir tipeando mientras esto corre
 // (nombre/dirección/etc, ver syncConfirmFields) — un re-render completo aquí los borraría
 // a medio tipear, el mismo bug que syncConfirmFields ya existe para evitar en otros lados.
+// El código que trajo el QR de la bolsa (?codigo=, ver 01-*), o ''.
+function codigoGuardado() { try {
+    return localStorage.getItem('sw_codigo') || '';
+}
+catch (e) {
+    return '';
+} }
 function renderPromoStatus() { var el = document.getElementById('o-promo-status'); if (el)
     el.textContent = promoStatus; }
 async function applyPromoCode() {
@@ -8616,7 +8628,7 @@ function sOCart() {
                 : en30('Puntos', 'Tienes ' + (cust.points || 0) + ' · ' + rw2.n.toLowerCase(), 'Usar', "toggleReward('" + rw2.id + "')"))
             : '')
         + (!appliedReward
-            ? (appliedPromo ? en30('Código', appliedPromo.code, 'Quitar', 'removePromoCode()') : en30('Código', '¿Tienes uno?', 'Poner', "hoja30='codigo';hojaErr='';render()"))
+            ? (appliedPromo ? en30('Código', appliedPromo.code, 'Quitar', 'removePromoCode()') : en30('Código', codigoGuardado() || '¿Tienes uno?', 'Poner', "hoja30='codigo';hojaErr='';render()"))
             : '');
     var t = payableTotal();
     var sinEnvio = !dirOk || envio === 0;
@@ -8670,7 +8682,7 @@ function hoja30HTML() {
     }
     else if (hoja30 === 'codigo') {
         cuerpo = '<em>Descuento</em><h3>¿Tienes un<br>código?</h3>'
-            + '<label class="campo"><s>El código</s><input id="o-promo" type="text" autocapitalize="characters" value=""></label>'
+            + '<label class="campo"><s>El código</s><input id="o-promo" type="text" autocapitalize="characters" value="' + esc(codigoGuardado()) + '"></label>'
             + '<div class="err" id="o-promo-status" role="alert">' + esc(hojaErr || promoStatus || '') + '</div>'
             + '<div class="nota">Se aplica sobre la comida, no sobre el envío.<br>Si no vale, te decimos por qué.</div>';
     }
@@ -9370,6 +9382,13 @@ function finalizeOrderSuccess(res, po, chargeId) {
     avisoPaso = 'aviso';
     aErr = '';
     window._lOrderId = res.order && res.order.id ? String(res.order.id) : '';
+    // El código del QR ya se usó (vale una vez por celular): no se vuelve a ofrecer escrito.
+    if (po.promoCode) {
+        try {
+            localStorage.removeItem('sw_codigo');
+        }
+        catch (e) { }
+    }
     // La hora que el servidor dejó prometida al crear el pedido (ventanaPrometida en env.ts).
     window._lVentana = ventanaDelPedido(res.order);
     receiptUploadState = null;

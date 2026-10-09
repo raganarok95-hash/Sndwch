@@ -5,7 +5,7 @@
 import { sbGet } from "./db.ts";
 import { ApiError } from "./types.ts";
 import { computeRankName , REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS } from "./env.ts";
-import { REGLAS, resolverCarrito, tasarLinea, type LineaDelCarrito, type Precios, type Recompensa } from "../_shared/dinero.ts";
+import { ahorroDeUnaBebida, REGLAS, resolverCarrito, tasarLinea, type LineaDelCarrito, type Precios, type Recompensa } from "../_shared/dinero.ts";
 import { CARTA, esSecreto, etiqueta, ID_SECRETO, idsDe, recompensaDeTipo, signaturesDeLaCarta, type TipoRecompensa } from "../_shared/carta.ts";
 
 // Reestructurado en esta sesión — el original (R01-R06, fijado casi al inicio del
@@ -1027,7 +1027,7 @@ export function deriveCart(
   // organizerFreeSandwichApplies en actions/group.ts). Nunca se toma del cuerpo del
   // request: el cliente no puede declararse acreedor de un descuento.
   organizerFreeSandwich = false,
-): { ingredients: string[]; expectedTotal: number; sanitizedItems: Record<string, unknown>[] } {
+): { ingredients: string[]; expectedTotal: number; sanitizedItems: Record<string, unknown>[]; ahorroBebida: number } {
   if (!Array.isArray(rawItems) || !rawItems.length) throw new ApiError("El carrito está vacío.", 400);
   if (rawItems.length > 30) throw new ApiError("Demasiados productos en el carrito.", 400);
 
@@ -1046,11 +1046,13 @@ export function deriveCart(
   // líneas son válidas (priceCartItem, arriba) y los errores que se le devuelven al cliente.
   if (rewardId && !REWARDS[rewardId]) throw new ApiError("Recompensa inválida.");
   const refDate = scheduledFor ? new Date(scheduledFor) : new Date();
-  const d = resolverCarrito(priced.map((p) => p.item as LineaDelCarrito), {
+  const lineas = priced.map((p) => p.item as LineaDelCarrito);
+  const op = {
     recompensa: (rewardId as Recompensa) || null,
     organizador: organizerFreeSandwich,
     cuandoMs: isNaN(refDate.getTime()) ? Date.now() : refDate.getTime(),
-  }, preciosVigentes());
+  };
+  const d = resolverCarrito(lineas, op, preciosVigentes());
   if (d.recompensa && d.recompensa.indice < 0) {
     throw new ApiError("No tienes ningún producto elegible para esta recompensa en tu carrito.", 400);
   }
@@ -1059,7 +1061,13 @@ export function deriveCart(
   // Cada línea guardada lleva su precio unitario de ESE día (`precio`, en soles): el detalle del
   // pedido lo muestra después sin recalcular con la carta de hoy, que el panel puede cambiar.
   // No viaja de vuelta: priceCartItem arma la línea con sus propios campos y lo descarta.
-  return { ingredients, expectedTotal: total, sanitizedItems: priced.map((p) => ({ ...p.item, precio: p.unitPrice })) };
+  return {
+    ingredients,
+    expectedTotal: total,
+    sanitizedItems: priced.map((p) => ({ ...p.item, precio: p.unitPrice })),
+    // Lo que regala un código «bebida» sobre ESTE carrito (computePromoDiscount en orders.ts).
+    ahorroBebida: ahorroDeUnaBebida(lineas, op, preciosVigentes()),
+  };
 }
 
 // Precio aproximado de una línea de carrito YA guardada en un pedido — usado solo para
