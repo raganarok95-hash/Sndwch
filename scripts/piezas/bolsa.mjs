@@ -1,6 +1,6 @@
 // SND//WCH — piezas/bolsa: la bolsa a una tinta (2026-10-08, docs/marketing/bolsa/) y, en
 // `mas-adelante/`, las piezas que el dueño dejó para después.
-// La tarjeta que va dentro (dos versiones), el sticker de cierre, el arte de la bolsa y el patrón
+// La tarjeta que va dentro (dos versiones), el arte de la bolsa, el sello del frente y el patrón
 // del papel manteca, en PDF para imprenta (medidas reales en mm, con 3 mm de sangrado) y en PNG
 // para verlas, más una maqueta de cómo llega todo junto.
 //
@@ -82,15 +82,6 @@ pieza('tarjeta-rappi-dorso', 90, 55, `<div style="position:absolute;inset:0;back
   </div></div>`);
 
 // ── 3 · Sticker de cierre: redondo, cruza el doblez de la bolsa ──────────────────────────────
-const anillo = 'ARMADO AL MOMENTO · CERRADO EN COCINA ·\u00A0'; // el espacio final, duro: el SVG borra los espacios de los extremos
-const rA = 23.4, vuelta = (2 * Math.PI * rA).toFixed(2); // radio del texto: centra las mayúsculas en la banda oscura
-pieza('sticker-cierre', 60, 60, `<div style="position:absolute;inset:0;background:${C.tinta}"></div>
-  <svg style="position:absolute;left:${S}mm;top:${S}mm" width="60mm" height="60mm" viewBox="0 0 60 60">
-    <defs><path id="r" d="M30,30 m-${rA},0 a${rA},${rA} 0 1,1 ${2 * rA},0 a${rA},${rA} 0 1,1 -${2 * rA},0"/></defs>
-    <circle cx="30" cy="30" r="20.4" fill="${C.papel}"/>
-    <text font-family="IBM Plex Mono" font-weight="600" font-size="4.6" fill="${C.papel}"><textPath href="#r" textLength="${vuelta}" lengthAdjust="spacing">${anillo}</textPath></text>
-  </svg>
-  <img src="${img('img/marca/avatar-1024-transparente.png')}" style="position:absolute;left:${S + 11}mm;top:${S + 11}mm;width:38mm;height:38mm;clip-path:circle(19mm)">`);
 
 // ── 3b · Etiqueta de cada sándwich: en un pedido de grupo dice de quién es (cocina lo escribe) ─
 pieza('etiqueta-sandwich', 50, 30, `<div style="position:absolute;inset:0;background:${C.papel};color:${C.tinta}">
@@ -128,20 +119,11 @@ pieza('bolsa-dorso', 240, 300, `<div style="position:absolute;inset:0;background
   <div style="position:absolute;left:${S + 22}mm;right:${S + 20}mm;top:${S + DOBLEZ + 180}mm;font:800 6.6mm/1.25 Archivo,sans-serif">Tu primera vez en la web, la bebida va gratis: código ${CODIGO}.</div>
   <div style="position:absolute;left:0;right:0;bottom:0;height:${S + 22}mm">${costillas(S + 22)}</div></div>`, true);
 
-// ── 4b · Opción barata (2026-10-09, dueño: «C modificar el empaque»): bolsa kraft LISA y el sticker
-//        de cierre, que ya va en cada pedido, hace el trabajo del dorso: QR + código. Una tinta.
-const URL_STICKER = `https://sndwch.app/?src=sticker&codigo=${CODIGO}`;
-piezas.push({ archivo: 'sticker-qr', w: 60, h: 60, dir: `${OUT}/opcion-barata`, cuerpo: `<div style="position:absolute;inset:0;background:#fff"></div>
-  <div style="position:absolute;left:${S}mm;top:${S}mm;width:60mm;height:60mm;border-radius:50%;background:${C.papel};color:${C.tinta};overflow:hidden;text-align:center">
-    <div class="disp" style="position:absolute;left:0;right:0;top:6.5mm;font-size:5.2mm">Pide directo</div>
-    <div style="position:absolute;left:16mm;top:13.5mm;width:28mm;height:28mm">${await qr(URL_STICKER)}</div>
-    <div style="position:absolute;left:7mm;right:7mm;top:43.5mm;font:800 3.3mm/1.2 Archivo,sans-serif">Tu primera vez en la web,<br>la bebida va gratis:</div>
-    <div class="mono" style="position:absolute;left:0;right:0;top:51.5mm;font-size:3.6mm;letter-spacing:.08em">código ${CODIGO}</div>
-  </div>` });
+// ── 4b · Los stickers (cierre, QR de la bolsa y calle) viven en scripts/piezas/stickers.mjs ────
 
 // ── 4c · El sello del frente (2026-10-09, dueño: «compre bolsas lisas y luego con sello le coloco
 //        el frontal»). Arte en negro puro para la sellería, a tamaño real (12 × 9 cm). El QR NO va
-//        en el sello: la tinta se corre en el kraft y deja de leerse; el QR va en el sticker.
+//        en el sello: la tinta se corre en el kraft y deja de leerse; va en su propio sticker.
 piezas.push({ archivo: 'sello-frente', w: 120, h: 90, dir: `${OUT}/opcion-barata`, cuerpo: `<div style="position:absolute;inset:0;background:#fff;color:#000">
   <div class="voz" style="position:absolute;left:${S + 8}mm;top:${S + 10}mm;font-size:27mm;line-height:.95">Alguien<br>pidió bien.</div>
   <div class="mono" style="position:absolute;left:${S + 9}mm;top:${S + 70}mm;font-size:8mm;letter-spacing:.03em">sndwch.app</div>

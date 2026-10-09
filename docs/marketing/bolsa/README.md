@@ -47,25 +47,18 @@ propios y en los de Rappi, así que no dice nada que en Rappi no sea cierto.
 
 ## Más adelante (diseñado, no se imprime ahora)
 
-En `mas-adelante/`: las tarjetas (grupo y Rappi), el sticker de cierre, la etiqueta del sándwich
+En `mas-adelante/`: las tarjetas (grupo y Rappi), la etiqueta del sándwich
 y un papel manteca de patrón. Quedan listos para cuando quieras cambiar el papel o agregar algo.
 
 Se regenera con `node scripts/piezas/bolsa.mjs <datos.json> docs/marketing/bolsa`.
 
-## Opción barata: bolsa lisa + sticker con QR (2026-10-09)
-Dueño: «C, modificar el empaque». El empaque cotizado sale S/2.50 por pedido; casi todo es la
-bolsa impresa. **Propuesta:** bolsa kraft **lisa** (~S/0.35) cerrada con el sticker que ya va en
-cada pedido, ahora con QR y código (`opcion-barata/sticker-qr.pdf`, 6 cm, una tinta). Empaque
-total ~S/0.60: **+S/663 en 6 meses** frente a hoy (`docs/PROYECCION.md`). No suma trabajo: el
-sticker ya estaba en el cierre. Se pierde el frente «Alguien pidió bien.» (el letrero ambulante);
-si quieres conservarlo, la intermedia es imprimir **solo una cara** en tiraje de 1,000+ (~S/1.20).
-El QR lleva `sndwch.app/?src=sticker&codigo=BOLSA` (verificado: se lee).
-
-![sticker](opcion-barata/sticker-qr.png)
-
+## Opción barata: bolsa lisa + sello + stickers (2026-10-09)
+Dueño: «C, modificar el empaque» y después: «compre bolsas lisas y luego con sello le coloco el
+frontal». La bolsa kraft #20 **lisa** (~S/0.26) lleva el frente con **sello** y se cierra con
+**dos stickers aparte**: el de cierre y el del QR (diseño y medidas en `docs/marketing/stickers/`).
 ### El sello del frente (2026-10-09, idea del dueño)
-Bolsa lisa + **sello** con el frente («Alguien pidió bien.» y sndwch.app) + el **sticker con QR**
-de cierre. Arte del sello en negro, a tamaño real 12 × 9 cm: `opcion-barata/sello-frente.pdf`
+Bolsa lisa + **sello** con el frente («Alguien pidió bien.» y sndwch.app) + el **sticker de cierre**
+y el **sticker del QR** (`docs/marketing/stickers/`). Arte del sello en negro, a tamaño real 12 × 9 cm: `opcion-barata/sello-frente.pdf`
 (se lo mandas a la sellería tal cual). **El QR no va en el sello**: en kraft la tinta se corre y
 deja de leerse. Se sella en tanda antes del servicio (50 bolsas en unos minutos), no al despachar.
 Tinta: para sellos sobre papel/kraft, base agua, color negro o verde muy oscuro.
