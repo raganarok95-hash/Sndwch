@@ -139,6 +139,14 @@ piezas.push({ archivo: 'sticker-qr', w: 60, h: 60, dir: `${OUT}/opcion-barata`, 
     <div class="mono" style="position:absolute;left:0;right:0;top:51.5mm;font-size:3.6mm;letter-spacing:.08em">código ${CODIGO}</div>
   </div>` });
 
+// ── 4c · El sello del frente (2026-10-09, dueño: «compre bolsas lisas y luego con sello le coloco
+//        el frontal»). Arte en negro puro para la sellería, a tamaño real (12 × 9 cm). El QR NO va
+//        en el sello: la tinta se corre en el kraft y deja de leerse; el QR va en el sticker.
+piezas.push({ archivo: 'sello-frente', w: 120, h: 90, dir: `${OUT}/opcion-barata`, cuerpo: `<div style="position:absolute;inset:0;background:#fff;color:#000">
+  <div class="voz" style="position:absolute;left:${S + 8}mm;top:${S + 10}mm;font-size:27mm;line-height:.95">Alguien<br>pidió bien.</div>
+  <div class="mono" style="position:absolute;left:${S + 9}mm;top:${S + 70}mm;font-size:8mm;letter-spacing:.03em">sndwch.app</div>
+</div>` });
+
 // ── 5 · Papel manteca: patrón a UNA tinta (así se imprime), sin el «//» que pide dos colores ──
 //        La espiral es de WICHO, las costillas de SANDO; la frase es la promesa.
 {

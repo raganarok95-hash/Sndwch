@@ -130,3 +130,31 @@ Código `BOLSA` (tipo «bebida», tope S/6, una vez por celular). El QR del dors
 a `sndwch.app/?grupo=1&src=bolsa&codigo=BOLSA` y el dorso lo dice: «Tu primera vez en la web, la
 bebida va gratis: código BOLSA.» El checkout lo ofrece ya escrito (`docs/marketing/bolsa/`). Cuesta ~S/1.90 por
 cliente que pasa de Rappi o PedidosYa a la web, donde cada pedido deja S/3.78 más.
+
+## ¿Ventas a la web o a los mensajes de Instagram? (2026-10-09)
+Dueño: «¿No debemos enfocarnos en la opción ventas con los ads? Casi nadie entrará a la web, todo
+será por Instagram; luego por mensajes de Instagram o el perfil les damos la web y compran».
+- La campaña **ya es de Ventas** (`OUTCOME_SALES`). La venta siempre se cierra en sndwch.app (es la
+  única caja), así que la pregunta es si el anuncio lleva **directo** a la web o **primero** a
+  los mensajes.
+- **Directo a la web** (lo armado): el botón «Pedir ahora» abre sndwch.app **dentro de
+  Instagram**; nadie sale de la app. Un paso menos, nadie tiene que contestar al instante, y Meta
+  aprende de quién PAGA (píxel + CAPI con celular y correo). Quien en vez de tocar el botón entra
+  al perfil, escribe y compra después, igual cuenta: Meta atribuye la compra hasta 7 días después
+  del clic o 1 día después de ver el anuncio, y el `?src=` dice por dónde llegó.
+- **A los mensajes**: Meta optimiza por conversaciones, no por compras; hay que contestar en
+  minutos de 12 a 14 y de 18 a 21, y muchas conversaciones («¿precio?») no compran.
+- **Plan**: noviembre sale como está (Ventas → web). Mientras tanto, el camino por mensajes se
+  deja automático (abajo) y se mide con `?src=ig-dm` e `?src=ig-bio`. Si en noviembre las ventas
+  vienen sobre todo por ahí y el costo por cliente a la web sale > S/30, en diciembre se prueba
+  Ventas → mensajes de Instagram con S/150.
+
+### Respuestas automáticas en los mensajes (las pega el dueño en Instagram)
+Instagram → Configuración → Herramientas para empresas → **Preguntas frecuentes** (hasta 4):
+- **¿Cómo pido?** → «Aquí, en un minuto y sin crear cuenta: sndwch.app/?src=ig-dm — eliges, pagas
+  con Yape o tarjeta y te avisamos cuando sale.»
+- **¿Llegan a mi zona?** → «Pon tu dirección en sndwch.app/?src=ig-dm y te dice al toque si
+  llegamos y cuánto es el envío.»
+- **¿Qué hay hoy?** → «La carta con precios, al día: sndwch.app/?src=ig-dm . Abrimos de martes a
+  domingo.»
+Enlace de la bio: `sndwch.app/?src=ig-bio`.
