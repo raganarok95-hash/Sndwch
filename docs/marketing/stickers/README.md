@@ -13,11 +13,22 @@ extra». **Es una propuesta**: nada se imprime sin tu OK.
 | **2 · QR de la bolsa** `2-qr-bolsa.pdf` | **70 × 100 mm**, esquinas de 4 mm | papel adhesivo couché **mate** (el brillo no deja leer el QR) | en el **dorso** de la bolsa, centrado (ver `docs/marketing/bolsa/`) | `sndwch.app/?src=bolsa&codigo=DIRECTO` |
 | **3 · Calle** `3-calle.pdf` | **80 × 80 mm**, esquinas de 6 mm | **vinilo** blanco + laminado mate UV (aguanta sol y lluvia) | donde te dejen pegarlo (abajo) | `sndwch.app/?src=calle` |
 
-| **4 · Tira de cierre con QR** `4-tira-cierre-qr.pdf` (opción B) | **70 × 200 mm**, esquinas de 4 mm | papel adhesivo couché **mate** | cruza la boca de la bolsa: 7.5 cm al frente (el sello redondo), 1 cm arriba, 11.5 cm al dorso (el QR) | `sndwch.app/?src=bolsa&codigo=DIRECTO` |
+| **4 · Tira de cierre con QR** `4-tira-1.pdf`, `4-tira-2.pdf`, `4-tira-3.pdf` | **70 × 215 mm**, esquinas de 4 mm, con **precorte** | papel adhesivo couché **mate** | cruza la boca: 9 cm al frente (sello redondo), 1 cm arriba, 11.5 cm al dorso (QR) | `sndwch.app/?src=bolsa&codigo=DIRECTO` |
 
 La **tira** reemplaza al cierre redondo y al sticker del QR: un solo sticker por bolsa (dueño:
 «que no sean dos sino uno solo, el de cierre, largo, y contenga el QR»). En el pliego el tramo del
 frente va **de cabeza**: al doblarla sobre la boca, las dos caras quedan derechas.
+
+**Precorte** (dueño: «usualmente se jode al sacar el sticker»): la tira no se despega, se
+**rasga** por una línea precortada (micro-perforado) a **2.6 cm del canto de arriba en el tramo
+del frente** (en el pliego: a 6.4 cm del extremo del frente). Al pegarla, la línea va justo en el
+borde del doblez. Así el kraft no se rompe, el QR queda entero en el dorso para la próxima vez y
+un precorte roto delata si la abrieron («si llega rasgado, avísanos»). **Pídele a la imprenta el
+micro-perforado en esa línea** (no va dibujado en el arte, solo la guía punteada).
+
+**Tres versiones, una frase cada una** (en el mismo tiraje, mismo troquel): «Hoy comes mejor que tu
+jefe.», «Esto no se comparte.», «Pediste bien. Cuéntalo.» Las frases que rotan van aquí y no en
+sellos: no cuestan nada extra.
 
 Todos los PDF llevan **3 mm de sangrado** por lado (el arte pasa del corte): la imprenta corta en
 la medida de la tabla. Los dos QR se verificaron con un lector: abren su enlace.
