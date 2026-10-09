@@ -16,6 +16,24 @@ muéstrame cómo quedaría atrás». **Un solo sello de 15 × 13 cm** (`sellos/6
 Va centrado a media altura. Al ser un solo sello no hay nada que alinear: se sella y listo.
 **El dorso** lleva solo el sticker del QR, centrado a la misma altura que el sello del frente.
 
+## Opción C, la más barata: un sticker de 7 cm de lista (2026-10-09)
+Con la lista de precios de stickers que trajo el dueño (7 cm a S/150 el millar), un **cuadrado de
+7 × 7 cm** (`../stickers/5-cierre-qr-70x70.pdf`) hace lo de la tira por la mitad o menos: va al
+frente, arriba al centro; la franja de 2.2 cm va sobre el doblez y se rasga por el precorte; abajo
+lleva el QR con DIRECTO. El dorso queda limpio (el sello de la oficina, para más adelante).
+
+![opción C](maqueta-bolsa-ahorro.png)
+
+| por bolsa | opción C |
+|---|---|
+| bolsa kraft lisa #20 | S/0.26 (S/220 el millar + IGV) |
+| sticker 7 × 7 (1,000) | S/0.15 |
+| papel manteca | S/0.075 |
+| tinta del sello | ~S/0.01 |
+| **total** | **~S/0.50** (contra S/2.50 del empaque impreso) |
+
+Inversión inicial: 1,000 stickers S/150 + 1,000 bolsas ~S/260 + los dos sellos (por cotizar).
+
 ## La bolsa para que la suban, versión ahorro (2026-10-09)
 Dueño: «basándote en marketing, en que la bolsa sea viral» → «cada sello cuesta dinero» →
 «la idea para rasgar, genial; las frases, para el futuro mejor. Mejora más ahorrando precios».
