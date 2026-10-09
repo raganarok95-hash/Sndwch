@@ -132,7 +132,19 @@ const logoTinta = (ancho, color) => `<img src="${img(color === '#000' ? LOGO_TIN
 const frase = (tam, color, alinear = 'left') => `<div class="voz" style="font-size:${tam}mm;line-height:.95;color:${color};text-align:${alinear};white-space:nowrap">Alguien<br>pidió bien.</div>`;
 const web = (tam, color) => `<div class="mono" style="font-size:${tam}mm;letter-spacing:.03em;color:${color}">sndwch.app</div>`;
 const costado = (largo, alto, color) => `<svg width="${largo}mm" height="${alto}mm" viewBox="0 0 ${largo} ${alto}"><text x="0" y="${alto - 2.4}" font-family="Anton" font-size="${alto * 0.95}" fill="${color}" textLength="${largo}" lengthAdjust="spacingAndGlyphs">ALGUIEN PIDIÓ BIEN.</text></svg>`;
+// La mezcla (dueño, 2026-10-09: «me gusta la idea del sello con el logo, me encantó. Mezcla 1, 2 y
+// 3, estructúralo bonito»): una cinta vertical con sndwch.app (de la 3) y, a su lado, una columna
+// con la cara de los hermanos (de la 2) y la frase (de la 1). Cinta y columna miden lo mismo de
+// alto, así todo cuadra en un bloque. Va en UN solo sello: nada que alinear al sellar.
+const MEZCLA = { cinta: 19, hueco: 16, logo: 78, gap: 7, frase: 24 };
+MEZCLA.alto = MEZCLA.logo * LOGO_PROP + MEZCLA.gap + MEZCLA.frase * 0.95 * 2;
+MEZCLA.ancho = MEZCLA.cinta + MEZCLA.hueco + 112;
+const cintaVertical = (texto, largo, ancho, color) => `<div style="width:${ancho}mm;height:${largo}mm;position:relative"><svg style="position:absolute;left:0;top:0;transform:translateY(${largo}mm) rotate(-90deg);transform-origin:0 0" width="${largo}mm" height="${ancho}mm" viewBox="0 0 ${largo} ${ancho}"><text x="0" y="${ancho - 1.2}" font-family="Anton" font-size="${ancho * 1.02}" fill="${color}" textLength="${largo}" lengthAdjust="spacingAndGlyphs">${texto}</text></svg></div>`;
+const mezcla = (color) => `<div style="display:flex;gap:${MEZCLA.hueco}mm;align-items:stretch">
+  ${cintaVertical('SNDWCH.APP', MEZCLA.alto, MEZCLA.cinta, color)}
+  <div style="display:flex;flex-direction:column;gap:${MEZCLA.gap}mm">${logoTinta(MEZCLA.logo, color)}${frase(MEZCLA.frase, color)}</div></div>`;
 const sello = (archivo, w, h, cuerpo) => piezas.push({ archivo, w, h, forma: 'rect', dir: SELLOS, sinSangrado: true, cuerpo: `<div style="position:absolute;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4mm">${cuerpo}</div>` });
+sello('6-mezcla-150x130', 150, 130, mezcla('#000'));
 sello('1-letrero-120x90', 120, 90, `<div style="width:112mm;display:flex;flex-direction:column;gap:6mm">${frase(27, '#000')}${web(8, '#000')}</div>`);
 sello('2-cara-90x115', 90, 115, `${logoTinta(86, '#000')}${web(8, '#000')}`);
 sello('3-costado-160x22', 160, 22, costado(156, 20, '#000'));
@@ -217,7 +229,7 @@ function kitBolsa(kb) {
     <polygon points="0,0 ${AN},0 ${AN},${SOLAPA} ${dientes} 0,${SOLAPA}" fill="#B08257"/>
     <line x1="0" y1="${SOLAPA * 0.48}" x2="${AN}" y2="${SOLAPA * 0.48}" stroke="rgba(60,35,15,.35)" stroke-width="0.4"/></svg>`;
   const cierre = `<div style="position:absolute;left:${px((AN - 50) / 2)};top:${px(SOLAPA - 25)}">${recorte(c1, kb, '0 2px 4px rgba(40,22,8,.35)')}</div>`;
-  const qrDorso = `<div style="position:absolute;left:${px((AN - 70) / 2)};top:${px(62)}">${recorte(c2, kb, '0 2px 4px rgba(40,22,8,.3)')}</div>`;
+  const qrDorso = `<div style="position:absolute;left:${px((AN - 70) / 2)};top:${px(AL * 0.42 - 50)}">${recorte(c2, kb, '0 2px 4px rgba(40,22,8,.3)')}</div>`;
   // Lo sellado: en la tinta del sello (verde casi negro), con la textura de tinta sobre kraft.
   // `x`,`y` en mm desde la esquina de la cara; `contenido` medido en mm (se escala con `zoom`).
   const sellado = (x, y, contenido) => `<div style="position:absolute;left:${px(x)};top:${px(y)};mix-blend-mode:multiply;opacity:.94"><div style="zoom:${(kb * 25.4 / 96).toFixed(4)};filter:url(#tinta)">${contenido}</div></div>`;
@@ -242,6 +254,8 @@ const FRENTES = [
     c: (k) => k.sellado((AN - 100) / 2, AL * 0.70, `<div style="width:100mm;display:flex;flex-direction:column;align-items:center;gap:3mm"><div class="voz" style="font-size:11mm;line-height:1;color:${T}">Alguien pidió bien.</div>${web(4.6, T)}</div>`) },
   { t: '5 · La firma', sellos: '1 sello · 11 × 14 cm', por: 'La cara y, debajo, la frase: el escudo y lo que dice. Es la más completa.',
     c: (k) => k.sellado((AN - 110) / 2, AL * 0.40 - 62, `<div style="width:110mm;display:flex;flex-direction:column;align-items:center;gap:4mm">${logoTinta(70, T)}<div class="voz" style="font-size:15mm;line-height:1;color:${T};white-space:nowrap">Alguien pidió bien.</div>${web(6, T)}</div>`) },
+  { t: '6 · La mezcla (1 + 2 + 3)', sellos: '1 sello · 15 × 13 cm', por: 'La cara y la frase en columna, y sndwch.app como cinta al costado. Un solo sello: nada que alinear.',
+    c: (k) => k.sellado((AN - MEZCLA.ancho) / 2, AL * 0.42 - MEZCLA.alto / 2, mezcla(T)) },
 ];
 const nota = (sellos, por) => `<div class="mono" style="font-size:13px;color:${C.oliva}">${sellos}</div><div style="font:400 14px/1.4 Archivo,sans-serif;color:#4A4A40">${por}</div>`;
 {
@@ -249,16 +263,16 @@ const nota = (sellos, por) => `<div class="mono" style="font-size:13px;color:${C
   const k = kitBolsa(1.55);
   await foto('docs/marketing/bolsa/ejemplos-bolsa.png', 1940, 840, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 20%,#F3ECDF,#DCD0BC);padding:44px 60px">
     <div class="mono" style="font-size:14px;letter-spacing:.08em;color:${C.oliva};margin-bottom:20px">CINCO FRENTES PARA LA BOLSA LISA #20 · EL DORSO ES IGUAL EN TODOS: EL STICKER DEL QR</div>
-    <div style="display:flex;gap:40px">${FRENTES.map((f) => k.cara(f.t, nota(f.sellos, f.por), f.c(k))).join('')}</div></div>`);
+    <div style="display:flex;gap:40px">${FRENTES.slice(0, 5).map((f) => k.cara(f.t, nota(f.sellos, f.por), f.c(k))).join('')}</div></div>`);
 }
 {
   // La maqueta de dos caras, con el frente elegido (por ahora, el 1).
-  const k = kitBolsa(2.3), f = FRENTES[0];
+  const k = kitBolsa(2.3), f = FRENTES[5];
   await foto('docs/marketing/bolsa/maqueta-bolsa-lisa.png', 1260, 1100, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:54px 70px">
     <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:22px">LA BOLSA · KRAFT LISA #20 · 21 × 40 × 12.5 CM</div>
     <div style="display:flex;gap:90px">
-      ${k.cara('Frente', nota(f.sellos, 'El sello a media altura: es lo que se ve con la bolsa en la mano o en la caja de la moto. La boca se dobla dos veces y el cierre cruza el doblez.'), f.c(k))}
-      ${k.cara('Dorso', nota('1 sticker · 70 × 100 mm', 'El sticker del QR, centrado en el tercio de arriba: es lo que ve quien la recibe al girarla.'), k.qrDorso, false)}
+      ${k.cara('Frente', nota(f.sellos, 'Un solo sello, centrado a media altura: la cara y la frase en columna y sndwch.app como cinta al costado. La boca se dobla dos veces y el cierre cruza el doblez.'), f.c(k))}
+      ${k.cara('Dorso', nota('1 sticker · 70 × 100 mm', 'Solo el sticker del QR, centrado y a la misma altura que el sello del frente: al girar la bolsa, todo cae en el mismo lugar.'), k.qrDorso, false)}
     </div></div>`);
 }
 await b.close();

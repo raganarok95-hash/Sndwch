@@ -6,9 +6,19 @@ bolsa bien». **Es una propuesta**: nada se compra ni se imprime sin tu OK.
 
 ![la bolsa](maqueta-bolsa-lisa.png)
 
+## El frente elegido: la mezcla de 1, 2 y 3 (2026-10-09)
+Dueño: «Me gusta la idea del sello con el logo, me encantó. Mezcla 1, 2 y 3, estructúralo bonito y
+muéstrame cómo quedaría atrás». **Un solo sello de 15 × 13 cm** (`sellos/6-mezcla-150x130.pdf`):
+- **la cara de los hermanos** (de la 2) arriba y **«Alguien pidió bien.»** (de la 1) debajo, en
+  una columna alineada a la izquierda;
+- **sndwch.app como cinta vertical** (de la 3) al costado, del mismo alto que la columna, así todo
+  cuadra en un bloque.
+Va centrado a media altura. Al ser un solo sello no hay nada que alinear: se sella y listo.
+**El dorso** lleva solo el sticker del QR, centrado a la misma altura que el sello del frente.
+
 ## Cinco frentes para elegir (2026-10-09, dueño: «rediséñala bien, dame ejemplos»)
 Lo único que cambia entre ellos es lo **sellado**; el cierre, el dorso con el QR y la bolsa son
-los mismos. La maqueta de arriba muestra el 1 hasta que elijas.
+los mismos. La maqueta de arriba es la mezcla elegida.
 
 ![cinco frentes](ejemplos-bolsa.png)
 
@@ -32,7 +42,7 @@ nada compite: antes estaba todo apilado en la misma cara.
 | pieza | medida | dónde va | archivo | costo por pedido |
 |---|---|---|---|---|
 | **Bolsa** kraft lisa #20, 60 g | 21 × 40 × 12.5 cm | — | — | ~S/0.26 (S/220 el millar + IGV, offi.pe) |
-| **Sello** (según el frente elegido) | de 10 × 3 a 11 × 14 cm | frente | `sellos/` | ~S/0.01 de tinta (el sello se compra una vez) |
+| **Sello** de la mezcla (cara + frase + cinta) | 15 × 13 cm | frente, centrado a media altura | `sellos/6-mezcla-150x130.pdf` | ~S/0.01 de tinta (el sello se compra una vez) |
 | **Sticker de cierre** | Ø 50 mm | cruzando el doblez de la boca, al centro | `../stickers/1-cierre.pdf` | por cotizar |
 | **Sticker del QR** | 70 × 100 mm | dorso, centrado, a 6 cm del doblez | `../stickers/2-qr-bolsa.pdf` | por cotizar |
 | Papel manteca | — | adentro, en cada sándwich | (el que ya tienes) | S/0.075 |
