@@ -195,25 +195,51 @@ const dato = (tipo, a, b, color) => `<div style="display:flex;gap:2.4mm;align-it
 // La distribución de la referencia (dueño: «el dibujo con líneas no me gusta, es más la
 // distribución en la bolsa»): nombre ancho y centrado con dos etiquetas chicas a los costados, la
 // frase justo debajo, la cara grande abajo a la derecha y los datos abajo a la izquierda.
-const CARTEL = { ancho: 182, nombre: 146, alto: 21, logo: 130 };
-CARTEL.cabeza = CARTEL.alto + 4 + 9;                       // nombre + aire + frase
-CARTEL.pie = CARTEL.logo * LOGO_PROP;
+// La bolsa para que la suban (dueño, 2026-10-09: «basándote en marketing, en que la bolsa sea
+// viral, en ganar más clientes» → «listo, trabajemos en eso, hazlo»):
+//   1 · pide la historia: una pastilla grande con @snd__wch («súbela y etiquétanos»);
+//   2 · frases coleccionables: la frase es un sello chico aparte y se rota entre FRASES;
+//   3 · el dorso le habla a la oficina, con la regla del pedido de grupo leída del código;
+//   4 · una sorpresa al abrirla: un sello en la parte que esconde el doblez.
+const GRUPO = (() => {
+  const m = /organizadorDesde:\s*(\d+)/.exec(readFileSync('supabase/functions/_shared/dinero.ts', 'utf8'));
+  if (!m) throw new Error('no encontré organizadorDesde en _shared/dinero.ts');
+  return Number(m[1]);
+})();
+const FRASES = ['Alguien pidió bien.', 'Hoy comes mejor que tu jefe.', 'Esto no se comparte. Bueno, intenta.', 'Pediste bien. Ahora cuéntalo.'];
+const CARTEL = { ancho: 182, nombre: 146, alto: 21, logo: 120, frase: 8.5, pastilla: 15 };
+CARTEL.cara = CARTEL.logo * LOGO_PROP;
+CARTEL.pie = CARTEL.cara + 5 + CARTEL.pastilla;
 const etiqueta = (a, b, color) => `<div style="font:800 2.9mm/1.2 Archivo,sans-serif;letter-spacing:.1em;text-align:center;text-transform:uppercase;color:${color}">${a}<br>${b}</div>`;
-const cabecera = (color) => `<div style="width:${CARTEL.ancho}mm;display:flex;flex-direction:column;align-items:center;gap:4mm">
-  <div style="width:100%;display:flex;align-items:center;justify-content:center;gap:3.2mm">
+const nombreCartel = (color) => `<div style="width:${CARTEL.ancho}mm;display:flex;align-items:center;justify-content:center;gap:3.2mm">
     ${etiqueta('Desde', '2026', color)}
     <svg width="${CARTEL.nombre}mm" height="${CARTEL.alto}mm" viewBox="0 0 ${CARTEL.nombre} ${CARTEL.alto}" style="overflow:visible"><text x="0" y="${CARTEL.alto}" style="font-family:Archivo;font-weight:900;font-stretch:125%" font-size="${CARTEL.alto * 1.38}" fill="${color}" textLength="${CARTEL.nombre}" lengthAdjust="spacingAndGlyphs">SNDWCH</text></svg>
-    ${etiqueta('15·30', 'cm', color)}
-  </div>
-  <div style="font:italic 500 9mm/1 Archivo,sans-serif;color:${color};white-space:nowrap">«Alguien pidió bien.»</div></div>`;
+    ${etiqueta('15·30', 'cm', color)}</div>`;
+const fraseCartel = (texto, color) => `<div style="font:italic 500 ${CARTEL.frase}mm/1 Archivo,sans-serif;color:${color};white-space:nowrap">«${texto}»</div>`;
+const pastilla = (color) => `<div style="height:${CARTEL.pastilla}mm;display:inline-flex;align-items:center;gap:3.4mm;border:0.9mm solid ${color};border-radius:99mm;padding:0 6mm;color:${color};white-space:nowrap">
+    <span style="font:800 4.2mm/1.1 Archivo,sans-serif;letter-spacing:.07em;text-transform:uppercase;text-align:right">Súbela y<br>etiquétanos</span>
+    <span style="font:900 8mm/1 Archivo,sans-serif;font-stretch:125%">${IG}</span></div>`;
 const pie = (color) => `<div style="width:${CARTEL.ancho}mm;height:${CARTEL.pie.toFixed(1)}mm;position:relative">
   <div style="position:absolute;right:0;top:0">${logoTinta(CARTEL.logo, color)}</div>
-  <div style="position:absolute;left:4mm;bottom:${(CARTEL.pie * 0.16).toFixed(1)}mm;display:flex;flex-direction:column;gap:3.6mm">
-    ${dato('web', 'Pide en', 'sndwch.app', color)}${dato('wsp', 'WSP', WSP, color)}${dato('ig', 'Síguenos en IG', IG, color)}</div></div>`;
+  <div style="position:absolute;left:4mm;top:${(CARTEL.cara * 0.48).toFixed(1)}mm;display:flex;flex-direction:column;gap:3.6mm">
+    ${dato('web', 'Pide en', 'sndwch.app', color)}${dato('wsp', 'WSP', WSP, color)}</div>
+  <div style="position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center">${pastilla(color)}</div></div>`;
+// El dorso: lo lee el de al lado. La regla es la de la app: con GRUPO sándwiches, quien organiza
+// se lleva el 15CM más barato (REGLAS.organizadorDesde y la elegibilidad de dinero.ts).
+const oficina = (color) => `<div style="width:166mm;display:flex;flex-direction:column;align-items:center;gap:3.6mm;color:${color}">
+  <svg width="146mm" height="15mm" viewBox="0 0 146 15" style="overflow:visible"><text x="0" y="15" style="font-family:Archivo;font-weight:900;font-stretch:125%" font-size="20.6" fill="${color}" textLength="146" lengthAdjust="spacingAndGlyphs">¿Y LA OFICINA?</text></svg>
+  <div style="font:italic 500 6.2mm/1.3 Archivo,sans-serif;text-align:center">Pidan juntos en sndwch.app. Con ${GRUPO} sándwiches,<br>quien organiza se lleva gratis el 15CM más barato.</div></div>`;
+// Adentro: va en la franja de arriba del frente que tapa el doblez; aparece al abrirla.
+const adentro = (color) => `<div style="width:130mm;display:flex;flex-direction:column;align-items:center;gap:2.2mm;color:${color}">
+  <svg width="58mm" height="11mm" viewBox="0 0 58 11" style="overflow:visible"><text x="0" y="11" style="font-family:Archivo;font-weight:900;font-stretch:125%" font-size="15.1" fill="${color}" textLength="58" lengthAdjust="spacingAndGlyphs">¡LLEGÓ!</text></svg>
+  <div style="font:italic 500 5mm/1 Archivo,sans-serif">Ahora sí: buen provecho. — Wicho</div></div>`;
 const sello = (archivo, w, h, cuerpo) => piezas.push({ archivo, w, h, forma: 'rect', dir: SELLOS, sinSangrado: true, cuerpo: `<div style="position:absolute;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4mm">${cuerpo}</div>` });
 sello('6-mezcla-150x130', 150, 130, mezcla('#000'));
-sello('7-cartel-cabecera-186x40', 186, 40, cabecera('#000'));
-sello('7-cartel-pie-186x128', 186, 128, pie('#000'));
+sello('7-nombre-186x26', 186, 26, nombreCartel('#000'));
+FRASES.forEach((f, i) => sello(`7-frase-${i + 1}-160x14`, 160, 14, fraseCartel(f, '#000')));
+sello(`7-pie-186x${Math.ceil(CARTEL.pie + 6)}`, 186, Math.ceil(CARTEL.pie + 6), pie('#000'));
+sello('7-dorso-oficina-172x46', 172, 46, oficina('#000'));
+sello('7-adentro-134x24', 134, 24, adentro('#000'));
 sello('1-letrero-120x90', 120, 90, `<div style="width:112mm;display:flex;flex-direction:column;gap:6mm">${frase(27, '#000')}${web(8, '#000')}</div>`);
 sello('2-cara-90x115', 90, 115, `${logoTinta(86, '#000')}${web(8, '#000')}`);
 sello('3-costado-160x22', 160, 22, costado(156, 20, '#000'));
@@ -371,20 +397,37 @@ const nota = (sellos, por) => `<div class="mono" style="font-size:13px;color:${C
     </div></div>`);
 }
 {
-  // El cartel: frente con dos sellos (cabecera y pie) y UNA tira (dueño: «agrega el sticker, que
-  // sea uno solo como quedamos»): el sello redondo al frente y el QR al dorso. La cabecera baja
-  // para quedar debajo de la tira.
-  const k = kitBolsa(2.3), px = k.px;
+  // La bolsa para que la suban: frente, dorso y al abrirla. Y las cuatro frases coleccionables.
+  const k = kitBolsa(2.0), px = k.px;
   const frenteTira = k.pegado((AN - 70) / 2, 0, 70, TIRA.frente, tramoFrente(0, 0));
   const dorsoTira = k.pegado((AN - 70) / 2, 0, 70, TIRA.dorso, await ladoQR(0, 0, 70, TIRA.dorso));
-  const bloque = CARTEL.cabeza + 9 + CARTEL.pie, y0 = TIRA.frente + (AL - 16 - TIRA.frente - bloque) / 2 - 6;
-  const frente = frenteTira + k.sellado((AN - CARTEL.ancho) / 2, y0, cabecera(T)) + k.sellado((AN - CARTEL.ancho) / 2, y0 + CARTEL.cabeza + 9, pie(T));
-  await foto('docs/marketing/bolsa/maqueta-bolsa-cartel.png', 1260, 1100, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:54px 70px">
-    <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:22px">EL CARTEL · KRAFT LISA #20 · DOS SELLOS Y UN SOLO STICKER</div>
-    <div style="display:flex;gap:90px">
-      ${k.cara('Frente', nota('2 sellos · 18.6 × 4 cm y 18.6 × 12.8 cm + 1 tira', 'Como la referencia: el nombre ancho al centro con dos etiquetas chicas, la frase debajo, la cara grande abajo a la derecha y los datos a la izquierda. La tira cierra arriba.'), frente, true, false)}
-      ${k.cara('Dorso', nota('la misma tira', 'Sigue por arriba y baja 11.5 cm con el QR y el código DIRECTO.'), dorsoTira, false)}
+  const X = (AN - CARTEL.ancho) / 2;
+  const bloque = CARTEL.alto + 5 + CARTEL.frase + 8 + CARTEL.pie;
+  const y0 = TIRA.frente + (AL - 16 - TIRA.frente - bloque) / 2;
+  const frenteSellos = (dy) => k.sellado(X, y0 + dy, nombreCartel(T)) +
+    k.sellado(X, y0 + dy + CARTEL.alto + 5, `<div style="width:${CARTEL.ancho}mm;display:flex;justify-content:center">${fraseCartel(FRASES[0], T)}</div>`) +
+    k.sellado(X, y0 + dy + CARTEL.alto + 5 + CARTEL.frase + 8, pie(T));
+  const dorso = dorsoTira + k.sellado((AN - 166) / 2, TIRA.dorso + 52, oficina(T));
+  // Al abrirla: la boca desdoblada (2.6 cm más de bolsa arriba) y el mensaje que tapaba el doblez.
+  const abierta = k.sellado((AN - 130) / 2, 9, adentro(T)) + frenteSellos(SOLAPA + 8);
+  await foto('docs/marketing/bolsa/maqueta-bolsa-cartel.png', 1560, 1020, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:48px 64px">
+    <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:20px">LA BOLSA PARA QUE LA SUBAN · KRAFT LISA #20 · SELLOS Y UN SOLO STICKER</div>
+    <div style="display:flex;gap:56px">
+      ${k.cara('Frente', nota('nombre · frase que rota · pie · tira', 'La pastilla pide la historia con @snd__wch bien grande, legible en una foto. La frase cambia cada día: hay cuatro.'), frenteTira + frenteSellos(0), true, false)}
+      ${k.cara('Dorso', nota('la tira + sello «¿Y la oficina?»', `Lo lee el de al lado. Con ${GRUPO} sándwiches, quien organiza se lleva gratis el 15CM más barato (regla de la app).`), dorso, false)}
+      ${k.cara('Al abrirla', nota('sello adentro del doblez', 'Lo que tapaba el doblez aparece al abrir: el momento que se graba.'), abierta, false)}
     </div></div>`);
+  // Las cuatro frases, como salen en la bolsa (una por día).
+  const kf = kitBolsa(2.6), pf = kf.px;
+  const tira = (f, n) => `<div style="display:flex;flex-direction:column;gap:8px">
+    <div style="position:relative;width:${pf(170)};height:${pf(26)};overflow:hidden;border-radius:4px;box-shadow:0 8px 16px -6px rgba(40,25,10,.35)">
+      <div style="position:absolute;inset:0;background:linear-gradient(90deg,#B98B5E,#C29468 50%,#B98B5E)"></div>
+      <svg style="position:absolute;inset:0;mix-blend-mode:multiply" width="100%" height="100%"><rect width="100%" height="100%" filter="url(#fibra)"/></svg>
+      ${kf.sellado(5, 8.5, fraseCartel(f, T))}</div>
+    <div class="mono" style="font-size:13px;color:${C.oliva}">sello ${n} · 7-frase-${n}-160x14.pdf</div></div>`;
+  await foto('docs/marketing/bolsa/frases-coleccionables.png', 1060, 400, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:44px 64px;display:flex;flex-direction:column;gap:22px">
+    <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva}">LAS FRASES COLECCIONABLES · UNA POR DÍA · «¿CUÁL TE TOCÓ?»</div>
+    <div style="display:grid;grid-template-columns:auto auto;gap:24px 40px;justify-content:start">${FRASES.map((f, n) => tira(f, n + 1)).join('')}</div></div>`);
 }
 await b.close();
 console.log(`✓ stickers y lámina en ${OUT}; sellos en docs/marketing/bolsa/sellos; la bolsa y sus ejemplos en docs/marketing/bolsa/`);
