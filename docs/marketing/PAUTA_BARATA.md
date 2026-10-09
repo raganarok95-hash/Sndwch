@@ -96,3 +96,11 @@ En la cuenta `1488138326460689`, **en pausa / borrador, no gasta nada**:
   11:00 a 14:00 y de 18:00 a 21:00, optimiza por **iniciar pago** con el píxel `1410494047274081`.
 - **Faltan los anuncios**: se crean cuando Meta vincule @snd__wch. Sin el id de Instagram, un
   anuncio nunca sale en Instagram, y una pieza no se puede editar después de creada.
+
+## Anuncio «almuerzo para la oficina» (2026-10-09, dueño: «Siii»)
+Va como **4.ª pieza dentro del mismo conjunto** `120252427034590076`, no como conjunto aparte:
+partir S/350 en dos conjuntos hace que Meta aprenda peor (regla 6). El conjunto ya cubre
+11:00–14:00 dentro de 5 km; Meta le da más plata a la pieza que más vende. Pieza: encargo
+`estudio/encargos/2026-11-03-oficina-1.md` (SANDO y WICHO entrando con bolsas a una oficina;
+sándwiches envueltos, sin relleno a la vista). Texto sugerido: «¿Almuerzo para la oficina? Pide
+4 y llegan juntos.» Se crea con las otras tres cuando Meta vincule @snd__wch.
