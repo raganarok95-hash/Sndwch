@@ -16,34 +16,25 @@ muéstrame cómo quedaría atrás». **Un solo sello de 15 × 13 cm** (`sellos/6
 Va centrado a media altura. Al ser un solo sello no hay nada que alinear: se sella y listo.
 **El dorso** lleva solo el sticker del QR, centrado a la misma altura que el sello del frente.
 
-## La bolsa para que la suban (2026-10-09)
-Dueño: «basándote en marketing, en que la bolsa sea viral, en ganar más clientes» → «listo,
-trabajemos en eso, hazlo» → «cada sello cuesta dinero, pero puede evaluarse; no entiendo bien cómo
-al abrirla se verá eso, usualmente se jode al sacar el sticker».
+## La bolsa para que la suban, versión ahorro (2026-10-09)
+Dueño: «basándote en marketing, en que la bolsa sea viral» → «cada sello cuesta dinero» →
+«la idea para rasgar, genial; las frases, para el futuro mejor. Mejora más ahorrando precios».
 
-![la bolsa para que la suban](maqueta-bolsa-cartel.png)
+![la bolsa, versión ahorro](maqueta-bolsa-cartel.png)
 
-1. **Pide la historia.** Una pastilla grande: «Súbela y etiquétanos **@snd__wch**», legible en una
-   foto de historia. Cada historia que suben se repostea: prueba social gratis.
-2. **Frases que rotan, impresas en la tira** (tres versiones del mismo sticker, sin sellos extra):
+- **Pide la historia:** la pastilla «Súbela y etiquétanos **@snd__wch**».
+- **Un solo sticker que se rasga, no se despega:** la tira de 50 × 190 mm con precorte en el borde
+  del doblez (detalle en `docs/marketing/stickers/`). El QR queda entero atrás.
+- **Dos sellos** (`sellos/7-cabecera-156x32.pdf` y `sellos/7-pie-156x111.pdf`).
 
-   ![frases](frases-coleccionables.png)
+| | antes | ahora |
+|---|---|---|
+| sellos | 3 · ~408 cm² (18.6 × 4, 18.6 × 13.7, 17.2 × 4.6) | **2 · ~223 cm²** (15.6 × 3.2 y 15.6 × 11.1): −45% de área |
+| tira | 70 × 215 mm · 4–5 por hoja A3 · 3 versiones | **50 × 190 mm · 10 por hoja A3 · 1 versión**: menos de la mitad por tira |
 
-3. **El dorso le habla a la oficina:** «¿Y la oficina? Pidan juntos en sndwch.app. Con 5
-   sándwiches, quien organiza se lleva gratis el 15CM más barato.» El 5 se lee de
-   `REGLAS.organizadorDesde` (dinero.ts) y la condición es la de la app.
-4. **La tira se rasga, no se despega:** un precorte justo en el borde del doblez. El kraft no se
-   rompe y el QR queda entero atrás (detalle en `docs/marketing/stickers/`).
-
-Se quitó la «sorpresa al abrirla» (iba bajo el doblez y se rompía con el sticker).
-
-**Tres sellos** (`sellos/`): `7-cabecera-186x40` (nombre, etiquetas y «Alguien pidió bien.»),
-`7-pie-186x137` (datos, cara y pastilla) y `7-dorso-oficina-172x46`. Se sellan en tanda antes del
-servicio; al despachar solo se dobla y se pega la tira. Si hay que ahorrar más, el del dorso es el
-que se puede dejar para después.
-
-Cómo saber si funciona: pedidos con `?src=bolsa`, canjes de DIRECTO y menciones a @snd__wch en
-historias, cada semana.
+**Para más adelante**, cuando la bolsa demuestre que trae pedidos (`?src=bolsa`, canjes de DIRECTO,
+menciones en historias): el sello del dorso «¿Y la oficina?» (`oficina()` en el script, con la
+regla de `REGLAS.organizadorDesde`) y las frases que rotan impresas en la tira (`FRASES_TIRA`).
 
 ## El cartel (2026-10-09, sobre una referencia del dueño)
 Dueño, con la foto de una bolsa kraft impresa a una tinta: «probemos un diseño parecido a este»,
@@ -76,11 +67,11 @@ cierre, largo, y contenga el QR. Algo así» (con un dibujo de una tira sobre la
 
 ![opción B](maqueta-bolsa-tira.png)
 
-Una **tira de 70 × 215 mm** (`../stickers/4-tira-1…3.pdf`, con precorte) pasa por encima de la boca:
-- **frente, 9 cm:** el precorte en el borde del doblez («rasga aquí para abrir»), el sello
-  redondo y la frase de la versión;
-- **arriba, 1 cm:** el `//` dorado y celeste, justo en el canto;
-- **dorso, 11.5 cm:** el QR en el mundo de WICHO, con el código DIRECTO.
+Una **tira de 50 × 190 mm** (`../stickers/4-tira-50x190.pdf`, con precorte) pasa por encima de la boca:
+- **frente, 7.2 cm:** el precorte en el borde del doblez («rasga aquí para abrir») y el sello
+  redondo;
+- **arriba, 0.8 cm:** el `//` dorado y celeste, justo en el canto;
+- **dorso, 11 cm:** el QR en el mundo de WICHO, con el código DIRECTO.
 El sello de la mezcla baja un poco en el frente para dejarle aire a la tira. **Ventaja:** un solo
 sticker, que se pone al despachar; nada que pegar en tanda. **Ojo:** la tira tiene que ir bien
 centrada sobre la boca, o el QR queda torcido atrás.
