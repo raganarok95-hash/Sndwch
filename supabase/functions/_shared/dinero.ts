@@ -262,6 +262,29 @@ export function resolverCarrito(
   };
 }
 
+/** Cuánto baja el carrito si UNA bebida —la más barata— va gratis (código promocional de tipo
+ *  «bebida», 2026-10-09: el QR de la bolsa), en soles. Se mide cobrando el carrito con y sin esa
+ *  unidad, así el combo que esa bebida armaba se pierde igual que con la recompensa R de bebida:
+ *  quien pide sándwich + bebida paga el sándwich, nunca menos. 0 si no hay bebida. */
+export function ahorroDeUnaBebida(
+  items: readonly LineaDelCarrito[],
+  op: OpcionesDelCarrito,
+  p: Precios,
+): number {
+  let k = -1;
+  let menor = Infinity;
+  items.forEach((it, i) => {
+    const x = tasarLinea(it, p);
+    if (x && x.tipo === 'side' && x.unitario < menor) {
+      menor = x.unitario;
+      k = i;
+    }
+  });
+  if (k < 0) return 0;
+  const sin = items.map((it, i) => (i === k ? { ...it, qty: it.qty - 1 } : it)).filter((it) => it.qty > 0);
+  return soles(cent(resolverCarrito(items, op, p).total) - cent(resolverCarrito(sin, op, p).total));
+}
+
 /** Precio de UNA unidad de la línea, en soles (0 si ya no está en la carta). */
 export function precioUnitario(it: LineaDelCarrito, p: Precios): number {
   const x = tasarLinea(it, p);

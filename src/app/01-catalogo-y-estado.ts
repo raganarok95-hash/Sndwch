@@ -1210,6 +1210,9 @@ var fijoFromUrl:string|null=null,franjaFromUrl:string|null=null;
   // y sobrevive aunque el registro pase en otra visita, así un clic de anuncio que hoy solo
   // mira el menú y recién se registra mañana igual queda atribuido a esa campaña.
   var sc2=qp.get('src');if(sc2)localStorage.setItem('sw_src',sc2.trim().slice(0,60));
+  // ?codigo=... — el QR de la bolsa trae su código (2026-10-09): se guarda y el checkout lo
+  // ofrece ya escrito. Igual lo valida el servidor al aplicarlo; acá solo se ahorra tipearlo.
+  var cd=qp.get('codigo');if(cd)localStorage.setItem('sw_codigo',cd.trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'').slice(0,20));
   // ?legal=... — enlace DIRECTO a cada texto legal. Hasta el 2026-09-12 los tres solo se
   // alcanzaban tocando dentro de la app, así que el negocio no tenía ninguna URL pública que
   // dar cuando alguien la pide por escrito. Y la piden: Google no publica la pantalla de

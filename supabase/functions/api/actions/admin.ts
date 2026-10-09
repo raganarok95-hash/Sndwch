@@ -731,7 +731,7 @@ export async function actAdminPromoList(b: Entrada<"admin-promo-list"> & { _ip?:
   return { promoCodes: rows };
 }
 
-const PROMO_DISCOUNT_TYPES = new Set(["percent", "fixed"]);
+const PROMO_DISCOUNT_TYPES = new Set(["percent", "fixed", "bebida"]);
 // Las fechas de un código: que sean fechas, y que no nazca vencido ni al revés. Antes un texto
 // cualquiera llegaba a la base (500) y un «hasta» anterior al «desde» creaba un código que el
 // panel mostraba activo y ningún cliente podía usar, sin que nadie se enterara.
