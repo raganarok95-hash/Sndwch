@@ -27,7 +27,7 @@ const C = {
   celeste: '#90CCF0', curva: '#7DBBE0', navy: '#1E2F3A', durazno: '#F0D8CC', lila: '#C3A6D2', lilaOsc: '#4A3D62',
 };
 // El código del QR de la bolsa (migración 20261009025200: tipo «bebida», una vez por celular).
-const CODIGO = 'BOLSA';
+const CODIGO = 'WICHO';
 const URL_BOLSA = `https://sndwch.app/?src=bolsa&codigo=${CODIGO}`;
 const URL_CALLE = 'https://sndwch.app/?src=calle';
 const qr = (url, color) => QRCode.toString(url, { type: 'svg', margin: 0, errorCorrectionLevel: 'Q', color: { dark: color, light: '#0000' } });
@@ -142,48 +142,78 @@ for (const x of piezas) {
   await p.close(); rmSync(tmp);
 }
 
-// ── Lámina: los tres a la misma escala, con su troquel y su medida, y cómo va la bolsa ────────
+// ── Lámina: los tres a la misma escala, con su troquel y su medida ───────────────────────────
+const foto = async (archivo, W, H, escena) => {
+  const tmp = resolve(OUT, '.foto.html');
+  writeFileSync(tmp, `<!doctype html><html><head><meta charset="utf-8"><style>${BASE}body{width:${W}px;height:${H}px;overflow:hidden;position:relative}</style></head><body>${escena}</body></html>`);
+  const p = await b.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1.5 });
+  await p.goto('file://' + tmp, { waitUntil: 'load' });
+  await cargar(p);
+  await p.screenshot({ path: archivo });
+  await p.close(); rmSync(tmp);
+};
+const recorte = (x, k, sombra = '0 10px 24px rgba(30,30,20,.28)') => {
+  const r = x.forma === 'circulo' ? '50%' : x.forma === 'rect4' ? `${4 * k}px` : `${6 * k}px`;
+  return `<div style="position:relative;width:${x.w * k}px;height:${x.h * k}px;border-radius:${r};overflow:hidden;box-shadow:${sombra}"><img src="${img(`${OUT}/${x.archivo}.png`)}" style="position:absolute;left:${-S * k}px;top:${-S * k}px;width:${(x.w + 2 * S) * k}px"></div>`;
+};
+const [c1, c2, c3] = piezas;
 {
-  const k = 4.2; // px por mm en la lámina
-  const recorte = (x) => {
-    const r = x.forma === 'circulo' ? '50%' : x.forma === 'rect4' ? `${4 * k}px` : `${6 * k}px`;
-    return `<div style="position:relative;width:${x.w * k}px;height:${x.h * k}px;border-radius:${r};overflow:hidden;box-shadow:0 10px 24px rgba(30,30,20,.28)"><img src="${img(`${OUT}/${x.archivo}.png`)}" style="position:absolute;left:${-S * k}px;top:${-S * k}px;width:${(x.w + 2 * S) * k}px"></div>`;
-  };
+  const k = 4.2; // px por mm
   const ficha = (x, titulo, medida, material, va) => `<div style="display:flex;flex-direction:column;gap:14px;width:${Math.max(x.w * k, 300)}px">
-    <div style="height:${100 * k}px;display:flex;align-items:flex-end">${recorte(x)}</div>
+    <div style="height:${100 * k}px;display:flex;align-items:flex-end">${recorte(x, k)}</div>
     <div class="disp" style="font-size:26px;color:${C.tinta}">${titulo}</div>
     <div class="mono" style="font-size:15px;color:${C.tinta}">${medida}</div>
     <div style="font:400 15px/1.4 Archivo,sans-serif;color:#4A4A40">${material}<br>${va}</div></div>`;
-  const [c1, c2, c3] = piezas;
-  // La bolsa lisa #20 (21 × 40 × 12.5) con su doblez, el sello del frente, el QR y el cierre.
-  const kb = 2.1, bw = 210 * kb, bh = 330 * kb, doblez = 40 * kb;
-  const bolsa = `<div style="position:relative;width:${bw}px;height:${bh}px;background:linear-gradient(90deg,#B4875B,#BE9165 50%,#B4875B);box-shadow:0 26px 40px rgba(40,25,10,.35)">
-    <div style="position:absolute;left:0;right:0;top:0;height:${doblez}px;background:linear-gradient(#A47650,#AD7F57);box-shadow:0 6px 8px -2px rgba(0,0,0,.35)"></div>
-    <div style="position:absolute;left:${(bw - 120 * kb) / 2}px;top:${doblez + 30 * kb}px;width:${120 * kb}px;height:${90 * kb}px;background:url('${img('docs/marketing/bolsa/opcion-barata/sello-frente.png')}') center/cover;mix-blend-mode:multiply;opacity:.88"></div>
-    <div style="position:absolute;left:${(bw - 50 * kb) / 2}px;top:${doblez - 25 * kb}px;width:${50 * kb}px;height:${50 * kb}px;border-radius:50%;overflow:hidden;box-shadow:0 3px 6px rgba(0,0,0,.3)"><img src="${img(`${OUT}/${c1.archivo}.png`)}" style="position:absolute;left:${-S * kb}px;top:${-S * kb}px;width:${(50 + 2 * S) * kb}px"></div>
-    <div style="position:absolute;left:${(bw - 70 * kb) / 2}px;top:${doblez + 135 * kb}px;width:${70 * kb}px;height:${100 * kb}px;border-radius:${4 * kb}px;overflow:hidden;box-shadow:0 3px 6px rgba(0,0,0,.25)"><img src="${img(`${OUT}/${c2.archivo}.png`)}" style="position:absolute;left:${-S * kb}px;top:${-S * kb}px;width:${(70 + 2 * S) * kb}px"></div>
-  </div>`;
-  const escena = `<div style="position:absolute;inset:0;background:${C.papel};padding:60px 70px;display:flex;gap:80px">
-    <div style="display:flex;flex-direction:column;gap:18px">
-      <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva}">LOS TRES STICKERS · A ESCALA</div>
-      <div style="display:flex;gap:56px;align-items:flex-start">
-        ${ficha(c1, '1 · Cierre', 'Ø 50 mm · troquel circular', 'Papel adhesivo couché, full color.', 'Cruza el doblez: si llega roto, se abrió.')}
-        ${ficha(c2, '2 · QR de la bolsa', '70 × 100 mm · esquinas 4 mm', 'Papel adhesivo couché MATE (el brillo tapa el QR).', 'Al centro de la bolsa, bajo el sello.')}
-        ${ficha(c3, '3 · Calle', '80 × 80 mm · esquinas 6 mm', 'Vinilo blanco + laminado mate UV (sol y lluvia).', 'Donde te dejen pegarlo.')}
-      </div>
+  await foto(`${OUT}/lamina-stickers.png`, 1240, 760, `<div style="position:absolute;inset:0;background:${C.papel};padding:56px 64px;display:flex;flex-direction:column;gap:18px">
+    <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva}">LOS TRES STICKERS · A ESCALA</div>
+    <div style="display:flex;gap:56px;align-items:flex-start">
+      ${ficha(c1, '1 · Cierre', 'Ø 50 mm · troquel circular', 'Papel adhesivo couché, full color.', 'Cruza el doblez: si llega roto, se abrió.')}
+      ${ficha(c2, '2 · QR de la bolsa', '70 × 100 mm · esquinas 4 mm', 'Papel adhesivo couché MATE (el brillo tapa el QR).', 'En el dorso de la bolsa.')}
+      ${ficha(c3, '3 · Calle', '80 × 80 mm · esquinas 6 mm', 'Vinilo blanco + laminado mate UV (sol y lluvia).', 'Donde te dejen pegarlo.')}
+    </div></div>`);
+}
+
+// ── La bolsa lisa #20 (21 × 40 × 12.5 cm), por sus dos caras ──────────────────────────────────
+//    Cada cara hace UN trabajo. Frente: el letrero que ven todos (el sello) y el cierre. Dorso: lo
+//    que le habla a quien la recibe (el sticker del QR). El sello y el QR se ponen en tanda antes
+//    del servicio; al despachar solo se dobla y se pega el cierre.
+{
+  const kb = 2.3, AN = 210, AL = 345, SOLAPA = 26, FUELLE = 11; // mm de la cara, ya doblada
+  const px = (mm) => (mm * kb).toFixed(1) + 'px';
+  // Papel kraft: fibra con ruido calculado, nunca una foto.
+  const defs = `<svg width="0" height="0" style="position:absolute"><defs>
+    <filter id="fibra" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.9 0.06" numOctaves="3" seed="7"/><feColorMatrix values="0 0 0 0 0.35  0 0 0 0 0.22  0 0 0 0 0.10  0 0 0 0.22 0"/></filter>
+    <filter id="tinta" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="3" result="r"/><feDisplacementMap in="SourceGraphic" in2="r" scale="2.2" xChannelSelector="R" yChannelSelector="G" result="d"/><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="11" result="m"/><feColorMatrix in="m" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.1 1.45" result="mm"/><feComposite in="d" in2="mm" operator="in"/></filter>
+  </defs></svg>`;
+  const papel = (extra = '') => `<div style="position:absolute;inset:0;background:linear-gradient(90deg,#A97C52 0,#B98B5E ${px(FUELLE)},#C29468 50%,#B98B5E calc(100% - ${px(FUELLE)}),#A97C52 100%)${extra}"></div>
+    <svg style="position:absolute;inset:0;mix-blend-mode:multiply" width="100%" height="100%"><rect width="100%" height="100%" filter="url(#fibra)"/></svg>
+    <div style="position:absolute;top:0;bottom:0;left:${px(FUELLE)};width:1px;background:rgba(70,45,20,.35)"></div>
+    <div style="position:absolute;top:0;bottom:0;right:${px(FUELLE)};width:1px;background:rgba(70,45,20,.35)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:${px(16)};height:1px;background:rgba(70,45,20,.3)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;height:${px(16)};background:linear-gradient(rgba(60,35,15,.10),rgba(60,35,15,.22))"></div>`;
+  // El borde dentado de la boca de la bolsa, doblado dos veces sobre el frente.
+  const dientes = Array.from({ length: Math.ceil(AN / 4) + 1 }, (_, i) => `${i * 4},${SOLAPA} ${i * 4 + 2},${SOLAPA + 1.6}`).join(' ');
+  const solapa = `<svg style="position:absolute;left:0;top:0;filter:drop-shadow(0 ${px(1.4)} ${px(1.6)} rgba(40,22,8,.45))" width="${px(AN)}" height="${px(SOLAPA + 3)}" viewBox="0 0 ${AN} ${SOLAPA + 3}">
+    <polygon points="0,0 ${AN},0 ${AN},${SOLAPA} ${dientes} 0,${SOLAPA}" fill="#B08257"/>
+    <line x1="0" y1="${SOLAPA * 0.48}" x2="${AN}" y2="${SOLAPA * 0.48}" stroke="rgba(60,35,15,.35)" stroke-width="0.4"/>
+  </svg>`;
+  const sello = `<div style="position:absolute;left:${px(22)};top:${px(AL * 0.43 - 42)};color:${C.tinta};mix-blend-mode:multiply;opacity:.94;filter:url(#tinta)">
+    <div class="voz" style="font-size:${px(27)};line-height:.95">Alguien<br>pidió bien.</div>
+    <div class="mono" style="font-size:${px(8)};letter-spacing:.03em;margin-top:${px(6)}">sndwch.app</div></div>`;
+  const cierre = `<div style="position:absolute;left:${px((AN - 50) / 2)};top:${px(SOLAPA - 25)}">${recorte(c1, kb, '0 2px 4px rgba(40,22,8,.35)')}</div>`;
+  const qrDorso = `<div style="position:absolute;left:${px((AN - 70) / 2)};top:${px(62)}">${recorte(c2, kb, '0 2px 4px rgba(40,22,8,.3)')}</div>`;
+  const cara = (titulo, nota, cuerpo, conSolapa) => `<div style="display:flex;flex-direction:column;gap:16px">
+    <div style="position:relative;width:${px(AN)};height:${px(AL)};box-shadow:0 30px 44px -10px rgba(40,25,10,.45);border-radius:2px 2px 4px 4px;overflow:hidden">
+      ${papel()}${conSolapa ? solapa : `<div style="position:absolute;left:0;right:0;top:0;height:${px(5)};background:linear-gradient(rgba(60,35,15,.28),transparent)"></div>`}${cuerpo}
     </div>
-    <div style="display:flex;flex-direction:column;gap:18px">
-      <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva}">ASÍ VA LA BOLSA LISA #20</div>
-      ${bolsa}
-    </div></div>`;
-  const W = 1900, H = 960;
-  const tmp = resolve(OUT, '.lamina.html');
-  writeFileSync(tmp, `<!doctype html><html><head><meta charset="utf-8"><style>${BASE}body{width:${W}px;height:${H}px;overflow:hidden;position:relative}</style></head><body>${escena}</body></html>`);
-  const p = await b.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
-  await p.goto('file://' + tmp, { waitUntil: 'load' });
-  await cargar(p);
-  await p.screenshot({ path: `${OUT}/lamina-stickers.png` });
-  await p.close(); rmSync(tmp);
+    <div class="disp" style="font-size:24px;color:${C.tinta}">${titulo}</div>
+    <div style="font:400 15px/1.45 Archivo,sans-serif;color:#4A4A40;max-width:${px(AN)}">${nota}</div></div>`;
+  await foto('docs/marketing/bolsa/maqueta-bolsa-lisa.png', 1260, 1100, `${defs}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:54px 70px">
+    <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:22px">LA BOLSA · KRAFT LISA #20 · 21 × 40 × 12.5 CM</div>
+    <div style="display:flex;gap:90px">
+      ${cara('Frente', 'El sello «Alguien pidió bien.» a media altura, alineado a la izquierda, en tinta verde casi negro: es lo que se ve con la bolsa en la mano o en la caja de la moto. La boca se dobla dos veces y el cierre cruza el doblez.', `${sello}${cierre}`, true)}
+      ${cara('Dorso', 'El sticker del QR, centrado en el tercio de arriba: es lo que ve quien la recibe al girarla. Nada más.', qrDorso, false)}
+    </div></div>`);
 }
 await b.close();
-console.log(`✓ ${piezas.length} stickers y la lámina en ${OUT}`);
+console.log(`✓ ${piezas.length} stickers y la lámina en ${OUT}; la bolsa en docs/marketing/bolsa/maqueta-bolsa-lisa.png`);

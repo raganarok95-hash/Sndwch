@@ -10,7 +10,7 @@ extra». **Es una propuesta**: nada se imprime sin tu OK.
 | | medida | material | va | QR |
 |---|---|---|---|---|
 | **1 · Cierre** `1-cierre.pdf` | **Ø 50 mm**, troquel circular | papel adhesivo couché, full color | cruzando el doblez de la bolsa: el que la abre lo rompe | — |
-| **2 · QR de la bolsa** `2-qr-bolsa.pdf` | **70 × 100 mm**, esquinas de 4 mm | papel adhesivo couché **mate** (el brillo no deja leer el QR) | al centro de la bolsa, debajo del sello del frente | `sndwch.app/?src=bolsa&codigo=BOLSA` |
+| **2 · QR de la bolsa** `2-qr-bolsa.pdf` | **70 × 100 mm**, esquinas de 4 mm | papel adhesivo couché **mate** (el brillo no deja leer el QR) | en el **dorso** de la bolsa, centrado (ver `docs/marketing/bolsa/`) | `sndwch.app/?src=bolsa&codigo=WICHO` |
 | **3 · Calle** `3-calle.pdf` | **80 × 80 mm**, esquinas de 6 mm | **vinilo** blanco + laminado mate UV (aguanta sol y lluvia) | donde te dejen pegarlo (abajo) | `sndwch.app/?src=calle` |
 
 Todos los PDF llevan **3 mm de sangrado** por lado (el arte pasa del corte): la imprenta corta en
@@ -24,7 +24,7 @@ la medida de la tabla. Los dos QR se verificaron con un lector: abren su enlace.
 - **QR de la bolsa.** Es el mundo de WICHO, el de la energía de sticker: celeste, las curvas de
   nivel de su polo, él riéndose, y su círculo de plumón alrededor de «gratis». Le habla a quien
   pidió por Rappi o PedidosYa: «La próxima vez, pide directo y la bebida va gratis», con el
-  código BOLSA ya puesto en el QR (vale una vez por celular, la bebida más barata del carrito).
+  código WICHO ya puesto en el QR (antes se llamaba BOLSA; dueño: «el código BOLSA no me gusta, usemos otro») (vale una vez por celular, la bebida más barata del carrito).
 - **Calle.** Es el mundo de SANDO: papel crema, tinta, el forro naranja vertical y el acanalado
   de sus puños. Su frase firmada, «Si lees esto, ya tienes hambre.», no grita: hace que lo leas
   entero, y para entonces ya funcionó. El wordmark con el `//` dice de quién es; el QR (`?src=calle`)
