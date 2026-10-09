@@ -4312,7 +4312,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'c462f4777f';
+var APP_BUILD = 'ade02d3149';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -9369,6 +9369,7 @@ function finalizeOrderSuccess(res, po, chargeId) {
     window._lRef = po.ref;
     avisoPaso = 'aviso';
     aErr = '';
+    window._lOrderId = res.order && res.order.id ? String(res.order.id) : '';
     // La hora que el servidor dejó prometida al crear el pedido (ventanaPrometida en env.ts).
     window._lVentana = ventanaDelPedido(res.order);
     receiptUploadState = null;
@@ -9501,7 +9502,12 @@ function sOSent() {
             + (window._lWaText ? '<button onclick="reopenWhatsAppConfirm()">Mandar el aviso por WhatsApp <span>→</span></button>' : '')
             // Justo después del primer pedido pagado es el momento de mayor intención para activar
             // las notificaciones: quiere saber cuándo llega SU pedido.
-            + (cust && cust.total_orders === 1 && !pushSubscribed && ('serviceWorker' in navigator) && ('PushManager' in window) ? '<button onclick="togglePushNotifications()">Avísame cuando salga <span>→</span></button>' : '')
+            // Y también a quien pidió SIN cuenta (2026-10-09): sin esto, los avisos de recompra (el
+            // regalo de las 24 h y el del día 7-10) no le llegaban nunca, en silencio. Se guarda con
+            // el teléfono de su pedido (push-subscribe-pedido).
+            + (!pushSubscribed && ('serviceWorker' in navigator) && ('PushManager' in window)
+                && ((cust && cust.total_orders === 1) || (!cust && window._lOrderId))
+                ? '<button data-accion="avisame-cuando-salga" onclick="' + (cust ? 'togglePushNotifications()' : 'avisarSinCuenta()') + '">' + (pushMsg && !cust ? esc(pushMsg) : 'Avísame cuando salga') + ' <span>→</span></button>' : '')
             + (cust ? '<button onclick="shareReferral()">Invita a alguien <span>→</span></button>' : '')
             + '</div>'
             // Si algo sale mal con este pedido, es acá donde el cliente lo va a buscar.
@@ -12972,6 +12978,34 @@ async function checkPushSubscription() {
         render();
     }
     catch (e) { }
+}
+// Avisos para quien pidió sin cuenta (2026-10-09): la suscripción queda con el teléfono de su
+// pedido; el id del pedido es la prueba. Lo usan la losa de la 06A y todos los recordatorios.
+async function avisarSinCuenta() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        pushMsg = 'Tu navegador no deja avisos.';
+        render();
+        return;
+    }
+    try {
+        var perm = await Notification.requestPermission();
+        if (perm !== 'granted') {
+            pushMsg = 'Permite los avisos en tu navegador';
+            render();
+            return;
+        }
+        var reg = await navigator.serviceWorker.ready;
+        var sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+        var j = sub.toJSON();
+        await api('push-subscribe-pedido', { orderId: window._lOrderId, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth });
+        pushSubscribed = true;
+        pushMsg = '';
+        render();
+    }
+    catch (e) {
+        pushMsg = 'No se pudo activar: ' + (e.message || 'intenta de nuevo');
+        render();
+    }
 }
 async function togglePushNotifications() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {

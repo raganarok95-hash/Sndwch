@@ -289,6 +289,20 @@ async function checkPushSubscription(){
     render();
   }catch(e){}
 }
+// Avisos para quien pidió sin cuenta (2026-10-09): la suscripción queda con el teléfono de su
+// pedido; el id del pedido es la prueba. Lo usan la losa de la 06A y todos los recordatorios.
+async function avisarSinCuenta(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)){pushMsg='Tu navegador no deja avisos.';render();return;}
+  try{
+    var perm=await Notification.requestPermission();
+    if(perm!=='granted'){pushMsg='Permite los avisos en tu navegador';render();return;}
+    var reg=await navigator.serviceWorker.ready;
+    var sub=await reg.pushManager.getSubscription()||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
+    var j=sub.toJSON();
+    await api('push-subscribe-pedido',{orderId:window._lOrderId,endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth});
+    pushSubscribed=true;pushMsg='';render();
+  }catch(e){pushMsg='No se pudo activar: '+(e.message||'intenta de nuevo');render();}
+}
 async function togglePushNotifications(){
   if(!('serviceWorker' in navigator)||!('PushManager' in window)){pushMsg='Tu navegador no soporta notificaciones push.';render();return;}
   if(!cust){pushMsg='Inicia sesión para activar notificaciones.';render();return;}

@@ -232,6 +232,11 @@ export const CONTRATO = {
     e.objeto({ token, endpoint: e.textoOpcional(2000), p256dh: e.textoOpcional(500), auth: e.textoOpcional(500) }),
   ),
   'push-unsubscribe': accion<Record<string, unknown>>()(e.objeto({ token, endpoint: e.textoOpcional(2000) })),
+  // Avisos para quien pidió SIN cuenta (2026-10-09): la suscripción queda con el teléfono de su
+  // pedido. El id del pedido es la prueba (solo lo tiene quien lo hizo).
+  'push-subscribe-pedido': accion<Record<string, unknown>>()(
+    e.objeto({ token, orderId: e.uuid('Falta el pedido.'), endpoint: e.textoOpcional(2000), p256dh: e.textoOpcional(500), auth: e.textoOpcional(500) }),
+  ),
   'submit-complaint': accion<Record<string, unknown>>()(
     e.objeto({
       token, kind: e.textoOpcional(40), consumerName: e.textoOpcional(200), consumerDni: e.textoOpcional(40),

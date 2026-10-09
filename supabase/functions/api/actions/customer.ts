@@ -812,6 +812,34 @@ export async function actPushSubscribe(b: Entrada<"push-subscribe"> & { _ip?: st
   return { success: true };
 }
 
+// Avisos para quien pidió SIN cuenta (dueño, 2026-10-09: «Solucionalo», sobre la recompra). La
+// app no pide cuenta antes de pagar, y los avisos de recompra (el regalo de las 24 h y el del
+// día 7-10) solo le llegaban a quien había iniciado sesión y activado las notificaciones en su
+// cuenta: al cliente nuevo, que es el que importa, no le llegaba nada, en silencio. Ahora se
+// ofrece justo después de pagar y la suscripción queda con el TELÉFONO DEL PEDIDO, que es por
+// donde buscan todos los recordatorios. La prueba de que es su pedido es el id (un uuid que solo
+// tiene quien lo hizo); se acepta solo en las 48 h siguientes al pedido.
+export async function actPushSubscribePedido(b: Entrada<"push-subscribe-pedido"> & { _ip?: string }) {
+  const endpoint = String(b.endpoint || "");
+  const p256dh = String(b.p256dh || "");
+  const auth = String(b.auth || "");
+  if (!endpoint || !p256dh || !auth) throw new ApiError("Faltan datos de la suscripción.");
+  const desde = new Date(Date.now() - 48 * 3600000).toISOString();
+  const pedido = (await sbGet("orders", `id=eq.${encodeURIComponent(String(b.orderId))}&created_at=gte.${encodeURIComponent(desde)}&select=customer_phone&limit=1`))[0];
+  const phone = pedido?.customer_phone ? String(pedido.customer_phone) : "";
+  if (!phone) throw new ApiError("No encontramos ese pedido.", 404);
+  const existing = await sbGet("push_subscriptions", `endpoint=eq.${encodeURIComponent(endpoint)}&select=id,customer_phone`);
+  if (existing.length && existing[0].customer_phone && existing[0].customer_phone !== phone) {
+    throw new ApiError("Este dispositivo ya recibe avisos de otro número.", 409);
+  }
+  if (existing.length) {
+    await sbUpdate("push_subscriptions", `endpoint=eq.${encodeURIComponent(endpoint)}`, { customer_phone: phone, p256dh, auth });
+  } else {
+    await sbInsert("push_subscriptions", { customer_phone: phone, endpoint, p256dh, auth });
+  }
+  return { success: true };
+}
+
 export async function actPushUnsubscribe(b: Entrada<"push-unsubscribe"> & { _ip?: string }) {
   const s = await requireSession(b.token);
   const endpoint = String(b.endpoint || "");
@@ -1134,15 +1162,23 @@ export async function actRemindSecondOrder(b: Entrada<"remind-second-order"> & {
   // limit explícito (cap de seguridad, mismo criterio que actAnniversaryGreeting) — sin
   // esto, PostgREST trunca en silencio a 1000 filas por defecto (hallazgo de auditoría
   // 2026-08-07).
-  const customers = await sbGet("customers", "select=phone,total_orders&total_orders=eq.1&limit=20000");
-  if (!customers.length) return { success: true, reminded: 0 };
-  const phones = customers.map((c: any) => `"${String(c.phone).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
+  const cuentas = await sbGet("customers", "select=phone,total_orders&total_orders=eq.1&limit=20000");
+  // Quien pidió SIN cuenta y aceptó los avisos después de pagar (2026-10-09) no está en
+  // `customers`: también se considera, por el teléfono de su suscripción. Para todos vale la
+  // misma regla: exactamente UN pedido pagado.
+  const subs = await sbGet("push_subscriptions", "customer_phone=not.is.null&select=customer_phone&limit=20000");
+  const candidatos = [...new Set([...cuentas.map((c: any) => String(c.phone)), ...subs.map((x: any) => String(x.customer_phone))])];
+  if (!candidatos.length) return { success: true, reminded: 0 };
+  const customers = candidatos.map((phone) => ({ phone }));
+  const phones = candidatos.map((ph) => `"${ph.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`).join(",");
   const orders = await sbGet("orders", `customer_phone=in.(${phones})&payment_status=eq.paid&select=customer_phone,created_at&limit=20000`);
   const firstOrderByPhone = new Map<string, number>();
+  const pagados = new Map<string, number>();
   for (const o of orders) {
     const t = new Date(o.created_at).getTime();
     const prev = firstOrderByPhone.get(o.customer_phone);
     if (prev === undefined || t < prev) firstOrderByPhone.set(o.customer_phone, t);
+    pagados.set(o.customer_phone, (pagados.get(o.customer_phone) || 0) + 1);
   }
   const now = Date.now();
   let reminded = 0;
@@ -1154,7 +1190,7 @@ export async function actRemindSecondOrder(b: Entrada<"remind-second-order"> & {
       break;
     }
     const firstOrderAt = firstOrderByPhone.get(c.phone);
-    if (firstOrderAt === undefined) continue;
+    if (firstOrderAt === undefined || pagados.get(c.phone) !== 1) continue;
     const daysSince = (now - firstOrderAt) / 86400000;
     if (daysSince < SECOND_ORDER_MIN_DAYS || daysSince > SECOND_ORDER_MAX_DAYS) continue;
     try {
