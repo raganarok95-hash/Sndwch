@@ -215,13 +215,20 @@ def _comprados(ads, cac_limpio):
 
 def corrida(ads_lanzamiento, meses_lanzamiento, reinversion, viral, organico_dia,
             cpm_rango=(5.0, 12.0), sueldo_dueno=0.0, factor_confianza=1.0,
-            contrib=None, tope_ads=None, cohorte_lanzamiento=0.0, decaimiento_organico=1.0):
+            contrib=None, tope_ads=None, cohorte_lanzamiento=0.0, decaimiento_organico=1.0,
+            plan_ads=None, forzar_plan=False):
     """`cohorte_lanzamiento`: clientes que entran de golpe el PRIMER mes y no se compran ni
     se refieren — la red personal del dueño, avisada a mano. Ningún modelo de este repo la
     tuvo, y es el único canal que ya existe el día 1 y no depende de ninguna subasta.
 
     `decaimiento_organico`: factor mensual sobre el ritmo orgánico. Un lanzamiento hace ruido
-    y después baja; asumir el mismo ritmo 24 meses sería el optimismo que este archivo evita."""
+    y después baja; asumir el mismo ritmo 24 meses sería el optimismo que este archivo evita.
+
+    `plan_ads` (2026-10-09): pauta fija MES A MES (lista; lo que falta, 0). Reemplaza a
+    `ads_lanzamiento`/`meses_lanzamiento` cuando la pauta no empieza el mes 0: los S/350
+    aprobados entran recién en noviembre, tras 14 días sin pauta. La reinversión se suma igual.
+    `forzar_plan`: el freno no corta la parte del plan (una prueba para MEDIR el CAC se gasta
+    aunque el CAC esperado supere el techo); la reinversión sí sigue frenada."""
     contrib = CONTRIB_PEDIDO if contrib is None else contrib
     cneta = contrib - OVERHEAD_PEDIDO
     perf = PERFILES[random.randrange(len(PERFILES))]
@@ -233,7 +240,8 @@ def corrida(ads_lanzamiento, meses_lanzamiento, reinversion, viral, organico_dia
     nuevos = [0.0] * H
     netos, ped_mes, ads_mes, pers_mes, caja = [], [], [], [], []
     acumulados, personal_previo, ped_prev, acum = 0.0, 1, 0.0, 0.0
-    ads = ads_lanzamiento
+    plan = (lambda m: plan_ads[m] if m < len(plan_ads) else 0.0) if plan_ads is not None else None
+    ads = plan(0) if plan else ads_lanzamiento
 
     for m in range(H):
         frio = (COLD_MULT - (COLD_MULT - 1.0) * m / COLD_MESES) if m < COLD_MESES else 1.0
@@ -244,7 +252,7 @@ def corrida(ads_lanzamiento, meses_lanzamiento, reinversion, viral, organico_dia
         # vida cubre lo que cuesta comprarlo, gastar más no es reinvertir: es perder más
         # rápido. Reinvertir no es gastar a ciegas.
         if cac_limpio > techo:
-            ads = 0.0
+            ads = plan(m) if (plan and forzar_plan) else 0.0
 
         comprados = _comprados(ads, cac_limpio)
         referidos = ped_prev * viral
@@ -271,7 +279,7 @@ def corrida(ads_lanzamiento, meses_lanzamiento, reinversion, viral, organico_dia
         netos.append(neto); ped_mes.append(ped); ads_mes.append(ads)
         pers_mes.append(necesarios); caja.append(acum)
 
-        base = ads_lanzamiento if m + 1 < meses_lanzamiento else 0.0
+        base = plan(m + 1) if plan else (ads_lanzamiento if m + 1 < meses_lanzamiento else 0.0)
         ads = base + max(0.0, reinversion * generado)
         if tope_ads is not None:
             ads = min(ads, tope_ads)
