@@ -30,6 +30,26 @@ la abrieron. **Pídele a la imprenta el micro-perforado en esa línea** (en el a
 **menos de la mitad**. Una sola versión. Las frases que rotan quedan para más adelante
 (`FRASES_TIRA` en el script; dueño: «las frases, para el futuro mejor»).
 
+| **5 · Cierre con QR, cuadrado** `5-cierre-qr-70x70.pdf` (opción C, la más barata) | **7 × 7 cm**, esquinas de 4 mm, con **precorte** | papel adhesivo full color (medida de lista) | al frente, arriba al centro: la franja de 2.2 cm va sobre el doblez y se rasga por el precorte; abajo el QR | `sndwch.app/?src=bolsa&codigo=DIRECTO` |
+
+### Precios de referencia (lista que trajo el dueño, 2026-10-09)
+Stickers troquelados, impresión full color, papel adhesivo (Host4Plus / Supersiro SAC):
+
+| medida | 250 | 500 | 1,000 |
+|---|---|---|---|
+| 3 cm | S/22 | S/30 | S/40 |
+| 4 cm | S/30 | S/45 | S/79 |
+| 5 cm | S/35 | S/50 | S/89 |
+| 6 cm | S/45 | S/70 | S/105 |
+| 7 cm | S/60 | S/90 | S/150 |
+| 8 cm | S/70 | S/130 | S/190 |
+| 9 cm | S/75 | S/145 | S/200 |
+
+A 1,000 unidades el cm² sale a ~S/0.0025–0.003. Por bolsa: **opción C (7 × 7) S/0.15**; opción
+A (redondo de 5 + QR de 7 × 10 a medida) ~S/0.29; la tira de 5 × 19 a medida ~S/0.25–0.29. Medidas
+a medida y el precorte: consultarlos. El de la calle (8 cm) va en **vinilo** para exterior: esta
+lista es de papel, pedir precio de vinilo aparte.
+
 Todos los PDF llevan **3 mm de sangrado** por lado (el arte pasa del corte): la imprenta corta en
 la medida de la tabla. Los dos QR se verificaron con un lector: abren su enlace.
 

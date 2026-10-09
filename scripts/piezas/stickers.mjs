@@ -171,6 +171,31 @@ piezas.push({ archivo: ARCHIVO_TIRA, w: TIRA.ancho, h: LARGO_TIRA, forma: 'rect4
   <div style="position:absolute;left:0;top:${S + TIRA.frente}mm;width:${TIRA.ancho + 2 * S}mm;height:${TIRA.boca}mm;background:${C.tinta}"></div>${tramoBoca(S, S + TIRA.frente)}
   <div style="position:absolute;left:0;top:${S + TIRA.frente + TIRA.boca}mm;width:${TIRA.ancho + 2 * S}mm;height:${TIRA.dorso + S}mm;overflow:hidden">${await ladoQRAngosto(S, 0, TIRA.ancho, TIRA.dorso, S)}</div>` });
 
+// ── 5 · Cierre con QR, cuadrado de 7 cm (opción C, 2026-10-09). Con la lista de precios que trajo
+//        el dueño (stickers troquelados full color en papel adhesivo: 7 cm a S/150 el millar), un
+//        cuadrado de MEDIDA DE LISTA hace lo de la tira por menos de la mitad: la franja de arriba
+//        va sobre el doblez y se rasga por el precorte; abajo, el QR con DIRECTO. Va al frente,
+//        arriba al centro: es lo primero que se ve.
+const CUADRO = { lado: 70, franja: 22 };
+async function cierreQR(x0, y0, extra = 0) {
+  const L = CUADRO.lado, F = CUADRO.franja;
+  return `<div style="position:absolute;left:${x0 - extra}mm;top:${y0 - extra}mm;width:${L + 2 * extra}mm;height:${F + extra}mm;background:${C.tinta}"></div>
+  <div style="position:absolute;left:${x0}mm;top:${y0 + 3.4}mm;width:${L}mm;display:flex;justify-content:center;gap:1mm">${[C.oro, C.celeste].map((col) => `<i style="display:block;width:0.8mm;height:4.2mm;border-radius:0.2mm;background:${col};transform:skewX(-16deg)"></i>`).join('')}</div>
+  <div class="mono" style="position:absolute;left:${x0}mm;width:${L}mm;top:${y0 + 10}mm;text-align:center;font-size:2.3mm;letter-spacing:.08em;color:${C.papel}">SI LLEGA RASGADO, AVÍSANOS</div>
+  <div class="mono" style="position:absolute;left:${x0}mm;width:${L}mm;top:${y0 + F - 6.2}mm;text-align:center;font-size:2.3mm;letter-spacing:.12em;color:${C.oro}">↓ RASGA AQUÍ PARA ABRIR ↓</div>
+  <div style="position:absolute;left:${x0 + 2.5}mm;width:${L - 5}mm;top:${y0 + F}mm;border-top:0.4mm dashed ${C.papel};z-index:2"></div>
+  <div style="position:absolute;left:${x0 - extra}mm;top:${y0 + F}mm;width:${L + 2 * extra}mm;height:${L - F + extra}mm;background:${C.celeste};overflow:hidden">${curvas(L + 2 * extra, L - F + extra, C.curva, 11, 1.4, 0.28)}</div>
+  <div style="position:absolute;left:${x0 + 4}mm;top:${y0 + F + 4}mm;width:30mm;padding:1.8mm;background:#fff;border-radius:2.4mm;box-shadow:0 0 0 0.45mm ${C.navy}">${await qr(URL_BOLSA, C.navy)}</div>
+  <div style="position:absolute;left:${x0 + 37.5}mm;top:${y0 + F + 4}mm;color:${C.navy}">
+    <div style="font:800 2.9mm/1 Archivo,sans-serif">La próxima vez,</div>
+    <div class="disp" style="font-size:9.2mm;margin-top:1mm">Pide<br>directo</div>
+    <div style="font:800 3mm/1.15 Archivo,sans-serif;margin-top:1.6mm">y la bebida va</div>
+    <div style="font:800 3.9mm/1 Archivo,sans-serif;margin-top:1.4mm"><span style="position:relative;display:inline-block;padding:0 1mm;margin-left:0.6mm">gratis<span style="position:absolute;left:-1.3mm;right:-1.4mm;top:-1.9mm;bottom:-2mm">${circuloAMano(12, 7.8, C.navy)}</span></span></div>
+  </div>
+  <div class="mono" style="position:absolute;left:${x0 + 4}mm;top:${y0 + F + 38.4}mm;font-size:2.7mm;letter-spacing:.05em;color:${C.navy}">código <b style="background:${C.navy};color:${C.celeste};padding:0.25mm 1mm;border-radius:0.8mm">${CODIGO}</b></div>`;
+}
+piezas.push({ archivo: '5-cierre-qr-70x70', w: CUADRO.lado, h: CUADRO.lado, forma: 'rect4', cuerpo: await cierreQR(S, S, S) });
+
 // ── Los sellos de la bolsa lisa (2026-10-09, dueño: «rediséñala bien, dame ejemplos») ──────
 //    Arte en NEGRO sobre blanco, a tamaño real, para la sellería: uno por cada ejemplo de bolsa.
 //    El logo a una tinta lo hace scripts/piezas/logo_a_sello.py (umbral sobre el logo).
@@ -447,6 +472,28 @@ const nota = (sellos, por) => `<div class="mono" style="font-size:13px;color:${C
       ${plana}
       ${k.cara('Frente', nota(`2 sellos: ${CARTEL.ancho / 10 + 0.6} × 3.2 cm y ${CARTEL.ancho / 10 + 0.6} × ${(Math.ceil(CARTEL.pie + 6) / 10).toFixed(1)} cm`, 'La pastilla pide la historia con @snd__wch, legible en una foto.'), frente, true, false)}
       ${k.cara('Dorso', nota('solo la tira', 'El QR con el código DIRECTO. El sello «¿Y la oficina?» queda para cuando la bolsa traiga pedidos.'), dorso, false)}
+    </div></div>`);
+}
+{
+  // Opción C: el cuadrado de 7 cm al frente, arriba al centro, con el precorte en el borde del
+  // doblez. El dorso queda limpio (el sello de la oficina, para más adelante).
+  const k = kitBolsa(2.3), px = k.px;
+  const X = (AN - CARTEL.ancho) / 2;
+  const y0 = 4 + CUADRO.lado + (AL - 16 - 4 - CUADRO.lado - (CARTEL.alto + 5 + CARTEL.frase + 8 + CARTEL.pie)) / 2;
+  const cuadro = k.pegado((AN - CUADRO.lado) / 2, SOLAPA - CUADRO.franja, CUADRO.lado, CUADRO.lado, await cierreQR(0, 0));
+  const frente = cuadro + k.sellado(X, y0, `<div style="width:${CARTEL.ancho}mm;display:flex;flex-direction:column;align-items:center;gap:5mm">${nombreCartel(T)}${fraseCartel('Alguien pidió bien.', T)}</div>`) +
+    k.sellado(X, y0 + CARTEL.alto + 5 + CARTEL.frase + 8, pie(T));
+  const suelto = `<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:${px(CUADRO.lado + 30)}">
+    <div style="position:relative;width:${px(CUADRO.lado)};height:${px(CUADRO.lado)}">${recorte(piezas.find((x) => x.archivo === '5-cierre-qr-70x70'), 2.3)}
+      <div style="position:absolute;left:-6px;width:calc(${px(CUADRO.lado)} + 12px);top:${px(CUADRO.franja)};border-top:2px dashed #B4441E"></div></div>
+    <div class="disp" style="font-size:22px;color:${C.tinta}">El sticker</div>
+    <div style="font:400 14px/1.4 Archivo,sans-serif;color:#4A4A40">7 × 7 cm, medida de lista: S/150 el millar (S/0.15 cada uno). La línea roja es el precorte: va justo en el borde del doblez.</div></div>`;
+  await foto('docs/marketing/bolsa/maqueta-bolsa-ahorro.png', 1500, 1100, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:54px 60px">
+    <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:22px">OPCIÓN C · LA MÁS BARATA · 2 SELLOS Y 1 STICKER DE 7 CM</div>
+    <div style="display:flex;gap:56px;align-items:flex-start">
+      ${suelto}
+      ${k.cara('Frente', nota('2 sellos + el sticker de 7 cm', 'El sticker cierra (la franja va sobre el doblez y se rasga por el precorte) y lleva el QR con DIRECTO. Es lo primero que se ve.'), frente, true, false)}
+      ${k.cara('Dorso', nota('limpio', 'Sin nada por ahora. Más adelante, el sello «¿Y la oficina?».'), '', false)}
     </div></div>`);
 }
 await b.close();
