@@ -121,7 +121,7 @@ CAPACIDAD_DIA = 40         # [MEDIDO] dueño: 40 pedidos por día por persona
 COSTO_REFERIDO = 7.65      # [MEDIDO] el 15CM de R06 + la bebida de R05, a costo
 SUPUESTOS = {
     # canal propio: Google listo; Instagram suma desde el 27 de octubre (dueño: «hay que esperar 7 días»)
-    "google_dia":     (0.10, 0.40, "nuevos/día por Google. Un perfil promedio recibe ~20 clics al mes; uno nuevo, menos"),
+    "google_dia":     (0.02, 0.15, "nuevos/día por Google. En Perú la comida se descubre en Instagram y TikTok; un solo-delivery casi no sale en Maps"),
     "instagram_dia":  (0.00, 0.40, "nuevos/día por Instagram desde el 27-oct, con una cuenta que arranca de cero"),
     "crecimiento":    (0.00, 0.15, "cuánto crece al mes el canal propio (reseñas, seguidores)"),
     "red_compra":     (0.00, 0.10, "de las ~30 personas de tu red, qué parte pide (dueño: «probablemente ninguno»)"),
@@ -173,7 +173,8 @@ def nucleo(brecha):
     return f / f.sum()
 
 
-def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None):
+def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
+    ex = ex or {}
     """Una corrida con los supuestos s[*][i]. Devuelve totales por mes."""
     x = {k: v[i] for k, v in s.items()}
     if "referidos" in sol:
@@ -188,7 +189,9 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None):
     ped = {c: np.zeros(T) for c in pend}
     nuevos_ref = np.zeros(T + 8)
     cac = x["cpm"] / (1000 * x["ctr"] * x["cvr"]) * 1.18 * APRENDIZAJE
-    dias_pauta = [t for t in range(dia(date(2026, 11, 3)), nov30 + 1) if ABIERTO[t]]
+    cac *= ex.get("cac_factor", 1.0)
+    desde = ex.get("prueba_desde", date(2026, 11, 3))
+    dias_pauta = [t for t in range(dia(desde), nov30 + 1) if ABIERTO[t]]
     meta_dia = (PAUTA / cac) / len(dias_pauta)
     # Pauta mensual desde diciembre (2026-10-09: «¿con cuánto de publicidad funcionaría?»).
     # [SUPUESTO] Trujillo es chico: cada S/1,000 al mes encarece el cliente un 15%; después de la
@@ -198,7 +201,7 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None):
     cac_mes = cac / APRENDIZAJE * 1.15 * (1 + 0.15 * pauta_mes / 1000)
     pauta_dia = np.zeros(T)
     if gasta:
-        for m in range(2, len(MESES)):
+        for m in range(ex.get("pauta_desde_mes", 2), len(MESES)):
             sel = np.where((MES_DE == m) & ABIERTO)[0]
             pauta_dia[sel] = (pauta_mes / cac_mes) / len(sel)
     red = 30 * x["red_compra"] / 6
@@ -212,10 +215,11 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None):
             continue
         crece = (1 + x["crecimiento"]) ** (t / 30.4)
         nuevos = {
-            "propio": (x["google_dia"] + (x["instagram_dia"] if t >= ig else 0)) * crece
+            "propio": (x["google_dia"] + (x["instagram_dia"] if t >= ig else 0) + (ex.get("tiktok", 0.0) if t >= ig else 0)) * crece
+                      + (ex.get("oficinas", 0.0) if t >= dia(date(2026, 11, 3)) else 0)
                       + (meta_dia if t in dias_pauta else 0) + pauta_dia[t] + (red if t in primeros else 0) + nuevos_ref[t],
-            "rappi": x["rappi_dia"],
-            "pya": x["pya_dia"] if t >= pya else 0.0,
+            "rappi": x["rappi_dia"] * ex.get("rappi_factor", 1.0),
+            "pya": x["pya_dia"] if t >= dia(ex.get("pya_desde", date(2026, 11, 17))) else 0.0,
         }
         migra = x["qr_a_propio"] if t >= qr else x["app_a_propio"]
         for c in pend:
@@ -251,8 +255,9 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None):
     for m in range(len(MESES)):
         sel = MES_DE == m
         v, c = ventas[sel].sum(), compras[sel].sum()
-        util = (deja[sel].sum() - FIJOS_MES - refer[sel].sum() * COSTO_REFERIDO - (PAUTA if m == 1 else 0)
-                - (pauta_mes if gasta and m >= 2 else 0))
+        util = (deja[sel].sum() - FIJOS_MES - refer[sel].sum() * COSTO_REFERIDO - (PAUTA if m == MES_DE[dias_pauta[0]] else 0)
+                - (pauta_mes if gasta and m >= ex.get("pauta_desde_mes", 2) else 0)
+                - ex.get("oferta_costo", 0.0) * (PAUTA / cac if m == MES_DE[dias_pauta[0]] else (pauta_mes / cac_mes if gasta and m >= ex.get("pauta_desde_mes", 2) else 0)))
         if not rmt and max(v, c) > 8000:
             rmt = True       # el Nuevo RUS acaba en S/8,000 al mes: se pasa al Régimen MYPE
         if rmt:
@@ -267,11 +272,11 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None):
     return out, cac
 
 
-def simular(sol=(), semilla=20261009, n=CORRIDAS, pauta_mes=0.0, si_cac_menor=None):
+def simular(sol=(), semilla=20261009, n=CORRIDAS, pauta_mes=0.0, si_cac_menor=None, ex=None):
     rng = np.random.default_rng(semilla)
     s = sortear(rng, n)
     eco = pedido(**SOLUCIONES["ticket"][1]) if "ticket" in sol else pedido()
-    runs = [correr(s, i, eco, sol, pauta_mes, si_cac_menor) for i in range(n)]
+    runs = [correr(s, i, eco, sol, pauta_mes, si_cac_menor, ex) for i in range(n)]
     gan = np.array([[m["ganancia"] for m in r[0]] for r in runs])
     res = dict(meses=[], s=s, total=gan.sum(1), cac=np.array([r[1] for r in runs]))
     for m, (a, mm) in enumerate(MESES):

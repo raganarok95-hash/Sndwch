@@ -117,3 +117,26 @@ El rango de S/5–45 por mil vistas usaba una fuente de «mercados emergentes».
 de 2026 dicen S/5–12 para restaurantes y un promedio país de US$2.1–3.7. Ahora el modelo usa
 S/5–14: **un cliente cuesta ~S/36 (S/23–52)**, y S/300–600 al mes ganan en la mitad de los casos.
 Detalle y plan: `docs/marketing/PAUTA_BARATA.md`.
+
+## Cómo traer más clientes: cada palanca simulada (2026-10-09, noche)
+Dueño: «¿Lo de Google y las reseñas es una suposición en Perú? No conozco a nadie que se guíe en
+eso… Antes, haz la simulación con números actuales: cómo mejorar, cómo que entren más clientes».
+No hay un estudio peruano de restaurantes. Google dice que el 69% de los peruanos lee reseñas para
+elegir negocio, pero en general; para comida mandan Instagram y TikTok. Google baja a 0.02–0.15
+clientes/día. Con eso, HOY = **S/1,007 en 6 meses**, marzo S/514/mes, 3.1 pedidos/día.
+
+| palanca (sola, sobre HOY) | 6 meses | marzo, al mes |
+|---|---|---|
+| Oficinas: visitas con muestras y pedido en grupo (+0.5 clientes/día, supuesto) | +S/2,041 | +S/524 |
+| TikTok con los mismos videos de Instagram (+0.2/día) | +S/1,071 | +S/279 |
+| Pauta S/600/mes si la prueba sale ≤ S/30, con radio corto, Reels y retargeting | +S/692 | +S/263 |
+| Rappi trabajado: fotos, promos, calificaciones (+30%) | +S/545 | +S/115 |
+| Oferta de 1.er pedido en los anuncios (bebida) | +S/300 | +S/145 |
+| Referidos con botón de WhatsApp | +S/206 | +S/62 |
+| Recompra: avisos sin cuenta (hecho) | +S/166 | +S/46 |
+| PedidosYa desde el 3-nov en vez del 17 | +S/127 | +S/5 |
+| Adelantar la prueba de Meta al 20-oct | ≈ S/0 | ≈ S/0 |
+
+**Todo junto: S/6,986 en 6 meses (S/4,686 a S/10,016), marzo S/2,169 al mes y 8.5 pedidos al día.**
+Adelantar la prueba no cambia la plata (la pauta queda casi pareja); lo que da es saber dos semanas
+antes si conviene, a cambio de perder la medición de cuánta gente llega sola.
