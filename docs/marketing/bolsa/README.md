@@ -27,8 +27,11 @@ debajo, el personaje grande abajo a la derecha y una columna de datos con ícono
   se escribe como en la web y en Instagram.
 - **«Alguien pidió bien.»**, la frase de SANDO, en su itálica.
 - **La cara de los hermanos** a una tinta, grande, abajo a la derecha.
-- **Los datos, solo los reales:** pide en sndwch.app · síguenos en IG @snd__wch · martes a domingo,
-  solo delivery. Sin dirección (no hay local) ni teléfono (no hay uno público).
+- **Los datos, solo los reales:** pide en sndwch.app · WSP +51 930 957 640 · síguenos en IG
+  @snd__wch · martes a domingo, solo delivery. Sin dirección (no hay local). El WhatsApp es el
+  mismo que la app muestra en soporte y comprobantes, y el script lo lee de ahí (`var WA` en
+  `src/app/01-catalogo-y-estado.ts`): si cambia, se regenera y el sello sale con el nuevo
+  (dueño: «si hay WhatsApp público puedes ponerlo como wsp»).
 - **Dos sellos** (`sellos/7-cartel-cabecera-176x72.pdf` y `sellos/7-cartel-pie-176x110.pdf`): la
   cabecera y el pie. Si algún día se imprime la bolsa, el mismo arte sirve a una tinta.
 - El cierre redondo arriba y el sticker del QR atrás (o la tira de la opción B, que también cabe).
