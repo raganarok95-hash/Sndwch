@@ -202,7 +202,7 @@ const pie = (color) => `<div style="width:${CARTEL.ancho}mm;display:flex;align-i
 const sello = (archivo, w, h, cuerpo) => piezas.push({ archivo, w, h, forma: 'rect', dir: SELLOS, sinSangrado: true, cuerpo: `<div style="position:absolute;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4mm">${cuerpo}</div>` });
 sello('6-mezcla-150x130', 150, 130, mezcla('#000'));
 sello('7-cartel-cabecera-176x72', 176, 72, cabecera('#000'));
-sello('7-cartel-pie-176x110', 176, 110, pie('#000'));
+sello('7-cartel-pie-176x118', 176, 118, pie('#000'));
 sello('1-letrero-120x90', 120, 90, `<div style="width:112mm;display:flex;flex-direction:column;gap:6mm">${frase(27, '#000')}${web(8, '#000')}</div>`);
 sello('2-cara-90x115', 90, 115, `${logoTinta(86, '#000')}${web(8, '#000')}`);
 sello('3-costado-160x22', 160, 22, costado(156, 20, '#000'));
@@ -360,14 +360,18 @@ const nota = (sellos, por) => `<div class="mono" style="font-size:13px;color:${C
     </div></div>`);
 }
 {
-  // El cartel: frente con dos sellos (cabecera y pie) y el cierre redondo; dorso con el QR.
+  // El cartel: frente con dos sellos (cabecera y pie) y UNA tira (dueño: «agrega el sticker, que
+  // sea uno solo como quedamos»): el sello redondo al frente y el QR al dorso. La cabecera baja
+  // para quedar debajo de la tira.
   const k = kitBolsa(2.3), px = k.px;
-  const frente = k.sellado((AN - CARTEL.ancho) / 2, 64, cabecera(T)) + k.sellado((AN - CARTEL.ancho) / 2, 172, pie(T));
+  const frenteTira = k.pegado((AN - 70) / 2, 0, 70, TIRA.frente, tramoFrente(0, 0));
+  const dorsoTira = k.pegado((AN - 70) / 2, 0, 70, TIRA.dorso, await ladoQR(0, 0, 70, TIRA.dorso));
+  const frente = frenteTira + k.sellado((AN - CARTEL.ancho) / 2, TIRA.frente + 11, cabecera(T)) + k.sellado((AN - CARTEL.ancho) / 2, TIRA.frente + 105, pie(T));
   await foto('docs/marketing/bolsa/maqueta-bolsa-cartel.png', 1260, 1100, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:54px 70px">
-    <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:22px">EL CARTEL · KRAFT LISA #20 · DOS SELLOS</div>
+    <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:22px">EL CARTEL · KRAFT LISA #20 · DOS SELLOS Y UN SOLO STICKER</div>
     <div style="display:flex;gap:90px">
-      ${k.cara('Frente', nota('2 sellos · 17.6 × 7.2 cm y 17.6 × 11 cm', 'Arriba el nombre y la frase; abajo, los datos a la izquierda y la cara de los hermanos a la derecha. El cierre cruza el doblez.'), frente)}
-      ${k.cara('Dorso', nota('1 sticker · 70 × 100 mm', 'El sticker del QR con el código DIRECTO, centrado.'), k.qrDorso, false)}
+      ${k.cara('Frente', nota('2 sellos + 1 tira', 'La tira baja 7.5 cm sobre el doblez con el sello redondo. Debajo, el nombre y la frase; abajo, los datos a la izquierda y la cara de los hermanos a la derecha.'), frente, true, false)}
+      ${k.cara('Dorso', nota('la misma tira', 'Sigue por arriba y baja 11.5 cm con el QR y el código DIRECTO.'), dorsoTira, false)}
     </div></div>`);
 }
 await b.close();

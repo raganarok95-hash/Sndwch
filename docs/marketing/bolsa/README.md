@@ -32,9 +32,13 @@ debajo, el personaje grande abajo a la derecha y una columna de datos con ícono
   mismo que la app muestra en soporte y comprobantes, y el script lo lee de ahí (`var WA` en
   `src/app/01-catalogo-y-estado.ts`): si cambia, se regenera y el sello sale con el nuevo
   (dueño: «si hay WhatsApp público puedes ponerlo como wsp»).
-- **Dos sellos** (`sellos/7-cartel-cabecera-176x72.pdf` y `sellos/7-cartel-pie-176x110.pdf`): la
+- **Dos sellos** (`sellos/7-cartel-cabecera-176x72.pdf` y `sellos/7-cartel-pie-176x118.pdf`): la
   cabecera y el pie. Si algún día se imprime la bolsa, el mismo arte sirve a una tinta.
-- El cierre redondo arriba y el sticker del QR atrás (o la tira de la opción B, que también cabe).
+- **Un solo sticker: la tira** (dueño: «agrega el sticker, que sea uno solo como quedamos»): baja
+  7.5 cm al frente con el sello redondo y 11.5 cm al dorso con el QR. La cabecera queda debajo.
+- **El logo a una tinta sale del avatar completo** (`logo_a_sello.py`): el de antes venía recortado
+  de origen y se veía cortado (dueño: «se ve algo cortado el logo»). Ahora lleva un contorno que
+  cierra la cabeza.
 
 ## Opción B: un solo sticker que cierra y lleva el QR (2026-10-09)
 Dueño: «DIRECTO. Segundo, hagamos otra pero con el sticker que no sean dos sino uno solo, el de
