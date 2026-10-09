@@ -27,7 +27,7 @@ const C = {
   celeste: '#90CCF0', curva: '#7DBBE0', navy: '#1E2F3A', durazno: '#F0D8CC', lila: '#C3A6D2', lilaOsc: '#4A3D62',
 };
 // El código del QR de la bolsa (migración 20261009025200: tipo «bebida», una vez por celular).
-const CODIGO = 'WICHO';
+const CODIGO = 'DIRECTO';
 const URL_BOLSA = `https://sndwch.app/?src=bolsa&codigo=${CODIGO}`;
 const URL_CALLE = 'https://sndwch.app/?src=calle';
 const qr = (url, color) => QRCode.toString(url, { type: 'svg', margin: 0, errorCorrectionLevel: 'Q', color: { dark: color, light: '#0000' } });
@@ -73,39 +73,44 @@ const pieza = (archivo, w, h, forma, cuerpo) => piezas.push({ archivo, w, h, for
 
 // ── 1 · Cierre Ø50 mm: el logo de los dos y, alrededor, lo que promete el cierre ─────────────
 //        Dos arcos que se leen derechos (arriba y abajo) y el «//» de la marca a cada costado.
-{
-  const d = 50, c = S + d / 2, rA = 20.9, rB = 22.9; // el texto queda a 2 mm del corte
-  const barras = (x, y, giro) => `<g transform="translate(${x} ${y}) rotate(${giro})">${[[C.oro, -0.62], [C.celeste, 0.62]].map(([col, dx]) => `<rect x="${dx - 0.22}" y="-1.35" width="0.44" height="2.7" rx="0.12" fill="${col}" transform="skewX(-16)"/>`).join('')}</g>`;
-  pieza('1-cierre', d, d, 'circulo', `<div style="position:absolute;inset:0;background:${C.tinta}"></div>
-  <svg style="position:absolute;left:0;top:0" width="${d + 2 * S}mm" height="${d + 2 * S}mm" viewBox="0 0 ${d + 2 * S} ${d + 2 * S}">
+//        `selloRedondo` lo dibuja con centro en (cx, cy) mm de su contenedor; lo usan el cierre
+//        redondo y la tira larga.
+function selloRedondo(cx, cy, id) {
+  const rA = 20.9, rB = 22.9; // el texto queda a 2 mm del corte de un círculo de 50
+  const barras = (x, y) => `<g transform="translate(${x} ${y})">${[[C.oro, -0.62], [C.celeste, 0.62]].map(([col, dx]) => `<rect x="${dx - 0.22}" y="-1.35" width="0.44" height="2.7" rx="0.12" fill="${col}" transform="skewX(-16)"/>`).join('')}</g>`;
+  return `<svg style="position:absolute;left:${cx - 25}mm;top:${cy - 25}mm;overflow:visible" width="50mm" height="50mm" viewBox="${-25} ${-25} 50 50">
     <defs>
-      <path id="arriba" d="M${c - rA},${c} A${rA},${rA} 0 0 1 ${c + rA},${c}"/>
-      <path id="abajo" d="M${c - rB},${c} A${rB},${rB} 0 0 0 ${c + rB},${c}"/>
+      <path id="${id}-a" d="M${-rA},0 A${rA},${rA} 0 0 1 ${rA},0"/>
+      <path id="${id}-b" d="M${-rB},0 A${rB},${rB} 0 0 0 ${rB},0"/>
     </defs>
-    <circle cx="${c}" cy="${c}" r="17.6" fill="${C.papel}"/>
-    <circle cx="${c}" cy="${c}" r="17.6" fill="none" stroke="${C.oro}" stroke-width="0.35"/>
+    <circle r="17.6" fill="${C.papel}"/>
+    <circle r="17.6" fill="none" stroke="${C.oro}" stroke-width="0.35"/>
     <g font-family="IBM Plex Mono" font-weight="600" font-size="3.1" fill="${C.papel}" letter-spacing="0.35">
-      <text text-anchor="middle"><textPath href="#arriba" startOffset="50%">ARMADO AL MOMENTO</textPath></text>
-      <text text-anchor="middle"><textPath href="#abajo" startOffset="50%">SI LLEGA ABIERTO, AVÍSANOS</textPath></text>
+      <text text-anchor="middle"><textPath href="#${id}-a" startOffset="50%">ARMADO AL MOMENTO</textPath></text>
+      <text text-anchor="middle"><textPath href="#${id}-b" startOffset="50%">SI LLEGA ABIERTO, AVÍSANOS</textPath></text>
     </g>
-    ${barras(c - 21.3, c, 0)}${barras(c + 21.3, c, 0)}
+    ${barras(-21.3, 0)}${barras(21.3, 0)}
   </svg>
-  <img src="${img('img/marca/avatar-1024-transparente.png')}" style="position:absolute;left:${c - 15.5}mm;top:${c - 15.5}mm;width:31mm;height:31mm">`);
+  <img src="${img('img/marca/avatar-1024-transparente.png')}" style="position:absolute;left:${cx - 15.5}mm;top:${cy - 15.5}mm;width:31mm;height:31mm">`;
 }
+pieza('1-cierre', 50, 50, 'circulo', `<div style="position:absolute;inset:0;background:${C.tinta}"></div>${selloRedondo(S + 25, S + 25, 'c1')}`);
 
 // ── 2 · QR de la bolsa 70×100: el mundo de WICHO (celeste, curvas de nivel, su círculo) ──────
-{
-  const w = 70, h = 100, X = S + 6;
-  pieza('2-qr-bolsa', w, h, 'rect4', `<div style="position:absolute;inset:0;background:${C.celeste};color:${C.navy};overflow:hidden">
-    ${curvas(w + 2 * S, h + 2 * S, C.curva, 22, 1.8, 0.3)}
-    <div style="position:absolute;left:${X}mm;top:${S + 7}mm;font:800 4.6mm/1 Archivo,sans-serif">La próxima vez,</div>
-    <div class="disp" style="position:absolute;left:${X - 0.4}mm;top:${S + 13}mm;font-size:16.5mm">Pide<br>directo</div>
-    <div style="position:absolute;left:${X}mm;top:${S + 45}mm;font:800 4.7mm/1 Archivo,sans-serif;white-space:nowrap">y la bebida va <span style="position:relative;display:inline-block;padding:0 1.2mm;margin-left:1mm">gratis<span style="position:absolute;left:-1.6mm;right:-1.8mm;top:-2.4mm;bottom:-2.6mm">${circuloAMano(14.2, 9.4, C.navy)}</span></span></div>
-    <img src="${img('img/wicho_rie.png')}" style="position:absolute;right:${S - 10}mm;bottom:${S - 5}mm;height:50mm">
-    <div style="position:absolute;left:${X}mm;top:${S + 54}mm;width:33mm;padding:2.2mm;background:#fff;border-radius:3mm;box-shadow:0 0 0 0.5mm ${C.navy}">${await qr(URL_BOLSA, C.navy)}</div>
-    <div class="mono" style="position:absolute;left:${X}mm;top:${S + 90.5}mm;font-size:3.5mm;letter-spacing:.06em">código <b style="background:${C.navy};color:${C.celeste};padding:0.3mm 1.2mm;border-radius:1mm">${CODIGO}</b></div>
-  </div>`);
+//        `ladoQR(x0, y0, w, h, extra)` dibuja el contenido con su esquina en (x0, y0) mm; lo usan el
+//        sticker suelto y la tira larga. `extra` agranda el fondo (el sangrado) sin mover nada.
+async function ladoQR(x0, y0, w, h, extra = 0) {
+  const X = x0 + 6;
+  return `<div style="position:absolute;left:${x0 - extra}mm;top:${y0 - extra}mm;width:${w + 2 * extra}mm;height:${h + 2 * extra}mm;background:${C.celeste};overflow:hidden">${curvas(w + 2 * extra, h + 2 * extra, C.curva, Math.round(h / 4.8), 1.8, 0.3)}</div>
+    <div style="position:absolute;left:${x0 - extra}mm;top:${y0 - extra}mm;width:${w + 2 * extra}mm;height:${h + 2 * extra}mm;overflow:hidden;color:${C.navy}">
+      <div style="position:absolute;left:${X - x0 + extra}mm;top:${7 + extra}mm;font:800 4.6mm/1 Archivo,sans-serif">La próxima vez,</div>
+      <div class="disp" style="position:absolute;left:${X - x0 + extra - 0.4}mm;top:${13 + extra}mm;font-size:16.5mm">Pide<br>directo</div>
+      <div style="position:absolute;left:${X - x0 + extra}mm;top:${45 + extra}mm;font:800 4.7mm/1 Archivo,sans-serif;white-space:nowrap">y la bebida va <span style="position:relative;display:inline-block;padding:0 1.2mm;margin-left:1mm">gratis<span style="position:absolute;left:-1.6mm;right:-1.8mm;top:-2.4mm;bottom:-2.6mm">${circuloAMano(14.2, 9.4, C.navy)}</span></span></div>
+      <img src="${img('img/wicho_rie.png')}" style="position:absolute;right:${extra - 10}mm;bottom:${extra - 5}mm;height:50mm">
+      <div style="position:absolute;left:${X - x0 + extra}mm;top:${54 + extra}mm;width:33mm;padding:2.2mm;background:#fff;border-radius:3mm;box-shadow:0 0 0 0.5mm ${C.navy}">${await qr(URL_BOLSA, C.navy)}</div>
+      <div class="mono" style="position:absolute;left:${X - x0 + extra}mm;top:${90.5 + extra}mm;font-size:3.5mm;letter-spacing:.06em">código <b style="background:${C.navy};color:${C.celeste};padding:0.3mm 1.2mm;border-radius:1mm">${CODIGO}</b></div>
+    </div>`;
 }
+pieza('2-qr-bolsa', 70, 100, 'rect4', await ladoQR(S, S, 70, 100, S));
 
 // ── 3 · Calle 80×80: el mundo de SANDO (papel, tinta, el forro naranja vertical, el acanalado) ─
 {
@@ -119,6 +124,23 @@ const pieza = (archivo, w, h, forma, cuerpo) => piezas.push({ archivo, w, h, for
     <div style="position:absolute;right:${S + 9}mm;bottom:${S + 15}mm;width:24mm;height:24mm;padding:1.6mm;background:#fff;border-radius:2mm">${await qr(URL_CALLE, C.tinta)}</div>
     <div style="position:absolute;right:${S + 9}mm;bottom:${S + 9.5}mm;width:24mm;text-align:center">${marca(C.tinta, '4.1mm')}</div>
   </div>`);
+}
+
+// ── 4 · La tira de cierre larga 70×200 (opción B, dueño 2026-10-09: «que no sean dos sino uno
+//        solo, el de cierre, largo, y contenga el QR»). Un solo sticker cruza la boca de la bolsa:
+//        baja 75 mm por el FRENTE con el sello redondo (cruza el doblez: si llega abierto, se ve),
+//        pasa 10 mm por arriba y baja 115 mm por el DORSO con el QR. En el pliego, el tramo del
+//        frente va de cabeza: al doblarla, las dos caras quedan derechas.
+const TIRA = { frente: 75, boca: 10, dorso: 115 };
+const tramoFrente = (x0, y0) => `<div style="position:absolute;left:${x0}mm;top:${y0}mm;width:70mm;height:${TIRA.frente}mm;background:${C.tinta}"></div>${selloRedondo(x0 + 35, y0 + 42, 'tira' + Math.round(x0 * 10 + y0))}`;
+const tramoBoca = (x0, y0) => `<div style="position:absolute;left:${x0}mm;top:${y0}mm;width:70mm;height:${TIRA.boca}mm;background:${C.tinta};display:flex;align-items:center;justify-content:center;gap:1.1mm">${[C.oro, C.celeste].map((col) => `<i style="display:block;width:0.9mm;height:5mm;border-radius:0.2mm;background:${col};transform:skewX(-16deg)"></i>`).join('')}</div>`;
+{
+  const largo = TIRA.frente + TIRA.boca + TIRA.dorso;
+  piezas.push({ archivo: '4-tira-cierre-qr', w: 70, h: largo, forma: 'rect4', cuerpo: `
+    <div style="position:absolute;left:0;top:0;width:${70 + 2 * S}mm;height:${TIRA.frente + S}mm;transform:rotate(180deg);overflow:hidden">
+      <div style="position:absolute;inset:0;background:${C.tinta}"></div>${tramoFrente(S, 0)}</div>
+    <div style="position:absolute;left:0;top:${S + TIRA.frente}mm;width:${70 + 2 * S}mm;height:${TIRA.boca}mm;background:${C.tinta}"></div>${tramoBoca(S, S + TIRA.frente)}
+    <div style="position:absolute;left:0;top:${S + TIRA.frente + TIRA.boca}mm;width:${70 + 2 * S}mm;height:${TIRA.dorso + S}mm;overflow:hidden">${await ladoQR(S, 0, 70, TIRA.dorso, S)}</div>` });
 }
 
 // ── Los sellos de la bolsa lisa (2026-10-09, dueño: «rediséñala bien, dame ejemplos») ──────
@@ -233,12 +255,13 @@ function kitBolsa(kb) {
   // Lo sellado: en la tinta del sello (verde casi negro), con la textura de tinta sobre kraft.
   // `x`,`y` en mm desde la esquina de la cara; `contenido` medido en mm (se escala con `zoom`).
   const sellado = (x, y, contenido) => `<div style="position:absolute;left:${px(x)};top:${px(y)};mix-blend-mode:multiply;opacity:.94"><div style="zoom:${(kb * 25.4 / 96).toFixed(4)};filter:url(#tinta)">${contenido}</div></div>`;
-  const cara = (titulo, notas, cuerpo, conSolapa = true) => `<div style="display:flex;flex-direction:column;gap:12px;width:${px(AN)}">
+  const pegado = (x, y, w, h, html) => `<div style="position:absolute;left:${px(x)};top:${px(y)};width:${px(w)};height:${px(h)};box-shadow:0 2px 5px rgba(40,22,8,.32);border-radius:${px(1.5)};overflow:hidden"><div style="zoom:${(kb * 25.4 / 96).toFixed(4)};position:relative;width:${w}mm;height:${h}mm">${html}</div></div>`;
+  const cara = (titulo, notas, cuerpo, conSolapa = true, conCierre = conSolapa) => `<div style="display:flex;flex-direction:column;gap:12px;width:${px(AN)}">
     <div style="position:relative;width:${px(AN)};height:${px(AL)};box-shadow:0 26px 40px -10px rgba(40,25,10,.45);border-radius:2px 2px 4px 4px;overflow:hidden">
-      ${papel}${conSolapa ? solapa : `<div style="position:absolute;left:0;right:0;top:0;height:${px(5)};background:linear-gradient(rgba(60,35,15,.28),transparent)"></div>`}${cuerpo}${conSolapa ? cierre : ''}
+      ${papel}${conSolapa ? solapa : `<div style="position:absolute;left:0;right:0;top:0;height:${px(5)};background:linear-gradient(rgba(60,35,15,.28),transparent)"></div>`}${cuerpo}${conCierre ? cierre : ''}
     </div>
     <div class="disp" style="font-size:22px;color:${C.tinta}">${titulo}</div>${notas}</div>`;
-  return { px, cara, sellado, qrDorso };
+  return { px, cara, sellado, qrDorso, pegado };
 }
 const T = C.tinta;
 // Los cuatro frentes: lo que cambia es SOLO lo sellado. Medidas en mm de la bolsa.
@@ -273,6 +296,31 @@ const nota = (sellos, por) => `<div class="mono" style="font-size:13px;color:${C
     <div style="display:flex;gap:90px">
       ${k.cara('Frente', nota(f.sellos, 'Un solo sello, centrado a media altura: la cara y la frase en columna y sndwch.app como cinta al costado. La boca se dobla dos veces y el cierre cruza el doblez.'), f.c(k))}
       ${k.cara('Dorso', nota('1 sticker · 70 × 100 mm', 'Solo el sticker del QR, centrado y a la misma altura que el sello del frente: al girar la bolsa, todo cae en el mismo lugar.'), k.qrDorso, false)}
+    </div></div>`);
+}
+{
+  // Opción B: la bolsa con UNA tira (cierre + QR). A la izquierda, la tira extendida con sus dos
+  // dobleces; al centro el frente y a la derecha el dorso.
+  const k = kitBolsa(2.3), px = k.px, f = FRENTES[5];
+  const frenteTira = k.pegado((AN - 70) / 2, 0, 70, TIRA.frente, tramoFrente(0, 0));
+  const dorsoTira = k.pegado((AN - 70) / 2, 0, 70, TIRA.dorso, await ladoQR(0, 0, 70, TIRA.dorso));
+  const largo = TIRA.frente + TIRA.boca + TIRA.dorso, L = `${(70 * 2.3 + 18).toFixed(0)}px`;
+  const marca = (y, texto) => `<div style="position:absolute;left:-6px;width:calc(${px(70)} + 12px);top:${px(y)};border-top:2px dashed ${C.naranja}"></div><div class="mono" style="position:absolute;left:${L};top:calc(${px(y)} - 9px);font-size:13px;color:${C.naranja};white-space:nowrap">${texto}</div>`;
+  const plana = `<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:${(70 * 2.3 + 150).toFixed(0)}px">
+    <div style="position:relative;width:${px(70)};height:${px(largo)}">
+      <img src="${img(`${OUT}/4-tira-cierre-qr.png`)}" style="position:absolute;left:${-S * 2.3}px;top:${-S * 2.3}px;width:${(70 + 2 * S) * 2.3}px;clip-path:inset(${S * 2.3}px round 6px)">
+      ${marca(TIRA.frente, 'doblez')}${marca(TIRA.frente + TIRA.boca, 'doblez')}
+      <div class="mono" style="position:absolute;left:${L};top:calc(${px(TIRA.frente / 2)} - 16px);font-size:13px;color:${C.tinta};white-space:nowrap">↑ FRENTE<br><span style="color:${C.oliva}">(va de cabeza)</span></div>
+      <div class="mono" style="position:absolute;left:${L};top:calc(${px(TIRA.frente + TIRA.boca + TIRA.dorso / 2)} - 8px);font-size:13px;color:${C.tinta};white-space:nowrap">↓ DORSO</div>
+    </div>
+    <div class="disp" style="font-size:22px;color:${C.tinta}">La tira, extendida</div>
+    <div class="mono" style="font-size:13px;color:${C.oliva}">70 × 200 mm<br>un solo sticker</div></div>`;
+  await foto('docs/marketing/bolsa/maqueta-bolsa-tira.png', 1600, 1120, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:54px 60px">
+    <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:22px">OPCIÓN B · UN SOLO STICKER: CIERRA LA BOLSA Y LLEVA EL QR</div>
+    <div style="display:flex;gap:56px;align-items:flex-start">
+      ${plana}
+      ${k.cara('Frente', nota('1 sello + la tira', 'La tira baja 7.5 cm sobre el doblez con el sello redondo: si llega abierta, se nota. El sello de la mezcla, más abajo.'), frenteTira + f.c(k).replace(`top:${px(AL * 0.42 - MEZCLA.alto / 2)}`, `top:${px(AL * 0.56 - MEZCLA.alto / 2)}`), true, false)}
+      ${k.cara('Dorso', nota('la misma tira', 'Sigue por arriba y baja 11.5 cm con el QR: lo primero que ve quien la recibe al girarla.'), dorsoTira, false)}
     </div></div>`);
 }
 await b.close();
