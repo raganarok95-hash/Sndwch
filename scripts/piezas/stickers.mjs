@@ -171,6 +171,14 @@ const mezcla = (color) => `<div style="display:flex;gap:${MEZCLA.hueco}mm;align-
 // el «//» no va: CLAUDE.md, regla 10), la frase de SANDO y la cara de los hermanos. Los datos son
 // solo los reales: sin dirección (no hay local) ni teléfono (no hay uno público).
 const IG = '@snd__wch';
+// El WhatsApp público es el mismo que muestra la app (botón de soporte y comprobantes): se lee de
+// ahí, nunca se escribe a mano. 51930957640 → +51 930 957 640.
+const WSP = (() => {
+  const m = /var WA='(\d+)'/.exec(readFileSync('src/app/01-catalogo-y-estado.ts', 'utf8'));
+  if (!m) throw new Error('no encontré el WhatsApp (var WA) en src/app/01-catalogo-y-estado.ts');
+  const n = m[1].replace(/^51/, '');
+  return `+51 ${n.slice(0, 3)} ${n.slice(3, 6)} ${n.slice(6)}`;
+})();
 const icono = (tipo, color) => {
   const t = { stroke: color, 'stroke-width': 1.7, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
   const a = Object.entries(t).map(([k, v]) => `${k}="${v}"`).join(' ');
@@ -178,6 +186,7 @@ const icono = (tipo, color) => {
     web: `<circle cx="12" cy="12" r="9.2" ${a}/><ellipse cx="12" cy="12" rx="4" ry="9.2" ${a}/><path d="M3 12h18M4.6 7.2h14.8M4.6 16.8h14.8" ${a}/>`,
     ig: `<rect x="3" y="3" width="18" height="18" rx="5.2" ${a}/><circle cx="12" cy="12" r="4.3" ${a}/><circle cx="17.4" cy="6.6" r="1.1" fill="${color}"/>`,
     reloj: `<circle cx="12" cy="12" r="9.2" ${a}/><path d="M12 6.6V12l3.6 2.4" ${a}/>`,
+    wsp: `<path d="M12 2.8a9.2 9.2 0 0 0-7.9 13.9L3 21l4.4-1.1A9.2 9.2 0 1 0 12 2.8z" ${a}/><path d="M9 7.9c.4-.4 1-.4 1.3.1l.8 1.4c.2.4.1.8-.2 1.1l-.5.4c.6 1.3 1.6 2.3 2.9 2.9l.4-.5c.3-.3.7-.4 1.1-.2l1.4.8c.5.3.5.9.1 1.3l-.7.7c-.6.6-1.6.7-2.4.3-2.3-1.1-4.1-2.9-5.2-5.2-.4-.8-.3-1.8.3-2.4z" fill="${color}" stroke="none"/>`,
   }[tipo];
   return `<svg width="7.6mm" height="7.6mm" viewBox="0 0 24 24" style="flex:none">${cuerpo}</svg>`;
 };
@@ -187,8 +196,8 @@ const cabecera = (color) => `<div style="width:${CARTEL.ancho}mm;display:flex;fl
   <svg width="${CARTEL.ancho}mm" height="${CARTEL.nombre}mm" viewBox="0 0 ${CARTEL.ancho} ${CARTEL.nombre}"><text x="0" y="${CARTEL.nombre - 0.6}" font-family="Anton" font-size="${CARTEL.nombre * 1.36}" fill="${color}" textLength="${CARTEL.ancho}" lengthAdjust="spacingAndGlyphs">SNDWCH</text></svg>
   <div class="voz" style="font-size:13.5mm;line-height:1;color:${color};white-space:nowrap">Alguien pidió bien.</div></div>`;
 const pie = (color) => `<div style="width:${CARTEL.ancho}mm;display:flex;align-items:flex-end;justify-content:space-between">
-  <div style="display:flex;flex-direction:column;gap:4.2mm;padding-bottom:2mm">
-    ${dato('web', 'Pide en', 'sndwch.app', color)}${dato('ig', 'Síguenos en IG', IG, color)}${dato('reloj', 'Martes a domingo', 'solo delivery', color)}</div>
+  <div style="display:flex;flex-direction:column;gap:3.6mm;padding-bottom:2mm">
+    ${dato('web', 'Pide en', 'sndwch.app', color)}${dato('wsp', 'WSP', WSP, color)}${dato('ig', 'Síguenos en IG', IG, color)}${dato('reloj', 'Martes a domingo', 'solo delivery', color)}</div>
   ${logoTinta(108, color)}</div>`;
 const sello = (archivo, w, h, cuerpo) => piezas.push({ archivo, w, h, forma: 'rect', dir: SELLOS, sinSangrado: true, cuerpo: `<div style="position:absolute;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4mm">${cuerpo}</div>` });
 sello('6-mezcla-150x130', 150, 130, mezcla('#000'));
