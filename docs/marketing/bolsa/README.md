@@ -16,6 +16,21 @@ muéstrame cómo quedaría atrás». **Un solo sello de 15 × 13 cm** (`sellos/6
 Va centrado a media altura. Al ser un solo sello no hay nada que alinear: se sella y listo.
 **El dorso** lleva solo el sticker del QR, centrado a la misma altura que el sello del frente.
 
+## Opción B: un solo sticker que cierra y lleva el QR (2026-10-09)
+Dueño: «DIRECTO. Segundo, hagamos otra pero con el sticker que no sean dos sino uno solo, el de
+cierre, largo, y contenga el QR. Algo así» (con un dibujo de una tira sobre la boca de la bolsa).
+
+![opción B](maqueta-bolsa-tira.png)
+
+Una **tira de 70 × 200 mm** (`../stickers/4-tira-cierre-qr.pdf`) pasa por encima de la boca:
+- **frente, 7.5 cm:** el sello redondo sobre fondo verde casi negro, cruzando el doblez (si la
+  abren, se nota);
+- **arriba, 1 cm:** el `//` dorado y celeste, justo en el canto;
+- **dorso, 11.5 cm:** el QR en el mundo de WICHO, con el código DIRECTO.
+El sello de la mezcla baja un poco en el frente para dejarle aire a la tira. **Ventaja:** un solo
+sticker, que se pone al despachar; nada que pegar en tanda. **Ojo:** la tira tiene que ir bien
+centrada sobre la boca, o el QR queda torcido atrás.
+
 ## Cinco frentes para elegir (2026-10-09, dueño: «rediséñala bien, dame ejemplos»)
 Lo único que cambia entre ellos es lo **sellado**; el cierre, el dorso con el QR y la bolsa son
 los mismos. La maqueta de arriba es la mezcla elegida.
@@ -57,7 +72,7 @@ Total estimado: **~S/0.65 por pedido** (contra S/3.90 de la bolsa impresa a 100 
 3. Tinta del sello: para papel y kraft, base agua, en **verde casi negro** (`#1E2B22`) o negro.
    Se deja secar un minuto antes de apilar.
 
-El QR del sticker lleva `sndwch.app/?src=bolsa&codigo=WICHO`: abre la web con el código WICHO ya
+El QR del sticker lleva `sndwch.app/?src=bolsa&codigo=DIRECTO`: abre la web con el código DIRECTO ya
 puesto (la bebida más barata gratis, una vez por celular). Se verificó con un lector.
 
 Se regenera con `node scripts/piezas/stickers.mjs` (los stickers y esta maqueta) y
@@ -97,9 +112,9 @@ propios y en los de Rappi, así que no dice nada que en Rappi no sea cierto.
 - **«¿Y la oficina? / Somos seis. Bueno, siete.»** Lo dice WICHO, que exagera y cuenta mal. El
   dorso da la regla real: «Con 5, el más barato va gratis» (sale de `REGLAS.organizadorDesde`;
   si cambia, se regenera).
-- **El QR** lleva `https://sndwch.app/?grupo=1&src=bolsa&codigo=WICHO`: abre un pedido en grupo
+- **El QR** lleva `https://sndwch.app/?grupo=1&src=bolsa&codigo=DIRECTO`: abre un pedido en grupo
   nuevo, el análisis sabe cuántos pedidos trae la bolsa, y el checkout ofrece ya escrito el código.
-- **«Tu primera vez en la web, la bebida va gratis: código WICHO.»** (2026-10-09, dueño: «Si aprueba
+- **«Tu primera vez en la web, la bebida va gratis: código DIRECTO.»** (2026-10-09, dueño: «Si aprueba
   todo»). Es la razón para que quien pidió por Rappi o PedidosYa pida directo la próxima vez:
   allí cada pedido deja S/3.78 más. El código vale una vez por celular y regala la bebida más
   barata del carrito (tipo «bebida», migración 20261009025200).

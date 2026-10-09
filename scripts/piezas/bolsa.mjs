@@ -23,7 +23,7 @@ const C = { papel: '#EFE6D4', tinta: '#1E2B22', naranja: '#D8823C', oliva: '#6C7
 const qr = (url, color = C.tinta) => QRCode.toString(url, { type: 'svg', margin: 0, errorCorrectionLevel: 'M', color: { dark: color, light: '#0000' } });
 // El código del QR de la bolsa (migración 20261009025200: tipo «bebida», una vez por celular). El QR
 // lo trae escrito (`?codigo=`) y el dorso lo nombra, para quien llega de Rappi o PedidosYa.
-const CODIGO = 'WICHO';
+const CODIGO = 'DIRECTO';
 const URL_GRUPO = `https://sndwch.app/?grupo=1&src=bolsa&codigo=${CODIGO}`;
 const URL_RAPPI = 'https://sndwch.app/?src=rappi';
 const marca = (col = C.tinta, size = '6mm') => `<span style="font:800 ${size}/1 Archivo,sans-serif;color:${col};display:inline-flex;align-items:center;letter-spacing:.01em">SND<span style="display:inline-flex;gap:.16em;margin:0 .1em"><i style="width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block;background:${C.oro}"></i><i style="width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block;background:${C.celeste}"></i></span>WCH</span>`;
