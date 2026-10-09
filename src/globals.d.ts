@@ -31,6 +31,7 @@ interface Window {
   _lPayMethod?: string;
   _lOrderCreatedAt?: number;
   _lRef?: string;
+  _lOrderId?: string;
   _lVentana?: string;
   _lRankUp?: string | null;
   // Desbloqueo del menú secreto — evento propio, independiente del rango. El umbral es

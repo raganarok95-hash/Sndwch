@@ -126,9 +126,9 @@ SUPUESTOS = {
     "crecimiento":    (0.00, 0.15, "cuánto crece al mes el canal propio (reseñas, seguidores)"),
     "red_compra":     (0.00, 0.10, "de las ~30 personas de tu red, qué parte pide (dueño: «probablemente ninguno»)"),
     # apps
-    "rappi_dia":      (0.30, 2.00, "nuevos/día por Rappi en Trujillo. Sin datos: se mide la 1.ª semana"),
+    "rappi_dia":      (0.15, 1.00, "nuevos/día por Rappi en Trujillo, local nuevo y sin calificaciones (conservador; dueño: «sé realista»)"),
     "rappi_comision": (0.20, 0.30, "comisión de Rappi desde el día 31 (el 1.er mes es 0%, acuerdo del dueño). Confírmala"),
-    "pya_dia":        (0.20, 1.50, "nuevos/día por PedidosYa, desde el 3 de noviembre (alta). Sin datos"),
+    "pya_dia":        (0.10, 0.60, "nuevos/día por PedidosYa, desde el 17 de noviembre (alta pendiente). Conservador"),
     "pya_comision":   (0.22, 0.30, "comisión de PedidosYa. No hay cifra pública en Perú; en Argentina ~26%"),
     "app_a_propio":   (0.03, 0.08, "de los pedidos repetidos de las apps, cuántos pasan al canal propio sin QR"),
     "qr_a_propio":    (0.10, 0.20, "lo mismo, con el QR en la bolsa (desde el 1 de noviembre)"),
@@ -173,14 +173,14 @@ def nucleo(brecha):
     return f / f.sum()
 
 
-def correr(s, i, eco, sol=()):
+def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None):
     """Una corrida con los supuestos s[*][i]. Devuelve totales por mes."""
     x = {k: v[i] for k, v in s.items()}
     if "referidos" in sol:
         x["referidos"] = SOLUCIONES["referidos"][1][0] + (x["referidos"] - 0.03) / 0.05 * 0.07
     p2_propio = x["p2"] + (SOLUCIONES["recompra"][1] if "recompra" in sol else 0.0)
     f = nucleo(x["brecha"])
-    ig, qr, pya, nov30, = dia(date(2026, 10, 27)), dia(date(2026, 11, 1)), dia(date(2026, 11, 3)), dia(date(2026, 11, 30))
+    ig, qr, pya, nov30, = dia(date(2026, 10, 27)), dia(date(2026, 11, 1)), dia(date(2026, 11, 17)), dia(date(2026, 11, 30))
     mes_frac = np.array([m for m in MES_DE], float)
 
     # tres canales × tres estados (falta el 2.º, falta el 3.º, ya es habitual)
@@ -188,8 +188,19 @@ def correr(s, i, eco, sol=()):
     ped = {c: np.zeros(T) for c in pend}
     nuevos_ref = np.zeros(T + 8)
     cac = x["cpm"] / (1000 * x["ctr"] * x["cvr"]) * 1.18 * APRENDIZAJE
-    dias_pauta = [t for t in range(pya, nov30 + 1) if ABIERTO[t]]
+    dias_pauta = [t for t in range(dia(date(2026, 11, 3)), nov30 + 1) if ABIERTO[t]]
     meta_dia = (PAUTA / cac) / len(dias_pauta)
+    # Pauta mensual desde diciembre (2026-10-09: «¿con cuánto de publicidad funcionaría?»).
+    # [SUPUESTO] Trujillo es chico: cada S/1,000 al mes encarece el cliente un 15%; después de la
+    # prueba, Meta ya aprendió algo (×1.15 en vez de ×1.30). `si_cac_menor`: solo se gasta si la
+    # prueba de noviembre midió un costo por cliente menor a ese.
+    gasta = pauta_mes > 0 and (si_cac_menor is None or cac <= si_cac_menor)
+    cac_mes = cac / APRENDIZAJE * 1.15 * (1 + 0.15 * pauta_mes / 1000)
+    pauta_dia = np.zeros(T)
+    if gasta:
+        for m in range(2, len(MESES)):
+            sel = np.where((MES_DE == m) & ABIERTO)[0]
+            pauta_dia[sel] = (pauta_mes / cac_mes) / len(sel)
     red = 30 * x["red_compra"] / 6
     primeros = [t for t in range(T) if ABIERTO[t]][:6]
 
@@ -202,7 +213,7 @@ def correr(s, i, eco, sol=()):
         crece = (1 + x["crecimiento"]) ** (t / 30.4)
         nuevos = {
             "propio": (x["google_dia"] + (x["instagram_dia"] if t >= ig else 0)) * crece
-                      + (meta_dia if t in dias_pauta else 0) + (red if t in primeros else 0) + nuevos_ref[t],
+                      + (meta_dia if t in dias_pauta else 0) + pauta_dia[t] + (red if t in primeros else 0) + nuevos_ref[t],
             "rappi": x["rappi_dia"],
             "pya": x["pya_dia"] if t >= pya else 0.0,
         }
@@ -240,7 +251,8 @@ def correr(s, i, eco, sol=()):
     for m in range(len(MESES)):
         sel = MES_DE == m
         v, c = ventas[sel].sum(), compras[sel].sum()
-        util = deja[sel].sum() - FIJOS_MES - refer[sel].sum() * COSTO_REFERIDO - (PAUTA if m == 1 else 0)
+        util = (deja[sel].sum() - FIJOS_MES - refer[sel].sum() * COSTO_REFERIDO - (PAUTA if m == 1 else 0)
+                - (pauta_mes if gasta and m >= 2 else 0))
         if not rmt and max(v, c) > 8000:
             rmt = True       # el Nuevo RUS acaba en S/8,000 al mes: se pasa al Régimen MYPE
         if rmt:
@@ -255,11 +267,11 @@ def correr(s, i, eco, sol=()):
     return out, cac
 
 
-def simular(sol=(), semilla=20261009, n=CORRIDAS):
+def simular(sol=(), semilla=20261009, n=CORRIDAS, pauta_mes=0.0, si_cac_menor=None):
     rng = np.random.default_rng(semilla)
     s = sortear(rng, n)
     eco = pedido(**SOLUCIONES["ticket"][1]) if "ticket" in sol else pedido()
-    runs = [correr(s, i, eco, sol) for i in range(n)]
+    runs = [correr(s, i, eco, sol, pauta_mes, si_cac_menor) for i in range(n)]
     gan = np.array([[m["ganancia"] for m in r[0]] for r in runs])
     res = dict(meses=[], s=s, total=gan.sum(1), cac=np.array([r[1] for r in runs]))
     for m, (a, mm) in enumerate(MESES):

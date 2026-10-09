@@ -934,6 +934,7 @@ function finalizeOrderSuccess(res,po,chargeId){
   // que el cron lo cancele solo, ver STALE_MANUAL_PAYMENT_HOURS_CLIENT.
   window._lOrderCreatedAt=Date.now();
   window._lRef=po.ref;avisoPaso='aviso';aErr='';
+  window._lOrderId=res.order&&res.order.id?String(res.order.id):'';
   // La hora que el servidor dejó prometida al crear el pedido (ventanaPrometida en env.ts).
   window._lVentana=ventanaDelPedido(res.order);
   receiptUploadState=null;
@@ -1046,7 +1047,12 @@ function sOSent(){
       +(window._lWaText?'<button onclick="reopenWhatsAppConfirm()">Mandar el aviso por WhatsApp <span>→</span></button>':'')
       // Justo después del primer pedido pagado es el momento de mayor intención para activar
       // las notificaciones: quiere saber cuándo llega SU pedido.
-      +(cust&&cust.total_orders===1&&!pushSubscribed&&('serviceWorker' in navigator)&&('PushManager' in window)?'<button onclick="togglePushNotifications()">Avísame cuando salga <span>→</span></button>':'')
+      // Y también a quien pidió SIN cuenta (2026-10-09): sin esto, los avisos de recompra (el
+      // regalo de las 24 h y el del día 7-10) no le llegaban nunca, en silencio. Se guarda con
+      // el teléfono de su pedido (push-subscribe-pedido).
+      +(!pushSubscribed&&('serviceWorker' in navigator)&&('PushManager' in window)
+        &&((cust&&cust.total_orders===1)||(!cust&&window._lOrderId))
+        ?'<button data-accion="avisame-cuando-salga" onclick="'+(cust?'togglePushNotifications()':'avisarSinCuenta()')+'">'+(pushMsg&&!cust?esc(pushMsg):'Avísame cuando salga')+' <span>→</span></button>':'')
       +(cust?'<button onclick="shareReferral()">Invita a alguien <span>→</span></button>':'')
       +'</div>'
       // Si algo sale mal con este pedido, es acá donde el cliente lo va a buscar.

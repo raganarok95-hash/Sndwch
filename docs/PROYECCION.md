@@ -82,3 +82,32 @@ es el canal de las apps.
 2. Las comisiones reales de tus contratos.
 3. Cuántos pedidos llegan con `?src=` de Google y de Instagram.
 4. Cuántos clientes de la app vuelven en 14 días.
+
+## Actualización (2026-10-09, tarde): supuestos conservadores y cuánta pauta
+
+Dueño: «Sé realista». Rappi pasa a 0.15–1 cliente nuevo al día y PedidosYa a 0.1–0.6, desde el
+17 de noviembre. Resultado: **~S/1,700 en 6 meses con lo que ya hay** (S/156 a S/3,415) y ~S/2,400
+con las soluciones; marzo, ~S/730–940 al mes, antes de tu sueldo.
+
+Pauta mensual desde diciembre, sobre el plan con soluciones (800 corridas):
+
+| pauta al mes | ganancia de 6 meses | gana más que sin pauta |
+|---|---|---|
+| 0 (solo la prueba de S/350) | S/2,411 | — |
+| S/300 | S/1,767 | 11% de los casos |
+| S/600 | S/1,123 | 10% |
+| S/1,000 | S/154 | 8% |
+| S/1,500 | −S/1,270 | 7% |
+| S/2,500 | −S/4,286 | 3% |
+| cualquiera, **solo si la prueba mide un cliente a ≤ S/30** | igual o mejor | nunca pierde |
+
+Con los datos de la industria, un cliente por Meta cuesta S/39–159 (mediana S/100), y un cliente
+deja ~S/35 en su vida. **La pauta solo conviene si la prueba de noviembre mide un costo de S/30 o
+menos** (pasa en ~6% de los casos con datos de industria, más si las piezas y la app convierten
+mejor). Si la prueba mide más, no se escala.
+
+## Solución 4, hecha
+La losa (06A) ya tenía el renglón «Avísame cuando salga →» solo para quien tenía cuenta. Ahora
+aparece también a quien pidió sin cuenta, y la suscripción queda con el teléfono de su pedido
+(`push-subscribe-pedido`). El aviso del día 7 al 10 considera también a esas personas. La solución 5
+(ofrecer la bebida) ya existía: la pantalla de bebidas con «Sigo sin bebida».
