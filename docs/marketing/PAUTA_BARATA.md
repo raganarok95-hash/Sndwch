@@ -114,6 +114,7 @@ eso, se crean con `ads_create_custom_audience` (las reglas están en la sesión 
 Desde diciembre, con 100+ compradores reales: lista de clientes → audiencia parecida al 1%.
 
 ## El QR de la bolsa: bebida gratis (2026-10-09)
-Código `BOLSA` (tipo «bebida», tope S/6, una vez por celular, campaña `qr-bolsa`). El QR lleva a
-`sndwch.app/?src=qr-bolsa&codigo=BOLSA`: el checkout lo ofrece ya escrito. Cuesta ~S/1.90 por
+Código `BOLSA` (tipo «bebida», tope S/6, una vez por celular). El QR del dorso de la bolsa lleva
+a `sndwch.app/?grupo=1&src=bolsa&codigo=BOLSA` y el dorso lo dice: «Tu primera vez en la web, la
+bebida va gratis: código BOLSA.» El checkout lo ofrece ya escrito (`docs/marketing/bolsa/`). Cuesta ~S/1.90 por
 cliente que pasa de Rappi o PedidosYa a la web, donde cada pedido deja S/3.78 más.

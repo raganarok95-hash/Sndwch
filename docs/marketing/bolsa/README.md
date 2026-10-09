@@ -27,8 +27,12 @@ propios y en los de Rappi, así que no dice nada que en Rappi no sea cierto.
 - **«¿Y la oficina? / Somos seis. Bueno, siete.»** Lo dice WICHO, que exagera y cuenta mal. El
   dorso da la regla real: «Con 5, el más barato va gratis» (sale de `REGLAS.organizadorDesde`;
   si cambia, se regenera).
-- **El QR** lleva `https://sndwch.app/?grupo=1&src=bolsa`: abre un pedido en grupo nuevo, y el
-  análisis sabe cuántos pedidos trae la bolsa.
+- **El QR** lleva `https://sndwch.app/?grupo=1&src=bolsa&codigo=BOLSA`: abre un pedido en grupo
+  nuevo, el análisis sabe cuántos pedidos trae la bolsa, y el checkout ofrece ya escrito el código.
+- **«Tu primera vez en la web, la bebida va gratis: código BOLSA.»** (2026-10-09, dueño: «Si aprueba
+  todo»). Es la razón para que quien pidió por Rappi o PedidosYa pida directo la próxima vez:
+  allí cada pedido deja S/3.78 más. El código vale una vez por celular y regala la bebida más
+  barata del carrito (tipo «bebida», migración 20261009025200).
 - **Las ondas y las costillas** son las texturas de WICHO y de SANDO. A una tinta funcionan igual.
 
 ## Para la imprenta

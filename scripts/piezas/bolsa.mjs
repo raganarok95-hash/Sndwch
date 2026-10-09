@@ -21,7 +21,10 @@ mkdirSync(OUT, { recursive: true });
 const img = (p) => 'file://' + resolve(p);
 const C = { papel: '#EFE6D4', tinta: '#1E2B22', naranja: '#D8823C', oliva: '#6C7860', celeste: '#8CC8EC', navy: '#1E2F3A', lilaOsc: '#4A3D62', durazno: '#F0D8CC', oro: '#CBA258', kraft: '#B98B5E' };
 const qr = (url, color = C.tinta) => QRCode.toString(url, { type: 'svg', margin: 0, errorCorrectionLevel: 'M', color: { dark: color, light: '#0000' } });
-const URL_GRUPO = 'https://sndwch.app/?grupo=1&src=bolsa';
+// El código del QR de la bolsa (migración 20261009025200: tipo «bebida», una vez por celular). El QR
+// lo trae escrito (`?codigo=`) y el dorso lo nombra, para quien llega de Rappi o PedidosYa.
+const CODIGO = 'BOLSA';
+const URL_GRUPO = `https://sndwch.app/?grupo=1&src=bolsa&codigo=${CODIGO}`;
 const URL_RAPPI = 'https://sndwch.app/?src=rappi';
 const marca = (col = C.tinta, size = '6mm') => `<span style="font:800 ${size}/1 Archivo,sans-serif;color:${col};display:inline-flex;align-items:center;letter-spacing:.01em">SND<span style="display:inline-flex;gap:.16em;margin:0 .1em"><i style="width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block;background:${C.oro}"></i><i style="width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block;background:${C.celeste}"></i></span>WCH</span>`;
 function curvas(w, h, color = '#7DBBE0', n = 14, amp = 2.2, grosor = 0.35) {
@@ -122,6 +125,7 @@ pieza('bolsa-dorso', 240, 300, `<div style="position:absolute;inset:0;background
     <div style="font-size:6.2mm;line-height:1.3;margin-top:4mm">Cada uno elige lo suyo desde su celular. Con ${D.organizadorDesde}, el más barato va gratis.</div>
   </div>
   <div class="mono" style="position:absolute;left:${S + 22}mm;top:${S + DOBLEZ + 168}mm;font-size:6mm">sndwch.app</div>
+  <div style="position:absolute;left:${S + 22}mm;right:${S + 20}mm;top:${S + DOBLEZ + 180}mm;font:800 6.6mm/1.25 Archivo,sans-serif">Tu primera vez en la web, la bebida va gratis: código ${CODIGO}.</div>
   <div style="position:absolute;left:0;right:0;bottom:0;height:${S + 22}mm">${costillas(S + 22)}</div></div>`, true);
 
 // ── 5 · Papel manteca: patrón a UNA tinta (así se imprime), sin el «//» que pide dos colores ──
