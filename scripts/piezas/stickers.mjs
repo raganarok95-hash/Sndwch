@@ -121,6 +121,25 @@ const pieza = (archivo, w, h, forma, cuerpo) => piezas.push({ archivo, w, h, for
   </div>`);
 }
 
+// ── Los sellos de la bolsa lisa (2026-10-09, dueño: «rediséñala bien, dame ejemplos») ──────
+//    Arte en NEGRO sobre blanco, a tamaño real, para la sellería: uno por cada ejemplo de bolsa.
+//    El logo a una tinta lo hace scripts/piezas/logo_a_sello.py (umbral sobre el logo).
+const SELLOS = 'docs/marketing/bolsa/sellos';
+const LOGO_TINTA = 'docs/marketing/bolsa/sellos/logo-tinta.png';
+const LOGO_PROP = (() => { const b = readFileSync(LOGO_TINTA); return b.readUInt32BE(20) / b.readUInt32BE(16); })(); // alto / ancho, del PNG
+// Negro para la sellería; verde casi negro (la tinta) para las maquetas.
+const logoTinta = (ancho, color) => `<img src="${img(color === '#000' ? LOGO_TINTA : LOGO_TINTA.replace('.png', '-verde.png'))}" style="display:block;width:${ancho}mm;height:${(ancho * LOGO_PROP).toFixed(2)}mm">`;
+const frase = (tam, color, alinear = 'left') => `<div class="voz" style="font-size:${tam}mm;line-height:.95;color:${color};text-align:${alinear};white-space:nowrap">Alguien<br>pidió bien.</div>`;
+const web = (tam, color) => `<div class="mono" style="font-size:${tam}mm;letter-spacing:.03em;color:${color}">sndwch.app</div>`;
+const costado = (largo, alto, color) => `<svg width="${largo}mm" height="${alto}mm" viewBox="0 0 ${largo} ${alto}"><text x="0" y="${alto - 2.4}" font-family="Anton" font-size="${alto * 0.95}" fill="${color}" textLength="${largo}" lengthAdjust="spacingAndGlyphs">ALGUIEN PIDIÓ BIEN.</text></svg>`;
+const sello = (archivo, w, h, cuerpo) => piezas.push({ archivo, w, h, forma: 'rect', dir: SELLOS, sinSangrado: true, cuerpo: `<div style="position:absolute;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4mm">${cuerpo}</div>` });
+sello('1-letrero-120x90', 120, 90, `<div style="width:112mm;display:flex;flex-direction:column;gap:6mm">${frase(27, '#000')}${web(8, '#000')}</div>`);
+sello('2-cara-90x115', 90, 115, `${logoTinta(86, '#000')}${web(8, '#000')}`);
+sello('3-costado-160x22', 160, 22, costado(156, 20, '#000'));
+sello('3-costado-logo-50x60', 50, 60, `${logoTinta(46, '#000')}${web(4.6, '#000')}`);
+sello('5-firma-110x140', 110, 140, `${logoTinta(70, '#000')}<div class="voz" style="font-size:15mm;line-height:1;color:#000;white-space:nowrap">Alguien pidió bien.</div>${web(6, '#000')}`);
+sello('4-minima-100x30', 100, 30, `<div class="voz" style="font-size:11mm;line-height:1;color:#000">Alguien pidió bien.</div>${web(4.6, '#000')}`);
+
 // ── Render: PDF con sangrado (imprenta) + PNG para verlas ─────────────────────────────────────
 const b = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_PATH ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } : {});
 const fuentes = process.env.FUENTES_CSS ? readFileSync(process.env.FUENTES_CSS, 'utf8') : null;
@@ -131,14 +150,15 @@ const cargar = async (p) => {
   await p.evaluate(async () => { await Promise.all(['400 10px Anton', '800 10px Archivo', '600 10px "IBM Plex Mono"', 'italic 400 10px "Instrument Serif"'].map((f) => document.fonts.load(f))); await Promise.all([...document.images].map((i) => i.decode().catch(() => 0))); });
 };
 for (const x of piezas) {
-  const W = x.w + 2 * S, H = x.h + 2 * S;
+  const dir = x.dir || OUT; mkdirSync(dir, { recursive: true });
+  const SS = x.sinSangrado ? 0 : S, W = x.w + 2 * SS, H = x.h + 2 * SS;
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>${BASE}html,body{width:${W}mm;height:${H}mm;overflow:hidden}@page{size:${W}mm ${H}mm;margin:0}</style></head><body><div style="position:relative;width:${W}mm;height:${H}mm;overflow:hidden">${x.cuerpo}</div></body></html>`;
-  const tmp = resolve(OUT, `.${x.archivo}.html`); writeFileSync(tmp, html);
+  const tmp = resolve(dir, `.${x.archivo}.html`); writeFileSync(tmp, html);
   const p = await b.newPage({ viewport: { width: Math.ceil(W * MM), height: Math.ceil(H * MM) }, deviceScaleFactor: 6 });
   await p.goto('file://' + tmp, { waitUntil: 'load' });
   await cargar(p);
-  await p.pdf({ path: `${OUT}/${x.archivo}.pdf`, width: `${W}mm`, height: `${H}mm`, printBackground: true, pageRanges: '1' });
-  await p.screenshot({ path: `${OUT}/${x.archivo}.png`, clip: { x: 0, y: 0, width: W * MM, height: H * MM } });
+  await p.pdf({ path: `${dir}/${x.archivo}.pdf`, width: `${W}mm`, height: `${H}mm`, printBackground: true, pageRanges: '1' });
+  await p.screenshot({ path: `${dir}/${x.archivo}.png`, clip: { x: 0, y: 0, width: W * MM, height: H * MM } });
   await p.close(); rmSync(tmp);
 }
 
@@ -173,47 +193,73 @@ const [c1, c2, c3] = piezas;
     </div></div>`);
 }
 
-// ── La bolsa lisa #20 (21 × 40 × 12.5 cm), por sus dos caras ──────────────────────────────────
+// ── La bolsa lisa #20 (21 × 40 × 12.5 cm) ───────────────────────────────────────────────────────
 //    Cada cara hace UN trabajo. Frente: el letrero que ven todos (el sello) y el cierre. Dorso: lo
 //    que le habla a quien la recibe (el sticker del QR). El sello y el QR se ponen en tanda antes
 //    del servicio; al despachar solo se dobla y se pega el cierre.
-{
-  const kb = 2.3, AN = 210, AL = 345, SOLAPA = 26, FUELLE = 11; // mm de la cara, ya doblada
+const DEFS = `<svg width="0" height="0" style="position:absolute"><defs>
+  <filter id="fibra" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.9 0.06" numOctaves="3" seed="7"/><feColorMatrix values="0 0 0 0 0.35  0 0 0 0 0.22  0 0 0 0 0.10  0 0 0 0.22 0"/></filter>
+  <filter id="tinta" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="3" result="r"/><feDisplacementMap in="SourceGraphic" in2="r" scale="2.2" xChannelSelector="R" yChannelSelector="G" result="d"/><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="11" result="m"/><feColorMatrix in="m" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.1 1.45" result="mm"/><feComposite in="d" in2="mm" operator="in"/></filter>
+</defs></svg>`;
+const AN = 210, AL = 345, SOLAPA = 26, FUELLE = 11; // mm de la cara, ya doblada
+function kitBolsa(kb) {
   const px = (mm) => (mm * kb).toFixed(1) + 'px';
   // Papel kraft: fibra con ruido calculado, nunca una foto.
-  const defs = `<svg width="0" height="0" style="position:absolute"><defs>
-    <filter id="fibra" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.9 0.06" numOctaves="3" seed="7"/><feColorMatrix values="0 0 0 0 0.35  0 0 0 0 0.22  0 0 0 0 0.10  0 0 0 0.22 0"/></filter>
-    <filter id="tinta" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="3" result="r"/><feDisplacementMap in="SourceGraphic" in2="r" scale="2.2" xChannelSelector="R" yChannelSelector="G" result="d"/><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="11" result="m"/><feColorMatrix in="m" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.1 1.45" result="mm"/><feComposite in="d" in2="mm" operator="in"/></filter>
-  </defs></svg>`;
-  const papel = (extra = '') => `<div style="position:absolute;inset:0;background:linear-gradient(90deg,#A97C52 0,#B98B5E ${px(FUELLE)},#C29468 50%,#B98B5E calc(100% - ${px(FUELLE)}),#A97C52 100%)${extra}"></div>
+  const papel = `<div style="position:absolute;inset:0;background:linear-gradient(90deg,#A97C52 0,#B98B5E ${px(FUELLE)},#C29468 50%,#B98B5E calc(100% - ${px(FUELLE)}),#A97C52 100%)"></div>
     <svg style="position:absolute;inset:0;mix-blend-mode:multiply" width="100%" height="100%"><rect width="100%" height="100%" filter="url(#fibra)"/></svg>
     <div style="position:absolute;top:0;bottom:0;left:${px(FUELLE)};width:1px;background:rgba(70,45,20,.35)"></div>
     <div style="position:absolute;top:0;bottom:0;right:${px(FUELLE)};width:1px;background:rgba(70,45,20,.35)"></div>
     <div style="position:absolute;left:0;right:0;bottom:${px(16)};height:1px;background:rgba(70,45,20,.3)"></div>
     <div style="position:absolute;left:0;right:0;bottom:0;height:${px(16)};background:linear-gradient(rgba(60,35,15,.10),rgba(60,35,15,.22))"></div>`;
-  // El borde dentado de la boca de la bolsa, doblado dos veces sobre el frente.
+  // El borde dentado de la boca, doblado dos veces sobre el frente.
   const dientes = Array.from({ length: Math.ceil(AN / 4) + 1 }, (_, i) => `${i * 4},${SOLAPA} ${i * 4 + 2},${SOLAPA + 1.6}`).join(' ');
   const solapa = `<svg style="position:absolute;left:0;top:0;filter:drop-shadow(0 ${px(1.4)} ${px(1.6)} rgba(40,22,8,.45))" width="${px(AN)}" height="${px(SOLAPA + 3)}" viewBox="0 0 ${AN} ${SOLAPA + 3}">
     <polygon points="0,0 ${AN},0 ${AN},${SOLAPA} ${dientes} 0,${SOLAPA}" fill="#B08257"/>
-    <line x1="0" y1="${SOLAPA * 0.48}" x2="${AN}" y2="${SOLAPA * 0.48}" stroke="rgba(60,35,15,.35)" stroke-width="0.4"/>
-  </svg>`;
-  const sello = `<div style="position:absolute;left:${px(22)};top:${px(AL * 0.43 - 42)};color:${C.tinta};mix-blend-mode:multiply;opacity:.94;filter:url(#tinta)">
-    <div class="voz" style="font-size:${px(27)};line-height:.95">Alguien<br>pidió bien.</div>
-    <div class="mono" style="font-size:${px(8)};letter-spacing:.03em;margin-top:${px(6)}">sndwch.app</div></div>`;
+    <line x1="0" y1="${SOLAPA * 0.48}" x2="${AN}" y2="${SOLAPA * 0.48}" stroke="rgba(60,35,15,.35)" stroke-width="0.4"/></svg>`;
   const cierre = `<div style="position:absolute;left:${px((AN - 50) / 2)};top:${px(SOLAPA - 25)}">${recorte(c1, kb, '0 2px 4px rgba(40,22,8,.35)')}</div>`;
   const qrDorso = `<div style="position:absolute;left:${px((AN - 70) / 2)};top:${px(62)}">${recorte(c2, kb, '0 2px 4px rgba(40,22,8,.3)')}</div>`;
-  const cara = (titulo, nota, cuerpo, conSolapa) => `<div style="display:flex;flex-direction:column;gap:16px">
-    <div style="position:relative;width:${px(AN)};height:${px(AL)};box-shadow:0 30px 44px -10px rgba(40,25,10,.45);border-radius:2px 2px 4px 4px;overflow:hidden">
-      ${papel()}${conSolapa ? solapa : `<div style="position:absolute;left:0;right:0;top:0;height:${px(5)};background:linear-gradient(rgba(60,35,15,.28),transparent)"></div>`}${cuerpo}
+  // Lo sellado: en la tinta del sello (verde casi negro), con la textura de tinta sobre kraft.
+  // `x`,`y` en mm desde la esquina de la cara; `contenido` medido en mm (se escala con `zoom`).
+  const sellado = (x, y, contenido) => `<div style="position:absolute;left:${px(x)};top:${px(y)};mix-blend-mode:multiply;opacity:.94"><div style="zoom:${(kb * 25.4 / 96).toFixed(4)};filter:url(#tinta)">${contenido}</div></div>`;
+  const cara = (titulo, notas, cuerpo, conSolapa = true) => `<div style="display:flex;flex-direction:column;gap:12px;width:${px(AN)}">
+    <div style="position:relative;width:${px(AN)};height:${px(AL)};box-shadow:0 26px 40px -10px rgba(40,25,10,.45);border-radius:2px 2px 4px 4px;overflow:hidden">
+      ${papel}${conSolapa ? solapa : `<div style="position:absolute;left:0;right:0;top:0;height:${px(5)};background:linear-gradient(rgba(60,35,15,.28),transparent)"></div>`}${cuerpo}${conSolapa ? cierre : ''}
     </div>
-    <div class="disp" style="font-size:24px;color:${C.tinta}">${titulo}</div>
-    <div style="font:400 15px/1.45 Archivo,sans-serif;color:#4A4A40;max-width:${px(AN)}">${nota}</div></div>`;
-  await foto('docs/marketing/bolsa/maqueta-bolsa-lisa.png', 1260, 1100, `${defs}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:54px 70px">
+    <div class="disp" style="font-size:22px;color:${C.tinta}">${titulo}</div>${notas}</div>`;
+  return { px, cara, sellado, qrDorso };
+}
+const T = C.tinta;
+// Los cuatro frentes: lo que cambia es SOLO lo sellado. Medidas en mm de la bolsa.
+const FRENTES = [
+  { t: '1 · El letrero', sellos: '1 sello · 12 × 9 cm', por: 'La frase grande, a la izquierda. Se lee de lejos y suena a la marca.',
+    c: (k) => k.sellado(22, AL * 0.43 - 42, `<div style="width:112mm;display:flex;flex-direction:column;gap:6mm">${frase(27, T)}${web(8, T)}</div>`) },
+  { t: '2 · La cara', sellos: '1 sello · 9 × 11.5 cm', por: 'Los dos hermanos al centro, como un escudo. Es lo más reconocible a 10 metros.',
+    c: (k) => k.sellado((AN - 90) / 2, AL * 0.40 - 50, `<div style="width:90mm;display:flex;flex-direction:column;align-items:center;gap:4mm">${logoTinta(86, T)}${web(8, T)}</div>`) },
+  { t: '3 · De costado', sellos: '2 sellos · 16 × 2.2 cm y 5 × 6 cm', por: 'La frase sube por el borde, como cinta; la cara chica abajo. La más «de diseño».',
+    c: (k) => k.sellado(19, SOLAPA + 14, `<div style="width:20mm;height:156mm"><div style="width:156mm;transform:translateY(156mm) rotate(-90deg);transform-origin:0 0">${costado(156, 20, T)}</div></div>`) +
+      k.sellado(AN - 22 - 50, AL - 34 - 60, `<div style="width:50mm;display:flex;flex-direction:column;align-items:center;gap:2.5mm">${logoTinta(46, T)}${web(4.6, T)}</div>`) },
+  { t: '4 · Mínima', sellos: '1 sello · 10 × 3 cm (el más barato)', por: 'Casi nada: el cierre hace de marca. Se ve cara y limpia, pero dice poco.',
+    c: (k) => k.sellado((AN - 100) / 2, AL * 0.70, `<div style="width:100mm;display:flex;flex-direction:column;align-items:center;gap:3mm"><div class="voz" style="font-size:11mm;line-height:1;color:${T}">Alguien pidió bien.</div>${web(4.6, T)}</div>`) },
+  { t: '5 · La firma', sellos: '1 sello · 11 × 14 cm', por: 'La cara y, debajo, la frase: el escudo y lo que dice. Es la más completa.',
+    c: (k) => k.sellado((AN - 110) / 2, AL * 0.40 - 62, `<div style="width:110mm;display:flex;flex-direction:column;align-items:center;gap:4mm">${logoTinta(70, T)}<div class="voz" style="font-size:15mm;line-height:1;color:${T};white-space:nowrap">Alguien pidió bien.</div>${web(6, T)}</div>`) },
+];
+const nota = (sellos, por) => `<div class="mono" style="font-size:13px;color:${C.oliva}">${sellos}</div><div style="font:400 14px/1.4 Archivo,sans-serif;color:#4A4A40">${por}</div>`;
+{
+  // Los cuatro ejemplos, lado a lado (el dorso es igual en todos: el sticker del QR).
+  const k = kitBolsa(1.55);
+  await foto('docs/marketing/bolsa/ejemplos-bolsa.png', 1940, 840, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 20%,#F3ECDF,#DCD0BC);padding:44px 60px">
+    <div class="mono" style="font-size:14px;letter-spacing:.08em;color:${C.oliva};margin-bottom:20px">CINCO FRENTES PARA LA BOLSA LISA #20 · EL DORSO ES IGUAL EN TODOS: EL STICKER DEL QR</div>
+    <div style="display:flex;gap:40px">${FRENTES.map((f) => k.cara(f.t, nota(f.sellos, f.por), f.c(k))).join('')}</div></div>`);
+}
+{
+  // La maqueta de dos caras, con el frente elegido (por ahora, el 1).
+  const k = kitBolsa(2.3), f = FRENTES[0];
+  await foto('docs/marketing/bolsa/maqueta-bolsa-lisa.png', 1260, 1100, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:54px 70px">
     <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:22px">LA BOLSA · KRAFT LISA #20 · 21 × 40 × 12.5 CM</div>
     <div style="display:flex;gap:90px">
-      ${cara('Frente', 'El sello «Alguien pidió bien.» a media altura, alineado a la izquierda, en tinta verde casi negro: es lo que se ve con la bolsa en la mano o en la caja de la moto. La boca se dobla dos veces y el cierre cruza el doblez.', `${sello}${cierre}`, true)}
-      ${cara('Dorso', 'El sticker del QR, centrado en el tercio de arriba: es lo que ve quien la recibe al girarla. Nada más.', qrDorso, false)}
+      ${k.cara('Frente', nota(f.sellos, 'El sello a media altura: es lo que se ve con la bolsa en la mano o en la caja de la moto. La boca se dobla dos veces y el cierre cruza el doblez.'), f.c(k))}
+      ${k.cara('Dorso', nota('1 sticker · 70 × 100 mm', 'El sticker del QR, centrado en el tercio de arriba: es lo que ve quien la recibe al girarla.'), k.qrDorso, false)}
     </div></div>`);
 }
 await b.close();
-console.log(`✓ ${piezas.length} stickers y la lámina en ${OUT}; la bolsa en docs/marketing/bolsa/maqueta-bolsa-lisa.png`);
+console.log(`✓ stickers y lámina en ${OUT}; sellos en docs/marketing/bolsa/sellos; la bolsa y sus ejemplos en docs/marketing/bolsa/`);
