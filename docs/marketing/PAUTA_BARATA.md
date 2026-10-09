@@ -86,3 +86,13 @@ meses: un cliente de marzo sigue pidiendo en abril, y eso no se ve aquí.
 - **Salió entre S/30 y S/45:** se cambian piezas o radio y se prueba otra vez con S/150.
 - **Salió a más de S/45:** no se pone un sol más. Se crece con Rappi, PedidosYa, Google,
   Instagram y referidos, que no cuestan.
+
+## La campaña, armada (2026-10-09, dueño: «1 y 2 aprobados»)
+En la cuenta `1488138326460689`, **en pausa / borrador, no gasta nada**:
+- Campaña `120252427032810076` «SNDWCH · Prueba de noviembre (S/350)»: ventas, presupuesto total
+  S/350, del 3 al 30 de noviembre.
+- Conjunto `120252427034590076`: 5 km alrededor de la cocina (STORE_LAT/LON de `reglas.ts`),
+  18–45 años como sugerencia, Reels e Historias de Facebook e Instagram, martes a domingo de
+  11:00 a 14:00 y de 18:00 a 21:00, optimiza por **iniciar pago** con el píxel `1410494047274081`.
+- **Faltan los anuncios**: se crean cuando Meta vincule @snd__wch. Sin el id de Instagram, un
+  anuncio nunca sale en Instagram, y una pieza no se puede editar después de creada.

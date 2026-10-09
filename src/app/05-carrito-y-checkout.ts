@@ -1053,7 +1053,11 @@ function sOSent(){
       +(!pushSubscribed&&('serviceWorker' in navigator)&&('PushManager' in window)
         &&((cust&&cust.total_orders===1)||(!cust&&window._lOrderId))
         ?'<button data-accion="avisame-cuando-salga" onclick="'+(cust?'togglePushNotifications()':'avisarSinCuenta()')+'">'+(pushMsg&&!cust?esc(pushMsg):'Avísame cuando salga')+' <span>→</span></button>':'')
-      +(cust?'<button onclick="shareReferral()">Invita a alguien <span>→</span></button>':'')
+      // Referidos (dueño, 2026-10-09: «1 y 2 aprobados»). El premio de quien invita vive en su
+      // cuenta, así que a quien pidió sin cuenta el mismo botón lo lleva a guardarla (el flujo
+      // aprobado de la losa) con el motivo dicho; con cuenta, comparte el link por WhatsApp.
+      +(cust?'<button data-accion="invitar" onclick="shareReferral()">Invita a alguien <span>→</span></button>'
+        :(invitado?'<button data-accion="invitar" onclick="avisoPaso=\'correo\';aErr=\'Guarda tu cuenta y te damos tu link: cuando tu amigo pida, ganas un sándwich.\';render()">Invita a alguien y gana un sándwich <span>→</span></button>':''))
       +'</div>'
       // Si algo sale mal con este pedido, es acá donde el cliente lo va a buscar.
       +legalLinksHTML('o_sent');
