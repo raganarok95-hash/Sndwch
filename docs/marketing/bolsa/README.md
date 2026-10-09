@@ -16,6 +16,32 @@ muéstrame cómo quedaría atrás». **Un solo sello de 15 × 13 cm** (`sellos/6
 Va centrado a media altura. Al ser un solo sello no hay nada que alinear: se sella y listo.
 **El dorso** lleva solo el sticker del QR, centrado a la misma altura que el sello del frente.
 
+## La bolsa para que la suban (2026-10-09)
+Dueño: «basándote en marketing, en que la bolsa sea viral, en ganar más clientes» → «listo,
+trabajemos en eso, hazlo». Sobre el cartel (abajo) se agregan cuatro cosas:
+
+![la bolsa para que la suban](maqueta-bolsa-cartel.png)
+
+1. **Pide la historia.** Una pastilla grande: «Súbela y etiquétanos **@snd__wch**», legible en una
+   foto de historia. Cada historia que suben se repostea: prueba social gratis (así llegó la
+   referencia de Patricio). El IG sale de la columna de datos y queda solo en la pastilla.
+2. **Frases coleccionables.** La frase es un sello chico aparte y se rota una por día: «¿cuál te
+   tocó?». Cuatro sellos de 16 × 1.4 cm:
+
+   ![frases](frases-coleccionables.png)
+
+3. **El dorso le habla a la oficina:** «¿Y la oficina? Pidan juntos en sndwch.app. Con 5
+   sándwiches, quien organiza se lleva gratis el 15CM más barato.» El 5 se lee de
+   `REGLAS.organizadorDesde` (dinero.ts) y la condición es la de la app. Lo ve el de al lado, que
+   es el cliente nuevo más fácil.
+4. **Una sorpresa al abrirla:** «¡Llegó! Ahora sí: buen provecho. — Wicho», sellado en la franja
+   de arriba del frente que tapa el doblez. Aparece al abrir: el momento que se graba.
+
+**Sellos** (`sellos/`): `7-nombre-186x26`, `7-frase-1…4-160x14`, `7-pie-186x…` (datos, cara y
+pastilla), `7-dorso-oficina-172x46` y `7-adentro-134x24`. Se sellan en tanda antes del servicio;
+al despachar solo se dobla y se pega la tira. Cómo saber si funciona: pedidos con `?src=bolsa`,
+canjes del código DIRECTO y menciones a @snd__wch en historias, cada semana.
+
 ## El cartel (2026-10-09, sobre una referencia del dueño)
 Dueño, con la foto de una bolsa kraft impresa a una tinta: «probemos un diseño parecido a este»,
 «más parecido a este, por favor» y «el dibujo con líneas no me gusta, es más la distribución en la
@@ -33,9 +59,8 @@ bolsa». Se copia la **distribución** de la referencia con lo nuestro (el logo 
   WhatsApp se lee de la app (`var WA` en `src/app/01-catalogo-y-estado.ts`).
 - **Un solo sticker: la tira** arriba (sello redondo al frente, QR con DIRECTO al dorso). El
   bloque va centrado en lo que queda debajo.
-- **Dos sellos:** `sellos/7-cartel-cabecera-186x40.pdf` (nombre, etiquetas y frase) y
-  `sellos/7-cartel-pie-186x128.pdf` (datos y cara). Si algún día se imprime la bolsa, el mismo
-  arte sirve a una tinta.
+- **Sellos:** los de «La bolsa para que la suban» (arriba): nombre, frase, pie, dorso y adentro.
+  Si algún día se imprime la bolsa, el mismo arte sirve a una tinta.
 - El logo a una tinta sale del avatar completo (`logo_a_sello.py`), con un contorno que cierra la
   cabeza: el de antes venía recortado de origen.
 
