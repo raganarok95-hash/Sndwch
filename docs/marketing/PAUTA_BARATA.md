@@ -104,3 +104,16 @@ partir S/350 en dos conjuntos hace que Meta aprenda peor (regla 6). El conjunto 
 `estudio/encargos/2026-11-03-oficina-1.md` (SANDO y WICHO entrando con bolsas a una oficina;
 sándwiches envueltos, sin relleno a la vista). Texto sugerido: «¿Almuerzo para la oficina? Pide
 4 y llegan juntos.» Se crea con las otras tres cuando Meta vincule @snd__wch.
+
+## Audiencias para bajar el costo (2026-10-09, dueño: «Si aprueba todo»)
+Dos audiencias de retargeting, gratis hasta que se pauta: «visitaron sndwch.app (30 días)» e
+«iniciaron pago y no compraron (14 días)», ambas del píxel `1410494047274081`. **Bloqueadas:**
+Meta pide que el dueño acepte los términos de audiencias personalizadas en
+https://www.facebook.com/customaudiences/app/tos/?act=1488138326460689 (error 2663). Aceptado
+eso, se crean con `ads_create_custom_audience` (las reglas están en la sesión 2026-10-09).
+Desde diciembre, con 100+ compradores reales: lista de clientes → audiencia parecida al 1%.
+
+## El QR de la bolsa: bebida gratis (2026-10-09)
+Código `BOLSA` (tipo «bebida», tope S/6, una vez por celular, campaña `qr-bolsa`). El QR lleva a
+`sndwch.app/?src=qr-bolsa&codigo=BOLSA`: el checkout lo ofrece ya escrito. Cuesta ~S/1.90 por
+cliente que pasa de Rappi o PedidosYa a la web, donde cada pedido deja S/3.78 más.
