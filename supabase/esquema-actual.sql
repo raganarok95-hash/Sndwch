@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20261008140228
+-- foto-tomada-tras-migracion: 20261009025200
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -726,7 +726,7 @@ alter table public.promo_code_redemptions add constraint promo_code_redemptions_
 
 alter table public.promo_codes add constraint promo_codes_code_key UNIQUE (code);
 
-alter table public.promo_codes add constraint promo_codes_discount_type_check CHECK ((discount_type = ANY (ARRAY['percent'::text, 'fixed'::text])));
+alter table public.promo_codes add constraint promo_codes_discount_type_check CHECK ((discount_type = ANY (ARRAY['percent'::text, 'fixed'::text, 'bebida'::text])));
 
 alter table public.promo_codes add constraint promo_codes_pkey PRIMARY KEY (id);
 
