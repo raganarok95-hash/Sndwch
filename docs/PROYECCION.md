@@ -226,5 +226,6 @@ y luego con sello le coloco el frontal. Invertiría solo en sellos y tinta.»
 | **bolsa lisa (S/0.26) + sello + papel + sticker con QR** | **S/1,725** | **S/672** | **S/17.42** |
 
 El sello (S/80–250 en MercadoLibre Perú, según tamaño y si es autoentintable) y la tinta se pagan
-con los primeros ~70 pedidos. El costo del modelo (`insumos.EMPAQUE_PEDIDO`) se cambia cuando el
+con los primeros ~70 pedidos. Con **dos** stickers por bolsa (cierre y QR, decisión del dueño) el
+empaque sube a ~S/0.65 si el del QR sale ~S/0.20: unos S/75 menos en 6 meses, sin cotizar aún. El costo del modelo (`insumos.EMPAQUE_PEDIDO`) se cambia cuando el
 dueño compre: hasta entonces queda en S/2.50, por el lado seguro.
