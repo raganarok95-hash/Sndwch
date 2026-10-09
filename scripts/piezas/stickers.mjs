@@ -165,8 +165,35 @@ const cintaVertical = (texto, largo, ancho, color) => `<div style="width:${ancho
 const mezcla = (color) => `<div style="display:flex;gap:${MEZCLA.hueco}mm;align-items:stretch">
   ${cintaVertical('SNDWCH.APP', MEZCLA.alto, MEZCLA.cinta, color)}
   <div style="display:flex;flex-direction:column;gap:${MEZCLA.gap}mm">${logoTinta(MEZCLA.logo, color)}${frase(MEZCLA.frase, color)}</div></div>`;
+// El «cartel» (dueño, 2026-10-09, con la foto de una bolsa de referencia: «probemos un diseño
+// parecido a este»): el nombre grande arriba, la frase debajo, el personaje grande abajo a la
+// derecha y una columna de datos con íconos a la izquierda. Con lo nuestro: SNDWCH (a una tinta
+// el «//» no va: CLAUDE.md, regla 10), la frase de SANDO y la cara de los hermanos. Los datos son
+// solo los reales: sin dirección (no hay local) ni teléfono (no hay uno público).
+const IG = '@snd__wch';
+const icono = (tipo, color) => {
+  const t = { stroke: color, 'stroke-width': 1.7, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
+  const a = Object.entries(t).map(([k, v]) => `${k}="${v}"`).join(' ');
+  const cuerpo = {
+    web: `<circle cx="12" cy="12" r="9.2" ${a}/><ellipse cx="12" cy="12" rx="4" ry="9.2" ${a}/><path d="M3 12h18M4.6 7.2h14.8M4.6 16.8h14.8" ${a}/>`,
+    ig: `<rect x="3" y="3" width="18" height="18" rx="5.2" ${a}/><circle cx="12" cy="12" r="4.3" ${a}/><circle cx="17.4" cy="6.6" r="1.1" fill="${color}"/>`,
+    reloj: `<circle cx="12" cy="12" r="9.2" ${a}/><path d="M12 6.6V12l3.6 2.4" ${a}/>`,
+  }[tipo];
+  return `<svg width="7.6mm" height="7.6mm" viewBox="0 0 24 24" style="flex:none">${cuerpo}</svg>`;
+};
+const dato = (tipo, a, b, color) => `<div style="display:flex;gap:2.6mm;align-items:center">${icono(tipo, color)}<div style="font:800 3.7mm/1.25 Archivo,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:${color}">${a}<br>${b}</div></div>`;
+const CARTEL = { ancho: 166, nombre: 44 };
+const cabecera = (color) => `<div style="width:${CARTEL.ancho}mm;display:flex;flex-direction:column;align-items:center;gap:4mm">
+  <svg width="${CARTEL.ancho}mm" height="${CARTEL.nombre}mm" viewBox="0 0 ${CARTEL.ancho} ${CARTEL.nombre}"><text x="0" y="${CARTEL.nombre - 0.6}" font-family="Anton" font-size="${CARTEL.nombre * 1.36}" fill="${color}" textLength="${CARTEL.ancho}" lengthAdjust="spacingAndGlyphs">SNDWCH</text></svg>
+  <div class="voz" style="font-size:13.5mm;line-height:1;color:${color};white-space:nowrap">Alguien pidió bien.</div></div>`;
+const pie = (color) => `<div style="width:${CARTEL.ancho}mm;display:flex;align-items:flex-end;justify-content:space-between">
+  <div style="display:flex;flex-direction:column;gap:4.2mm;padding-bottom:2mm">
+    ${dato('web', 'Pide en', 'sndwch.app', color)}${dato('ig', 'Síguenos en IG', IG, color)}${dato('reloj', 'Martes a domingo', 'solo delivery', color)}</div>
+  ${logoTinta(108, color)}</div>`;
 const sello = (archivo, w, h, cuerpo) => piezas.push({ archivo, w, h, forma: 'rect', dir: SELLOS, sinSangrado: true, cuerpo: `<div style="position:absolute;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4mm">${cuerpo}</div>` });
 sello('6-mezcla-150x130', 150, 130, mezcla('#000'));
+sello('7-cartel-cabecera-176x72', 176, 72, cabecera('#000'));
+sello('7-cartel-pie-176x110', 176, 110, pie('#000'));
 sello('1-letrero-120x90', 120, 90, `<div style="width:112mm;display:flex;flex-direction:column;gap:6mm">${frase(27, '#000')}${web(8, '#000')}</div>`);
 sello('2-cara-90x115', 90, 115, `${logoTinta(86, '#000')}${web(8, '#000')}`);
 sello('3-costado-160x22', 160, 22, costado(156, 20, '#000'));
@@ -321,6 +348,17 @@ const nota = (sellos, por) => `<div class="mono" style="font-size:13px;color:${C
       ${plana}
       ${k.cara('Frente', nota('1 sello + la tira', 'La tira baja 7.5 cm sobre el doblez con el sello redondo: si llega abierta, se nota. El sello de la mezcla, más abajo.'), frenteTira + f.c(k).replace(`top:${px(AL * 0.42 - MEZCLA.alto / 2)}`, `top:${px(AL * 0.56 - MEZCLA.alto / 2)}`), true, false)}
       ${k.cara('Dorso', nota('la misma tira', 'Sigue por arriba y baja 11.5 cm con el QR: lo primero que ve quien la recibe al girarla.'), dorsoTira, false)}
+    </div></div>`);
+}
+{
+  // El cartel: frente con dos sellos (cabecera y pie) y el cierre redondo; dorso con el QR.
+  const k = kitBolsa(2.3), px = k.px;
+  const frente = k.sellado((AN - CARTEL.ancho) / 2, 64, cabecera(T)) + k.sellado((AN - CARTEL.ancho) / 2, 172, pie(T));
+  await foto('docs/marketing/bolsa/maqueta-bolsa-cartel.png', 1260, 1100, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:54px 70px">
+    <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:22px">EL CARTEL · KRAFT LISA #20 · DOS SELLOS</div>
+    <div style="display:flex;gap:90px">
+      ${k.cara('Frente', nota('2 sellos · 17.6 × 7.2 cm y 17.6 × 11 cm', 'Arriba el nombre y la frase; abajo, los datos a la izquierda y la cara de los hermanos a la derecha. El cierre cruza el doblez.'), frente)}
+      ${k.cara('Dorso', nota('1 sticker · 70 × 100 mm', 'El sticker del QR con el código DIRECTO, centrado.'), k.qrDorso, false)}
     </div></div>`);
 }
 await b.close();

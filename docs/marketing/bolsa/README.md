@@ -16,6 +16,23 @@ muéstrame cómo quedaría atrás». **Un solo sello de 15 × 13 cm** (`sellos/6
 Va centrado a media altura. Al ser un solo sello no hay nada que alinear: se sella y listo.
 **El dorso** lleva solo el sticker del QR, centrado a la misma altura que el sello del frente.
 
+## El cartel (2026-10-09, sobre una referencia del dueño)
+Dueño, con la foto de una bolsa kraft impresa a una tinta: «probemos un diseño parecido a este».
+Se tomó la **estructura** de la referencia, no su contenido: el nombre grande arriba, la frase
+debajo, el personaje grande abajo a la derecha y una columna de datos con íconos a la izquierda.
+
+![el cartel](maqueta-bolsa-cartel.png)
+
+- **SNDWCH** en Anton, a todo el ancho. A una tinta el `//` no va (CLAUDE.md, regla 10): el nombre
+  se escribe como en la web y en Instagram.
+- **«Alguien pidió bien.»**, la frase de SANDO, en su itálica.
+- **La cara de los hermanos** a una tinta, grande, abajo a la derecha.
+- **Los datos, solo los reales:** pide en sndwch.app · síguenos en IG @snd__wch · martes a domingo,
+  solo delivery. Sin dirección (no hay local) ni teléfono (no hay uno público).
+- **Dos sellos** (`sellos/7-cartel-cabecera-176x72.pdf` y `sellos/7-cartel-pie-176x110.pdf`): la
+  cabecera y el pie. Si algún día se imprime la bolsa, el mismo arte sirve a una tinta.
+- El cierre redondo arriba y el sticker del QR atrás (o la tira de la opción B, que también cabe).
+
 ## Opción B: un solo sticker que cierra y lleva el QR (2026-10-09)
 Dueño: «DIRECTO. Segundo, hagamos otra pero con el sticker que no sean dos sino uno solo, el de
 cierre, largo, y contenga el QR. Algo así» (con un dibujo de una tira sobre la boca de la bolsa).
