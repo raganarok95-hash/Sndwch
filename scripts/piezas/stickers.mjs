@@ -179,30 +179,41 @@ const WSP = (() => {
   const n = m[1].replace(/^51/, '');
   return `+51 ${n.slice(0, 3)} ${n.slice(3, 6)} ${n.slice(6)}`;
 })();
+// Íconos como en la referencia: círculo lleno y el dibujo calado (se ve el kraft a través).
+let idIcono = 0;
 const icono = (tipo, color) => {
-  const t = { stroke: color, 'stroke-width': 1.7, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };
-  const a = Object.entries(t).map(([k, v]) => `${k}="${v}"`).join(' ');
-  const cuerpo = {
-    web: `<circle cx="12" cy="12" r="9.2" ${a}/><ellipse cx="12" cy="12" rx="4" ry="9.2" ${a}/><path d="M3 12h18M4.6 7.2h14.8M4.6 16.8h14.8" ${a}/>`,
-    ig: `<rect x="3" y="3" width="18" height="18" rx="5.2" ${a}/><circle cx="12" cy="12" r="4.3" ${a}/><circle cx="17.4" cy="6.6" r="1.1" fill="${color}"/>`,
-    reloj: `<circle cx="12" cy="12" r="9.2" ${a}/><path d="M12 6.6V12l3.6 2.4" ${a}/>`,
-    wsp: `<path d="M12 2.8a9.2 9.2 0 0 0-7.9 13.9L3 21l4.4-1.1A9.2 9.2 0 1 0 12 2.8z" ${a}/><path d="M9 7.9c.4-.4 1-.4 1.3.1l.8 1.4c.2.4.1.8-.2 1.1l-.5.4c.6 1.3 1.6 2.3 2.9 2.9l.4-.5c.3-.3.7-.4 1.1-.2l1.4.8c.5.3.5.9.1 1.3l-.7.7c-.6.6-1.6.7-2.4.3-2.3-1.1-4.1-2.9-5.2-5.2-.4-.8-.3-1.8.3-2.4z" fill="${color}" stroke="none"/>`,
+  const a = 'stroke="#000" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+  const dibujo = {
+    web: `<circle cx="12" cy="12" r="6.6" ${a}/><ellipse cx="12" cy="12" rx="2.8" ry="6.6" ${a}/><path d="M5.4 12h13.2" ${a}/>`,
+    ig: `<rect x="6" y="6" width="12" height="12" rx="3.6" ${a}/><circle cx="12" cy="12" r="2.9" ${a}/><circle cx="15.6" cy="8.4" r="0.9" fill="#000"/>`,
+    wsp: `<path d="M12 5.6a6.4 6.4 0 0 0-5.5 9.7L5.8 18.4l3.2-.8A6.4 6.4 0 1 0 12 5.6z" ${a}/><path d="M10 9.3c.3-.3.7-.3.9.1l.5 1c.1.3 0 .6-.2.8l-.3.3c.4.9 1.1 1.6 2 2l.3-.3c.2-.2.5-.3.8-.2l1 .5c.4.2.4.6.1.9l-.5.5c-.4.4-1.1.5-1.7.2-1.6-.8-2.9-2-3.6-3.6-.3-.6-.2-1.3.2-1.7z" fill="#000"/>`,
   }[tipo];
-  return `<svg width="7.6mm" height="7.6mm" viewBox="0 0 24 24" style="flex:none">${cuerpo}</svg>`;
+  const id = `ic${++idIcono}`;
+  return `<svg width="6.4mm" height="6.4mm" viewBox="0 0 24 24" style="flex:none"><defs><mask id="${id}"><rect width="24" height="24" fill="#fff"/>${dibujo}</mask></defs><circle cx="12" cy="12" r="12" fill="${color}" mask="url(#${id})"/></svg>`;
 };
-const dato = (tipo, a, b, color) => `<div style="display:flex;gap:2.6mm;align-items:center">${icono(tipo, color)}<div style="font:800 3.7mm/1.25 Archivo,sans-serif;letter-spacing:.05em;text-transform:uppercase;color:${color}">${a}<br>${b}</div></div>`;
-const CARTEL = { ancho: 166, nombre: 44 };
+const dato = (tipo, a, b, color) => `<div style="display:flex;gap:2.4mm;align-items:center">${icono(tipo, color)}<div style="font:800 3.2mm/1.25 Archivo,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:${color};white-space:nowrap">${a}<br>${b}</div></div>`;
+// La distribución de la referencia (dueño: «el dibujo con líneas no me gusta, es más la
+// distribución en la bolsa»): nombre ancho y centrado con dos etiquetas chicas a los costados, la
+// frase justo debajo, la cara grande abajo a la derecha y los datos abajo a la izquierda.
+const CARTEL = { ancho: 182, nombre: 146, alto: 21, logo: 130 };
+CARTEL.cabeza = CARTEL.alto + 4 + 9;                       // nombre + aire + frase
+CARTEL.pie = CARTEL.logo * LOGO_PROP;
+const etiqueta = (a, b, color) => `<div style="font:800 2.9mm/1.2 Archivo,sans-serif;letter-spacing:.1em;text-align:center;text-transform:uppercase;color:${color}">${a}<br>${b}</div>`;
 const cabecera = (color) => `<div style="width:${CARTEL.ancho}mm;display:flex;flex-direction:column;align-items:center;gap:4mm">
-  <svg width="${CARTEL.ancho}mm" height="${CARTEL.nombre}mm" viewBox="0 0 ${CARTEL.ancho} ${CARTEL.nombre}"><text x="0" y="${CARTEL.nombre - 0.6}" font-family="Anton" font-size="${CARTEL.nombre * 1.36}" fill="${color}" textLength="${CARTEL.ancho}" lengthAdjust="spacingAndGlyphs">SNDWCH</text></svg>
-  <div class="voz" style="font-size:13.5mm;line-height:1;color:${color};white-space:nowrap">Alguien pidió bien.</div></div>`;
-const pie = (color) => `<div style="width:${CARTEL.ancho}mm;display:flex;align-items:flex-end;justify-content:space-between">
-  <div style="display:flex;flex-direction:column;gap:3.6mm;padding-bottom:2mm">
-    ${dato('web', 'Pide en', 'sndwch.app', color)}${dato('wsp', 'WSP', WSP, color)}${dato('ig', 'Síguenos en IG', IG, color)}${dato('reloj', 'Martes a domingo', 'solo delivery', color)}</div>
-  ${logoTinta(108, color)}</div>`;
+  <div style="width:100%;display:flex;align-items:center;justify-content:center;gap:3.2mm">
+    ${etiqueta('Desde', '2026', color)}
+    <svg width="${CARTEL.nombre}mm" height="${CARTEL.alto}mm" viewBox="0 0 ${CARTEL.nombre} ${CARTEL.alto}" style="overflow:visible"><text x="0" y="${CARTEL.alto}" style="font-family:Archivo;font-weight:900;font-stretch:125%" font-size="${CARTEL.alto * 1.38}" fill="${color}" textLength="${CARTEL.nombre}" lengthAdjust="spacingAndGlyphs">SNDWCH</text></svg>
+    ${etiqueta('15·30', 'cm', color)}
+  </div>
+  <div style="font:italic 500 9mm/1 Archivo,sans-serif;color:${color};white-space:nowrap">«Alguien pidió bien.»</div></div>`;
+const pie = (color) => `<div style="width:${CARTEL.ancho}mm;height:${CARTEL.pie.toFixed(1)}mm;position:relative">
+  <div style="position:absolute;right:0;top:0">${logoTinta(CARTEL.logo, color)}</div>
+  <div style="position:absolute;left:4mm;bottom:${(CARTEL.pie * 0.16).toFixed(1)}mm;display:flex;flex-direction:column;gap:3.6mm">
+    ${dato('web', 'Pide en', 'sndwch.app', color)}${dato('wsp', 'WSP', WSP, color)}${dato('ig', 'Síguenos en IG', IG, color)}</div></div>`;
 const sello = (archivo, w, h, cuerpo) => piezas.push({ archivo, w, h, forma: 'rect', dir: SELLOS, sinSangrado: true, cuerpo: `<div style="position:absolute;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4mm">${cuerpo}</div>` });
 sello('6-mezcla-150x130', 150, 130, mezcla('#000'));
-sello('7-cartel-cabecera-176x72', 176, 72, cabecera('#000'));
-sello('7-cartel-pie-176x118', 176, 118, pie('#000'));
+sello('7-cartel-cabecera-186x40', 186, 40, cabecera('#000'));
+sello('7-cartel-pie-186x128', 186, 128, pie('#000'));
 sello('1-letrero-120x90', 120, 90, `<div style="width:112mm;display:flex;flex-direction:column;gap:6mm">${frase(27, '#000')}${web(8, '#000')}</div>`);
 sello('2-cara-90x115', 90, 115, `${logoTinta(86, '#000')}${web(8, '#000')}`);
 sello('3-costado-160x22', 160, 22, costado(156, 20, '#000'));
@@ -216,8 +227,8 @@ const fuentes = process.env.FUENTES_CSS ? readFileSync(process.env.FUENTES_CSS, 
 const MM = 96 / 25.4;
 const cargar = async (p) => {
   if (fuentes) await p.addStyleTag({ content: fuentes });
-  else await p.addStyleTag({ url: 'https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;700;800&family=IBM+Plex+Mono:wght@600&family=Instrument+Serif:ital@1&display=block' });
-  await p.evaluate(async () => { await Promise.all(['400 10px Anton', '800 10px Archivo', '600 10px "IBM Plex Mono"', 'italic 400 10px "Instrument Serif"'].map((f) => document.fonts.load(f))); await Promise.all([...document.images].map((i) => i.decode().catch(() => 0))); });
+  else await p.addStyleTag({ url: 'https://fonts.googleapis.com/css2?family=Anton&family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=IBM+Plex+Mono:wght@600&family=Instrument+Serif:ital@1&display=block' });
+  await p.evaluate(async () => { await Promise.all(['400 10px Anton', '800 10px Archivo', '900 extra-expanded 10px Archivo', 'italic 500 10px Archivo', '600 10px "IBM Plex Mono"', 'italic 400 10px "Instrument Serif"'].map((f) => document.fonts.load(f))); await Promise.all([...document.images].map((i) => i.decode().catch(() => 0))); });
 };
 for (const x of piezas) {
   const dir = x.dir || OUT; mkdirSync(dir, { recursive: true });
@@ -366,11 +377,12 @@ const nota = (sellos, por) => `<div class="mono" style="font-size:13px;color:${C
   const k = kitBolsa(2.3), px = k.px;
   const frenteTira = k.pegado((AN - 70) / 2, 0, 70, TIRA.frente, tramoFrente(0, 0));
   const dorsoTira = k.pegado((AN - 70) / 2, 0, 70, TIRA.dorso, await ladoQR(0, 0, 70, TIRA.dorso));
-  const frente = frenteTira + k.sellado((AN - CARTEL.ancho) / 2, TIRA.frente + 11, cabecera(T)) + k.sellado((AN - CARTEL.ancho) / 2, TIRA.frente + 105, pie(T));
+  const bloque = CARTEL.cabeza + 9 + CARTEL.pie, y0 = TIRA.frente + (AL - 16 - TIRA.frente - bloque) / 2 - 6;
+  const frente = frenteTira + k.sellado((AN - CARTEL.ancho) / 2, y0, cabecera(T)) + k.sellado((AN - CARTEL.ancho) / 2, y0 + CARTEL.cabeza + 9, pie(T));
   await foto('docs/marketing/bolsa/maqueta-bolsa-cartel.png', 1260, 1100, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:54px 70px">
     <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:22px">EL CARTEL · KRAFT LISA #20 · DOS SELLOS Y UN SOLO STICKER</div>
     <div style="display:flex;gap:90px">
-      ${k.cara('Frente', nota('2 sellos + 1 tira', 'La tira baja 7.5 cm sobre el doblez con el sello redondo. Debajo, el nombre y la frase; abajo, los datos a la izquierda y la cara de los hermanos a la derecha.'), frente, true, false)}
+      ${k.cara('Frente', nota('2 sellos · 18.6 × 4 cm y 18.6 × 12.8 cm + 1 tira', 'Como la referencia: el nombre ancho al centro con dos etiquetas chicas, la frase debajo, la cara grande abajo a la derecha y los datos a la izquierda. La tira cierra arriba.'), frente, true, false)}
       ${k.cara('Dorso', nota('la misma tira', 'Sigue por arriba y baja 11.5 cm con el QR y el código DIRECTO.'), dorsoTira, false)}
     </div></div>`);
 }

@@ -17,28 +17,30 @@ Va centrado a media altura. Al ser un solo sello no hay nada que alinear: se sel
 **El dorso** lleva solo el sticker del QR, centrado a la misma altura que el sello del frente.
 
 ## El cartel (2026-10-09, sobre una referencia del dueño)
-Dueño, con la foto de una bolsa kraft impresa a una tinta: «probemos un diseño parecido a este».
-Se tomó la **estructura** de la referencia, no su contenido: el nombre grande arriba, la frase
-debajo, el personaje grande abajo a la derecha y una columna de datos con íconos a la izquierda.
+Dueño, con la foto de una bolsa kraft impresa a una tinta: «probemos un diseño parecido a este»,
+«más parecido a este, por favor» y «el dibujo con líneas no me gusta, es más la distribución en la
+bolsa». Se copia la **distribución** de la referencia con lo nuestro (el logo sólido se queda):
 
 ![el cartel](maqueta-bolsa-cartel.png)
 
-- **SNDWCH** en Anton, a todo el ancho. A una tinta el `//` no va (CLAUDE.md, regla 10): el nombre
-  se escribe como en la web y en Instagram.
-- **«Alguien pidió bien.»**, la frase de SANDO, en su itálica.
-- **La cara de los hermanos** a una tinta, grande, abajo a la derecha.
-- **Los datos, solo los reales:** pide en sndwch.app · WSP +51 930 957 640 · síguenos en IG
-  @snd__wch · martes a domingo, solo delivery. Sin dirección (no hay local). El WhatsApp es el
-  mismo que la app muestra en soporte y comprobantes, y el script lo lee de ahí (`var WA` en
-  `src/app/01-catalogo-y-estado.ts`): si cambia, se regenera y el sello sale con el nuevo
-  (dueño: «si hay WhatsApp público puedes ponerlo como wsp»).
-- **Dos sellos** (`sellos/7-cartel-cabecera-176x72.pdf` y `sellos/7-cartel-pie-176x118.pdf`): la
-  cabecera y el pie. Si algún día se imprime la bolsa, el mismo arte sirve a una tinta.
-- **Un solo sticker: la tira** (dueño: «agrega el sticker, que sea uno solo como quedamos»): baja
-  7.5 cm al frente con el sello redondo y 11.5 cm al dorso con el QR. La cabecera queda debajo.
-- **El logo a una tinta sale del avatar completo** (`logo_a_sello.py`): el de antes venía recortado
-  de origen y se veía cortado (dueño: «se ve algo cortado el logo»). Ahora lleva un contorno que
-  cierra la cabeza.
+- **El nombre ancho y centrado:** SNDWCH en Archivo negra a todo lo ancho (eje de ancho al 125%),
+  con dos etiquetas chicas pegadas a los costados: «Desde 2026» y «15·30 cm» (los dos tamaños). A
+  una tinta el `//` no va (CLAUDE.md, regla 10).
+- **La frase justo debajo**, en itálica de palo seco como la referencia: «Alguien pidió bien.»
+- **La cara de los hermanos grande, abajo a la derecha** (13 cm), pegada a la frase.
+- **Los datos abajo a la izquierda**, con íconos en círculo lleno y el dibujo calado: pide en
+  sndwch.app · WSP +51 930 957 640 · síguenos en IG @snd__wch. Sin dirección (no hay local). El
+  WhatsApp se lee de la app (`var WA` en `src/app/01-catalogo-y-estado.ts`).
+- **Un solo sticker: la tira** arriba (sello redondo al frente, QR con DIRECTO al dorso). El
+  bloque va centrado en lo que queda debajo.
+- **Dos sellos:** `sellos/7-cartel-cabecera-186x40.pdf` (nombre, etiquetas y frase) y
+  `sellos/7-cartel-pie-186x128.pdf` (datos y cara). Si algún día se imprime la bolsa, el mismo
+  arte sirve a una tinta.
+- El logo a una tinta sale del avatar completo (`logo_a_sello.py`), con un contorno que cierra la
+  cabeza: el de antes venía recortado de origen.
+
+Para regenerar hace falta Archivo con su eje de ancho (`FUENTES_CSS` con las caras variables de
+Archivo, o el respaldo de Google Fonts que ya las pide).
 
 ## Opción B: un solo sticker que cierra y lleva el QR (2026-10-09)
 Dueño: «DIRECTO. Segundo, hagamos otra pero con el sticker que no sean dos sino uno solo, el de
