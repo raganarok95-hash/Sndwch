@@ -111,3 +111,9 @@ La losa (06A) ya tenía el renglón «Avísame cuando salga →» solo para quie
 aparece también a quien pidió sin cuenta, y la suscripción queda con el teléfono de su pedido
 (`push-subscribe-pedido`). El aviso del día 7 al 10 considera también a esas personas. La solución 5
 (ofrecer la bebida) ya existía: la pantalla de bebidas con «Sigo sin bebida».
+
+## Corrección (2026-10-09, noche): el precio de Meta en Perú
+El rango de S/5–45 por mil vistas usaba una fuente de «mercados emergentes». Las fuentes peruanas
+de 2026 dicen S/5–12 para restaurantes y un promedio país de US$2.1–3.7. Ahora el modelo usa
+S/5–14: **un cliente cuesta ~S/36 (S/23–52)**, y S/300–600 al mes ganan en la mitad de los casos.
+Detalle y plan: `docs/marketing/PAUTA_BARATA.md`.

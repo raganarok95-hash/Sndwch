@@ -139,7 +139,7 @@ SUPUESTOS = {
     "brecha":         (14.0, 40.0, "días promedio entre un pedido y el siguiente"),
     "referidos":      (0.03, 0.08, "clientes nuevos que trae cada pedido propio"),
     # Meta: S/350 de prueba del 3 al 30 de noviembre
-    "cpm":            (5.0, 45.0, "S/ por mil vistas: agencia peruana S/5-12, mercados emergentes S/11-45"),
+    "cpm":            (5.0, 14.0, "S/ por mil vistas en Perú 2026: restaurantes S/5-12 (Ads Academy); promedio país US$2.1-3.7"),
     "ctr":            (0.0185, 0.0297, "clic: 1.85% alimentos y bebidas a 2.97% restaurantes (2026)"),
     "cvr":            (0.0154, 0.0189, "compra después del clic: 1.54% a 1.89% (2026)"),
 }
