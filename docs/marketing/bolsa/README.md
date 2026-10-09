@@ -62,3 +62,12 @@ si quieres conservarlo, la intermedia es imprimir **solo una cara** en tiraje de
 El QR lleva `sndwch.app/?src=sticker&codigo=BOLSA` (verificado: se lee).
 
 ![sticker](opcion-barata/sticker-qr.png)
+
+### El sello del frente (2026-10-09, idea del dueño)
+Bolsa lisa + **sello** con el frente («Alguien pidió bien.» y sndwch.app) + el **sticker con QR**
+de cierre. Arte del sello en negro, a tamaño real 12 × 9 cm: `opcion-barata/sello-frente.pdf`
+(se lo mandas a la sellería tal cual). **El QR no va en el sello**: en kraft la tinta se corre y
+deja de leerse. Se sella en tanda antes del servicio (50 bolsas en unos minutos), no al despachar.
+Tinta: para sellos sobre papel/kraft, base agua, color negro o verde muy oscuro.
+
+![sello](opcion-barata/sello-frente.png)

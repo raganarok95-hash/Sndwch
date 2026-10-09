@@ -195,7 +195,7 @@ Lima cuesta S/1.10–2.95 a 500 unidades y S/0.85–1.65 a 5,000 (imprentaperuan
 | escenario | 6 meses | marzo | deja un pedido propio |
 |---|---|---|---|
 | hoy: empaque S/2.50, apps +10% | S/1,018 | S/510 | S/15.39 |
-| empaque S/1.20 (bolsa impresa a 1,000+, una cara) | S/1,471 | S/614 | S/16.69 |
+| ~~empaque S/1.20 (bolsa impresa a 1,000+, una cara)~~ — corregido abajo: a tu medida no baja de ~S/1.65 | S/1,471 | S/614 | S/16.69 |
 | **empaque S/0.60 (bolsa lisa + sticker con QR)** | **S/1,681** | **S/662** | **S/17.29** |
 
 Con el empaque a S/1.86 o menos por pedido, todo el catálogo vuelve bajo el techo de 45% sin
@@ -207,3 +207,24 @@ perder clientes S/1,681; si espanta al 10% de los de app, S/1,358; si espanta al
 de Rappi es 0% de comisión, la recomendación es **abrir en Rappi al precio de la web** y poner el
 +10% el día 31, cuando empieza la comisión, comparando pedidos por día antes y después. Cuesta
 ~S/50 (unos 20 pedidos de app × S/2.60).
+
+### Corrección y decisión (2026-10-09, noche)
+Dueño: «No cambio de precios. 390 soles valen 100 bolsas personalizadas medida 39x21x12.5. Pero
+la bolsa kraft sin personalización sí es mucho más barata. […] Lo otro es que compre bolsas lisas
+y luego con sello le coloco el frontal. Invertiría solo en sellos y tinta.»
+- **No se cambian precios** (decisión del dueño).
+- Los S/1.20 de «impresa a una cara» eran un estimado mío para una bolsa mediana, no una
+  cotización. A su medida (39×21×12.5, como la «grande» de la tabla de Lima) la impresa cuesta
+  ~S/2.95 a 500, ~S/2.20 a 1,000 y ~S/1.65 a 5,000; su cotización de S/3.90 a 100 cuadra.
+- La lisa de su medida (kraft #20, 60 g, 21×40×12.5) sale **S/220 el millar + IGV ≈ S/0.26**
+  (offi.pe). Con sello, papel y sticker con QR, el empaque queda en **~S/0.47 por pedido**.
+
+| empaque por pedido | 6 meses | marzo | deja un pedido propio |
+|---|---|---|---|
+| bolsa impresa a 100 (S/3.90) + papel + sticker | S/484 | S/383 | S/13.79 |
+| bolsa impresa a 1,000 (~S/2.20) + papel + sticker | S/1,052 | S/518 | S/15.49 |
+| **bolsa lisa (S/0.26) + sello + papel + sticker con QR** | **S/1,725** | **S/672** | **S/17.42** |
+
+El sello (S/80–250 en MercadoLibre Perú, según tamaño y si es autoentintable) y la tinta se pagan
+con los primeros ~70 pedidos. El costo del modelo (`insumos.EMPAQUE_PEDIDO`) se cambia cuando el
+dueño compre: hasta entonces queda en S/2.50, por el lado seguro.
