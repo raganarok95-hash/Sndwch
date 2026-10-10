@@ -62,11 +62,11 @@ la medida de la tabla. Los dos QR se verificaron con un lector: abren su enlace.
   nivel de su polo, él riéndose, y su círculo de plumón alrededor de «gratis». Le habla a quien
   pidió por Rappi o PedidosYa: «La próxima vez, pide directo y la bebida va gratis», con el
   código DIRECTO ya puesto en el QR (se llamó BOLSA y WICHO; dueño: «el código que sea algo más genérico» → «DIRECTO») (vale una vez por celular, la bebida más barata del carrito).
-- **Calle.** Es el mundo de SANDO: papel crema, tinta, el forro naranja vertical y el acanalado
-  de sus puños. Ordenado como un aviso que se lee al paso (dueño, 2026-10-10: «más marketing»):
+- **Calle.** Papel crema, tinta, el forro naranja vertical y el acanalado (la paleta de SANDO). Ordenado como un aviso que se lee al paso (dueño, 2026-10-10: «más marketing»):
   el gancho («Si lees esto, ya tienes hambre.»), qué es («Sándwiches a domicilio»), por qué ahora
   (un sello naranja: «bebida gratis en tu 1.er pedido», el código DIRECTO ya va puesto en el QR) y
-  qué hacer («escanea y pide»). Sin firma de SANDO: a quien no lo conoce no le dice nada. El QR
+  qué hacer («escanea y pide»). Sin SANDO: a quien no lo conoce no le dice nada; en su lugar va el
+  logo (dueño, 2026-10-10: «cambia a sando por el logo»), el mismo que verá en la bolsa. El QR
   (`?src=calle`) cuenta los pedidos que trae la calle.
 
 ## Dónde pegar el de la calle
