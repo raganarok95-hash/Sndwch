@@ -134,8 +134,9 @@ async function ladoQRAngosto(x0, y0, w, h, extra = 0) {
     <div style="position:absolute;right:0;top:0;bottom:0;width:${S + 5}mm;background:${C.naranja}"></div>
     <div style="position:absolute;left:0;right:${S + 5}mm;bottom:0;height:${S + 7}mm;background:${rib(C.oliva)}"></div>
     <div class="voz" style="position:absolute;left:${S + 6}mm;top:${S + 6}mm;font-size:9.6mm;line-height:.98">Si lees esto,<br>ya tienes<br>hambre.</div>
-    <div class="disp" style="position:absolute;left:${S + 6.3}mm;top:${S + 35.5}mm;font-size:3.6mm;letter-spacing:.08em">— Sando</div>
-    <img src="${img('img/sando2_asoma.png')}" style="position:absolute;left:${S + 1}mm;bottom:${S + 7}mm;height:33mm">
+    <div class="disp" style="position:absolute;left:${S + 6.3}mm;top:${S + 36}mm;font-size:3.4mm;letter-spacing:.06em;color:${C.naranja};white-space:nowrap">Sándwiches a domicilio</div>
+    <img src="${img('img/sando2_asoma.png')}" style="position:absolute;left:${S + 1}mm;bottom:${S + 7}mm;height:30mm">
+    <div class="mono" style="position:absolute;right:${S + 9}mm;bottom:${S + 40.4}mm;width:24mm;text-align:center;font-size:2.4mm;letter-spacing:.02em;white-space:nowrap">escanea y pide ↓</div>
     <div style="position:absolute;right:${S + 9}mm;bottom:${S + 15}mm;width:24mm;height:24mm;padding:1.6mm;background:#fff;border-radius:2mm">${await qr(URL_CALLE, C.tinta)}</div>
     <div style="position:absolute;right:${S + 9}mm;bottom:${S + 9.5}mm;width:24mm;text-align:center">${marca(C.tinta, '4.1mm')}</div>
   </div>`);
@@ -186,13 +187,13 @@ async function cierreQR(x0, y0, extra = 0) {
   <div style="position:absolute;left:${x0 + 2.5}mm;width:${L - 5}mm;top:${y0 + F}mm;border-top:0.4mm dashed ${C.papel};z-index:2"></div>
   <div style="position:absolute;left:${x0 - extra}mm;top:${y0 + F}mm;width:${L + 2 * extra}mm;height:${L - F + extra}mm;background:${C.celeste};overflow:hidden">${curvas(L + 2 * extra, L - F + extra, C.curva, 11, 1.4, 0.28)}</div>
   <div style="position:absolute;left:${x0 + 4}mm;top:${y0 + F + 4}mm;width:30mm;padding:1.8mm;background:#fff;border-radius:2.4mm;box-shadow:0 0 0 0.45mm ${C.navy}">${await qr(URL_BOLSA, C.navy)}</div>
-  <div style="position:absolute;left:${x0 + 37.5}mm;top:${y0 + F + 4}mm;color:${C.navy}">
+  <div style="position:absolute;left:${x0 + 37.5}mm;top:${y0 + F + 3}mm;color:${C.navy}">
     <div style="font:800 2.9mm/1 Archivo,sans-serif">La próxima vez,</div>
     <div class="disp" style="font-size:9.2mm;margin-top:1mm">Pide<br>directo</div>
-    <div style="font:800 3mm/1.15 Archivo,sans-serif;margin-top:1.6mm">y la bebida va</div>
-    <div style="font:800 3.9mm/1 Archivo,sans-serif;margin-top:1.4mm"><span style="position:relative;display:inline-block;padding:0 1mm;margin-left:0.6mm">gratis<span style="position:absolute;left:-1.3mm;right:-1.4mm;top:-1.9mm;bottom:-2mm">${circuloAMano(12, 7.8, C.navy)}</span></span></div>
+    <div style="font:800 3mm/1 Archivo,sans-serif;margin-top:1.4mm;white-space:nowrap">y la bebida va <span style="position:relative;display:inline-block;padding:0 0.8mm;margin-left:0.4mm">gratis<span style="position:absolute;left:-1.1mm;right:-1.2mm;top:-1.6mm;bottom:-1.7mm">${circuloAMano(9.6, 6.4, C.navy)}</span></span></div>
   </div>
-  <div class="mono" style="position:absolute;left:${x0 + 4}mm;top:${y0 + F + 38.4}mm;font-size:2.7mm;letter-spacing:.05em;color:${C.navy}">código <b style="background:${C.navy};color:${C.celeste};padding:0.25mm 1mm;border-radius:0.8mm">${CODIGO}</b></div>`;
+  <div class="mono" style="position:absolute;left:${x0 + 4}mm;top:${y0 + F + 38.4}mm;font-size:2.7mm;letter-spacing:.05em;color:${C.navy}">código <b style="background:${C.navy};color:${C.celeste};padding:0.25mm 1mm;border-radius:0.8mm">${CODIGO}</b></div>
+  <div style="position:absolute;left:${x0 - extra}mm;top:${y0 + F}mm;width:${L + 2 * extra}mm;height:${L - F + extra}mm;overflow:hidden;pointer-events:none"><img src="${img('img/wicho_rie.png')}" style="position:absolute;right:${extra - 3.5}mm;bottom:${-2.5}mm;height:21mm"></div>`;
 }
 piezas.push({ archivo: '5-cierre-qr-70x70', w: CUADRO.lado, h: CUADRO.lado, forma: 'rect4', cuerpo: await cierreQR(S, S, S) });
 

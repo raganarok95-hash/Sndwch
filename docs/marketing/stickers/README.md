@@ -63,9 +63,9 @@ la medida de la tabla. Los dos QR se verificaron con un lector: abren su enlace.
   pidió por Rappi o PedidosYa: «La próxima vez, pide directo y la bebida va gratis», con el
   código DIRECTO ya puesto en el QR (se llamó BOLSA y WICHO; dueño: «el código que sea algo más genérico» → «DIRECTO») (vale una vez por celular, la bebida más barata del carrito).
 - **Calle.** Es el mundo de SANDO: papel crema, tinta, el forro naranja vertical y el acanalado
-  de sus puños. Su frase firmada, «Si lees esto, ya tienes hambre.», no grita: hace que lo leas
-  entero, y para entonces ya funcionó. El wordmark con el `//` dice de quién es; el QR (`?src=calle`)
-  dice cuántos pedidos trae.
+  de sus puños. La frase «Si lees esto, ya tienes hambre.» engancha; debajo dice qué es
+  («Sándwiches a domicilio») y el QR dice qué hacer («escanea y pide»). Sin firma de SANDO: a quien
+  no lo conoce no le dice nada (dueño, 2026-10-10). El QR (`?src=calle`) cuenta los pedidos.
 
 ## Dónde pegar el de la calle
 Pegarlo en postes, paredes o mobiliario público sin permiso suele estar prohibido por las
