@@ -1,0 +1,142 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#E7DFD1;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js"}}</script>
+</head><body>
+<script type="module">
+// SND//WCH — simulación 3D de la bolsa kraft #20 cerrada, con los dos sellos y el sticker de 7 cm.
+// La sirve render.mjs; los parámetros van en la URL (ver render.mjs). Medidas en mm.
+import * as THREE from 'three';
+
+// ── Parámetros (mm) ───────────────────────────────────────────────────────────────────────
+const q = new URLSearchParams(location.search);
+const W = 210, D = 125, ALTO = 390;          // bolsa kraft #20: 21 × 39 × 12.5
+const T = 80;                                 // la boca, al cerrarse, se aplasta en ~T mm
+const inicio = +q.get('inicio');              // donde empieza a aplastarse (altura del contenido o regla fija)
+const dobleces = +(q.get('dobleces') || 2);
+const giro = +(q.get('abre') || 0);           // grados que se levanta la solapa (0 = cerrada)
+const ancho = +(q.get('w') || 1100), alto = +(q.get('h') || 1300);
+const cam = (q.get('cam') || '-380,300,640').split(',').map(Number);
+const mira = (q.get('mira') || '0,200,0').split(',').map(Number);
+const fov = +(q.get('fov') || 28);
+const PX = 8;                                 // px por mm en las texturas
+
+// Perfil del frente: recto hasta `inicio`, después se cierra hacia el medio.
+const zf = (y) => y <= inicio ? D / 2 : 2.5 + (D / 2 - 2.5) * (1 - ((y - inicio) / T) ** 2);
+const Hc = inicio + T;
+const N = 600, Y = [], Sx = [0];
+for (let i = 0; i <= N; i++) Y.push(Hc * i / N);
+for (let i = 1; i <= N; i++) Sx.push(Sx[i - 1] + Math.hypot(Y[i] - Y[i - 1], zf(Y[i]) - zf(Y[i - 1])));
+const L = Sx[N];                              // largo del frente, del piso a la cresta
+const E = ALTO - L, F = E / dobleces;         // lo que se dobla y la solapa que queda
+const enS = (s) => { // s (mm sobre la superficie desde el piso) → [y, z]
+  let i = Sx.findIndex((v) => v >= s); if (i <= 0) i = 1;
+  const t = (s - Sx[i - 1]) / (Sx[i] - Sx[i - 1] || 1);
+  const y = Y[i - 1] + t * (Y[i] - Y[i - 1]); return [y, zf(y)];
+};
+window.MEDIDAS = { L: +L.toFixed(1), E: +E.toFixed(1), F: +F.toFixed(1), Hc: +Hc.toFixed(1) };
+
+const cargar = (src) => new Promise((ok) => { const im = new Image(); im.onload = () => ok(im); im.src = src; });
+const [kraft, kraftD, cab, pie, franja, cuerpo, franjaRota, cuerpoRoto] = await Promise.all(
+  ['kraft', 'kraft-dorso', '7-cabecera-156x32', '7-pie-156x111', 'sticker-franja', 'sticker-cuerpo', 'sticker-franja-rota', 'sticker-cuerpo-roto'].map((n) => cargar(`/tex/${n}.png`)));
+
+function lienzo(wmm, hmm, fondo) {
+  const c = document.createElement('canvas'); c.width = Math.round(wmm * PX); c.height = Math.round(hmm * PX);
+  const g = c.getContext('2d'); g.fillStyle = g.createPattern(fondo, 'repeat'); g.fillRect(0, 0, c.width, c.height);
+  return [c, g];
+}
+const sombra = (g, f) => { g.save(); g.shadowColor = 'rgba(40,22,8,.35)'; g.shadowBlur = 1.2 * PX; g.shadowOffsetY = 0.4 * PX; f(); g.restore(); };
+
+// ── El frente, en coordenadas de la superficie: y_lienzo = (L − s) ───────────────────────
+// Los sellos se ponen con la bolsa plana: su lugar se mide desde el piso y no cambia por más que
+// se doble la boca. `pie`: a cuántos mm del piso termina la tinta del sello de abajo (2026-10-10:
+// 30; antes, 72, y con un pedido chico el sticker tapaba «SNDWCH»). La cabecera va 1 cm encima.
+const [cf, gf] = lienzo(W, L, kraft);
+gf.globalCompositeOperation = 'multiply';
+const sello = (im, wmm, hmm, xmm, sArriba) => gf.drawImage(im, xmm * PX, (L - sArriba) * PX, wmm * PX, hmm * PX);
+const pieTop = +(q.get('pie') || 30) - 2.9 + 111;   // el PNG del pie deja 2.9 mm bajo la tinta
+sello(cab, 156, 32, 27, pieTop + 37.4);
+sello(pie, 156, 111, 27, pieTop);
+gf.globalCompositeOperation = 'source-over';
+// el fuelle marcado y la base
+gf.fillStyle = 'rgba(60,35,15,.10)'; gf.fillRect(0, (L - 16) * PX, W * PX, 16 * PX);
+// la sombra que deja el borde de la solapa sobre el frente
+const sb = gf.createLinearGradient(0, F * PX, 0, (F + 4) * PX); sb.addColorStop(0, 'rgba(40,22,8,.45)'); sb.addColorStop(1, 'rgba(40,22,8,0)');
+if (!giro) { gf.fillStyle = sb; gf.fillRect(0, F * PX, W * PX, 4 * PX); }
+// el sticker: el precorte cae en el borde de la solapa (s = L − F); el cuerpo baja 59 mm
+const ST = 70, FR = 11;
+const xs = (W - ST) / 2;
+sombra(gf, () => gf.drawImage(giro ? cuerpoRoto : cuerpo, xs * PX, F * PX, ST * PX, (ST - FR) * PX));
+
+// ── La solapa: la cara de afuera es el dorso doblado; lleva la franja del sticker abajo ───
+const [cs, gs] = lienzo(W, F, kraftD);
+const grd = gs.createLinearGradient(0, 0, 0, F * PX); grd.addColorStop(0, 'rgba(60,35,15,.12)'); grd.addColorStop(1, 'rgba(60,35,15,0)');
+gs.fillStyle = grd; gs.fillRect(0, 0, W * PX, F * PX);
+gs.fillStyle = 'rgba(70,42,18,.35)'; gs.fillRect(0, (F - 0.7) * PX, W * PX, 0.7 * PX); // el canto del doblez
+sombra(gs, () => gs.drawImage(giro ? franjaRota : franja, xs * PX, (F - FR) * PX, ST * PX, FR * PX));
+
+// ── Escena ────────────────────────────────────────────────────────────────────────────────
+const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+r.setSize(ancho, alto); r.setPixelRatio(1); r.outputColorSpace = THREE.SRGBColorSpace;
+r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(r.domElement);
+const escena = new THREE.Scene(); escena.background = new THREE.Color('#E7DFD1');
+const camara = new THREE.PerspectiveCamera(fov, ancho / alto, 10, 5000);
+camara.position.set(...cam); camara.lookAt(...mira);
+escena.add(new THREE.HemisphereLight('#FFF6E8', '#8A7560', 1.25));
+const sol = new THREE.DirectionalLight('#FFF2DE', 2.1); sol.position.set(-420, 760, 520); sol.castShadow = true;
+sol.shadow.mapSize.set(2048, 2048); Object.assign(sol.shadow.camera, { left: -400, right: 400, top: 600, bottom: -200, near: 10, far: 2500 });
+sol.shadow.radius = 6; sol.shadow.bias = -0.0008; escena.add(sol);
+const relleno = new THREE.DirectionalLight('#E8EEF5', 0.55); relleno.position.set(500, 200, 300); escena.add(relleno);
+
+const tex = (c) => { const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t; };
+const mat = (map) => new THREE.MeshStandardMaterial({ map, roughness: 0.93, metalness: 0, side: THREE.DoubleSide });
+const texK = (im, rx, ry) => { const [c] = lienzo(rx, ry, im); return tex(c); };
+
+// Una tira de superficie a lo largo de s: filas (y,z) y columnas x; uv con v = s / largo.
+function tira(s0, s1, x0, x1, filas, desplaza, signoZ = 1) {
+  const pos = [], uv = [], idx = [];
+  for (let i = 0; i <= filas; i++) {
+    const s = s0 + (s1 - s0) * i / filas; const [y, z] = enS(s);
+    for (const [j, x] of [[0, x0], [1, x1]]) { pos.push(x, y, signoZ * (z + desplaza)); uv.push(j, i / filas); }
+  }
+  for (let i = 0; i < filas; i++) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+const malla = (g, m) => { const o = new THREE.Mesh(g, m); o.castShadow = o.receiveShadow = true; escena.add(o); return o; };
+
+// frente y dorso (el lienzo del frente va de s = 0 a s = L)
+malla(tira(0, L, -W / 2, W / 2, 160, 0), mat(tex(cf)));
+malla(tira(0, L, W / 2, -W / 2, 160, 0, -1), mat(texK(kraftD, W, L)));
+// costados: el fuelle se mete hacia adentro donde la boca se aplasta (pliegue en V)
+function costado(lado) {
+  const pos = [], uv = [], idx = [], filas = 120;
+  for (let i = 0; i <= filas; i++) {
+    const y = Hc * i / filas, z = zf(y), entra = D / 2 - z;
+    const xb = lado * (W / 2), xm = lado * (W / 2 - entra * 0.92);
+    pos.push(xb, y, z, xm, y, 0, xb, y, -z); uv.push(0, y / Hc, 0.5, y / Hc, 1, y / Hc);
+  }
+  for (let i = 0; i < filas; i++) { const a = i * 3; idx.push(a, a + 3, a + 1, a + 1, a + 3, a + 4, a + 1, a + 4, a + 2, a + 2, a + 4, a + 5); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals();
+  malla(g, mat(texK(kraft, D, Hc)));
+}
+costado(1); costado(-1);
+
+// la solapa (sigue la curva del frente, 1 mm afuera) y el rollo de arriba, giran juntos
+const pivote = new THREE.Group(); const [py, pz] = enS(L); pivote.position.set(0, py, pz); escena.add(pivote);
+const gSol = tira(L - F, L, -W / 2, W / 2, 60, 1.0 + 0.3 * dobleces);
+gSol.translate(0, -py, -pz);
+const solapa = new THREE.Mesh(gSol, mat(tex(cs))); solapa.castShadow = solapa.receiveShadow = true; pivote.add(solapa);
+const rollo = new THREE.Mesh(new THREE.CylinderGeometry(2.2 + 0.9 * dobleces, 2.2 + 0.9 * dobleces, W, 24, 1), mat(texK(kraftD, 40, W)));
+rollo.rotation.z = Math.PI / 2; rollo.position.set(0, 0, -1.5); rollo.castShadow = true; pivote.add(rollo);
+pivote.rotation.x = -giro * Math.PI / 180;
+
+// piso con sombra suave
+const piso = new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000), new THREE.ShadowMaterial({ opacity: 0.22 }));
+piso.rotation.x = -Math.PI / 2; piso.receiveShadow = true; escena.add(piso);
+
+r.render(escena, camara);
+window.LISTO = true;
+</script></body></html>

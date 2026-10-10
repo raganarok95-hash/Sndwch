@@ -493,6 +493,14 @@ cuadro con Playwright → MP4 H.264). En el contenedor no hay ffmpeg: `pip insta
 <scratchpad> imageio-ffmpeg` trae un binario estático (`FFMPEG=<ruta>`). En GitHub sirve el de
 `apt` o el mismo paquete. Fuentes: inyectar el CSS local (`FUENTES_CSS`), ver «Fuentes de Google».
 
+## 3D en Chromium sin GPU (2026-10-10)
+
+WebGL funciona en el Chromium del contenedor con `--use-angle=swiftshader --enable-unsafe-swiftshader
+--ignore-gpu-blocklist` (three.js, sombras incluidas). `three` no está en el package.json: se copia
+o instala sin guardar (`npm install --no-save three@0.170.0`). Un HTML que carga módulos no anda
+desde `file://`: se sirve con `page.route()` (ver `scripts/piezas/simular-bolsa/render.mjs`).
+Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disco y se usa `goto`.
+
 ## Rutinas de Claude creadas desde una sesión (2026-10-07)
 - `create_trigger` (MCP Claude_Code_Remote) desde una sesión de Claude Code crea la rutina **sin
   el repo** (`sources: []`) y **sin conectores** (el parámetro `connectors` no está disponible

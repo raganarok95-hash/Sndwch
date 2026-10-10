@@ -35,6 +35,29 @@ antes el logo iba arriba y se iba con la solapa; corregido). El dorso queda limp
 
 Inversión inicial: 1,000 stickers S/150 + 1,000 bolsas ~S/260 + los dos sellos (por cotizar).
 
+## Simulada en 3D (2026-10-10): el sticker tapaba «SNDWCH»
+Dueño: «el sticker de la bolsa, simúlalo en bolsa, tal vez allí veas el error de diseño».
+
+![simulación 3D](simulacion-3d.jpg)
+
+**El error:** la maqueta plana suponía que la boca se dobla siempre igual (2.3 cm, dos veces). En
+3D, con lo que de verdad va adentro, se ve que no: con un pedido grande la bolsa se dobla poco y
+todo se lee; con **un 15CM y su bebida** la bolsa se dobla hasta la comida, el borde de la solapa baja
+unos 6 cm y el sticker (que siempre va en ese borde) queda **encima de «SNDWCH»**.
+
+**El arreglo, sin costo:** los dos sellos se cuentan desde la **base**, no desde arriba, y bajan
+4 cm. Arriba queda kraft libre para que el sticker caiga donde caiga la solapa.
+
+**Dónde sellar** (bolsa plana, frente hacia ti, sellos centrados a lo ancho):
+- **sello de abajo** (el pie, 15.6 × 11.1 cm): su borde de abajo a **3 cm de la base**;
+- **sello de arriba** (la cabecera, 15.6 × 3.2 cm): **1 cm encima** del de abajo.
+
+**Al cerrar:** dos dobleces hacia el frente, desde el borde de arriba. Si el pedido es muy chico,
+no se aplasta la bolsa contra la comida: se dobla igual que siempre y la comida va abajo.
+
+La simulación se rehace con `scripts/piezas/simular-bolsa/` (three.js en Chromium; el uso está
+en `render.mjs`): sirve para probar cualquier cambio de bolsa, sello o sticker antes de imprimir.
+
 ## La bolsa para que la suban, versión ahorro (2026-10-09)
 Dueño: «basándote en marketing, en que la bolsa sea viral» → «cada sello cuesta dinero» →
 «la idea para rasgar, genial; las frases, para el futuro mejor. Mejora más ahorrando precios».
@@ -132,7 +155,8 @@ Total estimado: **~S/0.65 por pedido** (contra S/3.90 de la bolsa impresa a 100 
 1. **En tanda, antes del servicio:** se sellan 50 bolsas y se les pega el sticker del QR atrás.
    Son unos minutos y se hace con las manos limpias, lejos de la plancha.
 2. **Al despachar:** pedido adentro, la boca se dobla **dos veces** hacia el frente y el sticker de
-   cierre cruza el doblez, al centro. Nada más.
+   cierre cruza el doblez, al centro, con el precorte justo en el borde de la solapa. Nada más.
+   Aunque el pedido sea chico, no se aplasta la bolsa contra la comida (ver «Simulada en 3D»).
 3. Tinta del sello: para papel y kraft, base agua, en **verde casi negro** (`#1E2B22`) o negro.
    Se deja secar un minuto antes de apilar.
 
