@@ -29,7 +29,7 @@ const C = {
 // El código del QR de la bolsa (migración 20261009025200: tipo «bebida», una vez por celular).
 const CODIGO = 'DIRECTO';
 const URL_BOLSA = `https://sndwch.app/?src=bolsa&codigo=${CODIGO}`;
-const URL_CALLE = 'https://sndwch.app/?src=calle';
+const URL_CALLE = `https://sndwch.app/?src=calle&codigo=${CODIGO}`;
 const qr = (url, color) => QRCode.toString(url, { type: 'svg', margin: 0, errorCorrectionLevel: 'Q', color: { dark: color, light: '#0000' } });
 const S = 3; // sangrado, mm
 
@@ -129,16 +129,22 @@ async function ladoQRAngosto(x0, y0, w, h, extra = 0) {
 
 // ── 3 · Calle 80×80: el mundo de SANDO (papel, tinta, el forro naranja vertical, el acanalado) ─
 {
+  // Dueño, 2026-10-10: «cámbialo un poco, más marketing». El orden de un aviso que se lee al paso:
+  // gancho (la frase), qué es (sándwiches a domicilio), por qué ahora (bebida gratis en el primer
+  // pedido: el código DIRECTO, una vez por celular, ya va puesto en el QR) y qué hacer (escanea).
   const w = 80, h = 80;
   pieza('3-calle', w, h, 'rect6', `<div style="position:absolute;inset:0;background:${C.papel};color:${C.tinta};overflow:hidden">
     <div style="position:absolute;right:0;top:0;bottom:0;width:${S + 5}mm;background:${C.naranja}"></div>
-    <div style="position:absolute;left:0;right:${S + 5}mm;bottom:0;height:${S + 7}mm;background:${rib(C.oliva)}"></div>
-    <div class="voz" style="position:absolute;left:${S + 6}mm;top:${S + 6}mm;font-size:9.6mm;line-height:.98">Si lees esto,<br>ya tienes<br>hambre.</div>
-    <div class="disp" style="position:absolute;left:${S + 6.3}mm;top:${S + 36}mm;font-size:3.4mm;letter-spacing:.06em;color:${C.naranja};white-space:nowrap">Sándwiches a domicilio</div>
-    <img src="${img('img/sando2_asoma.png')}" style="position:absolute;left:${S + 1}mm;bottom:${S + 7}mm;height:30mm">
-    <div class="mono" style="position:absolute;right:${S + 9}mm;bottom:${S + 40.4}mm;width:24mm;text-align:center;font-size:2.4mm;letter-spacing:.02em;white-space:nowrap">escanea y pide ↓</div>
-    <div style="position:absolute;right:${S + 9}mm;bottom:${S + 15}mm;width:24mm;height:24mm;padding:1.6mm;background:#fff;border-radius:2mm">${await qr(URL_CALLE, C.tinta)}</div>
-    <div style="position:absolute;right:${S + 9}mm;bottom:${S + 9.5}mm;width:24mm;text-align:center">${marca(C.tinta, '4.1mm')}</div>
+    <div style="position:absolute;left:0;right:${S + 5}mm;bottom:0;height:${S + 6}mm;background:${rib(C.oliva)}"></div>
+    <div class="voz" style="position:absolute;left:${S + 5.5}mm;top:${S + 5}mm;font-size:8.6mm;line-height:.98">Si lees esto,<br>ya tienes<br>hambre.</div>
+    <div class="disp" style="position:absolute;left:${S + 5.8}mm;top:${S + 31.6}mm;font-size:3.6mm;letter-spacing:.06em;color:${C.naranja};white-space:nowrap">Sándwiches a domicilio</div>
+    <img src="${img('img/sando2_asoma.png')}" style="position:absolute;left:${S + 0.5}mm;bottom:${S + 6}mm;height:34mm">
+    <div style="position:absolute;left:${S + 48.6}mm;top:${S + 5.5}mm;width:21mm;height:21mm;border-radius:50%;background:${C.naranja};color:${C.papel};transform:rotate(-10deg);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 0 0.7mm ${C.papel},0 0 0 1.2mm ${C.naranja}">
+      <div class="disp" style="font-size:4.8mm;line-height:.95;text-align:center">Bebida<br>gratis</div>
+      <div style="font:800 1.8mm/1.15 Archivo,sans-serif;margin-top:0.9mm;letter-spacing:.04em;text-transform:uppercase;text-align:center">en tu<br>1.er pedido</div></div>
+    <div class="mono" style="position:absolute;right:${S + 9}mm;top:${S + 31}mm;width:24mm;text-align:center;font-size:2.5mm;letter-spacing:.02em;white-space:nowrap">escanea y pide ↓</div>
+    <div style="position:absolute;right:${S + 9}mm;top:${S + 35}mm;width:24mm;height:24mm;padding:1.6mm;background:#fff;border-radius:2mm">${await qr(URL_CALLE, C.tinta)}</div>
+    <div style="position:absolute;right:${S + 9}mm;top:${S + 61.2}mm;width:24mm;text-align:center">${marca(C.tinta, '4.1mm')}</div>
   </div>`);
 }
 
@@ -181,8 +187,10 @@ const CUADRO = { lado: 70, franja: 22 };
 async function cierreQR(x0, y0, extra = 0) {
   const L = CUADRO.lado, F = CUADRO.franja;
   return `<div style="position:absolute;left:${x0 - extra}mm;top:${y0 - extra}mm;width:${L + 2 * extra}mm;height:${F + extra}mm;background:${C.tinta}"></div>
-  <div style="position:absolute;left:${x0}mm;top:${y0 + 3.4}mm;width:${L}mm;display:flex;justify-content:center;gap:1mm">${[C.oro, C.celeste].map((col) => `<i style="display:block;width:0.8mm;height:4.2mm;border-radius:0.2mm;background:${col};transform:skewX(-16deg)"></i>`).join('')}</div>
-  <div class="mono" style="position:absolute;left:${x0}mm;width:${L}mm;top:${y0 + 10}mm;text-align:center;font-size:2.3mm;letter-spacing:.08em;color:${C.papel}">SI LLEGA RASGADO, AVÍSANOS</div>
+  <div style="position:absolute;left:${x0 + 4.5}mm;top:${y0 + 2.2}mm;width:12.6mm;height:12.6mm;border-radius:50%;background:${C.papel};box-shadow:0 0 0 0.3mm ${C.oro}"></div>
+  <img src="${img('img/marca/avatar-1024-transparente.png')}" style="position:absolute;left:${x0 + 5}mm;top:${y0 + 2.7}mm;width:11.6mm;height:11.6mm">
+  <div style="position:absolute;left:${x0 + 20}mm;top:${y0 + 3.4}mm">${marca(C.papel, '6.4mm')}</div>
+  <div class="mono" style="position:absolute;left:${x0 + 20.3}mm;top:${y0 + 11}mm;font-size:2.15mm;letter-spacing:.06em;color:${C.papel};white-space:nowrap">SI LLEGA RASGADO, AVÍSANOS</div>
   <div class="mono" style="position:absolute;left:${x0}mm;width:${L}mm;top:${y0 + F - 6.2}mm;text-align:center;font-size:2.3mm;letter-spacing:.12em;color:${C.oro}">↓ RASGA AQUÍ PARA ABRIR ↓</div>
   <div style="position:absolute;left:${x0 + 2.5}mm;width:${L - 5}mm;top:${y0 + F}mm;border-top:0.4mm dashed ${C.papel};z-index:2"></div>
   <div style="position:absolute;left:${x0 - extra}mm;top:${y0 + F}mm;width:${L + 2 * extra}mm;height:${L - F + extra}mm;background:${C.celeste};overflow:hidden">${curvas(L + 2 * extra, L - F + extra, C.curva, 11, 1.4, 0.28)}</div>

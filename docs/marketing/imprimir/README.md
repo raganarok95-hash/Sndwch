@@ -20,6 +20,6 @@ medida final. PNG a 576 dpi con la medida guardada en el archivo; el PDF es el m
 - **Corte:** cuadrado con **esquinas redondeadas de 6 mm**.
 - **Material:** **vinilo blanco con laminado mate** (para exterior: sol y lluvia).
 - **Cantidad:** 250 para empezar.
-- QR verificado: abre `sndwch.app/?src=calle`.
+- QR verificado: abre `sndwch.app/?src=calle&codigo=DIRECTO` (la bebida gratis del sello naranja).
 
 Se regeneran con `node scripts/piezas/stickers.mjs` (los originales están en `docs/marketing/stickers/`).
