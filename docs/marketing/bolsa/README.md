@@ -18,10 +18,10 @@ Va centrado a media altura. Al ser un solo sello no hay nada que alinear: se sel
 
 ## Opción C, la más barata: un sticker de 7 cm de lista (2026-10-09)
 Con la lista de precios de stickers que trajo el dueño (7 cm a S/150 el millar), un **cuadrado de
-7 × 7 cm** (`../stickers/5-cierre-qr-70x70.pdf`) hace lo de la tira por la mitad o menos: va al
-frente, arriba al centro; la franja de 1.1 cm («rasga aquí») va sobre la solapa y el precorte cae
-justo en el borde del doblez; abajo, el logo y el QR con DIRECTO se quedan en la bolsa (2026-10-10:
-antes el logo iba arriba y se iba con la solapa; corregido). El dorso queda limpio (el sello de la oficina, para más adelante).
+7 × 7 cm** (`../stickers/5-cierre-qr-70x70.pdf`) hace lo de la tira por la mitad o menos: va en el
+**dorso**, arriba al centro (la boca se dobla hacia atrás); la franja de 1.1 cm («rasga aquí») va
+sobre la solapa y el precorte cae justo en el borde del doblez; abajo, el logo y el QR con DIRECTO
+se quedan en la bolsa. El frente lleva solo los dos sellos (2026-10-10, ver «Simulada en 3D»).
 
 ![opción C](maqueta-bolsa-ahorro.png)
 
@@ -35,25 +35,24 @@ antes el logo iba arriba y se iba con la solapa; corregido). El dorso queda limp
 
 Inversión inicial: 1,000 stickers S/150 + 1,000 bolsas ~S/260 + los dos sellos (por cotizar).
 
-## Simulada en 3D (2026-10-10): el sticker tapaba «SNDWCH»
-Dueño: «el sticker de la bolsa, simúlalo en bolsa, tal vez allí veas el error de diseño».
+## Simulada en 3D (2026-10-10): el logo adelante, el QR atrás
+Dueño: «el sticker de la bolsa, simúlalo en bolsa, tal vez allí veas el error de diseño» → «arréglalo,
+pásame las maquetas. Igual el QR era a la espalda y el sello con el logo adelante».
 
 ![simulación 3D](simulacion-3d.jpg)
 
-**El error:** la maqueta plana suponía que la boca se dobla siempre igual (2.3 cm, dos veces). En
-3D, con lo que de verdad va adentro, se ve que no: con un pedido grande la bolsa se dobla poco y
-todo se lee; con **un 15CM y su bebida** la bolsa se dobla hasta la comida, el borde de la solapa baja
-unos 6 cm y el sticker (que siempre va en ese borde) queda **encima de «SNDWCH»**.
+**El error:** la opción C ponía todo adelante, y la maqueta plana suponía que la boca se dobla
+siempre igual. En 3D, con lo que de verdad va adentro, no es así: con **un 15CM y su bebida** la
+bolsa se dobla hasta la comida, el borde de la solapa baja unos 6 cm y el sticker (que siempre va
+en ese borde) queda **encima de «SNDWCH»**. Además, el QR iba adelante y era atrás.
 
-**El arreglo, sin costo:** los dos sellos se cuentan desde la **base**, no desde arriba, y bajan
-4 cm. Arriba queda kraft libre para que el sticker caiga donde caiga la solapa.
+**El arreglo, sin costo (mismo sticker, mismos sellos):** la boca se dobla **hacia atrás** y el
+sticker de 7 cm cierra en el **dorso**, con el QR. Adelante solo van los dos sellos con el logo, y
+por más que se doble la boca nada los tapa: la cara que sale en las fotos queda limpia.
 
 **Dónde sellar** (bolsa plana, frente hacia ti, sellos centrados a lo ancho):
-- **sello de abajo** (el pie, 15.6 × 11.1 cm): su borde de abajo a **3 cm de la base**;
-- **sello de arriba** (la cabecera, 15.6 × 3.2 cm): **1 cm encima** del de abajo.
-
-**Al cerrar:** dos dobleces hacia el frente, desde el borde de arriba. Si el pedido es muy chico,
-no se aplasta la bolsa contra la comida: se dobla igual que siempre y la comida va abajo.
+- **sello de abajo** (el del logo, 15.6 × 11.1 cm): su borde de abajo a **7 cm de la base**;
+- **sello de arriba** («SNDWCH / Alguien pidió bien», 15.6 × 3.2 cm): **1 cm encima** del de abajo.
 
 La simulación se rehace con `scripts/piezas/simular-bolsa/` (three.js en Chromium; el uso está
 en `render.mjs`): sirve para probar cualquier cambio de bolsa, sello o sticker antes de imprimir.
@@ -152,11 +151,10 @@ nada compite: antes estaba todo apilado en la misma cara.
 Total estimado: **~S/0.65 por pedido** (contra S/3.90 de la bolsa impresa a 100 unidades).
 
 ## Cómo se arma (para que despachar no tarde más)
-1. **En tanda, antes del servicio:** se sellan 50 bolsas y se les pega el sticker del QR atrás.
+1. **En tanda, antes del servicio:** se sellan 50 bolsas por el frente (los dos sellos).
    Son unos minutos y se hace con las manos limpias, lejos de la plancha.
-2. **Al despachar:** pedido adentro, la boca se dobla **dos veces** hacia el frente y el sticker de
-   cierre cruza el doblez, al centro, con el precorte justo en el borde de la solapa. Nada más.
-   Aunque el pedido sea chico, no se aplasta la bolsa contra la comida (ver «Simulada en 3D»).
+2. **Al despachar:** pedido adentro, la boca se dobla **dos veces hacia atrás** y el sticker de 7 cm
+   la cierra en el dorso, al centro, con el precorte justo en el borde de la solapa. Nada más.
 3. Tinta del sello: para papel y kraft, base agua, en **verde casi negro** (`#1E2B22`) o negro.
    Se deja secar un minuto antes de apilar.
 

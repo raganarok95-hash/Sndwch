@@ -373,10 +373,11 @@ const DEFS = `<svg width="0" height="0" style="position:absolute"><defs>
   <filter id="tinta" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="3" result="r"/><feDisplacementMap in="SourceGraphic" in2="r" scale="2.2" xChannelSelector="R" yChannelSelector="G" result="d"/><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="11" result="m"/><feColorMatrix in="m" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.1 1.45" result="mm"/><feComposite in="d" in2="mm" operator="in"/></filter>
 </defs></svg>`;
 const AN = 210, AL = 345, SOLAPA = 26, FUELLE = 11; // mm de la cara, ya doblada
-// Los dos sellos del cartel, contados desde el PISO: el pie termina a 3 cm de la base. Así el
-// sticker de cierre no los tapa aunque la boca se doble más con un pedido chico (simulación 3D,
-// 2026-10-10: con el bloque centrado, un 15CM con su bebida dejaba el sticker sobre «SNDWCH»).
-const SELLOS_Y0 = AL - 30 - (CARTEL.alto + 5 + CARTEL.frase + 8 + CARTEL.pie);
+// Los dos sellos del cartel, contados desde el PISO (se sella con la bolsa plana): el pie termina a
+// 7 cm de la base y la cabecera va 1 cm encima. La boca se dobla hacia ATRÁS y el sticker de cierre
+// va en el dorso, así que por más que se doble con un pedido chico nada tapa el frente
+// (simulación 3D, 2026-10-10: con el sticker adelante, un 15CM con su bebida lo dejaba sobre «SNDWCH»).
+const SELLOS_Y0 = AL - 72 - (CARTEL.alto + 5 + CARTEL.frase + 8 + CARTEL.pie);
 function kitBolsa(kb) {
   const px = (mm) => (mm * kb).toFixed(1) + 'px';
   // Papel kraft: fibra con ruido calculado, nunca una foto.
@@ -494,25 +495,26 @@ const nota = (sellos, por) => `<div class="mono" style="font-size:13px;color:${C
     </div></div>`);
 }
 {
-  // Opción C: el cuadrado de 7 cm al frente, arriba al centro, con el precorte en el borde del
-  // doblez. El dorso queda limpio (el sello de la oficina, para más adelante).
+  // Opción C: el frente lleva solo los dos sellos; la boca se dobla hacia atrás y el cuadrado de
+  // 7 cm va en el dorso, arriba al centro, con el precorte en el borde de la solapa (dueño,
+  // 2026-10-10: «el QR era a la espalda y el sello con el logo adelante»).
   const k = kitBolsa(2.3), px = k.px;
   const X = (AN - CARTEL.ancho) / 2;
   const y0 = SELLOS_Y0;
   const cuadro = k.pegado((AN - CUADRO.lado) / 2, SOLAPA - CUADRO.franja, CUADRO.lado, CUADRO.lado, await cierreQR(0, 0));
-  const frente = cuadro + k.sellado(X, y0, `<div style="width:${CARTEL.ancho}mm;display:flex;flex-direction:column;align-items:center;gap:5mm">${nombreCartel(T)}${fraseCartel('Alguien pidió bien.', T)}</div>`) +
+  const frente = k.sellado(X, y0, `<div style="width:${CARTEL.ancho}mm;display:flex;flex-direction:column;align-items:center;gap:5mm">${nombreCartel(T)}${fraseCartel('Alguien pidió bien.', T)}</div>`) +
     k.sellado(X, y0 + CARTEL.alto + 5 + CARTEL.frase + 8, pie(T));
   const suelto = `<div style="display:flex;flex-direction:column;gap:12px;flex:none;width:${px(CUADRO.lado + 30)}">
     <div style="position:relative;width:${px(CUADRO.lado)};height:${px(CUADRO.lado)}">${recorte(piezas.find((x) => x.archivo === '5-cierre-qr-70x70'), 2.3)}
       <div style="position:absolute;left:-6px;width:calc(${px(CUADRO.lado)} + 12px);top:${px(CUADRO.franja)};border-top:2px dashed #B4441E"></div></div>
     <div class="disp" style="font-size:22px;color:${C.tinta}">El sticker</div>
-    <div style="font:400 14px/1.4 Archivo,sans-serif;color:#4A4A40">7 × 7 cm, medida de lista: S/150 el millar (S/0.15 cada uno). La línea roja es el precorte, a 1.1 cm del borde de arriba: va justo en el borde del doblez. Arriba de ella solo «rasga aquí»; abajo, lo que se queda en la bolsa.</div></div>`;
+    <div style="font:400 14px/1.4 Archivo,sans-serif;color:#4A4A40">7 × 7 cm, medida de lista: S/150 el millar (S/0.15 cada uno). Va en el dorso. La línea roja es el precorte, a 1.1 cm del borde de arriba: va justo en el borde de la solapa. Arriba de ella solo «rasga aquí»; abajo, lo que se queda en la bolsa.</div></div>`;
   await foto('docs/marketing/bolsa/maqueta-bolsa-ahorro.png', 1500, 1100, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:54px 60px">
-    <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:22px">OPCIÓN C · LA MÁS BARATA · 2 SELLOS Y 1 STICKER DE 7 CM</div>
+    <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:22px">OPCIÓN C · LA MÁS BARATA · EL LOGO ADELANTE, EL QR ATRÁS</div>
     <div style="display:flex;gap:56px;align-items:flex-start">
       ${suelto}
-      ${k.cara('Frente', nota('2 sellos + el sticker de 7 cm', 'El sticker cierra (la franja va sobre el doblez y se rasga por el precorte) y lleva el QR con DIRECTO. Es lo primero que se ve.'), frente, true, false)}
-      ${k.cara('Dorso', nota('limpio', 'Sin nada por ahora. Más adelante, el sello «¿Y la oficina?».'), '', false)}
+      ${k.cara('Frente', nota('los 2 sellos', 'El logo y el nombre, nada más: la cara que sale en las fotos. Se sella con la bolsa plana: el sello de abajo a 7 cm de la base, el de arriba 1 cm encima.'), frente, false)}
+      ${k.cara('Dorso', nota('el sticker de 7 cm', 'La boca se dobla dos veces hacia atrás y el sticker la cierra: la franja va sobre la solapa y se rasga por el precorte; el QR con DIRECTO se queda en la bolsa.'), cuadro, true, false)}
     </div></div>`);
 }
 await b.close();
