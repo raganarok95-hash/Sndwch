@@ -11,7 +11,7 @@ extra». **Es una propuesta**: nada se imprime sin tu OK.
 |---|---|---|---|---|
 | **1 · Cierre** `1-cierre.pdf` | **Ø 50 mm**, troquel circular | papel adhesivo couché, full color | cruzando el doblez de la bolsa: el que la abre lo rompe | — |
 | **2 · QR de la bolsa** `2-qr-bolsa.pdf` | **70 × 100 mm**, esquinas de 4 mm | papel adhesivo couché **mate** (el brillo no deja leer el QR) | en el **dorso** de la bolsa, centrado (ver `docs/marketing/bolsa/`) | `sndwch.app/?src=bolsa&codigo=DIRECTO` |
-| **3 · Calle** `3-calle.pdf` | **80 × 80 mm**, esquinas de 6 mm | **vinilo** blanco + laminado mate UV (aguanta sol y lluvia) | donde te dejen pegarlo (abajo) | `sndwch.app/?src=calle` |
+| **3 · Calle** `3-calle.pdf` | **80 × 80 mm**, esquinas de 6 mm | **vinilo** blanco + laminado mate UV (aguanta sol y lluvia) | donde te dejen pegarlo (abajo) | `sndwch.app/?src=calle&codigo=DIRECTO` |
 
 | **4 · Tira de cierre con QR** `4-tira-50x190.pdf` | **50 × 190 mm**, esquinas de 4 mm, con **precorte** | papel adhesivo couché **mate** | cruza la boca: 7.2 cm al frente (sello redondo Ø40), 0.8 cm arriba, 11 cm al dorso (QR) | `sndwch.app/?src=bolsa&codigo=DIRECTO` |
 
@@ -63,9 +63,11 @@ la medida de la tabla. Los dos QR se verificaron con un lector: abren su enlace.
   pidió por Rappi o PedidosYa: «La próxima vez, pide directo y la bebida va gratis», con el
   código DIRECTO ya puesto en el QR (se llamó BOLSA y WICHO; dueño: «el código que sea algo más genérico» → «DIRECTO») (vale una vez por celular, la bebida más barata del carrito).
 - **Calle.** Es el mundo de SANDO: papel crema, tinta, el forro naranja vertical y el acanalado
-  de sus puños. La frase «Si lees esto, ya tienes hambre.» engancha; debajo dice qué es
-  («Sándwiches a domicilio») y el QR dice qué hacer («escanea y pide»). Sin firma de SANDO: a quien
-  no lo conoce no le dice nada (dueño, 2026-10-10). El QR (`?src=calle`) cuenta los pedidos.
+  de sus puños. Ordenado como un aviso que se lee al paso (dueño, 2026-10-10: «más marketing»):
+  el gancho («Si lees esto, ya tienes hambre.»), qué es («Sándwiches a domicilio»), por qué ahora
+  (un sello naranja: «bebida gratis en tu 1.er pedido», el código DIRECTO ya va puesto en el QR) y
+  qué hacer («escanea y pide»). Sin firma de SANDO: a quien no lo conoce no le dice nada. El QR
+  (`?src=calle`) cuenta los pedidos que trae la calle.
 
 ## Dónde pegar el de la calle
 Pegarlo en postes, paredes o mobiliario público sin permiso suele estar prohibido por las
