@@ -30,7 +30,7 @@ la abrieron. **Pídele a la imprenta el micro-perforado en esa línea** (en el a
 **menos de la mitad**. Una sola versión. Las frases que rotan quedan para más adelante
 (`FRASES_TIRA` en el script; dueño: «las frases, para el futuro mejor»).
 
-| **5 · Cierre con QR, cuadrado** `5-cierre-qr-70x70.pdf` (opción C, la más barata) | **7 × 7 cm**, esquinas de 4 mm, con **precorte** | papel adhesivo full color (medida de lista) | al frente, arriba al centro: la franja de 2.2 cm va sobre el doblez y se rasga por el precorte; abajo el QR | `sndwch.app/?src=bolsa&codigo=DIRECTO` |
+| **5 · Cierre con QR, cuadrado** `5-cierre-qr-70x70.pdf` (opción C, la más barata) | **7 × 7 cm**, esquinas de 4 mm, con **precorte** | papel adhesivo full color (medida de lista) | al frente, arriba al centro: la franja de 1.1 cm («rasga aquí») va sobre la solapa y el precorte cae justo en el borde del doblez; abajo, el logo y el QR se quedan en la bolsa | `sndwch.app/?src=bolsa&codigo=DIRECTO` |
 
 ### Precios de referencia (lista que trajo el dueño, 2026-10-09)
 Stickers troquelados, impresión full color, papel adhesivo (Host4Plus / Supersiro SAC):

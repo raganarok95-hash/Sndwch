@@ -10,8 +10,8 @@ medida final. PNG a 576 dpi con la medida guardada en el archivo; el PDF es el m
 - **Medida final:** 7 × 7 cm (la imagen mide 7.6 × 7.6 cm con el sangrado).
 - **Corte:** cuadrado con **esquinas redondeadas de 4 mm**.
 - **Material:** papel adhesivo, impresión full color, acabado **mate** (el brillo dificulta leer el QR).
-- **Precorte:** micro-perforado **recto, horizontal, de borde a borde, a 2.2 cm del borde de arriba**
-  (la franja verde oscura es la de arriba; la línea punteada del arte marca el lugar).
+- **Precorte:** micro-perforado **recto, horizontal, de borde a borde, a 1.1 cm del borde de arriba**
+  (la línea punteada del arte marca el lugar: arriba solo «rasga aquí», abajo el logo y el QR).
 - **Cantidad:** 1,000 (lista de referencia: S/150).
 - QR verificado: abre `sndwch.app/?src=bolsa&codigo=DIRECTO`.
 

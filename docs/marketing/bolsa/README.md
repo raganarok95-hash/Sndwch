@@ -19,8 +19,9 @@ Va centrado a media altura. Al ser un solo sello no hay nada que alinear: se sel
 ## Opción C, la más barata: un sticker de 7 cm de lista (2026-10-09)
 Con la lista de precios de stickers que trajo el dueño (7 cm a S/150 el millar), un **cuadrado de
 7 × 7 cm** (`../stickers/5-cierre-qr-70x70.pdf`) hace lo de la tira por la mitad o menos: va al
-frente, arriba al centro; la franja de 2.2 cm va sobre el doblez y se rasga por el precorte; abajo
-lleva el QR con DIRECTO. El dorso queda limpio (el sello de la oficina, para más adelante).
+frente, arriba al centro; la franja de 1.1 cm («rasga aquí») va sobre la solapa y el precorte cae
+justo en el borde del doblez; abajo, el logo y el QR con DIRECTO se quedan en la bolsa (2026-10-10:
+antes el logo iba arriba y se iba con la solapa; corregido). El dorso queda limpio (el sello de la oficina, para más adelante).
 
 ![opción C](maqueta-bolsa-ahorro.png)
 
