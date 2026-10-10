@@ -373,6 +373,10 @@ const DEFS = `<svg width="0" height="0" style="position:absolute"><defs>
   <filter id="tinta" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="2" seed="3" result="r"/><feDisplacementMap in="SourceGraphic" in2="r" scale="2.2" xChannelSelector="R" yChannelSelector="G" result="d"/><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="11" result="m"/><feColorMatrix in="m" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.1 1.45" result="mm"/><feComposite in="d" in2="mm" operator="in"/></filter>
 </defs></svg>`;
 const AN = 210, AL = 345, SOLAPA = 26, FUELLE = 11; // mm de la cara, ya doblada
+// Los dos sellos del cartel, contados desde el PISO: el pie termina a 3 cm de la base. Así el
+// sticker de cierre no los tapa aunque la boca se doble más con un pedido chico (simulación 3D,
+// 2026-10-10: con el bloque centrado, un 15CM con su bebida dejaba el sticker sobre «SNDWCH»).
+const SELLOS_Y0 = AL - 30 - (CARTEL.alto + 5 + CARTEL.frase + 8 + CARTEL.pie);
 function kitBolsa(kb) {
   const px = (mm) => (mm * kb).toFixed(1) + 'px';
   // Papel kraft: fibra con ruido calculado, nunca una foto.
@@ -466,8 +470,7 @@ const nota = (sellos, por) => `<div class="mono" style="font-size:13px;color:${C
   const frenteTira = k.pegado((AN - TIRA.ancho) / 2, 0, TIRA.ancho, TIRA.frente, tramoFrente(0, 0));
   const dorsoTira = k.pegado((AN - TIRA.ancho) / 2, 0, TIRA.ancho, TIRA.dorso, await ladoQRAngosto(0, 0, TIRA.ancho, TIRA.dorso));
   const X = (AN - CARTEL.ancho) / 2;
-  const bloque = CARTEL.alto + 5 + CARTEL.frase + 8 + CARTEL.pie;
-  const y0 = TIRA.frente + (AL - 16 - TIRA.frente - bloque) / 2;
+  const y0 = SELLOS_Y0;
   const frente = frenteTira + k.sellado(X, y0, `<div style="width:${CARTEL.ancho}mm;display:flex;flex-direction:column;align-items:center;gap:5mm">${nombreCartel(T)}${fraseCartel('Alguien pidió bien.', T)}</div>`) +
     k.sellado(X, y0 + CARTEL.alto + 5 + CARTEL.frase + 8, pie(T));
   const dorso = dorsoTira;
@@ -495,7 +498,7 @@ const nota = (sellos, por) => `<div class="mono" style="font-size:13px;color:${C
   // doblez. El dorso queda limpio (el sello de la oficina, para más adelante).
   const k = kitBolsa(2.3), px = k.px;
   const X = (AN - CARTEL.ancho) / 2;
-  const y0 = 4 + CUADRO.lado + (AL - 16 - 4 - CUADRO.lado - (CARTEL.alto + 5 + CARTEL.frase + 8 + CARTEL.pie)) / 2;
+  const y0 = SELLOS_Y0;
   const cuadro = k.pegado((AN - CUADRO.lado) / 2, SOLAPA - CUADRO.franja, CUADRO.lado, CUADRO.lado, await cierreQR(0, 0));
   const frente = cuadro + k.sellado(X, y0, `<div style="width:${CARTEL.ancho}mm;display:flex;flex-direction:column;align-items:center;gap:5mm">${nombreCartel(T)}${fraseCartel('Alguien pidió bien.', T)}</div>`) +
     k.sellado(X, y0 + CARTEL.alto + 5 + CARTEL.frase + 8, pie(T));
