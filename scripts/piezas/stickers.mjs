@@ -32,6 +32,8 @@ const URL_BOLSA = `https://sndwch.app/?src=bolsa&codigo=${CODIGO}`;
 const URL_CALLE = `https://sndwch.app/?src=calle&codigo=${CODIGO}`;
 const qr = (url, color) => QRCode.toString(url, { type: 'svg', margin: 0, errorCorrectionLevel: 'Q', color: { dark: color, light: '#0000' } });
 const S = 3; // sangrado, mm
+// El PNG del logo trae una mota suelta abajo a la izquierda (fuera del dibujo): se recorta ahí.
+const SIN_MOTA = 'clip-path:polygon(0 0,100% 0,100% 100%,23% 100%,23% 84%,0 84%)';
 
 // El wordmark con el «//» de la marca: dos barras iguales, dorada y celeste (CLAUDE.md, regla 10).
 const marca = (col, size) => `<span style="font:800 ${size}/1 Archivo,sans-serif;color:${col};display:inline-flex;align-items:center;letter-spacing:.01em">SND<span style="display:inline-flex;gap:.16em;margin:0 .1em"><i style="width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block;background:${C.oro}"></i><i style="width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block;background:${C.celeste}"></i></span>WCH</span>`;
@@ -91,7 +93,7 @@ function selloRedondo(cx, cy, id, abajo = 'SI LLEGA ABIERTO, AVÍSANOS', d = 50)
     </g>
     ${barras(-21.3, 0)}${barras(21.3, 0)}
   </svg>
-  <img src="${img('img/marca/avatar-1024-transparente.png')}" style="position:absolute;left:${cx - 15.5 * d / 50}mm;top:${cy - 15.5 * d / 50}mm;width:${31 * d / 50}mm;height:${31 * d / 50}mm">`;
+  <img src="${img('img/marca/avatar-1024-transparente.png')}" style="${SIN_MOTA};position:absolute;left:${cx - 15.5 * d / 50}mm;top:${cy - 15.5 * d / 50}mm;width:${31 * d / 50}mm;height:${31 * d / 50}mm">`;
 }
 pieza('1-cierre', 50, 50, 'circulo', `<div style="position:absolute;inset:0;background:${C.tinta}"></div>${selloRedondo(S + 25, S + 25, 'c1')}`);
 
@@ -127,7 +129,9 @@ async function ladoQRAngosto(x0, y0, w, h, extra = 0) {
     </div>`;
 }
 
-// ── 3 · Calle 80×80: el mundo de SANDO (papel, tinta, el forro naranja vertical, el acanalado) ─
+// ── 3 · Calle 80×80: papel, tinta, el forro naranja vertical, el acanalado y el LOGO ────────────
+// Dueño, 2026-10-10: «cambia a sando por el logo». En la calle nadie conoce a SANDO todavía; el logo
+// es lo que va a volver a ver en la bolsa y en Instagram.
 {
   // Dueño, 2026-10-10: «cámbialo un poco, más marketing». El orden de un aviso que se lee al paso:
   // gancho (la frase), qué es (sándwiches a domicilio), por qué ahora (bebida gratis en el primer
@@ -138,7 +142,7 @@ async function ladoQRAngosto(x0, y0, w, h, extra = 0) {
     <div style="position:absolute;left:0;right:${S + 5}mm;bottom:0;height:${S + 6}mm;background:${rib(C.oliva)}"></div>
     <div class="voz" style="position:absolute;left:${S + 5.5}mm;top:${S + 5}mm;font-size:8.6mm;line-height:.98">Si lees esto,<br>ya tienes<br>hambre.</div>
     <div class="disp" style="position:absolute;left:${S + 5.8}mm;top:${S + 31.6}mm;font-size:3.6mm;letter-spacing:.06em;color:${C.naranja};white-space:nowrap">Sándwiches a domicilio</div>
-    <img src="${img('img/sando2_asoma.png')}" style="position:absolute;left:${S + 0.5}mm;bottom:${S + 6}mm;height:34mm">
+    <img src="${img('img/marca/avatar-1024-transparente.png')}" style="${SIN_MOTA};position:absolute;left:${S + 1.3}mm;top:${S + 34.6}mm;width:42mm;height:42mm">
     <div style="position:absolute;left:${S + 48.6}mm;top:${S + 5.5}mm;width:21mm;height:21mm;border-radius:50%;background:${C.naranja};color:${C.papel};transform:rotate(-10deg);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0 0 0.7mm ${C.papel},0 0 0 1.2mm ${C.naranja}">
       <div class="disp" style="font-size:4.8mm;line-height:.95;text-align:center">Bebida<br>gratis</div>
       <div style="font:800 1.8mm/1.15 Archivo,sans-serif;margin-top:0.9mm;letter-spacing:.04em;text-transform:uppercase;text-align:center">en tu<br>1.er pedido</div></div>
@@ -193,7 +197,7 @@ async function cierreQR(x0, y0, extra = 0) {
   <div class="mono" style="position:absolute;left:${x0}mm;width:${L}mm;top:${y0 + F - 6.3}mm;text-align:center;font-size:2.4mm;letter-spacing:.12em;color:${C.oro}">↓ RASGA AQUÍ PARA ABRIR ↓</div>
   <div style="position:absolute;left:${x0 - extra}mm;width:${L + 2 * extra}mm;top:${y0 + F}mm;border-top:0.4mm dashed ${C.papel};z-index:2"></div>
   <div style="position:absolute;left:${x0 + 4.5}mm;top:${y0 + F + 1.6}mm;width:11.8mm;height:11.8mm;border-radius:50%;background:${C.papel};box-shadow:0 0 0 0.3mm ${C.oro}"></div>
-  <img src="${img('img/marca/avatar-1024-transparente.png')}" style="position:absolute;left:${x0 + 4.95}mm;top:${y0 + F + 2.05}mm;width:10.9mm;height:10.9mm">
+  <img src="${img('img/marca/avatar-1024-transparente.png')}" style="${SIN_MOTA};position:absolute;left:${x0 + 4.95}mm;top:${y0 + F + 2.05}mm;width:10.9mm;height:10.9mm">
   <div style="position:absolute;left:${x0 + 19.5}mm;top:${y0 + F + 2.4}mm">${marca(C.papel, '6.2mm')}</div>
   <div class="mono" style="position:absolute;left:${x0 + 19.8}mm;top:${y0 + F + 9.8}mm;font-size:2.1mm;letter-spacing:.06em;color:${C.papel};white-space:nowrap">SI LLEGA RASGADO, AVÍSANOS</div>
   <div style="position:absolute;left:${x0 - extra}mm;top:${y0 + Q}mm;width:${L + 2 * extra}mm;height:${L - Q + extra}mm;background:${C.celeste};overflow:hidden">${curvas(L + 2 * extra, L - Q + extra, C.curva, 10, 1.4, 0.28)}</div>
