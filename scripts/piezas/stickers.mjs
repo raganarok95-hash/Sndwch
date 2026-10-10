@@ -183,25 +183,28 @@ piezas.push({ archivo: ARCHIVO_TIRA, w: TIRA.ancho, h: LARGO_TIRA, forma: 'rect4
 //        cuadrado de MEDIDA DE LISTA hace lo de la tira por menos de la mitad: la franja de arriba
 //        va sobre el doblez y se rasga por el precorte; abajo, el QR con DIRECTO. Va al frente,
 //        arriba al centro: es lo primero que se ve.
-const CUADRO = { lado: 70, franja: 22 };
+// Como en la tira (dueño, 2026-10-10: «está al revés, mira lo que hiciste antes y las medidas»):
+// ARRIBA del precorte, sobre la solapa, va solo «rasga aquí» (esa franja se va con la solapa al
+// abrir). DEBAJO, en el cuerpo de la bolsa, va lo que se queda: el logo con SND//WCH y el QR.
+const CUADRO = { lado: 70, franja: 11, marca: 15 };
 async function cierreQR(x0, y0, extra = 0) {
-  const L = CUADRO.lado, F = CUADRO.franja;
-  return `<div style="position:absolute;left:${x0 - extra}mm;top:${y0 - extra}mm;width:${L + 2 * extra}mm;height:${F + extra}mm;background:${C.tinta}"></div>
-  <div style="position:absolute;left:${x0 + 4.5}mm;top:${y0 + 2.2}mm;width:12.6mm;height:12.6mm;border-radius:50%;background:${C.papel};box-shadow:0 0 0 0.3mm ${C.oro}"></div>
-  <img src="${img('img/marca/avatar-1024-transparente.png')}" style="position:absolute;left:${x0 + 5}mm;top:${y0 + 2.7}mm;width:11.6mm;height:11.6mm">
-  <div style="position:absolute;left:${x0 + 20}mm;top:${y0 + 3.4}mm">${marca(C.papel, '6.4mm')}</div>
-  <div class="mono" style="position:absolute;left:${x0 + 20.3}mm;top:${y0 + 11}mm;font-size:2.15mm;letter-spacing:.06em;color:${C.papel};white-space:nowrap">SI LLEGA RASGADO, AVÍSANOS</div>
-  <div class="mono" style="position:absolute;left:${x0}mm;width:${L}mm;top:${y0 + F - 6.2}mm;text-align:center;font-size:2.3mm;letter-spacing:.12em;color:${C.oro}">↓ RASGA AQUÍ PARA ABRIR ↓</div>
-  <div style="position:absolute;left:${x0 + 2.5}mm;width:${L - 5}mm;top:${y0 + F}mm;border-top:0.4mm dashed ${C.papel};z-index:2"></div>
-  <div style="position:absolute;left:${x0 - extra}mm;top:${y0 + F}mm;width:${L + 2 * extra}mm;height:${L - F + extra}mm;background:${C.celeste};overflow:hidden">${curvas(L + 2 * extra, L - F + extra, C.curva, 11, 1.4, 0.28)}</div>
-  <div style="position:absolute;left:${x0 + 4}mm;top:${y0 + F + 4}mm;width:30mm;padding:1.8mm;background:#fff;border-radius:2.4mm;box-shadow:0 0 0 0.45mm ${C.navy}">${await qr(URL_BOLSA, C.navy)}</div>
-  <div style="position:absolute;left:${x0 + 37.5}mm;top:${y0 + F + 3}mm;color:${C.navy}">
-    <div style="font:800 2.9mm/1 Archivo,sans-serif">La próxima vez,</div>
-    <div class="disp" style="font-size:9.2mm;margin-top:1mm">Pide<br>directo</div>
-    <div style="font:800 3mm/1 Archivo,sans-serif;margin-top:1.4mm;white-space:nowrap">y la bebida va <span style="position:relative;display:inline-block;padding:0 0.8mm;margin-left:0.4mm">gratis<span style="position:absolute;left:-1.1mm;right:-1.2mm;top:-1.6mm;bottom:-1.7mm">${circuloAMano(9.6, 6.4, C.navy)}</span></span></div>
+  const L = CUADRO.lado, F = CUADRO.franja, M = CUADRO.marca, Q = F + M; // Q: donde empieza el celeste
+  return `<div style="position:absolute;left:${x0 - extra}mm;top:${y0 - extra}mm;width:${L + 2 * extra}mm;height:${Q + extra}mm;background:${C.tinta}"></div>
+  <div class="mono" style="position:absolute;left:${x0}mm;width:${L}mm;top:${y0 + F - 6.3}mm;text-align:center;font-size:2.4mm;letter-spacing:.12em;color:${C.oro}">↓ RASGA AQUÍ PARA ABRIR ↓</div>
+  <div style="position:absolute;left:${x0 - extra}mm;width:${L + 2 * extra}mm;top:${y0 + F}mm;border-top:0.4mm dashed ${C.papel};z-index:2"></div>
+  <div style="position:absolute;left:${x0 + 4.5}mm;top:${y0 + F + 1.6}mm;width:11.8mm;height:11.8mm;border-radius:50%;background:${C.papel};box-shadow:0 0 0 0.3mm ${C.oro}"></div>
+  <img src="${img('img/marca/avatar-1024-transparente.png')}" style="position:absolute;left:${x0 + 4.95}mm;top:${y0 + F + 2.05}mm;width:10.9mm;height:10.9mm">
+  <div style="position:absolute;left:${x0 + 19.5}mm;top:${y0 + F + 2.4}mm">${marca(C.papel, '6.2mm')}</div>
+  <div class="mono" style="position:absolute;left:${x0 + 19.8}mm;top:${y0 + F + 9.8}mm;font-size:2.1mm;letter-spacing:.06em;color:${C.papel};white-space:nowrap">SI LLEGA RASGADO, AVÍSANOS</div>
+  <div style="position:absolute;left:${x0 - extra}mm;top:${y0 + Q}mm;width:${L + 2 * extra}mm;height:${L - Q + extra}mm;background:${C.celeste};overflow:hidden">${curvas(L + 2 * extra, L - Q + extra, C.curva, 10, 1.4, 0.28)}</div>
+  <div style="position:absolute;left:${x0 + 4}mm;top:${y0 + Q + 3}mm;width:28mm;padding:1.7mm;background:#fff;border-radius:2.3mm;box-shadow:0 0 0 0.45mm ${C.navy}">${await qr(URL_BOLSA, C.navy)}</div>
+  <div style="position:absolute;left:${x0 + 36.5}mm;top:${y0 + Q + 2.6}mm;color:${C.navy}">
+    <div style="font:800 2.8mm/1 Archivo,sans-serif">La próxima vez,</div>
+    <div class="disp" style="font-size:8.6mm;margin-top:0.9mm">Pide<br>directo</div>
+    <div style="font:800 2.9mm/1 Archivo,sans-serif;margin-top:1.3mm;white-space:nowrap">y la bebida va <span style="position:relative;display:inline-block;padding:0 0.8mm;margin-left:0.4mm">gratis<span style="position:absolute;left:-1.1mm;right:-1.2mm;top:-1.6mm;bottom:-1.7mm">${circuloAMano(9.4, 6.2, C.navy)}</span></span></div>
   </div>
-  <div class="mono" style="position:absolute;left:${x0 + 4}mm;top:${y0 + F + 38.4}mm;font-size:2.7mm;letter-spacing:.05em;color:${C.navy}">código <b style="background:${C.navy};color:${C.celeste};padding:0.25mm 1mm;border-radius:0.8mm">${CODIGO}</b></div>
-  <div style="position:absolute;left:${x0 - extra}mm;top:${y0 + F}mm;width:${L + 2 * extra}mm;height:${L - F + extra}mm;overflow:hidden;pointer-events:none"><img src="${img('img/wicho_rie.png')}" style="position:absolute;right:${extra - 3.5}mm;bottom:${-2.5}mm;height:21mm"></div>`;
+  <div class="mono" style="position:absolute;left:${x0 + 4}mm;top:${y0 + Q + 36.6}mm;font-size:2.6mm;letter-spacing:.05em;color:${C.navy}">código <b style="background:${C.navy};color:${C.celeste};padding:0.25mm 1mm;border-radius:0.8mm">${CODIGO}</b></div>
+  <div style="position:absolute;left:${x0 - extra}mm;top:${y0 + Q}mm;width:${L + 2 * extra}mm;height:${L - Q + extra}mm;overflow:hidden;pointer-events:none"><img src="${img('img/wicho_rie.png')}" style="position:absolute;right:${extra - 3.5}mm;bottom:${-2.5}mm;height:19.5mm"></div>`;
 }
 piezas.push({ archivo: '5-cierre-qr-70x70', w: CUADRO.lado, h: CUADRO.lado, forma: 'rect4', cuerpo: await cierreQR(S, S, S) });
 
@@ -496,7 +499,7 @@ const nota = (sellos, por) => `<div class="mono" style="font-size:13px;color:${C
     <div style="position:relative;width:${px(CUADRO.lado)};height:${px(CUADRO.lado)}">${recorte(piezas.find((x) => x.archivo === '5-cierre-qr-70x70'), 2.3)}
       <div style="position:absolute;left:-6px;width:calc(${px(CUADRO.lado)} + 12px);top:${px(CUADRO.franja)};border-top:2px dashed #B4441E"></div></div>
     <div class="disp" style="font-size:22px;color:${C.tinta}">El sticker</div>
-    <div style="font:400 14px/1.4 Archivo,sans-serif;color:#4A4A40">7 × 7 cm, medida de lista: S/150 el millar (S/0.15 cada uno). La línea roja es el precorte: va justo en el borde del doblez.</div></div>`;
+    <div style="font:400 14px/1.4 Archivo,sans-serif;color:#4A4A40">7 × 7 cm, medida de lista: S/150 el millar (S/0.15 cada uno). La línea roja es el precorte, a 1.1 cm del borde de arriba: va justo en el borde del doblez. Arriba de ella solo «rasga aquí»; abajo, lo que se queda en la bolsa.</div></div>`;
   await foto('docs/marketing/bolsa/maqueta-bolsa-ahorro.png', 1500, 1100, `${DEFS}<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 35% 25%,#F3ECDF,#DCD0BC);padding:54px 60px">
     <div class="mono" style="font-size:15px;letter-spacing:.08em;color:${C.oliva};margin-bottom:22px">OPCIÓN C · LA MÁS BARATA · 2 SELLOS Y 1 STICKER DE 7 CM</div>
     <div style="display:flex;gap:56px;align-items:flex-start">
