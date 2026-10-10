@@ -47,29 +47,36 @@ function lienzo(wmm, hmm, fondo) {
 }
 const sombra = (g, f) => { g.save(); g.shadowColor = 'rgba(40,22,8,.35)'; g.shadowBlur = 1.2 * PX; g.shadowOffsetY = 0.4 * PX; f(); g.restore(); };
 
-// ── El frente, en coordenadas de la superficie: y_lienzo = (L − s) ───────────────────────
+// ── Las caras, en coordenadas de la superficie: y_lienzo = (L − s) ─────────────────────────
+// `cierre`: hacia dónde se dobla la boca. «atras» (2026-10-10, dueño: «el QR era a la espalda y
+// el sello con el logo adelante»): la solapa y el sticker van en el dorso y el frente queda solo
+// con los sellos. «frente»: la opción C como estaba (todo adelante).
+const atras = (q.get('cierre') || 'atras') === 'atras';
 // Los sellos se ponen con la bolsa plana: su lugar se mide desde el piso y no cambia por más que
-// se doble la boca. `pie`: a cuántos mm del piso termina la tinta del sello de abajo (2026-10-10:
-// 30; antes, 72, y con un pedido chico el sticker tapaba «SNDWCH»). La cabecera va 1 cm encima.
+// se doble la boca. `pie`: a cuántos mm del piso termina la tinta del sello de abajo. La cabecera
+// va 1 cm encima.
 const [cf, gf] = lienzo(W, L, kraft);
 gf.globalCompositeOperation = 'multiply';
 const sello = (im, wmm, hmm, xmm, sArriba) => gf.drawImage(im, xmm * PX, (L - sArriba) * PX, wmm * PX, hmm * PX);
-const pieTop = +(q.get('pie') || 30) - 2.9 + 111;   // el PNG del pie deja 2.9 mm bajo la tinta
+const pieTop = +(q.get('pie') || 72) - 2.9 + 111;   // el PNG del pie deja 2.9 mm bajo la tinta
 sello(cab, 156, 32, 27, pieTop + 37.4);
 sello(pie, 156, 111, 27, pieTop);
 gf.globalCompositeOperation = 'source-over';
-// el fuelle marcado y la base
-gf.fillStyle = 'rgba(60,35,15,.10)'; gf.fillRect(0, (L - 16) * PX, W * PX, 16 * PX);
-// la sombra que deja el borde de la solapa sobre el frente
-const sb = gf.createLinearGradient(0, F * PX, 0, (F + 4) * PX); sb.addColorStop(0, 'rgba(40,22,8,.45)'); sb.addColorStop(1, 'rgba(40,22,8,0)');
-if (!giro) { gf.fillStyle = sb; gf.fillRect(0, F * PX, W * PX, 4 * PX); }
+const base = (g) => { g.fillStyle = 'rgba(60,35,15,.10)'; g.fillRect(0, (L - 16) * PX, W * PX, 16 * PX); };
+base(gf);
+// el lado de la solapa: el dorso (cierre atrás) o el mismo frente (cierre adelante)
+const [cl, gl] = atras ? lienzo(W, L, kraftD) : [cf, gf];
+if (atras) base(gl);
+// la sombra que deja el borde de la solapa
+const sb = gl.createLinearGradient(0, F * PX, 0, (F + 4) * PX); sb.addColorStop(0, 'rgba(40,22,8,.45)'); sb.addColorStop(1, 'rgba(40,22,8,0)');
+if (!giro) { gl.fillStyle = sb; gl.fillRect(0, F * PX, W * PX, 4 * PX); }
 // el sticker: el precorte cae en el borde de la solapa (s = L − F); el cuerpo baja 59 mm
 const ST = 70, FR = 11;
 const xs = (W - ST) / 2;
-sombra(gf, () => gf.drawImage(giro ? cuerpoRoto : cuerpo, xs * PX, F * PX, ST * PX, (ST - FR) * PX));
+sombra(gl, () => gl.drawImage(giro ? cuerpoRoto : cuerpo, xs * PX, F * PX, ST * PX, (ST - FR) * PX));
 
-// ── La solapa: la cara de afuera es el dorso doblado; lleva la franja del sticker abajo ───
-const [cs, gs] = lienzo(W, F, kraftD);
+// ── La solapa: su cara de afuera es la otra pared doblada; lleva la franja del sticker abajo ─
+const [cs, gs] = lienzo(W, F, atras ? kraft : kraftD);
 const grd = gs.createLinearGradient(0, 0, 0, F * PX); grd.addColorStop(0, 'rgba(60,35,15,.12)'); grd.addColorStop(1, 'rgba(60,35,15,0)');
 gs.fillStyle = grd; gs.fillRect(0, 0, W * PX, F * PX);
 gs.fillStyle = 'rgba(70,42,18,.35)'; gs.fillRect(0, (F - 0.7) * PX, W * PX, 0.7 * PX); // el canto del doblez
@@ -104,11 +111,13 @@ function tira(s0, s1, x0, x1, filas, desplaza, signoZ = 1) {
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); return g;
 }
-const malla = (g, m) => { const o = new THREE.Mesh(g, m); o.castShadow = o.receiveShadow = true; escena.add(o); return o; };
+// `gira`: grados que se gira la bolsa sobre el piso (180 = se ve la otra cara con la misma luz)
+const bolsa = new THREE.Group(); bolsa.rotation.y = +(q.get('gira') || 0) * Math.PI / 180; escena.add(bolsa);
+const malla = (g, m) => { const o = new THREE.Mesh(g, m); o.castShadow = o.receiveShadow = true; bolsa.add(o); return o; };
 
-// frente y dorso (el lienzo del frente va de s = 0 a s = L)
-malla(tira(0, L, -W / 2, W / 2, 160, 0), mat(tex(cf)));
-malla(tira(0, L, W / 2, -W / 2, 160, 0, -1), mat(texK(kraftD, W, L)));
+// z+ es el lado de la solapa (el dorso si el cierre va atrás); z− el otro. Los lienzos van de s = 0 a L.
+malla(tira(0, L, -W / 2, W / 2, 160, 0), mat(tex(cl)));
+malla(tira(0, L, W / 2, -W / 2, 160, 0, -1), mat(atras ? tex(cf) : texK(kraftD, W, L)));
 // costados: el fuelle se mete hacia adentro donde la boca se aplasta (pliegue en V)
 function costado(lado) {
   const pos = [], uv = [], idx = [], filas = 120;
@@ -125,7 +134,7 @@ function costado(lado) {
 costado(1); costado(-1);
 
 // la solapa (sigue la curva del frente, 1 mm afuera) y el rollo de arriba, giran juntos
-const pivote = new THREE.Group(); const [py, pz] = enS(L); pivote.position.set(0, py, pz); escena.add(pivote);
+const pivote = new THREE.Group(); const [py, pz] = enS(L); pivote.position.set(0, py, pz); bolsa.add(pivote);
 const gSol = tira(L - F, L, -W / 2, W / 2, 60, 1.0 + 0.3 * dobleces);
 gSol.translate(0, -py, -pz);
 const solapa = new THREE.Mesh(gSol, mat(tex(cs))); solapa.castShadow = solapa.receiveShadow = true; pivote.add(solapa);
