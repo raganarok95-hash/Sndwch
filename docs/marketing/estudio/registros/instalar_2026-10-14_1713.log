@@ -1,0 +1,123 @@
+﻿17:13:34  == SND//WCH - el Estudio: instalacion y prueba ==
+17:13:34  Windows PowerShell 5.1.26100.9444
+17:13:34  [OK]    Git 2.56.0.windows.2
+17:13:36  [OK]    Clon al dia (bc376d1)
+17:13:36  Instalando o actualizando gflow-cli (la primera vez baja ~150 MB)...
+Resolved 57 packages in 1.03s
+Checked 57 packages in 15ms
+Installed 3 executables: flow, gflow, gflow-cli
+warning: An executable named `playwright` is not provided by package `gflow-cli` but is available via the dependency `playwright`. Consider using `uv tool run --from playwright playwright` instead.
+17:13:40  [OK]    gflow-cli 0.85.0
+17:13:41  Se abre Chrome: entra con tu cuenta de Google de Flow. Cuando cargue Flow, se cierra solo.
+17:13:51  La verificacion rapida de gflow fallo. Pruebo de verdad: una imagen de prueba en Flow (gratis, ~1 minuto)...
+gflow.exe : {"engine": "playwright", "event": "browser.engine_selected", "correlation_id": 
+"7bd44f3e-4ab5-49a9-bbca-f44db3d41744", "cli_command": "image t2i", "cli_version": "0.85.0", "level": "info", 
+"timestamp": "2026-10-14T22:14:02.495026Z"}
+En ~\instalar-sndwch.ps1: 141 Carácter: 18
++ ...  $salida = (& gflow image t2i 'A single red apple on a plain white ta ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ({"engine": "pla...14:02.495026Z"}:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+{"error": "OSError", "event": "client.preread_flow_cookies_failed", "correlation_id": 
+"7bd44f3e-4ab5-49a9-bbca-f44db3d41744", "cli_command": "image t2i", "cli_version": "0.85.0", "level": "warning", 
+"timestamp": "2026-10-14T22:14:03.172710Z"}
+{"channel": "chrome", "chrome_strategy_requested": true, "chrome_executable": "C:\\Program 
+Files\\Google\\Chrome\\Application\\chrome.exe", "user_data_dir": 
+"C:\\Users\\ragan\\AppData\\Local\\ffroliva\\gflow-cli\\profile_default", "cookies_db_present": true, 
+"cookies_db_path": 
+"C:\\Users\\ragan\\AppData\\Local\\ffroliva\\gflow-cli\\profile_default\\Default\\Network\\Cookies", "platform": 
+"win32", "launch_args": ["--password-store=basic", "--disable-blink-features=AutomationControlled", 
+"--disable-dev-shm-usage", "--window-position=-30000,-30000"], "ignore_default_args": ["--enable-automation", 
+"--no-sandbox"], "password_store_basic": true, "event": "client.persistent_context_launch", "correlation_id": 
+"7bd44f3e-4ab5-49a9-bbca-f44db3d41744", "cli_command": "image t2i", "cli_version": "0.85.0", "level": "info", 
+"timestamp": "2026-10-14T22:14:03.185013Z"}
+{"context_cookie_count": 52, "flow_session_cookie_present": false, "flow_session_cookie_expired": false, 
+"google_sapisid_present": true, "event": "client.context_cookie_state", "correlation_id": 
+"7bd44f3e-4ab5-49a9-bbca-f44db3d41744", "cli_command": "image t2i", "cli_version": "0.85.0", "level": "info", 
+"timestamp": "2026-10-14T22:14:04.054650Z"}
+{"event": "client.context_cookie_seed_unavailable", "correlation_id": "7bd44f3e-4ab5-49a9-bbca-f44db3d41744", 
+"cli_command": "image t2i", "cli_version": "0.85.0", "level": "warning", "timestamp": "2026-10-14T22:14:04.054650Z"}
+{"lang": "en", "waited_ms": 4000.0, "reason": "TimeoutError", "event": "client.account_locale_lang_unchanged", 
+"correlation_id": "7bd44f3e-4ab5-49a9-bbca-f44db3d41744", "cli_command": "image t2i", "cli_version": "0.85.0", 
+"level": "info", "timestamp": "2026-10-14T22:14:08.566866Z"}
+{"locale": "en", "source": "html_lang", "event": "client.account_locale_resolved", "correlation_id": 
+"7bd44f3e-4ab5-49a9-bbca-f44db3d41744", "cli_command": "image t2i", "cli_version": "0.85.0", "level": "info", 
+"timestamp": "2026-10-14T22:14:08.566866Z"}
+{"was": null, "now": "?", "event": "client.account_locale_state", "correlation_id": 
+"7bd44f3e-4ab5-49a9-bbca-f44db3d41744", "cli_command": "image t2i", "cli_version": "0.85.0", "level": "info", 
+"timestamp": "2026-10-14T22:14:08.566866Z"}
+{"event": "ui_automation.setup_shared_page", "correlation_id": "7bd44f3e-4ab5-49a9-bbca-f44db3d41744", "cli_command": 
+"image t2i", "cli_version": "0.85.0", "level": "info", "timestamp": "2026-10-14T22:14:08.566866Z"}
+  Creating project...
+{"status": 401, "issue_ref": "#864", "event": "project.labs_route_refused", "correlation_id": 
+"7bd44f3e-4ab5-49a9-bbca-f44db3d41744", "cli_command": "image t2i", "cli_version": "0.85.0", "level": "info", 
+"timestamp": "2026-10-14T22:14:09.137474Z"}
+{"project_id": "0ff2efae-4b62-4a04-ae18-4bde9d6eb023", "event": "migrated.project_created", "correlation_id": 
+"7bd44f3e-4ab5-49a9-bbca-f44db3d41744", "cli_command": "image t2i", "cli_version": "0.85.0", "level": "info", 
+"timestamp": "2026-10-14T22:14:10.623991Z"}
+{"project_id": "0ff2efae-4b62-4a04-ae18-4bde9d6eb023", "event": "migrated.project_renamed", "correlation_id": 
+"7bd44f3e-4ab5-49a9-bbca-f44db3d41744", "cli_command": "image t2i", "cli_version": "0.85.0", "level": "info", 
+"timestamp": "2026-10-14T22:14:13.413114Z"}
+  Project: 0ff2efae-4b62-4a04-ae18-4bde9d6eb023
+  Generating 1 image(s) (NARWHAL, IMAGE_ASPECT_RATIO_SQUARE)...
+{"issue_ref": "#799", "url": "https://flow.google.com/project/0ff2efae-4b62-4a04-ae18-4bde9d6eb023", "event": 
+"migrated.agent_only_composer", "correlation_id": "7bd44f3e-4ab5-49a9-bbca-f44db3d41744", "cli_command": "image t2i", 
+"cli_version": "0.85.0", "level": "info", "timestamp": "2026-10-14T22:14:43.584407Z"}
+{"incident_id": "7bd44f3e-4ab5-49a9-bbca-f44db3d41744-fc27beabe5", "event": "incident.capture_started", 
+"correlation_id": "7bd44f3e-4ab5-49a9-bbca-f44db3d41744", "cli_command": "image t2i", "cli_version": "0.85.0", 
+"level": "info", "timestamp": "2026-10-14T22:14:43.589435Z"}
+{"incident_id": "7bd44f3e-4ab5-49a9-bbca-f44db3d41744-fc27beabe5", "status": "complete", "artifact_kinds": 
+["browser.json", "network.json", "report.md", "sensitive/screenshot.png", "ui.json"], "duration_ms": 0, "event": 
+"incident.capture_completed", "correlation_id": "7bd44f3e-4ab5-49a9-bbca-f44db3d41744", "cli_command": "image t2i", 
+"cli_version": "0.85.0", "level": "info", "timestamp": "2026-10-14T22:14:44.133945Z"}
+{"error_class": "FlowAgentUiError", "problem": {"type": "https://gflow-cli.dev/errors/flow-agent-ui", "title": "Google 
+Flow Agentic UI detected", "detail": "migrated host: this account's composer is agent-only \u2014 the settings trigger 
+(.settings-trigger-button) is in the page but hidden, and no agent-mode chip (button.agent-mode-chip) exists to turn 
+off, so there is no classic composer to drive on https://flow.google.com/project/0ff2efae-4b62-4a04-ae18-4bde9d6eb023 
+(host=migrated). Not selector drift, and not the recoverable agent mode of #749. Readiness gate: Locator.wait_for: 
+Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator(\".settings-trigger-button\").first to be visible\n    
+62 \u00d7 locator resolved to hidden <button hidden=\"\" matbutton=\"\" flow-button=\"\" cdkoverlayorigin=\"\" 
+_ngcontent-ng-c3235405240=\"\" mat-ripple-loader-uninitialized=\"\" aria-label=\"Bot\u00f3n de configuraci\u00f3n\" 
+mat-ripple-loader-class-name=\"mat-mdc-button-ripple\" class=\"mdc-button mat-mdc-button-base settings-trigger-button 
+mdc-button--unelevated mat-mdc-unelevated-button mat-unthemed flow-button-primary flow-button-small 
+flow-button-no-touch-target\">\u2026</button>\n", "remediation_hint": "Google has put this account on Flow's 
+agent-only composer, where aspect, model and count are Agent-settings defaults rather than per-request controls. 
+gflow-cli has no driver for it yet, so no flag or profile change helps and a re-run will not either \u2014 this is 
+tracked in issue #799. Generating from the Flow web UI still works.", "incident": {"id": 
+"7bd44f3e-4ab5-49a9-bbca-f44db3d41744-fc27beabe5", "capture_status": "complete"}}, "cli_command": "image t2i", 
+"event": "error_raised", "correlation_id": "7bd44f3e-4ab5-49a9-bbca-f44db3d41744", "cli_version": "0.85.0", "level": 
+"error", "timestamp": "2026-10-14T22:14:44.170738Z"}
+Google Flow Agentic UI detected: migrated host: this account's composer is 
+agent-only ù the settings trigger (.settings-trigger-button) is in the page but
+hidden, and no agent-mode chip (button.agent-mode-chip) exists to turn off, so 
+there is no classic composer to drive on 
+https://flow.google.com/project/0ff2efae-4b62-4a04-ae18-4bde9d6eb023 
+(host=migrated). Not selector drift, and not the recoverable agent mode of 
+#749. Readiness gate: Locator.wait_for: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".settings-trigger-button").first to be visible
+    62 Î locator resolved to hidden <button hidden="" matbutton="" 
+flow-button="" cdkoverlayorigin="" _ngcontent-ng-c3235405240="" 
+mat-ripple-loader-uninitialized="" aria-label="Bot¾n de configuraci¾n" 
+mat-ripple-loader-class-name="mat-mdc-button-ripple" class="mdc-button 
+mat-mdc-button-base settings-trigger-button mdc-button--unelevated 
+mat-mdc-unelevated-button mat-unthemed flow-button-primary flow-button-small 
+flow-button-no-touch-target">à</button>
+
+-> Google has put this account on Flow's agent-only composer, where aspect, 
+model and count are Agent-settings defaults rather than per-request controls. 
+gflow-cli has no driver for it yet, so no flag or profile change helps and a 
+re-run will not either ù this is tracked in issue #799. Generating from the 
+Flow web UI still works.
+Incident bundle: 
+~\AppData\Local\ffroliva\gflow-cli\incidents\2026-10-14\20261014T2
+21443Z-7bd44f3e-4ab5-49a9-bbca-f44db3d41744-fc27beabe5-1b815f ù review before 
+sharing; sensitive artifacts may contain account or media data.
+Pre-filled bug report: 
+~\AppData\Local\ffroliva\gflow-cli\incidents\2026-10-14\20261014T2
+21443Z-7bd44f3e-4ab5-49a9-bbca-f44db3d41744-fc27beabe5-1b815f\report.md
+
+17:14:44          la imagen de prueba no salio (gflow salio con 25)
+17:14:44  [FALTA] Sesion de Flow
+17:14:44          -> Vuelve a pegar la linea y entra con tu cuenta de Google en la ventana de Chrome que se abre.
