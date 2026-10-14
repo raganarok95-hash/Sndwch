@@ -114,14 +114,16 @@ function Instalar {
     & gflow auth login --browser $navegador
     & gflow auth status *> $null
   }
-  if ($LASTEXITCODE -ne 0) {
-    # 2026-10-14, captura del dueno: gflow vio la sesion ("Signed in"), pero al cerrar Chrome no
-    # alcanzo a leer sus cookies (Chrome aun tenia tomada la base: OSError), dio la sesion por no
-    # verificada y borro su marca de Chrome. Se espera a que Chrome suelte el perfil, se repone la
-    # marca (el arreglo que documenta gflow, USER_GUIDE 13.4) y se verifica otra vez contra Flow.
-    # Si no verifica, la marca se quita: nada queda dando por buena una sesion que no lo es.
-    Di 'Verificando otra vez la sesion de Flow...' 'Cyan'
-    Start-Sleep -Seconds 10
+  $sesionOk = ($LASTEXITCODE -eq 0)
+  if (-not $sesionOk) {
+    # 2026-10-14, dos capturas del dueno: gflow ve la sesion ("Signed in"), pero su verificacion
+    # rapida falla en Windows (auth_flow_session_probe_error, OSError: lee las cookies con
+    # browser_cookie3 y no cae a Chrome con ese error) y borra su marca de Chrome. Generar NO usa
+    # esa verificacion: abre el perfil con Chrome. Se repone la marca (USER_GUIDE 13.4 de gflow) y
+    # se prueba lo que de verdad importa: una imagen de prueba (las imagenes no gastan creditos).
+    # Si no sale, se quita la marca: nada queda dando por buena una sesion que no lo es.
+    Di 'La verificacion rapida de gflow fallo. Pruebo de verdad: una imagen de prueba en Flow (gratis, ~1 minuto)...' 'Cyan'
+    Start-Sleep -Seconds 5
     $raiz = Join-Path $env:LOCALAPPDATA 'ffroliva\gflow-cli'
     $perfil = Get-ChildItem $raiz -Directory -Filter 'profile_*' -ErrorAction SilentlyContinue |
       Sort-Object LastWriteTime -Descending | Select-Object -First 1
@@ -134,11 +136,22 @@ function Instalar {
       $marca = Join-Path $perfil.FullName '.gflow_browser_strategy'
       $habia = Test-Path $marca
       [System.IO.File]::WriteAllText($marca, 'chrome', (New-Object System.Text.UTF8Encoding($false)))
-      & gflow auth status *> $null
-      if ($LASTEXITCODE -ne 0 -and -not $habia) { Remove-Item $marca -Force -ErrorAction SilentlyContinue }
+      $prueba = Join-Path $env:TEMP 'sndwch-prueba-flow'
+      Remove-Item $prueba -Recurse -Force -ErrorAction SilentlyContinue
+      $salida = (& gflow image t2i 'A single red apple on a plain white table, soft daylight.' -n 1 --aspect 1:1 --out $prueba 2>&1 | Out-String)
+      $codigo = $LASTEXITCODE
+      # La salida va al registro (publico): sin la ruta del usuario ni correos.
+      Add-Content -Path $log -Value (([string]$salida).Replace($HOME, '~') -replace '[\w.+-]+@[\w-]+\.[\w.-]+', '<correo>')
+      $imagen = @(Get-ChildItem $prueba -File -Filter '*.png' -ErrorAction SilentlyContinue)
+      if ($codigo -eq 0 -and $imagen.Count -gt 0) { $sesionOk = $true }
+      else {
+        Di ('        la imagen de prueba no salio (gflow salio con ' + $codigo + ')')
+        if (-not $habia) { Remove-Item $marca -Force -ErrorAction SilentlyContinue }
+      }
+      Remove-Item $prueba -Recurse -Force -ErrorAction SilentlyContinue
     }
   }
-  if ($LASTEXITCODE -eq 0) { Bien 'Sesion de Flow (gflow)' }
+  if ($sesionOk) { Bien 'Sesion de Flow (gflow)' }
   else { Mal 'Sesion de Flow' 'Vuelve a pegar la linea y entra con tu cuenta de Google en la ventana de Chrome que se abre.'; return }
 
   # 5 - El MCP de Flow de antes ya no sirve: se quita para que nada lo use.
