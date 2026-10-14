@@ -160,8 +160,9 @@ Las imágenes de `img/` son de la app: en marketing solo sirven de **respaldo**,
 ese día, y nunca como plan. Los bocetos que te muestro antes de generar son **esquemas** (la
 escena escrita en un recuadro), no imágenes viejas.
 
-Flow no tiene API: solo funciona en tu laptop, con tu sesión de Google, a través del MCP
-`google-flow-browser-mcp`. **El equipo lo llama dejando un encargo; tu laptop lo cumple.**
+Flow no tiene API: solo funciona en tu laptop, con tu sesión de Google, a través de
+**gflow-cli** (desde 2026-10-14; el MCP de antes dejó de servir cuando Flow se mudó a
+`flow.google.com`). **El equipo lo llama dejando un encargo; tu laptop lo cumple.**
 
 1. **Creatividad escribe el encargo** en `docs/marketing/estudio/encargos/<id>.md`: qué imagen,
    para qué pieza, qué personaje de Flow (`@SANDO`, `@WICHO`, sin describirlos con texto),

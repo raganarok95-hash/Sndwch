@@ -1,5 +1,9 @@
 # Conectar Claude a Google Flow — en tu laptop
 
+> **2026-10-14: este MCP ya no sirve.** Flow se mudó a `flow.google.com` y el MCP solo conoce
+> `labs.google`. El Estudio genera ahora con **gflow-cli** (`scripts/estudio/flow.ps1`,
+> autorizado por el dueño). Ver `docs/marketing/estudio/INSTALAR.md` y `docs/ENTORNO.md`.
+
 > **Esto NO corre en la sesión de Claude que trabaja en este repo.** Esa vive en un contenedor
 > remoto y efímero, sin tu Chrome y sin tu cuenta de Google. El servidor se instala en **tu
 > Claude Code local**, y ahí es donde vas a poder pedirle videos. Yo te preparo los prompts y el

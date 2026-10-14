@@ -1,5 +1,9 @@
 # Imágenes para el lanzamiento, en Flow (gratis) — 2026-10-07
 
+> **2026-10-14: este MCP ya no sirve.** Flow se mudó a `flow.google.com` y el MCP solo conoce
+> `labs.google`. El Estudio genera ahora con **gflow-cli** (`scripts/estudio/flow.ps1`,
+> autorizado por el dueño). Ver `docs/marketing/estudio/INSTALAR.md` y `docs/ENTORNO.md`.
+
 Dueño: «Si ya tienes acceso a Flow, puedes producir imágenes totalmente gratis». **Desde la sesión
 en la nube no hay acceso a Flow**: Flow no tiene API y solo se maneja con un navegador con tu
 cuenta de Google (`docs/FLOW_EN_TU_LAPTOP.md`). Las imágenes de Flow sí son gratis con tu cuenta.

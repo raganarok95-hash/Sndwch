@@ -1,8 +1,11 @@
 # El Estudio: cómo le encarga la agencia una imagen a Flow (2026-10-08)
 
 Dueño: «Ese equipo es el que debe llamar a Flow para el proceso». La agencia (`../AGENCIA.md` §5)
-deja **encargos** aquí. Tu laptop los cumple sola con el MCP de Flow, a las 7:30 y a las 19:30
-(`scripts/estudio/LIBRETO.md`, instalación en `INSTALAR.md`), y sube el resultado a la rama `estudio`.
+deja **encargos** aquí. Tu laptop los cumple sola con **gflow-cli**, a las 7:30 y a las 19:30
+(`scripts/estudio/flow.ps1`, instalación en `INSTALAR.md`), y sube el resultado a la rama `estudio`.
+Los personajes van como **imagen de referencia** (`referencias/sando.png` y `wicho.png`, fondo
+blanco, al doble; las hace `scripts/estudio/referencias.py`): se muestran, no se describen.
+Los encargos de video no se generan solos (gastan créditos): quedan pendientes.
 
 ```
 docs/marketing/estudio/
