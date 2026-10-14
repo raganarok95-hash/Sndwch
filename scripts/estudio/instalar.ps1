@@ -4,10 +4,11 @@
 # Se corre con UNA linea, sin abrir carpetas ni tener nada antes (Windows+R, pegar, Enter):
 #   powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol='Tls12'; irm https://raw.githubusercontent.com/raganarok95-hash/Sndwch/main/scripts/estudio/instalar.ps1 | iex"
 #
-# Se puede correr las veces que haga falta. Revisa cada pieza y la instala si falta (Git, Node,
-# Claude Code, el MCP de Flow), deja al dia su propio clon (~\sndwch-estudio), revisa la sesion de
+# Se puede correr las veces que haga falta. Revisa cada pieza y la instala si falta (Git, su propio
+# clon ~\sndwch-estudio, gflow-cli para Flow, Claude Code para los lunes), revisa la sesion de
 # Flow (si hace falta abre Chrome para que entres UNA vez), programa la tarea "SNDWCH Estudio"
 # (7:30 y 19:30) y hace una primera corrida a la vista. Al final dice [OK] o [FALTA] por pieza.
+# 2026-10-14: Flow lo genera gflow-cli (autorizado por el dueno), no el MCP de antes.
 #
 # SOLO ASCII en este archivo: PowerShell 5.1 lee mal las rayas y comillas tipograficas.
 # Llega por "irm | iex": nada de param(), $PSScriptRoot ni exit (cerraria la ventana).
@@ -45,11 +46,6 @@ function ConWinget($id, $nombre) {
     ForEach-Object { Add-Content -Path $log -Value ([string]$_) }
   RecargarPath
 }
-function NodeSirve {
-  if (-not (Tiene 'node')) { return $false }
-  $p = ((node -v) -replace '^v', '').Split('.')
-  return ([int]$p[0] -gt 22) -or ([int]$p[0] -eq 22 -and [int]$p[1] -ge 13)
-}
 function RutaClaude {
   $c = (Get-Command claude -ErrorAction SilentlyContinue).Source
   if (-not $c) { $c = Join-Path $HOME '.local\bin\claude.exe' }
@@ -67,43 +63,7 @@ function Instalar {
   if (Tiene 'git') { Bien ((git --version) -replace 'git version ', 'Git ') }
   else { Mal 'Git' 'Instalalo desde https://git-scm.com/download/win y vuelve a pegar la linea.'; return }
 
-  # 2 - Node 22.13 o mas nuevo: el MCP de Flow corre con npx.
-  if (-not (NodeSirve)) { ConWinget 'OpenJS.NodeJS.LTS' 'Node.js' }
-  if (NodeSirve) { Bien ('Node ' + (node -v)) }
-  else { Mal 'Node.js 22.13 o mas nuevo' 'Instalalo desde https://nodejs.org (LTS) y vuelve a pegar la linea.' }
-
-  # 3 - Claude Code, con tu cuenta.
-  $claude = RutaClaude
-  if (-not $claude) {
-    Di 'Instalando Claude Code...' 'Cyan'
-    try { Invoke-RestMethod 'https://claude.ai/install.ps1' | Invoke-Expression } catch { Di $_.Exception.Message }
-    RecargarPath
-    $claude = RutaClaude
-  }
-  if (-not $claude) { Mal 'Claude Code' 'Instalalo desde https://claude.com/claude-code y vuelve a pegar la linea.'; return }
-  Bien 'Claude Code instalado'
-  $r = (& $claude -p 'Responde solo con la palabra LISTO' --max-turns 1 2>&1 | Out-String)
-  if ($r -match 'LISTO') { Bien 'Claude Code con tu cuenta' }
-  else {
-    Mal 'Claude Code sin sesion' 'Abre PowerShell, escribe  claude  , entra con tu cuenta, cierralo y vuelve a pegar la linea.'
-    Di ('        respondio: ' + $r.Trim())
-    return
-  }
-
-  # 4 - El MCP de Flow. Start-Process pasa el "--" tal cual (PowerShell 5.1 puede comerselo).
-  $mcp = (& $claude mcp list 2>&1 | Out-String)
-  if ($mcp -notmatch 'google-flow') {
-    Di 'Conectando Flow a Claude Code...' 'Cyan'
-    $out = Join-Path $registros 'mcp_add.txt'
-    Start-Process -FilePath $claude -NoNewWindow -Wait -RedirectStandardOutput $out -RedirectStandardError ($out + '.err') `
-      -ArgumentList @('mcp', 'add', '--scope', 'user', 'google-flow', '--', 'cmd', '/c', 'npx', '-y', 'google-flow-browser-mcp')
-    Get-Content $out, ($out + '.err') -ErrorAction SilentlyContinue | ForEach-Object { Di $_ }
-    $mcp = (& $claude mcp list 2>&1 | Out-String)
-  }
-  if ($mcp -match 'google-flow') { Bien 'Flow conectado a Claude Code' }
-  else { Mal 'El MCP de Flow' 'Manda una captura de esta ventana.'; Di $mcp; return }
-
-  # 5 - Su propio clon, al dia. Tu carpeta Sndwch no se toca.
+  # 2 - Su propio clon, al dia. Tu carpeta Sndwch no se toca.
   if (-not (Test-Path (Join-Path $repo '.git'))) {
     if (Test-Path $repo) { Rename-Item $repo ($repo + '-viejo-' + $sello) }
     git clone -q $REPO_URL $repo 2>&1 | ForEach-Object { Di $_ }
@@ -123,19 +83,54 @@ function Instalar {
     else { Mal 'El clon no se pudo actualizar' 'Manda una captura de esta ventana.'; return }
   } finally { Pop-Location }
 
-  # 6 - La sesion de Flow y los personajes. Si no hay sesion, se abre Chrome: entras UNA vez.
-  Di 'Revisando tu sesion de Flow. Si se abre Chrome, entra con tu cuenta de Google y vuelve aqui.' 'Cyan'
-  $p = 'Usa SOLO las herramientas de google-flow. 1) Comprueba si la sesion de Google en Flow esta iniciada. ' +
-    '2) Si no lo esta, inicia el login (se abre una ventana visible de Chrome) y espera a que el dueno entre: ' +
-    'compruebalo cada 20 segundos (Bash: sleep 20) durante 10 minutos como maximo, y confirma el login. ' +
-    '3) Busca el proyecto de Flow donde estan los personajes SANDO y WICHO. No generes nada ni gastes creditos. ' +
-    'Responde en UNA linea: SESION_OK o SESION_FALTA, y PERSONAJES_OK o PERSONAJES_FALTA, con el nombre del proyecto.'
-  Push-Location $repo
-  $r = (& $claude -p $p --allowedTools 'mcp__google-flow,Bash(sleep:*)' --max-turns 80 2>&1 | Out-String)
-  Pop-Location
-  Di ('        Flow respondio: ' + $r.Trim())
-  if ($r -match 'SESION_OK') { Bien 'Sesion de Flow' } else { Mal 'Sesion de Flow' 'Vuelve a pegar la linea y entra con tu cuenta de Google en la ventana de Chrome que se abre.' }
-  if ($r -match 'PERSONAJES_OK') { Bien 'SANDO y WICHO en Flow' } else { Mal 'SANDO y WICHO en Flow' 'Crea en Flow los personajes SANDO y WICHO (docs/FLOW_EN_TU_LAPTOP.md) y vuelve a pegar la linea.' }
+  # 3 - gflow-cli: Flow desde la terminal (2026-10-14, autorizado por el dueno). Flow se mudo a
+  #     flow.google.com y el MCP de antes no lo conoce. Se instala con uv, que trae su Python.
+  if (-not (Tiene 'uv')) { ConWinget 'astral-sh.uv' 'uv' }
+  if (-not (Tiene 'uv')) { Mal 'uv (instala gflow)' 'Instalalo desde https://docs.astral.sh/uv/ y vuelve a pegar la linea.'; return }
+  Di 'Instalando o actualizando gflow-cli (la primera vez baja ~150 MB)...' 'Cyan'
+  uv tool install --upgrade gflow-cli 2>&1 | ForEach-Object { Add-Content -Path $log -Value ([string]$_) }
+  RecargarPath
+  uv tool run --from gflow-cli playwright install chromium 2>&1 | ForEach-Object { Add-Content -Path $log -Value ([string]$_) }
+  if (Tiene 'gflow') { Bien ('gflow-cli ' + ((gflow --version) -replace '^.*version\s*', '')) }
+  else { Mal 'gflow-cli' 'Manda una captura de esta ventana.'; return }
+
+  # 4 - Tu sesion de Flow en gflow. Si no la hay, se abre Chrome: entras UNA vez con tu cuenta de
+  #     Google y, cuando carga Flow, se cierra solo. Dura semanas. (Lo que imprime no va al
+  #     registro: lleva tu correo y el registro es publico.)
+  & gflow auth status *> $null
+  if ($LASTEXITCODE -ne 0) {
+    Di 'Se abre Chrome: entra con tu cuenta de Google de Flow. Cuando cargue Flow, se cierra solo.' 'Cyan'
+    $navegador = 'auto'
+    foreach ($c in @('C:\Program Files\Google\Chrome\Application\chrome.exe',
+        'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe',
+        (Join-Path $env:LOCALAPPDATA 'Google\Chrome\Application\chrome.exe'))) { if (Test-Path $c) { $navegador = 'chrome' } }
+    & gflow auth login --browser $navegador
+    & gflow auth status *> $null
+  }
+  if ($LASTEXITCODE -eq 0) { Bien 'Sesion de Flow (gflow)' }
+  else { Mal 'Sesion de Flow' 'Vuelve a pegar la linea y entra con tu cuenta de Google en la ventana de Chrome que se abre.'; return }
+
+  # 5 - El MCP de Flow de antes ya no sirve: se quita para que nada lo use.
+  $claude = RutaClaude
+  if ($claude) {
+    $mcp = (& $claude mcp list 2>&1 | Out-String)
+    if ($mcp -match 'google-flow') { & $claude mcp remove --scope user google-flow 2>&1 | ForEach-Object { Di $_ } }
+  }
+
+  # 6 - Claude Code, con tu cuenta: solo para el ciclo de la agencia de los lunes. Si falta, Flow
+  #     igual corre.
+  if (-not $claude) {
+    Di 'Instalando Claude Code...' 'Cyan'
+    try { Invoke-RestMethod 'https://claude.ai/install.ps1' | Invoke-Expression } catch { Di $_.Exception.Message }
+    RecargarPath
+    $claude = RutaClaude
+  }
+  if (-not $claude) { Mal 'Claude Code (el ciclo del lunes)' 'Instalalo desde https://claude.com/claude-code y vuelve a pegar la linea.' }
+  else {
+    $r = (& $claude -p 'Responde solo con la palabra LISTO' --max-turns 1 2>&1 | Out-String)
+    if ($r -match 'LISTO') { Bien 'Claude Code con tu cuenta (ciclo del lunes)' }
+    else { Mal 'Claude Code sin sesion (el ciclo del lunes)' 'Abre PowerShell, escribe  claude  , entra con tu cuenta, cierralo y vuelve a pegar la linea.' }
+  }
 
   # 7 - La tarea programada: 7:30 y 19:30, despierta la laptop, y si estaba apagada corre al prenderla.
   $script = Join-Path $repo 'scripts\estudio\estudio.ps1'
@@ -147,18 +142,16 @@ function Instalar {
   $quien = New-ScheduledTaskPrincipal -UserId ($env:USERDOMAIN + '\' + $env:USERNAME) -LogonType Interactive
   try {
     Register-ScheduledTask -TaskName 'SNDWCH Estudio' -Action $accion -Trigger $disparos -Settings $ajustes `
-      -Principal $quien -Description 'La agencia de SND//WCH: ciclo del lunes y encargos a Google Flow' -Force -ErrorAction Stop | Out-Null
+      -Principal $quien -Description 'La agencia de SND//WCH: encargos a Google Flow (gflow) y ciclo del lunes' -Force -ErrorAction Stop | Out-Null
     Bien 'Tarea "SNDWCH Estudio" programada (7:30 y 19:30)'
   } catch { Mal 'La tarea programada' ('Windows no la dejo crear: ' + $_.Exception.Message) }
 
-  # 8 - La primera corrida, a la vista. Sube lo hecho y su registro a GitHub.
-  if ($faltas.Count -eq 0) {
-    Di 'Primera corrida del Estudio. Si se abre una ventana para entrar a GitHub, entra con tu cuenta (es solo la primera vez).' 'Cyan'
-    $destino = Join-Path $repo 'docs\marketing\estudio\registros'
-    New-Item -ItemType Directory -Force -Path $destino | Out-Null
-    Copy-Item $log (Join-Path $destino ('instalar_' + $sello + '.log'))
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $script -Visible
-  }
+  # 8 - La primera corrida, a la vista: genera lo pendiente y sube lo hecho y su registro a GitHub.
+  Di 'Primera corrida del Estudio. Si se abre una ventana para entrar a GitHub, entra con tu cuenta (es solo la primera vez).' 'Cyan'
+  $destino = Join-Path $repo 'docs\marketing\estudio\registros'
+  New-Item -ItemType Directory -Force -Path $destino | Out-Null
+  Copy-Item $log (Join-Path $destino ('instalar_' + $sello + '.log'))
+  & powershell -NoProfile -ExecutionPolicy Bypass -File $script -Visible
 }
 
 # Si algo falto, el registro igual sube a GitHub (rama estudio), para ver que paso sin preguntarte.

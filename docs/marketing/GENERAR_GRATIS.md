@@ -1,5 +1,9 @@
 # Imágenes y video gratis: qué sirve de verdad (2026-10-07)
 
+> **2026-10-14: este MCP ya no sirve.** Flow se mudó a `flow.google.com` y el MCP solo conoce
+> `labs.google`. El Estudio genera ahora con **gflow-cli** (`scripts/estudio/flow.ps1`,
+> autorizado por el dueño). Ver `docs/marketing/estudio/INSTALAR.md` y `docs/ENTORNO.md`.
+
 Dueño: «Sería mejor que primero veamos una forma gratis de crear imágenes y video, porque la
 necesitaremos para ser más creativos».
 

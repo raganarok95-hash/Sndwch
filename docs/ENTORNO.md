@@ -621,7 +621,13 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
   Con eso, el Estudio no necesita un agente de Claude para generar: alcanza un bucle de
   PowerShell sobre los encargos.
 - **El clasificador también bloqueó (14-oct)** correr aquí `gflow image i2i --help`
-  («Auto-Mode Bypass»). Para seguir con gflow hace falta la autorización explícita del dueño.
+  («Auto-Mode Bypass») hasta que el dueño autorizó: «Autorizo usar gflow-cli con mi cuenta de
+  Google Flow y que el Estudio lo corra solo en mi laptop». Desde entonces: `scripts/estudio/flow.ps1`
+  (bucle sin agente), `instalar.ps1` instala `uv` + gflow + su Chromium y abre el login una vez.
+  `gflow` 0.85.0 se instala aquí con `pip` en un venv del scratchpad para leer su `--help`; la
+  prueba de `flow.ps1` usa PowerShell 7 y un `gflow` falso (normal, política de contenido = 5,
+  sesión vencida = 3 en `auth status`, límite = 4, error raro = 1 con correo y ruta tapados).
+  Contra Flow de verdad solo se prueba en la laptop: `flow.google.com` da 403 en el proxy.
 - **El clasificador del modo automático bloqueó (14-oct)** que la tarea programada abra sola una
   sesión con Remote Control, permisos preaprobados y Flow («Create Unsafe Agents»), e incluso
   editar su archivo de permisos. El dueño había pedido «ve cómo llamar a la terminal para Flow,

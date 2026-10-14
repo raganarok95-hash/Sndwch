@@ -7,8 +7,9 @@
 # SOLO caracteres ASCII en este archivo: PowerShell 5.1 lee los .ps1 sin BOM como ANSI y una raya
 # o unas comillas tipograficas pueden romper el script sin aviso (2026-10-08: "no abrio nada").
 #
-# Trabaja en su PROPIO clon (~\sndwch-estudio). Claude corre con permisos minimos (Flow, leer y
-# escribir archivos, copiar y listar). El git lo hace este script, solo hacia la rama "estudio";
+# Trabaja en su PROPIO clon (~\sndwch-estudio). Flow lo genera gflow-cli (flow.ps1) y el lunes
+# Claude corre con permisos minimos (leer y escribir archivos). El git lo hace este script, solo
+# hacia la rama "estudio";
 # GitHub lo une a main (.github/workflows/historias.yml). CADA corrida sube su registro a
 # docs/marketing/estudio/registros/ (repo PUBLICO: el registro nunca lleva la ruta de tu usuario).
 param([switch]$Visible)
@@ -66,32 +67,25 @@ try {
 
   $claude = (Get-Command claude -ErrorAction SilentlyContinue).Source
   if (-not $claude) { $claude = Join-Path $HOME '.local\bin\claude.exe' }
-  if (-not (Test-Path $claude)) { throw 'no encuentro Claude Code: pega otra vez la linea del instalador' }
+  $hayClaude = Test-Path $claude
+  if (-not $hayClaude) { Anota 'no encuentro Claude Code: el ciclo del lunes no corre (pega otra vez la linea del instalador)' 'Red' }
 
   # 2 - Los lunes: el ciclo de la agencia (brief, historias y encargos de la semana que viene).
-  if ((Get-Date).DayOfWeek -eq 'Monday' -and (Get-Date).Hour -lt 12) {
+  if ($hayClaude -and (Get-Date).DayOfWeek -eq 'Monday' -and (Get-Date).Hour -lt 12) {
     Anota 'lunes: ciclo de la agencia' 'Cyan'
     & $claude -p 'Lee scripts/estudio/LUNES.md y cumplelo al pie de la letra.' `
       --allowedTools 'Read,Write,Edit,Glob,Grep' --max-turns 60 2>&1 | ForEach-Object { Anota $_ }
     $hecho += 'agencia'
   }
 
-  # 3 - El Estudio: los encargos pendientes, en Flow.
-  $pendientes = @(Get-ChildItem 'docs/marketing/estudio/encargos/*.md' -ErrorAction SilentlyContinue |
-    Where-Object { -not (Test-Path ('docs/marketing/estudio/hecho/{0}/estado.json' -f $_.BaseName)) })
-  Anota ('encargos pendientes: ' + $pendientes.Count)
-  if ($pendientes.Count -gt 0) {
-    Anota 'Flow: generando (tarda unos minutos por imagen)' 'Cyan'
-    $argumentos = @('-p', 'Lee scripts/estudio/LIBRETO.md y cumplelo al pie de la letra.',
-      '--allowedTools', 'mcp__google-flow,Read,Write,Glob,Grep,Bash(cp:*),Bash(mkdir:*),Bash(ls:*),Bash(sleep:*)',
-      '--max-turns', '150')
-    $flow = Join-Path $HOME '.google-flow-creator'
-    if (Test-Path $flow) { $argumentos += @('--add-dir', $flow) }
-    & $claude @argumentos 2>&1 | ForEach-Object { Anota $_ }
-    $hecho += 'flow'
-    $listos = @(Get-ChildItem 'docs/marketing/estudio/hecho/*/estado.json' -ErrorAction SilentlyContinue).Count
-    Anota ('encargos con resultado: ' + $listos)
-  }
+  # 3 - El Estudio: los encargos pendientes, en Flow, con gflow-cli (scripts/estudio/flow.ps1).
+  # Sin agente: un bucle sobre los encargos (2026-10-14; el MCP de antes no conocia flow.google.com).
+  Anota 'Flow: generando con gflow (unos 30 segundos por imagen)' 'Cyan'
+  & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repo 'scripts\estudio\flow.ps1') 2>&1 |
+    ForEach-Object { Anota $_ }
+  $hecho += 'flow'
+  $listos = @(Get-ChildItem 'docs/marketing/estudio/hecho/*/estado.json' -ErrorAction SilentlyContinue).Count
+  Anota ('encargos con resultado: ' + $listos)
 } catch {
   Anota ('ERROR: ' + $_.Exception.Message) 'Red'
 } finally {
