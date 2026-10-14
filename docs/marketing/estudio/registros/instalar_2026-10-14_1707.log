@@ -1,0 +1,73 @@
+﻿17:07:49  == SND//WCH - el Estudio: instalacion y prueba ==
+17:07:49  Windows PowerShell 5.1.26100.9444
+17:07:49  [OK]    Git 2.56.0.windows.2
+17:07:50  [OK]    Clon al dia (048eee1)
+17:07:50  Instalando o actualizando gflow-cli (la primera vez baja ~150 MB)...
+Ignoring existing environment for `gflow-cli`: the requested Python interpreter does not match the environment interpreter
+Resolved 57 packages in 1.15s
+Prepared 57 packages in 26ms
+Installed 57 packages in 593ms
+ + annotated-doc==0.0.5
+ + annotated-types==0.8.0
+ + anyio==4.15.1
+ + attrs==26.1.0
+ + browser-cookie3==0.20.1
+ + certifi==2026.7.22
+ + cffi==2.1.1
+ + click==8.5.0
+ + colorama==0.4.6
+ + cryptography==50.0.2
+ + fastapi==0.143.1
+ + gflow-cli==0.85.0
+ + greenlet==3.5.6
+ + h11==0.16.0
+ + httpcore==1.0.9
+ + httpcore2==2.13.1
+ + httptools==0.9.0
+ + httpx==0.28.1
+ + httpx2==2.13.1
+ + idna==3.20
+ + jsonschema==4.26.0
+ + jsonschema-specifications==2025.9.1
+ + lz4==4.4.5
+ + markdown-it-py==4.2.0
+ + mcp==2.3.0
+ + mcp-types==2.3.0
+ + mdurl==0.1.2
+ + opentelemetry-api==1.45.1
+ + platformdirs==4.13.0
+ + playwright==1.61.0
+ + pycparser==3.11
+ + pycryptodomex==3.24.1
+ + pydantic==2.14.1
+ + pydantic-core==2.50.1
+ + pydantic-settings==2.16.0
+ + pyee==13.0.1
+ + pygments==2.21.0
+ + pyjwt==2.15.1
+ + python-dotenv==1.2.4
+ + python-multipart==0.0.32
+ + pywin32==312
+ + pyyaml==6.0.3
+ + referencing==0.37.0
+ + rich==15.0.0
+ + rpds-py==2026.9.1
+ + shadowcopy==0.0.4
+ + sse-starlette==3.5.0
+ + starlette==1.8.0
+ + structlog==26.1.0
+ + tenacity==9.2.1
+ + truststore==0.10.5
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.4
+ + uvicorn==0.54.0
+ + watchfiles==1.3.0
+ + websockets==17.2
+ + wmi==1.5.1
+Installed 3 executables: flow, gflow, gflow-cli
+warning: An executable named `playwright` is not provided by package `gflow-cli` but is available via the dependency `playwright`. Consider using `uv tool run --from playwright playwright` instead.
+17:07:57  [OK]    gflow-cli 0.85.0
+17:07:58  Se abre Chrome: entra con tu cuenta de Google de Flow. Cuando cargue Flow, se cierra solo.
+17:08:07  Verificando otra vez la sesion de Flow...
+17:08:21  [FALTA] Sesion de Flow
+17:08:21          -> Vuelve a pegar la linea y entra con tu cuenta de Google en la ventana de Chrome que se abre.
