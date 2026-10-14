@@ -136,9 +136,12 @@ foreach ($archivo in $pendientes) {
     Estado $dir 'fallo' 'Flow rechazo la escena por su politica de contenido'
     Di ('FLOW: ' + $id + ' fallo: Flow rechazo la escena (politica de contenido)')
     $fallos++
-  } elseif ($codigo -eq 3 -or $codigo -eq 4) {
+  } elseif ($codigo -eq 3 -or $codigo -eq 4 -or $codigo -eq 25) {
     $porque = 'la sesion de Google vencio: pega otra vez la linea del instalador'
     if ($codigo -eq 4) { $porque = 'Flow puso un limite por ahora; se sigue en la proxima corrida' }
+    # 25 (2026-10-14, registro de la laptop): Google paso la cuenta a la interfaz de agente de Flow
+    # y gflow aun no la maneja (issue #799 de gflow-cli). Fallarian todos: se para.
+    if ($codigo -eq 25) { $porque = 'Flow tiene la cuenta en su interfaz de agente y gflow aun no la maneja' }
     Di ('FLOW: paro en ' + $id + ': ' + $porque)
     break
   } else {

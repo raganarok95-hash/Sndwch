@@ -597,6 +597,13 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
   (`client.py`: la lectura previa de cookies es «best-effort» y en Windows el Chrome del perfil
   carga sus cookies solo). Si la imagen no sale, quita la marca. `flow.ps1` ya no se frena por
   `gflow auth status`: si la sesión venció de verdad, el primer encargo sale con 3.
+- **gflow-cli no maneja la cuenta del dueño (registro del 14-oct, 17:14):** la sesión sirve
+  (abrió un proyecto en `flow.google.com`), pero la imagen de prueba salió con **25**,
+  `FlowAgentUiError`: Google puso la cuenta en la **interfaz de agente** de Flow (un chat; formato,
+  modelo y cantidad son ajustes del agente, no controles por pedido) y gflow 0.85.0 no tiene
+  driver para eso (issue #799, abierto). Hay un PR de la comunidad (#824) sin unir, probado solo
+  en inglés y sin imagen-a-imagen. `flow.ps1` para en el primer 25 para no abrir 19 proyectos en
+  vano.
 - **Windows + R no sirve para instalar (dueño, 2026-10-14: «no funcionó el comando»):** si algo
   falla, la ventana se cierra antes de mostrar el error, y Defender (AMSI) puede frenar el patrón
   `irm … | iex`. La guía ahora abre PowerShell, baja `instalar.ps1` con `iwr -UseBasicParsing
