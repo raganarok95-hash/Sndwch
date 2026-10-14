@@ -114,6 +114,30 @@ function Instalar {
     & gflow auth login --browser $navegador
     & gflow auth status *> $null
   }
+  if ($LASTEXITCODE -ne 0) {
+    # 2026-10-14, captura del dueno: gflow vio la sesion ("Signed in"), pero al cerrar Chrome no
+    # alcanzo a leer sus cookies (Chrome aun tenia tomada la base: OSError), dio la sesion por no
+    # verificada y borro su marca de Chrome. Se espera a que Chrome suelte el perfil, se repone la
+    # marca (el arreglo que documenta gflow, USER_GUIDE 13.4) y se verifica otra vez contra Flow.
+    # Si no verifica, la marca se quita: nada queda dando por buena una sesion que no lo es.
+    Di 'Verificando otra vez la sesion de Flow...' 'Cyan'
+    Start-Sleep -Seconds 10
+    $raiz = Join-Path $env:LOCALAPPDATA 'ffroliva\gflow-cli'
+    $perfil = Get-ChildItem $raiz -Directory -Filter 'profile_*' -ErrorAction SilentlyContinue |
+      Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($perfil) {
+      $ruta = $perfil.FullName.ToLower()
+      Get-CimInstance Win32_Process -Filter "Name='chrome.exe'" -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -and $_.CommandLine.ToLower().Contains($ruta) } |
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+      Start-Sleep -Seconds 3
+      $marca = Join-Path $perfil.FullName '.gflow_browser_strategy'
+      $habia = Test-Path $marca
+      [System.IO.File]::WriteAllText($marca, 'chrome', (New-Object System.Text.UTF8Encoding($false)))
+      & gflow auth status *> $null
+      if ($LASTEXITCODE -ne 0 -and -not $habia) { Remove-Item $marca -Force -ErrorAction SilentlyContinue }
+    }
+  }
   if ($LASTEXITCODE -eq 0) { Bien 'Sesion de Flow (gflow)' }
   else { Mal 'Sesion de Flow' 'Vuelve a pegar la linea y entra con tu cuenta de Google en la ventana de Chrome que se abre.'; return }
 

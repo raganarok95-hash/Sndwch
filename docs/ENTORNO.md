@@ -585,6 +585,15 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
   tienen paquete listo en Windows, y pidió Visual C++ para compilarlos. Con `--python 3.12` todo
   baja listo: se comprobó aquí con `uv pip compile --python-platform x86_64-pc-windows-msvc
   --python-version 3.12 --only-binary :all:` (con 3.15 falla igual que en la laptop).
+- **La primera verificación de gflow puede fallar aunque entraste (captura del dueño, 2026-10-14):**
+  `auth_login_session_detected` → «Signed in» → `auth_flow_session_probe_error error=OSError` →
+  `auth_chrome_marker_rolled_back`. Leído en el código (0.85.0): al cerrar Chrome, `browser_cookie3`
+  no puede abrir la base de cookies todavía tomada (`mode=ro`, copia, y la copia sombra por WMI,
+  que sin ser administrador da `OSError`); gflow solo cae a Playwright con un `PermissionError`, así
+  que marca «no verificada» y borra `.gflow_browser_strategy`. El instalador ahora espera, cierra
+  solo el Chrome de ese perfil (`%LOCALAPPDATA%\ffroliva\gflow-cli\profile_*`), repone la marca
+  sin BOM (el arreglo de USER_GUIDE 13.4) y vuelve a verificar con `gflow auth status`; si no
+  verifica, la quita.
 - **Windows + R no sirve para instalar (dueño, 2026-10-14: «no funcionó el comando»):** si algo
   falla, la ventana se cierra antes de mostrar el error, y Defender (AMSI) puede frenar el patrón
   `irm … | iex`. La guía ahora abre PowerShell, baja `instalar.ps1` con `iwr -UseBasicParsing
