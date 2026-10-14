@@ -7,9 +7,9 @@
 # SOLO caracteres ASCII en este archivo: PowerShell 5.1 lee los .ps1 sin BOM como ANSI y una raya
 # o unas comillas tipograficas pueden romper el script sin aviso (2026-10-08: "no abrio nada").
 #
-# Trabaja en su PROPIO clon (~\sndwch-estudio). Flow lo genera gflow-cli (flow.ps1) y el lunes
-# Claude corre con permisos minimos (leer y escribir archivos). El git lo hace este script, solo
-# hacia la rama "estudio";
+# Trabaja en su PROPIO clon (~\sndwch-estudio). Flow lo genera Claude en tu Chrome
+# (flow-chrome.ps1) y el lunes Claude corre con permisos minimos (leer y escribir archivos). El git
+# lo hace este script, solo hacia la rama "estudio";
 # GitHub lo une a main (.github/workflows/historias.yml). CADA corrida sube su registro a
 # docs/marketing/estudio/registros/ (repo PUBLICO: el registro nunca lleva la ruta de tu usuario).
 param([switch]$Visible)
@@ -78,12 +78,10 @@ try {
     $hecho += 'agencia'
   }
 
-  # 3 - El Estudio: los encargos pendientes, en Flow, con gflow-cli (scripts/estudio/flow.ps1).
-  # Sin agente: un bucle sobre los encargos (2026-10-14; el MCP de antes no conocia flow.google.com).
-  Anota 'Flow: generando con gflow (unos 30 segundos por imagen)' 'Cyan'
-  & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repo 'scripts\estudio\flow.ps1') 2>&1 |
-    ForEach-Object { Anota $_ }
-  $hecho += 'flow'
+  # 3 - Flow ya no se genera aqui (2026-10-14): Google paso la cuenta a la interfaz de agente de
+  # Flow y gflow-cli no la maneja (exit 25, issue #799). Lo genera Claude en tu Chrome con
+  # scripts/estudio/flow-chrome.ps1, y esta corrida sube lo que dejo. Cuando gflow maneje esa
+  # interfaz, se vuelve a llamar a scripts/estudio/flow.ps1 aqui.
   $listos = @(Get-ChildItem 'docs/marketing/estudio/hecho/*/estado.json' -ErrorAction SilentlyContinue).Count
   Anota ('encargos con resultado: ' + $listos)
 } catch {

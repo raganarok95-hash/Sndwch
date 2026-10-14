@@ -1,8 +1,11 @@
 # El Estudio: cómo le encarga la agencia una imagen a Flow (2026-10-08)
 
 Dueño: «Ese equipo es el que debe llamar a Flow para el proceso». La agencia (`../AGENCIA.md` §5)
-deja **encargos** aquí. Tu laptop los cumple sola con **gflow-cli**, a las 7:30 y a las 19:30
-(`scripts/estudio/flow.ps1`, instalación en `INSTALAR.md`), y sube el resultado a la rama `estudio`.
+deja **encargos** aquí. Los cumple **Claude en tu Chrome**, usando el chat de Flow como lo harías
+tú (`scripts/estudio/flow-chrome.ps1` lo abre, `FLOW_EN_CHROME.md` son sus instrucciones;
+instalación en `INSTALAR.md`), y el resultado sube a la rama `estudio`. Dueño, 2026-10-14: eligió
+«Claude maneja Flow en tu Chrome», porque Google pasó la cuenta a la interfaz de agente de Flow y
+gflow-cli no la maneja (`scripts/estudio/flow.ps1` queda para cuando la maneje).
 Los personajes van como **imagen de referencia** (`referencias/sando.png` y `wicho.png`, fondo
 blanco, al doble; las hace `scripts/estudio/referencias.py`): se muestran, no se describen.
 Los encargos de video no se generan solos (gastan créditos): quedan pendientes.

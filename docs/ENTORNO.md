@@ -604,6 +604,11 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
   driver para eso (issue #799, abierto). Hay un PR de la comunidad (#824) sin unir, probado solo
   en inglés y sin imagen-a-imagen. `flow.ps1` para en el primer 25 para no abrir 19 proyectos en
   vano.
+- **Flow con Claude en el Chrome del dueño (dueño, 2026-10-14: «Claude maneja Flow en tu
+  Chrome»):** `scripts/estudio/flow-chrome.ps1` pone el clon al día y abre `claude --chrome` con
+  `FLOW_EN_CHROME.md`. Claude in Chrome (extensión oficial, plan Pro/Max, sesión de claude.ai, no
+  API key) sube archivos de hasta 10 MB a la página y maneja el chat de Flow. No corre solo: lo
+  abre el dueño. La tarea programada solo pone el clon al día, hace el lunes y sube lo hecho.
 - **Windows + R no sirve para instalar (dueño, 2026-10-14: «no funcionó el comando»):** si algo
   falla, la ventana se cierra antes de mostrar el error, y Defender (AMSI) puede frenar el patrón
   `irm … | iex`. La guía ahora abre PowerShell, baja `instalar.ps1` con `iwr -UseBasicParsing
