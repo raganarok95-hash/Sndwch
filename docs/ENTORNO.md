@@ -592,8 +592,11 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
   que sin ser administrador da `OSError`); gflow solo cae a Playwright con un `PermissionError`, así
   que marca «no verificada» y borra `.gflow_browser_strategy`. El instalador ahora espera, cierra
   solo el Chrome de ese perfil (`%LOCALAPPDATA%\ffroliva\gflow-cli\profile_*`), repone la marca
-  sin BOM (el arreglo de USER_GUIDE 13.4) y vuelve a verificar con `gflow auth status`; si no
-  verifica, la quita.
+  sin BOM (el arreglo de USER_GUIDE 13.4) y prueba con **una imagen de prueba** (gratis): la
+  verificación rápida falla igual con la base ya libre (segunda captura), pero generar no la usa
+  (`client.py`: la lectura previa de cookies es «best-effort» y en Windows el Chrome del perfil
+  carga sus cookies solo). Si la imagen no sale, quita la marca. `flow.ps1` ya no se frena por
+  `gflow auth status`: si la sesión venció de verdad, el primer encargo sale con 3.
 - **Windows + R no sirve para instalar (dueño, 2026-10-14: «no funcionó el comando»):** si algo
   falla, la ventana se cierra antes de mostrar el error, y Defender (AMSI) puede frenar el patrón
   `irm … | iex`. La guía ahora abre PowerShell, baja `instalar.ps1` con `iwr -UseBasicParsing

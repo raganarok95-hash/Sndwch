@@ -70,11 +70,10 @@ $gflow = (Get-Command gflow -ErrorAction SilentlyContinue).Source
 if (-not $gflow) { $gflow = Join-Path $HOME '.local/bin/gflow.exe' }
 if (-not (Test-Path $gflow)) { Di 'FLOW: no encuentro gflow. Pega otra vez la linea del instalador.'; exit 2 }
 
+# La verificacion rapida de gflow falla en Windows aunque la sesion sirva (OSError al leer las
+# cookies, 2026-10-14): solo avisa. Si de verdad vencio, el primer encargo sale con 3 y se para.
 & $gflow auth status *> $null
-if ($LASTEXITCODE -ne 0) {
-  Di 'FLOW: la sesion de Google en Flow no esta iniciada o vencio. Pega otra vez la linea del instalador (abre Chrome para entrar).'
-  exit 3
-}
+if ($LASTEXITCODE -ne 0) { Di 'FLOW: aviso: la verificacion rapida de gflow no confirmo la sesion; se intenta igual.' }
 
 $referencias = @{}
 foreach ($n in @('SANDO', 'WICHO')) {
