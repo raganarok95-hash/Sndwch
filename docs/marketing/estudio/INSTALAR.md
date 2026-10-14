@@ -11,23 +11,26 @@ Dueño, 2026-10-08: «sí, deja 100% automático lo de Flow». Después de esto,
 Tú no haces nada más. Solo deja la laptop **prendida o en suspensión** (no apagada) y con tu sesión
 de Windows iniciada. Si estaba apagada a esa hora, corre apenas la prendes.
 
-## Instalar o arreglar: una sola línea (2026-10-08)
+## Instalar o arreglar (2026-10-14: desde una ventana de PowerShell)
 
-Dueño: «No funciona el comando y debe ser automático». Ya no hay que abrir carpetas ni tener nada
-instalado antes:
+Dueño: «cuando intenté Windows más R no funcionó el comando». Con Windows + R, si algo falla la
+ventana se cierra sola y no se ve por qué (y el antivirus de Windows a veces frena el «descargar y
+correr» de `irm | iex`). Por eso ahora se hace desde una ventana que se queda abierta:
 
-1. En la laptop, presiona **Windows + R**.
-2. Pega esta línea y presiona **Enter**:
+1. Presiona la tecla **Windows**, escribe **PowerShell** y presiona **Enter** (la normal, no
+   «como administrador»).
+2. Pega esta línea (clic derecho pega) y presiona **Enter**:
    ```
-   powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol='Tls12'; irm https://raw.githubusercontent.com/raganarok95-hash/Sndwch/main/scripts/estudio/instalar.ps1 | iex"
+   [Net.ServicePointManager]::SecurityProtocol='Tls12'; iwr https://raw.githubusercontent.com/raganarok95-hash/Sndwch/main/scripts/estudio/instalar.ps1 -UseBasicParsing -OutFile $HOME\instalar-sndwch.ps1; powershell -ExecutionPolicy Bypass -File $HOME\instalar-sndwch.ps1
    ```
-3. Se abre una ventana azul que revisa cada pieza y dice **[OK]** o **[FALTA]**:
-   - **Git, Node y Claude Code:** si falta alguno, lo instala solo. Si Windows pide permiso, acepta.
-   - **Claude Code con tu cuenta:** si no hay sesión, te dice cómo entrar.
-   - **Flow conectado a Claude Code.**
-   - **Su propio clon**, `sndwch-estudio`. Tu carpeta `Sndwch` no se toca.
+   Baja el instalador a tu carpeta de usuario y lo corre. Si algo sale en rojo, la ventana se queda
+   abierta: mándame una captura.
+3. Revisa cada pieza y dice **[OK]** o **[FALTA]**:
+   - **Git y su propio clon**, `sndwch-estudio`. Tu carpeta `Sndwch` no se toca.
+   - **gflow-cli**, para Flow. Si Windows pide permiso para instalar algo, acepta.
    - **Tu sesión de Flow:** si no la hay, **se abre Chrome: entras con tu cuenta de Google una sola
-     vez** y vuelves a la ventana.
+     vez** y se cierra solo cuando carga Flow.
+   - **Claude Code con tu cuenta**, solo para los lunes.
    - **La tarea programada**, a las 7:30 y a las 19:30.
    - **La primera corrida, a la vista.** Si se abre una ventana para entrar a GitHub, entra con tu
      cuenta. Es solo la primera vez.

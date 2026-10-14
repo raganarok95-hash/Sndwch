@@ -580,6 +580,15 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
   scratchpad y se usa `[System.Management.Automation.Language.Parser]::ParseFile`. El git del
   Estudio se simula con un remoto falso y un `claude` falso. Lo que no se puede probar aquí:
   `winget`, `Register-ScheduledTask` y el login de Flow (solo Windows).
+- **gflow en Windows necesita Python 3.12, fijo (registro del instalador, 2026-10-14):** `uv tool
+  install gflow-cli` tomó el Python más nuevo (3.15), para el que `lz4` 4.4.5 y `pyyaml` 6.0.3 no
+  tienen paquete listo en Windows, y pidió Visual C++ para compilarlos. Con `--python 3.12` todo
+  baja listo: se comprobó aquí con `uv pip compile --python-platform x86_64-pc-windows-msvc
+  --python-version 3.12 --only-binary :all:` (con 3.15 falla igual que en la laptop).
+- **Windows + R no sirve para instalar (dueño, 2026-10-14: «no funcionó el comando»):** si algo
+  falla, la ventana se cierra antes de mostrar el error, y Defender (AMSI) puede frenar el patrón
+  `irm … | iex`. La guía ahora abre PowerShell, baja `instalar.ps1` con `iwr -UseBasicParsing
+  -OutFile` y lo corre con `-File`: el error queda a la vista.
 - En PowerShell 5.1, un `--` pasado a un programa externo puede perderse. Para
   `claude mcp add … -- cmd /c npx …` se usa `Start-Process -ArgumentList @(...)`.
 

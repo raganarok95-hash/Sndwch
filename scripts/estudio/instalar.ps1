@@ -1,8 +1,9 @@
 # SND//WCH - instala, revisa y prueba el Estudio automatico en la laptop del dueno.
 # Autorizado por el dueno el 2026-10-08: "si, deja 100% automatico lo de Flow" y "debe ser automatico".
 #
-# Se corre con UNA linea, sin abrir carpetas ni tener nada antes (Windows+R, pegar, Enter):
-#   powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol='Tls12'; irm https://raw.githubusercontent.com/raganarok95-hash/Sndwch/main/scripts/estudio/instalar.ps1 | iex"
+# Se corre con UNA linea en una ventana de PowerShell (tecla Windows, "PowerShell", Enter, pegar):
+#   [Net.ServicePointManager]::SecurityProtocol='Tls12'; iwr https://raw.githubusercontent.com/raganarok95-hash/Sndwch/main/scripts/estudio/instalar.ps1 -UseBasicParsing -OutFile $HOME\instalar-sndwch.ps1; powershell -ExecutionPolicy Bypass -File $HOME\instalar-sndwch.ps1
+# (2026-10-14: con Windows+R la ventana se cerraba sin mostrar el error. Tambien sirve por irm | iex.)
 #
 # Se puede correr las veces que haga falta. Revisa cada pieza y la instala si falta (Git, su propio
 # clon ~\sndwch-estudio, gflow-cli para Flow, Claude Code para los lunes), revisa la sesion de
@@ -87,12 +88,18 @@ function Instalar {
   #     flow.google.com y el MCP de antes no lo conoce. Se instala con uv, que trae su Python.
   if (-not (Tiene 'uv')) { ConWinget 'astral-sh.uv' 'uv' }
   if (-not (Tiene 'uv')) { Mal 'uv (instala gflow)' 'Instalalo desde https://docs.astral.sh/uv/ y vuelve a pegar la linea.'; return }
+  # Python 3.12, fijo: uv elegia el mas nuevo (3.15) y para ese aun no hay paquetes listos de lz4
+  # ni pyyaml en Windows; los queria compilar y pedia Visual C++ (registro del 2026-10-14).
   Di 'Instalando o actualizando gflow-cli (la primera vez baja ~150 MB)...' 'Cyan'
-  uv tool install --upgrade gflow-cli 2>&1 | ForEach-Object { Add-Content -Path $log -Value ([string]$_) }
+  uv tool install --upgrade --python 3.12 gflow-cli 2>&1 | ForEach-Object { Add-Content -Path $log -Value ([string]$_) }
   RecargarPath
-  uv tool run --from gflow-cli playwright install chromium 2>&1 | ForEach-Object { Add-Content -Path $log -Value ([string]$_) }
+  uv tool run --python 3.12 --from gflow-cli playwright install chromium 2>&1 | ForEach-Object { Add-Content -Path $log -Value ([string]$_) }
   if (Tiene 'gflow') { Bien ('gflow-cli ' + ((gflow --version) -replace '^.*version\s*', '')) }
-  else { Mal 'gflow-cli' 'Manda una captura de esta ventana.'; return }
+  else {
+    $error1 = (Get-Content $log | Where-Object { $_ -match '^error:' } | Select-Object -Last 1)
+    if ($error1) { Di ('        ' + $error1) }
+    Mal 'gflow-cli' 'Manda una captura de esta ventana.'; return
+  }
 
   # 4 - Tu sesion de Flow en gflow. Si no la hay, se abre Chrome: entras UNA vez con tu cuenta de
   #     Google y, cuando carga Flow, se cierra solo. Dura semanas. (Lo que imprime no va al
