@@ -1,0 +1,125 @@
+﻿16:53:31  == SND//WCH - el Estudio: instalacion y prueba ==
+16:53:31  Windows PowerShell 5.1.26100.9444
+16:53:31  [OK]    Git 2.56.0.windows.2
+16:53:34  [OK]    Clon al dia (7504a21)
+16:53:35  Instalando uv. Si Windows pide permiso, acepta.
+El origen 'msstore' requiere que vea los siguientes contratos antes de usarlo.
+Terms of Transaction: https://aka.ms/microsoft-store-terms-of-transaction
+El origen requiere que la regi├│n geogr├ífica de dos letras de la m├íquina actual se env├¡e al servicio back-end para que funcione correctamente (por ejemplo, "EE. UU.").
+
+Encontrado uv [astral-sh.uv] Versi├│n 0.13.1
+El propietario de esta aplicaci├│n le concede una licencia.
+Microsoft no es responsable, ni tampoco concede ninguna licencia de paquetes de terceros.
+Este paquete requiere las siguientes dependencias:
+  - Paquetes
+      Microsoft.VCRedist.2015+.x64
+Descargando https://github.com/astral-sh/uv/releases/download/0.13.1/uv-x86_64-pc-windows-msvc.zip
+El hash del instalador se verific├│ correctamente
+Extrayendo archivo...
+Archivo extra├¡do correctamente
+Iniciando instalaci├│n de paquete...
+Variable de entorno PATH modificada; reinicie el shell para usar el nuevo valor.
+Alias de l├¡nea de comandos agregado: "uvx"
+Alias de l├¡nea de comandos agregado: "uv"
+Alias de l├¡nea de comandos agregado: "uvw"
+Instalado correctamente
+16:53:48  Instalando o actualizando gflow-cli (la primera vez baja ~150 MB)...
+Downloading cpython-3.15.0-windows-x86_64-none (download) (23.3MiB)
+ Downloaded cpython-3.15.0-windows-x86_64-none (download)
+Resolved 57 packages in 5.01s
+Downloading pywin32 (6.7MiB)
+Downloading pygments (1.2MiB)
+Downloading pycryptodomex (1.7MiB)
+Downloading pydantic-core (2.1MiB)
+Downloading playwright (36.1MiB)
+Downloading cryptography (3.9MiB)
+Downloading gflow-cli (1.4MiB)
+   Building lz4==4.4.5
+ Downloaded pydantic-core
+ Downloaded pycryptodomex
+ Downloaded gflow-cli
+ Downloaded pygments
+ Downloaded cryptography
+   Building pyyaml==6.0.3
+ Downloaded pywin32
+ Downloaded playwright
+error: Failed to build `lz4==4.4.5`
+  cause: The build backend returned an error
+  cause: Call to `setuptools.build_meta.build_wheel` failed (exit code: 1)
+System.Management.Automation.RemoteException
+         [stdout]
+         running bdist_wheel
+         running build
+         running build_py
+         creating build\lib.win-amd64-cpython-315\lz4
+         copying lz4\version.py -> build\lib.win-amd64-cpython-315\lz4
+         copying lz4\__init__.py -> build\lib.win-amd64-cpython-315\lz4
+         creating build\lib.win-amd64-cpython-315\lz4\block
+         copying lz4\block\__init__.py -> build\lib.win-amd64-cpython-315\lz4\block
+         creating build\lib.win-amd64-cpython-315\lz4\frame
+         copying lz4\frame\__init__.py -> build\lib.win-amd64-cpython-315\lz4\frame
+         running build_ext
+         building 'lz4._version' extension
+System.Management.Automation.RemoteException
+         [stderr]
+         C:\Users\ragan\AppData\Local\uv\cache\builds-v0\.tmpmPrfHH\Lib\site-packages\setuptools\_distutils\dist.py:318: UserWarning: Unknown distribution option: 'tests_require'
+           warnings.warn(msg)
+         C:\Users\ragan\AppData\Local\uv\cache\builds-v0\.tmpmPrfHH\Lib\site-packages\setuptools_scm\_integration\version_inference.py:236: UserWarning: version of lz4 already set
+           warnings.warn(f"version of {self.dist_name} already set")
+         C:\Users\ragan\AppData\Local\uv\cache\builds-v0\.tmpmPrfHH\Lib\site-packages\setuptools\dist.py:765: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+         !!
+System.Management.Automation.RemoteException
+                 ********************************************************************************
+                 Please consider removing the following classifiers in favor of a SPDX license expression:
+System.Management.Automation.RemoteException
+                 License :: OSI Approved :: BSD License
+System.Management.Automation.RemoteException
+                 See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+                 ********************************************************************************
+System.Management.Automation.RemoteException
+         !!
+           self._finalize_license_expression()
+         error: Microsoft Visual C++ 14.0 or greater is required. Get it with "Microsoft C++ Build Tools": https://visualstudio.microsoft.com/visual-cpp-build-tools/
+System.Management.Automation.RemoteException
+hint: `lz4` (v4.4.5) was included because `gflow-cli` (v0.85.0) depends on `browser-cookie3` (v0.20.1) which depends on `lz4`
+System.Management.Automation.RemoteException
+hint: Build failures usually indicate a problem with the package or the build environment
+   Building lz4==4.4.5
+   Building pyyaml==6.0.3
+error: Failed to build `lz4==4.4.5`
+  cause: The build backend returned an error
+  cause: Call to `setuptools.build_meta.build_wheel` failed (exit code: 1)
+System.Management.Automation.RemoteException
+         [stdout]
+         running bdist_wheel
+         running build
+         running build_py
+         copying lz4\version.py -> build\lib.win-amd64-cpython-315\lz4
+         running build_ext
+         building 'lz4._version' extension
+System.Management.Automation.RemoteException
+         [stderr]
+         C:\Users\ragan\AppData\Local\uv\cache\builds-v0\.tmp6mAIQV\Lib\site-packages\setuptools\_distutils\dist.py:318: UserWarning: Unknown distribution option: 'tests_require'
+           warnings.warn(msg)
+         C:\Users\ragan\AppData\Local\uv\cache\builds-v0\.tmp6mAIQV\Lib\site-packages\setuptools_scm\_integration\version_inference.py:236: UserWarning: version of lz4 already set
+           warnings.warn(f"version of {self.dist_name} already set")
+         C:\Users\ragan\AppData\Local\uv\cache\builds-v0\.tmp6mAIQV\Lib\site-packages\setuptools\dist.py:765: SetuptoolsDeprecationWarning: License classifiers are deprecated.
+         !!
+System.Management.Automation.RemoteException
+                 ********************************************************************************
+                 Please consider removing the following classifiers in favor of a SPDX license expression:
+System.Management.Automation.RemoteException
+                 License :: OSI Approved :: BSD License
+System.Management.Automation.RemoteException
+                 See https://packaging.python.org/en/latest/guides/writing-pyproject-toml/#license for details.
+                 ********************************************************************************
+System.Management.Automation.RemoteException
+         !!
+           self._finalize_license_expression()
+         error: Microsoft Visual C++ 14.0 or greater is required. Get it with "Microsoft C++ Build Tools": https://visualstudio.microsoft.com/visual-cpp-build-tools/
+System.Management.Automation.RemoteException
+hint: `lz4` (v4.4.5) was included because `gflow-cli` (v0.85.0) depends on `browser-cookie3` (v0.20.1) which depends on `lz4`
+System.Management.Automation.RemoteException
+hint: Build failures usually indicate a problem with the package or the build environment
+16:54:33  [FALTA] gflow-cli
+16:54:33          -> Manda una captura de esta ventana.
