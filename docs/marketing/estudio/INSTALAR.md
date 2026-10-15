@@ -5,9 +5,10 @@ Dueño, 2026-10-08: «sí, deja 100% automático lo de Flow». Después de esto,
   que viene (`scripts/estudio/LUNES.md`);
 - **todos los días a las 7:30 y a las 19:30** pone su clon al día y sube a GitHub lo que haya
   quedado hecho;
-- **cuando tú quieras generar**, abres **Claude con tu Chrome** y él hace en Flow los encargos
-  pendientes (ver «Generar en Flow» abajo). Dueño, 2026-10-14: «Claude maneja Flow en tu Chrome»
-  (Google pasó tu cuenta a la interfaz de agente de Flow y gflow-cli no la maneja);
+- **todos los días a las 7:00**, si creaste la rutina de la app de Claude («Que Flow genere solo»
+  abajo), hace en Flow los encargos pendientes con tu Chrome; si no, lo haces tú cuando quieras
+  («Generar en Flow»). Dueño, 2026-10-14: «Claude maneja Flow en tu Chrome» (Google pasó tu
+  cuenta a la interfaz de agente de Flow y gflow-cli no la maneja);
 - sube todo a GitHub, y GitHub monta las historias y las programa en Instagram a su hora.
 
 Tú no haces nada más. Solo deja la laptop **prendida o en suspensión** (no apagada) y con tu sesión
@@ -51,6 +52,33 @@ Pone el clon al día, abre Claude con tu Chrome y genera los encargos pendientes
 Flow: sube la referencia de SANDO o WICHO, pide 2 imágenes verticales, las descarga, las revisa y
 al final las sube a GitHub. Tú solo apruebas lo que te pregunte (puedes elegir «permitir todo en
 este sitio» para Flow). Tu Chrome tiene que tener abierta tu cuenta de Google de Flow.
+
+Así salieron las 3 primeras el 14-oct (`2026-10-19-manana-*`).
+
+## Que Flow genere solo cada mañana (rutina de la app de Claude, gratis)
+
+Dueño, 2026-10-14: «debe ser totalmente gratuito… el problema no es la herramienta sino que tú no
+puedes conectarte». La app de escritorio de Claude tiene **rutinas locales**: corren en tu laptop
+a la hora que elijas, sin que abras nada, y usan tu Chrome con Claude in Chrome (lo mismo que
+generó las 3 primeras). No cuestan nada aparte de tu plan. Se crean una vez, ~3 minutos:
+
+1. Abre la **app de escritorio de Claude** (actualízala si te lo pide) → pestaña **Code** →
+   **Routines** (en la barra lateral, o dentro de **More**) → **New routine** → **Local**.
+2. Llena así:
+   - **Name**: `sndwch-flow`
+   - **Description**: `Genera en Flow los encargos pendientes`
+   - **Instructions**: `Lee scripts/estudio/FLOW_EN_CHROME.md y cúmplelo como rutina: genera en Flow los encargos pendientes.`
+   - **Carpeta**: `C:\Users\<tu usuario>\sndwch-estudio` (la que dejó el instalador). Sin
+     «worktree».
+   - **Schedule**: **Daily**, **7:00**. Antes de las 7:30, así la tarea de Windows sube lo hecho.
+3. Guarda y aprieta **Run now** una vez, mirando: cada vez que pida permiso, elige **Always
+   allow**. Desde ahí, las corridas siguientes aprueban solas lo mismo.
+4. En **Settings → This computer → System**, prende **Keep computer awake**.
+
+Tiene que estar **abierta la app de Claude** y **abierto Chrome** con tu cuenta de Flow. Con la
+tapa cerrada la laptop duerme y esa mañana no corre; corre una vez apenas despierta. Si algo la
+frena (Google pide entrar otra vez, Flow pone límite), lo deja anotado en
+`docs/marketing/estudio/registros/` y lo que falta sale al día siguiente.
 
 ## Lo que el instalador revisa (antes era a mano)
 
