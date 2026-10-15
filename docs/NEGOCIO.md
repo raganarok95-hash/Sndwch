@@ -423,7 +423,9 @@ Meta, contenido, recompra; bandejas opcionales): el mes 3 deja ~S/2,300–3,000 
 S/6,000 llega en el mes 6 si un cliente de Meta cuesta ~S/21, en el 10 si cuesta ~S/36, y nunca en
 12 meses si la recompra no mejora. **`docs/OTRA_PUBLICIDAD.md`** (esa noche): con anuncios dentro de
 Rappi, PedidosYa y Google (S/800 al mes) más Meta a ~S/36, S/6,000 sostenidos desde el mes 6 en vez
-del 10; sin Meta no alcanza; TikTok pagado no conviene.
+del 10; sin Meta no alcanza; TikTok pagado no conviene. **`docs/META_Y_PRESENCIAL.md`**: embajadores
+pagados por resultado (~S/8 por cliente) + los tres anuncios + Meta con una prueba de S/700 que
+escala el 17-nov → mes 5 (mes 6 con ayudante desde enero); sin Meta, mes 6.
 
 `PREDICCION_V12.md` concluye que la meta de **S/5,000 netos sostenidos NO se alcanza con más
 publicidad** —a S/20,000/mes el resultado empeora— sino con tres números. Ninguno estaba
