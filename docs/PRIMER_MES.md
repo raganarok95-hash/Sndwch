@@ -86,3 +86,65 @@ carta del día (menos proteínas abiertas) para que la merma no se coma el marge
 ## Lo que hay que medir la primera semana (y volver a correr esto)
 Pedidos propios al día; lo que se bota por semana (la merma es un supuesto); cuántas oficinas
 visitadas piden; pedidos de Rappi y PedidosYa; el ticket promedio.
+
+## Ajustado con tus respuestas (2026-10-15, tarde)
+
+Dueño: «Compra de bolsas lisas y sellos ya está realizado» · «todo se congela» · «me cobran 15
+soles por el envío del pan» · «todos abren juntos PedidosYa, Rappi y la web» · «movemos la prueba
+al inicio» · «no puedo ofrecer a 2 oficinas al día, tengo un trabajo fijo formal».
+`python3 modelo/primer_mes.py --ajustado`: bolsa lisa, merma controlada, S/15 de envío de pan por
+semana, PedidosYa desde el 20, la prueba de Meta del 20-oct al 16-nov y oficinas solo por mensaje y
+al paso (+0.15 clientes al día [SUPUESTO]).
+
+| escenario (cada fila suma a la anterior) | primer mes | gana en | pedidos al día | 6 meses |
+|---|---|---|---|---|
+| así abres hoy | −S/23 (−S/279 a +S/238) | 45% | 2.0 | +S/1,647 |
+| + Rappi trabajado | +S/83 | 63% | 2.2 | +S/2,315 |
+| + volantes o stickers (~S/100) | +S/104 | 66% | 2.5 | +S/2,454 |
+| + bebida, 30CM, referidos y recompra | +S/177 | 75% | 2.6 | +S/3,153 |
+| + oficinas por mensaje y al paso | +S/217 (−S/111 a +S/553) | 79% | 2.8 | +S/3,962 |
+| **+ UN almuerzo fijo de oficina desde el 3-nov** | **+S/410 (+S/82 a +S/746)** | **95%** | 3.3 | **+S/5,725** |
+| lo mismo, con la prueba de Meta en diciembre | +S/506 | 100% | 2.7 | +S/5,482 |
+
+La prueba de Meta al inicio cuesta ~S/96 en el primer mes y trae clientes que se quedan: en 6
+meses deja un poco más que hacerla en diciembre. Decisión tuya: va al inicio.
+
+### El pan (S/15 por envío)
+- **Congelar el mismo día que llega**, ya frío y **cortado en porciones de 15CM**, envuelto dos
+  veces (film y bolsa zip sin aire), con la fecha. Aguanta hasta 3 meses; mejor dentro del mes
+  ([King Arthur](https://www.kingarthurbaking.com/blog/2023/12/20/freeze-bread)).
+- **Nunca a la refrigeradora**: el frío de la refri lo pone duro más rápido que dejarlo afuera
+  ([America's Test Kitchen](https://www.americastestkitchen.com/articles/7254-how-to-store-homemade-bread)).
+- Afuera, en bolsa cerrada, solo lo de 1 o 2 días.
+- **Cada mañana** sacas las porciones del día (las de «Abro con N»): 30–60 min en su bolsa. Si
+  llega un pedido antes, va directo del congelador al horno: 175 °C unos 5 minutos devuelven la
+  costra ([King Arthur](https://www.kingarthurbaking.com/blog/2025/07/24/how-to-defrost-bread)).
+- **Pide cada dos semanas** y congela: el envío baja a S/7.50 por semana. Pregunta si hay un
+  pedido mínimo con envío gratis, o recógelo al volver del trabajo.
+- Lo ideal sería pan **precocido** (se termina 8–10 min en el horno): no encontré proveedor en
+  Trujillo; pregúntale a tu panadero si lo hace.
+
+### ¿Volantes o sticker publicitario?
+- **El sticker en postes o paredes es riesgoso**: el SEGAT de Trujillo sanciona afiches pegados
+  sin autorización
+  ([SINIA](https://sinia.minam.gob.pe/novedades/infraccionaran-quienes-coloquen-afiches-sin-autorizacion-fiestas-ano)).
+  Además, en la calle la gente pasa y no se detiene a escanear. Funciona donde la gente espera
+  o se sienta, con permiso: la bolsa (ya va), el mural del condominio, una bodega o barbería amiga.
+- **El volante llega a la mano**, en la casa o en el escritorio, con tiempo para escanear.
+  Las cifras que circulan (1.8–3.5% de respuesta) son de empresas que venden volanteo: tómalas como
+  techo. El modelo supone mucho menos (~0.5%).
+- **Se prueban los dos** con su propio origen: volantes con `?src=volante`, stickers con
+  `?src=calle` (el que ya está impreso). A las dos semanas se queda el que trae más pedidos.
+
+### Oficinas sin visitas diarias
+La lista está en `docs/marketing/OFICINAS_CERCANAS.md` (179 lugares, las 10 primeras elegidas).
+Con tu trabajo formal: tu propia oficina primero, mensajes de noche a las 10 de la lista y una
+pasada por semana dejando volantes. Origen `?src=oficina`.
+
+### La prueba de Meta al inicio: lo que falta para que salga el 20
+- Un **método de pago** en la cuenta de anuncios 1488138326460689 y tus permisos de finanzas
+  (`docs/CONFIGURAR_META.md`, C3 y C4).
+- La **página conectada a la cuenta de anuncios** (C5). Instagram no hace falta para la prueba:
+  el anuncio sale en Instagram con la página como identidad.
+- Se pierde la medición limpia de cuánta gente llega sola los primeros 14 días (P1b): se separa
+  con los `?src=` y la atribución de Meta.

@@ -24,7 +24,7 @@ with contextlib.redirect_stdout(io.StringIO()):
     import proyeccion as P                     # noqa: E402
 import insumos as I                            # noqa: E402
 
-N = int(sys.argv[1]) if len(sys.argv) > 1 else 800
+N = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 800
 APERTURA = date(2026, 10, 20)
 
 # [SUPUESTO] Lo que se vence en una semana si se tiene TODA la carta lista (pan sub comprado «por si
@@ -80,7 +80,7 @@ def correr(sol, ex):
 
 S = lambda v: ("−" if v < 0 else "+" if v > 0 else "") + f"S/{abs(v):,.0f}"
 
-if __name__ == "__main__":
+if __name__ == "__main__" and "--ajustado" not in sys.argv:
     base_pm, base_6, _ = correr((), BASE)
     hoy_pm, _, _ = correr((), {})
     print(f"PRIMER MES (20-oct a 18-nov) · {N} corridas · caso malo / medio / bueno = 1 de 10 / mitad / 9 de 10\n")
@@ -119,3 +119,45 @@ if __name__ == "__main__":
     deja = e["propio"] + (I.por_sandwich(I.EMPAQUE_PEDIDO, sand_por_pedido=1) - I.por_sandwich(I.EMPAQUE_BOLSA_LISA, sand_por_pedido=1))
     print(f"\nEquilibrio del primer mes con bolsa lisa y sin prueba: {(P.FIJOS_MES * 30 / 30.4 + 20 + MERMA_CON_CONTROL[0] * 30 / 7) / deja / 26:.1f} pedidos propios al día "
           f"(cada uno deja S/{deja:.2f})")
+
+
+# ══════════════════════════════════════════════════════════════════
+# AJUSTADO CON LAS RESPUESTAS DEL DUEÑO (2026-10-15, tarde)
+# ══════════════════════════════════════════════════════════════════
+# «Compra de bolsas lisas y sellos ya está realizado» · «todo se congela» · «me cobran 15 soles
+# por el envío del pan» · «todos abren juntos PedidosYa, Rappi y la web» · «movemos la prueba al
+# inicio» · «no puedo ofrecer a 2 oficinas al día, tengo un trabajo fijo formal».
+PAN_ENVIO = (15.0 / 6, 10_000)     # S/15 por envío, un envío por semana (el pan se congela)
+HOY_REAL = dict(
+    empaque=I.EMPAQUE_BOLSA_LISA, merma=MERMA_CON_CONTROL, gastos=[PAN_ENVIO],
+    pya_desde=APERTURA, prueba_desde=APERTURA, prueba_hasta=date(2026, 11, 16),
+)
+# Oficinas sin visitas diarias: mensajes a las 10 de la lista y una visita al paso por semana
+# [SUPUESTO] +0.15 clientes al día, ~S/50 de muestras en total.
+OFICINAS_LIGERO = dict(oficinas=0.15, oficinas_desde=APERTURA, gastos=[PAN_ENVIO, (5.0, 10)])
+OFICINA_FIJA = dict(oficina_fija=(6, date(2026, 11, 3)), descuento_grupo=DESCUENTO_GRUPO)
+VOLANTEO = dict(volanteo=(0.3, 18))
+
+
+def ajustado():
+    print("\n\n══ AJUSTADO CON TUS RESPUESTAS (bolsa lisa comprada, todo congelado, pan S/15 por envío,")
+    print("   PedidosYa desde el 20, prueba de Meta del 20-oct al 16-nov, sin visitas diarias) ══")
+    escenarios = [
+        ("Así abre hoy", (), HOY_REAL),
+        ("+ Rappi trabajado", (), dict(HOY_REAL, rappi_factor=1.3)),
+        ("+ volantes o stickers (~S/100)", (), dict(HOY_REAL, rappi_factor=1.3, **VOLANTEO, gastos=[PAN_ENVIO, VOLANTES])),
+        ("+ bebida, 30CM, referidos y recompra", ("ticket", "referidos", "recompra"), dict(HOY_REAL, rappi_factor=1.3, **VOLANTEO, gastos=[PAN_ENVIO, VOLANTES])),
+        ("+ oficinas por mensaje y al paso", ("ticket", "referidos", "recompra"), dict(HOY_REAL, rappi_factor=1.3, **VOLANTEO, **{k: v for k, v in OFICINAS_LIGERO.items() if k != "gastos"}, gastos=[PAN_ENVIO, VOLANTES, (5.0, 10)])),
+        ("+ UN almuerzo fijo de oficina desde el 3-nov", ("ticket", "referidos", "recompra"), dict(HOY_REAL, rappi_factor=1.3, **VOLANTEO, **{k: v for k, v in OFICINAS_LIGERO.items() if k != "gastos"}, **OFICINA_FIJA, gastos=[PAN_ENVIO, VOLANTES, (5.0, 10)])),
+        ("Lo mismo, pero la prueba de Meta después (dic)", ("ticket", "referidos", "recompra"), dict(HOY_REAL, rappi_factor=1.3, **VOLANTEO, **{k: v for k, v in OFICINAS_LIGERO.items() if k != "gastos"}, **OFICINA_FIJA, gastos=[PAN_ENVIO, VOLANTES, (5.0, 10)], sin_prueba=True)),
+    ]
+    for titulo, sol, ex in escenarios:
+        pm, t6, r = correr(sol, ex)
+        print(f"\n{titulo}")
+        print(f"  primer mes {S(pm['p50'])} ({S(pm['p10'])} a {S(pm['p90'])}) · gana en {pm['positivo']:.0%} · "
+              f"{pm['pedidos']:.0f} pedidos ({pm['pedidos'] / 26:.1f} al día) · ventas {S(pm['ventas'])}")
+        print("  " + " · ".join(f"{m['mes']} {S(m['p50'])}" for m in r["meses"]) + f" · 6 meses {S(t6)}")
+
+
+if __name__ == "__main__" and "--ajustado" in sys.argv:
+    ajustado()
