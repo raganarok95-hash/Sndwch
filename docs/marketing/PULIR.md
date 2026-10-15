@@ -59,8 +59,9 @@ producción y contra Meta, **el marketing automático no ha publicado nunca nada
    2 o 3 clips de 10 segundos por semana.
 3. **Medir cada canal por pedidos, no por *likes*.** Cada enlace lleva su origen: `ig-bio`, `tiktok`,
    `google`, `meta`. El correo del domingo ya dice de dónde vino cada pedido. Lo que en dos semanas
-   no trae pedidos, se cambia. *Propuesta (dime sí o no): después del primer pedido, una pregunta de
-   un toque, «¿cómo nos conociste?»: atrapa lo que un enlace no ve (un Reel visto, un amigo).*
+   no trae pedidos, se cambia. *«¿Cómo nos conociste?»: descartado (dueño: «eso ya es muy invasivo»).* Los
+   anuncios de Rappi y PedidosYa se miden en su propio panel; Google, con `?src=google-ads`
+   (`docs/OTRA_PUBLICIDAD.md`).
 4. **La prueba de Meta, bien armada** (cuando esté el paso 2): los 2–3 Reels que mejor funcionen
    gratis como anuncio, Trujillo, a las horas de almuerzo y cena, y medida por pedidos con origen
    `meta`. Con presupuesto chico no conviene optimizar a «compra» (Meta necesita ~50 compras por

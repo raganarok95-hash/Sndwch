@@ -267,6 +267,15 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     # esos días (los que ya son clientes piden en otro momento). `hasta`: None = siempre.
     corte_alm, hasta_alm = ex.get("almuerzo_cerrado", (0.0, None))
     t_alm = dia(hasta_alm) if hasta_alm else T
+    # `canales` = [(canal, S/ al mes, S/ por cliente nuevo, desde)] (2026-10-15: «publicidad de
+    # otros tipos»): anuncios dentro de Rappi y PedidosYa, Google, TikTok, publicaciones pagadas.
+    # Cada sol trae 1/costo clientes nuevos en ese canal ("propio", "rappi" o "pya"), repartidos en
+    # los días abiertos desde `desde`; el gasto corre todos los días. [SUPUESTO] Como en Meta,
+    # Trujillo es chico: cada S/1,000 al mes encarece el cliente un 15%.
+    pagados = {c: np.zeros(T) for c in ("propio", "rappi", "pya")}
+    for canal, monto, costo_cli, desde_c in ex.get("canales", []):
+        dias_c = [t for t in range(T) if AB[t] and t >= dia(desde_c)]
+        pagados[canal][dias_c] += monto / (costo_cli * (1 + 0.15 * monto / 1000)) / (25.5 * AB.sum() / ABIERTO.sum())
 
     for t in range(T):
         if not AB[t]:        # lo que caía en lunes pasa al martes
@@ -283,11 +292,13 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
                       + ev_nuevos[t] + sum(n * k for n, desde_al, k in ex.get("aliados", []) if t >= dia(desde_al))
                       + (ex.get("oficinas", 0.0) if t >= dia(ex.get("oficinas_desde", date(2026, 11, 3))) else 0)
                       + (ex["volanteo"][0] if "volanteo" in ex and t in abiertos[:ex["volanteo"][1]] else 0)
-                      + (meta_dia if t in dias_pauta else 0) + pauta_dia[t] + (red if t in primeros else 0) + nuevos_ref[t],
-            "rappi": x["rappi_dia"] * ex.get("rappi_factor", 1.0) * (1 - corte_alm if DIAS[t].weekday() < 5 and t < t_alm else 1),
+                      + (meta_dia if t in dias_pauta else 0) + pauta_dia[t] + (red if t in primeros else 0) + nuevos_ref[t]
+                      + pagados["propio"][t],
+            "rappi": x["rappi_dia"] * ex.get("rappi_factor", 1.0) * (1 - corte_alm if DIAS[t].weekday() < 5 and t < t_alm else 1)
+                     + pagados["rappi"][t],
             "pya": (x["pya_dia"] if t >= dia(ex.get("pya_desde", date(2026, 11, 17))) else 0.0)
                    * (1 - corte_alm if DIAS[t].weekday() < 5 and t < t_alm else 1) * ex.get("sueltos_factor", 1.0)
-                   * ex.get("pya_factor", 1.0),
+                   * ex.get("pya_factor", 1.0) + pagados["pya"][t],
         }
         nuevos_dia[t] = sum(nuevos.values())
         migra = x["qr_a_propio"] if t >= qr else x["app_a_propio"]
@@ -359,6 +370,8 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     gasto_dia = np.zeros(T)
     for monto, n_dias in ex.get("gastos", []):
         gasto_dia[abiertos[:n_dias]] += monto
+    for _canal, monto, _costo, desde_c in ex.get("canales", []):
+        gasto_dia[dia(desde_c):] += monto / 30.4
 
     out = []
     rmt = False

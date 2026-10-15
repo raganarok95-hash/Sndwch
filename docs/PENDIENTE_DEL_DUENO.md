@@ -55,7 +55,7 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 **Lo más nuevo (2026-10-15, noche)**: el plan de S/6,000 (`docs/META_6000.md`) y el estado del
 marketing (`docs/marketing/PULIR.md`, verificado contra Meta). Hecho hoy con tu «sí»: la pausa
 programa los pedidos, el pedido fijo se ofrece en el segundo pedido, «¿Comen dos?» en el carrito.
-La bandeja: no por ahora. **Lo que bloquea el marketing:**
+La bandeja: no por ahora. Publicidad de otros tipos: `docs/OTRA_PUBLICIDAD.md` (P46). **Lo que bloquea el marketing:**
 
 | # | Qué | Por qué |
 |---|---|---|
@@ -63,8 +63,9 @@ La bandeja: no por ahora. **Lo que bloquea el marketing:**
 | P41 | **Página e Instagram en la cuenta de anuncios, tus permisos y el método de pago** (C3–C5 de `docs/CONFIGURAR_META.md`) | La cuenta de anuncios no tiene ninguna página: **la prueba de Meta del 20 no puede salir** |
 | P42 | **Las imágenes de Flow de la semana del 20** (la rutina del Estudio en tu laptop) | 6 de 7 historias de la apertura no tienen imágenes |
 | P43 | **El 17-nov**: el presupuesto de Meta con el costo por cliente de la prueba | Decide si la meta llega en el mes 6 o en el 10 |
-| P44 | Sí o no: **«¿cómo nos conociste?»** de un toque después del primer pedido | Mide lo que un enlace no ve |
+| ~~P44~~ | ~~«¿cómo nos conociste?»~~ | **Descartado** (dueño, 2026-10-15: «No, eso ya es muy invasivo») |
 | P45 | **TikTok**: abrir la cuenta | Los mismos Reels llegan a más gente nueva |
+| P46 | Sí o no: **anuncios dentro de Rappi (S/300 al mes) y Google (S/300) desde el 3-nov, y PedidosYa (S/200) desde el 1-dic** (`docs/OTRA_PUBLICIDAD.md`); gasto real | Con Meta a ~S/36, la meta pasa del mes 10 al 6 |
 
 Lo que sigue abajo es de septiembre (`PREDICCION_V14.md`) y supone una red de 300 personas; tú
 dijiste que son ~30.
