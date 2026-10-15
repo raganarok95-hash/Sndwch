@@ -1,0 +1,30 @@
+name: Oficinas cercanas
+
+# La lista de oficinas, bancos, clínicas, colegios y entidades públicas a 2 km del punto de
+# despacho, de OpenStreetMap (scripts/oficinas-cercanas.mjs; docs/PRIMER_MES.md). Se corre a mano:
+# el proxy de las sesiones no llega a Overpass y GitHub sí. Solo lee datos públicos.
+on:
+  workflow_dispatch:
+    inputs:
+      radio:
+        description: 'Radio en metros'
+        required: false
+        default: '2000'
+
+jobs:
+  lista:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Preguntar a OpenStreetMap
+        env:
+          RADIO: ${{ inputs.radio }}
+        run: node scripts/oficinas-cercanas.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: oficinas-cercanas
+          path: oficinas-cercanas.md
