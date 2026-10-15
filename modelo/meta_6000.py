@@ -25,7 +25,7 @@ import contextlib
 import io
 import os
 import sys
-from datetime import date
+from datetime import date, timedelta
 
 os.environ.setdefault("PROYECCION_HASTA", "2027-10-19")       # 12 meses de 30 días
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -88,6 +88,29 @@ RECOMPRA = dict(p2_extra=0.10, pn_extra=0.10, brecha_factor=0.75)
 CONTENIDO = dict(tiktok=0.2)
 
 
+# ── Publicidad de otros tipos (dueño, 2026-10-15: «veamos otras cosas… Publicidad de otros
+# tipos, necesitamos llegar a esa meta») ─────────────────────────────────────────────────────
+# (canal, S/ al mes, S/ por cliente nuevo, desde). Fuentes y por qué cada número en
+# docs/OTRA_PUBLICIDAD.md. Todo se prende y se apaga desde el celular; nada es presencial.
+# ANUNCIOS DENTRO DE RAPPI: se paga por clic y salen arriba en la búsqueda y la lista. Rappi no
+# publica el costo del clic; quien abre Rappi casi nunca sabe qué va a pedir («solo el 3%»), así
+# que el clic convierte mucho más que en Meta [SUPUESTO: S/15 por cliente nuevo]. Desde el 3-nov,
+# con las primeras calificaciones; tope S/300 al mes (Trujillo es chico).
+RAPPI_ADS = ("rappi", 300.0, 15.0, date(2026, 11, 3))
+# ANUNCIOS DENTRO DE PEDIDOSYA: «desde S/200 al mes» [panca.pe]. Desde el 1-dic (el alta es del
+# 17-nov y conviene llegar con calificaciones) [SUPUESTO: S/15 por cliente nuevo].
+PYA_ADS = ("pya", 200.0, 15.0, date(2026, 12, 1))
+# GOOGLE (búsqueda y Maps): sale a quien YA busca «sándwich», «delivery» o «sanguchería» en
+# Trujillo; clic S/0.40–3 en Perú. Pocas búsquedas: no absorbe más de ~S/300 al mes [SUPUESTO:
+# S/20 por cliente nuevo]. Desde el 3-nov.
+GOOGLE_ADS = ("propio", 300.0, 20.0, date(2026, 11, 3))
+OTRA_PUBLICIDAD = [RAPPI_ADS, PYA_ADS, GOOGLE_ADS]           # S/800 al mes
+# TIKTOK CON PLATA: mil vistas cuestan S/11–30 (Meta S/5–14) y el mínimo es ~S/20 al día. Mismo
+# clic y misma compra que Meta: ~S/80 por cliente [SUPUESTO]. Se modela para mostrar que NO
+# conviene: TikTok sirve gratis (los mismos videos), no pagado.
+TIKTOK_ADS = ("propio", 600.0, 80.0, date(2026, 12, 1))
+
+
 def nucleo(**extra):
     """Lo realista, todo desde su casa: las apps a fondo, el contenido que ya sale solo, los pedidos
     para compartir y la recompra fuerte. Meta va aparte (la pauta y su costo por cliente)."""
@@ -107,14 +130,25 @@ ESCENARIOS = [
     ("  cliente a ~S/36 + 10 bandejas al mes (opcionales)", nucleo(eventos=bandejas(10), nuevos_por_30cm=0.05), 2500.0, 40.0),
     ("  cliente a ~S/36, si la recompra no mejora", nucleo(p2_extra=0.0, pn_extra=0.0, brecha_factor=1.0), 2500.0, 40.0),
     ("  cliente a ~S/36, si las apps rinden como hoy", nucleo(rappi_factor=1.3, pya_factor=1.0), 2500.0, 40.0),
+    # Publicidad de otros tipos: los anuncios dentro de Rappi y PedidosYa y Google (S/800 al mes).
+    ("Desde casa + Rappi, PedidosYa y Google con anuncios (S/800), sin Meta", nucleo(canales=OTRA_PUBLICIDAD), 0.0, None),
+    ("Desde casa + esos S/800 + Meta S/2,500; cliente a ~S/36", nucleo(canales=OTRA_PUBLICIDAD), 2500.0, 40.0),
+    ("Desde casa + esos S/800 + Meta S/1,500; cliente a ~S/21", nucleo(cac_factor=0.6, canales=OTRA_PUBLICIDAD), 1500.0, 40.0),
+    ("  S/800 + Meta a ~S/36, si los anuncios cuestan el doble por cliente",
+     nucleo(canales=[(c, m, k * 2, d) for c, m, k, d in OTRA_PUBLICIDAD]), 2500.0, 40.0),
+    ("  S/800 + Meta a ~S/36 + TikTok con plata (S/600)", nucleo(canales=OTRA_PUBLICIDAD + [TIKTOK_ADS]), 2500.0, 40.0),
+    ("  S/800 + Meta a ~S/36 + ayudante desde ~20 pedidos al día (feb)",
+     nucleo(canales=OTRA_PUBLICIDAD, ayudante=(1400.0, date(2027, 2, 16)), capacidad=60), 2500.0, 40.0),
+    ("  S/800 + Meta a ~S/36, si la recompra no mejora",
+     nucleo(canales=OTRA_PUBLICIDAD, p2_extra=0.0, pn_extra=0.0, brecha_factor=1.0), 2500.0, 40.0),
 ]
 
 
-def horas_semana(ex, w):
-    """Horas de trabajo a la semana para el dueño [SUPUESTOS]: 8 min por pedido suelto, 25 min por
-    bandeja, 3 h de compras y 30 min de preparar y limpiar por día abierto. Con ayudante, él solo
-    compra y lleva el panel (~5 h); el ayudante arma."""
-    if ex.get("ayudante"):
+def horas_semana(ex, w, k):
+    """Horas de trabajo a la semana para el dueño en el mes k (0 = el primero) [SUPUESTOS]: 8 min
+    por pedido suelto, 25 min por bandeja, 3 h de compras y 30 min de preparar y limpiar por día
+    abierto. Con ayudante, él solo compra y lleva el panel (~5 h); el ayudante arma."""
+    if ex.get("ayudante") and ex["ayudante"][1] <= date(2026, 10, 20) + timedelta(days=30 * k):
         return 5.0
     sueltos = (w["pedidos"] - w["ev30"]) / 4.33 * 8 / 60
     return sueltos + w["ev30"] / 6 / 4.33 * 25 / 60 + 3 + 0.5 * 6
@@ -134,7 +168,7 @@ def main():
         print("  " + " · ".join(f"mes {k + 1} {S(w[k]['p50'])} ({w[k]['meta']:.0%})" for k in (0, 2, 5, 8, 11)))
         m3 = w[2]
         print(f"  mes 3: {S(m3['p10'])} a {S(m3['p90'])} · {m3['pedidos'] / 26:.1f} al día · {m3['ev30'] / 6:.0f} bandejas · "
-              f"ventas {S(m3['ventas'])} · impuestos {S(m3['impuestos'])} · ~{horas_semana(ex, m3):.0f} h tuyas a la semana · "
+              f"ventas {S(m3['ventas'])} · impuestos {S(m3['impuestos'])} · ~{horas_semana(ex, m3, 2):.0f} h tuyas a la semana (mes 6: ~{horas_semana(ex, w[5], 5):.0f} h) · "
               f"S/6,000 sostenidos desde el mes {llega or '— (no en 12 meses)'}\n")
 
 
