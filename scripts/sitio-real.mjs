@@ -43,7 +43,7 @@ await pagina.waitForFunction(() => !!(window.googleMapsKey && window.googleConfi
 
 // 3. Google Maps carga con la key REAL desde el dominio REAL: si Google rechaza la key (API apagada,
 //    dominio no permitido), llama a gm_authFailure o falta una librería.
-const maps = await pagina.evaluate(async () => {
+const revisarMaps = (p) => p.evaluate(async () => {
   let rechazo = false;
   const previo = window.gm_authFailure;
   window.gm_authFailure = () => { rechazo = true; if (previo) previo(); };
@@ -53,6 +53,7 @@ const maps = await pagina.evaluate(async () => {
     return { ok: true, rechazo, mapa: !!window.gClase('maps', 'Map'), buscador: !!window.gClase('places', 'AutocompleteSuggestion'), geo: !!window.gClase('geocoding', 'Geocoder') };
   } catch (e) { return { ok: false, error: String(e && e.message || e), rechazo }; }
 });
+const maps = await revisarMaps(pagina);
 if (!maps.ok) problemas.push('Google Maps no cargó: ' + maps.error);
 else {
   if (maps.rechazo) problemas.push('Google rechazó la key de Maps (gm_authFailure): revisar APIs activadas y dominios permitidos');
@@ -97,6 +98,27 @@ for (const f of pagina.frames()) {
   if (/no (está|esta) (habilitad|activ)|inactiv|deshabilitad|not (enabled|active)|no disponible/i.test(texto)) problemas.push('Culqi dice que el pago no está habilitado: ' + texto.replace(/\s+/g, ' ').slice(0, 200));
 }
 await pagina.screenshot({ path: 'sitio-real-culqi.png' }).catch(() => {});
+
+// 6. www.sndwch.app (P22, 2026-10-02). Si existe y NO manda a sndwch.app, la llave de Maps tiene que
+//    aceptar ese dominio también: si no, quien entre por www busca su dirección con el buscador de
+//    respaldo, sin error a la vista. Si www no existe o redirige, no hay nada que permitir.
+let www;
+try {
+  const r = await pagina.request.get('https://www.sndwch.app/', { maxRedirects: 0, timeout: 20000 });
+  if (r.status() >= 300 && r.status() < 400) www = `redirige (${r.status()}) a ${r.headers()['location'] || '?'}`;
+  else {
+    www = `responde ${r.status()} sin redirigir`;
+    const p2 = await navegador.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    await p2.goto('https://www.sndwch.app/', { waitUntil: 'networkidle', timeout: 60000 });
+    await p2.waitForFunction(() => !!window.googleMapsKey, null, { timeout: 20000 }).catch(() => {});
+    const m2 = await revisarMaps(p2);
+    if (!m2.ok || m2.rechazo || !m2.buscador) problemas.push('P22: en www.sndwch.app Google no acepta la llave de Maps: agrega https://www.sndwch.app/* a sus sitios permitidos');
+    else www += '; Maps carga bien ahí también';
+  }
+} catch (e) {
+  www = 'no responde (' + String(e && e.message || e).split('\n')[0].slice(0, 120) + '): no hay nada que permitir';
+}
+console.log('www.sndwch.app: ' + www);
 
 for (const e of errores) problemas.push('error en la página: ' + e);
 await navegador.close();
