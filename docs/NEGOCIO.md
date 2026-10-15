@@ -417,6 +417,10 @@ todo el catálogo.
 
 ## Las tres palancas del modelo: medidas, no supuestas (2026-09-06)
 
+**2026-10-15 — `docs/META_6000.md`**: con clientes sueltos (sin volantes) el mes 3 deja ~S/1,100;
+S/6,000 solo llegan vendiendo por volumen (almuerzos de equipo semanales + bandejas + ayudante al
+mediodía), y en el Nuevo RUS el techo es ~S/3,600.
+
 `PREDICCION_V12.md` concluye que la meta de **S/5,000 netos sostenidos NO se alcanza con más
 publicidad** —a S/20,000/mes el resultado empeora— sino con tres números. Ninguno estaba
 medido: el modelo los ASUME y mover cualquiera unos puntos cambia la conclusión entera.

@@ -52,6 +52,20 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 
 ## 1a. ⚠ LO QUE DECIDE EL MES 3 — y casi todo depende de ti, no del código
 
+**Lo más nuevo (2026-10-15): `docs/META_6000.md`**, tu meta de S/6,000 líquidos al mes. Lo que
+necesito para seguir:
+
+| # | Qué | Por qué |
+|---|---|---|
+| P40 | **¿Quién arma y entrega los pedidos del mediodía mientras trabajas?** | Sin alguien al mediodía no hay almuerzo de oficina y el techo es ~S/3,350 al mes |
+| P41 | **¿Cuánto es tu sueldo?** | Para saber si el escalón 1 (bandejas, sin ayudante) ya lo iguala |
+| P42 | **¿Tienes RUC y en qué régimen?** | El Nuevo RUS no da factura y acaba en S/8,000 de ventas al mes: cambia los impuestos |
+| P43 | **¿Tu empleador permite venderle a tus compañeros?** | Tu oficina sería el primer almuerzo de equipo, sin mensaje ni degustación |
+| P44 | Sí o no: la bandeja como producto en la carta, una página para empresas, la lista de oficinas a 3.5 km, y ~S/810 en degustaciones | Concepto antes que código; las degustaciones son gasto real |
+
+Lo que sigue abajo es de septiembre (`PREDICCION_V14.md`) y supone una red de 300 personas; tú
+dijiste que son ~30.
+
 `PREDICCION_V14.md` midió qué hace falta para **S/3,000 netos en diciembre**. El resultado es
 incómodo y útil: **la publicidad NO lo mueve** (con S/8,000 de pauta sale peor que con S/0,
 porque el gasto se resta hoy y el cliente vuelve recién a las cinco semanas). Lo que sí lo

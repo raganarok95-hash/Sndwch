@@ -179,6 +179,23 @@ def nucleo(brecha):
     return f / f.sum()
 
 
+def impuesto(v, c, util, rmt, ex, anio=2026, v_encargo=0.0):
+    """Lo que se paga en un mes con ventas `v` y compras `c`. `rmt`: ya se pasó al Régimen MYPE
+    (el Nuevo RUS acaba en S/8,000 al mes de ventas o de compras, y no se vuelve).
+    `compras_con_factura` [SUPUESTO 0.5]: la parte de las compras que da crédito de IGV.
+    `contador` (S/ al mes): el Régimen MYPE lleva libros y factura electrónica.
+    `igv_reducido` (2026-10-15): la tasa especial de la MYPE de restaurantes (Ley 31556 y sus
+    prórrogas; SUNAT: 8% + 2.5% de IPM = 10.5% en 2026; 12% de IGV en 2027 [+3% de IPM, SIN
+    CONFIRMAR]). Solo si el 70% de los ingresos es de restaurante: las bandejas por encargo
+    (`v_encargo`, CIIU 5621) no entran y, si pasan del 30%, se pierde para todo."""
+    if not rmt:
+        return 20.0 if max(v, c) <= 5000 else 50.0     # cuotas del Nuevo RUS
+    tasa = (0.105 if anio <= 2026 else 0.15) if ex.get("igv_reducido") and v_encargo <= 0.30 * v else 0.18
+    debito = tasa / (1 + tasa) * (v - v_encargo) + 18 / 118 * v_encargo
+    igv = max(0.0, debito - 18 / 118 * ex.get("compras_con_factura", 0.5) * c)
+    return igv + 0.10 * max(0.0, util - igv) + ex.get("contador", 0.0)    # renta MYPE: 10% hasta 15 UIT
+
+
 def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     ex = ex or {}
     """Una corrida con los supuestos s[*][i]. Devuelve totales por mes."""
@@ -252,23 +269,37 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     # oficina que pide el mismo día cada semana; no suma clientes nuevos, suma pedidos propios. El
     # descuento del grupo (`descuento_grupo`, S/ por pedido) se resta de lo que deja.
     desc_dia = np.zeros(T)
-    if "oficina_fija" in ex:
-        n_sem, desde_of = ex["oficina_fija"]
-        sel_of = np.array([ABIERTO[t] and t >= dia(desde_of) for t in range(T)])
-        ped["propio"][sel_of] += n_sem / 6.0
-        desc_dia[sel_of] = n_sem / 6.0 * ex.get("descuento_grupo", 0.0)
+    # `oficinas_fijas` (2026-10-15, meta de S/6,000): varias oficinas, cada una (pedidos por semana,
+    # desde). Solo de lunes a viernes: el almuerzo de oficina no existe el fin de semana.
+    fijas = list(ex.get("oficinas_fijas", [])) + ([ex["oficina_fija"]] if "oficina_fija" in ex else [])
+    for n_sem, desde_of in fijas:
+        dias_of = [t for t in range(T) if ABIERTO[t] and t >= dia(desde_of) and DIAS[t].weekday() < 5]
+        ped["propio"][dias_of] += n_sem / 4.0       # martes a viernes: 4 días hábiles abiertos
+        desc_dia[dias_of] += n_sem / 4.0 * ex.get("descuento_grupo", 0.0)
+    # `eventos` (2026-10-15): bandejas para reuniones, capacitaciones y celebraciones, pedidas con
+    # días de anticipación. Una lista de (desde, eventos al mes, sándwiches de 30CM por evento),
+    # repartidos en los días abiertos. Cada 30CM deja su precio de carta menos su costo, la tarjeta
+    # y los puntos, y menos `descuento_evento` (S/ por 30CM). No suman clientes ni recompra.
+    ev30 = np.zeros(T)
+    for desde_ev, por_mes, n30 in ex.get("eventos", []):
+        dias_ev = [t for t in range(T) if ABIERTO[t] and t >= dia(desde_ev)]
+        ev30[dias_ev] += por_mes * n30 / 25.5           # ~25.5 días abiertos al mes
 
-    # capacidad: lo que pasa de 40 al día no se cocina
-    total = ped["propio"] + ped["rappi"] + ped["pya"]
-    escala = np.where(total > CAPACIDAD_DIA, CAPACIDAD_DIA / np.maximum(total, 1e-9), 1.0)
+    # capacidad: lo que pasa de 40 al día no se cocina (`capacidad`: con un ayudante, más). Un 30CM
+    # de bandeja cuenta como un pedido.
+    cap = ex.get("capacidad", CAPACIDAD_DIA)
+    total = ped["propio"] + ped["rappi"] + ped["pya"] + ev30
+    escala = np.where(total > cap, cap / np.maximum(total, 1e-9), 1.0)
     for c in ped:
         ped[c] *= escala
+    ev30 = ev30 * escala
 
     com_rappi = np.where(np.arange(T) < 30, 0.0, x["rappi_comision"])
     deja = (ped["propio"] * eco["propio"] + ped["rappi"] * (eco["app"] - com_rappi * eco["ticket_app"])
-            + ped["pya"] * (eco["app"] - x["pya_comision"] * eco["ticket_app"]))
-    ventas = ped["propio"] * eco["ticket"] + (ped["rappi"] + ped["pya"]) * eco["ticket_app"]
-    compras = total * escala * eco["costo"]
+            + ped["pya"] * (eco["app"] - x["pya_comision"] * eco["ticket_app"])
+            + ev30 * (eco["p30"] * (1 - TARJETA * CULQI - RECOMPENSAS) - eco["c30"] - ex.get("descuento_evento", 0.0)))
+    ventas = ped["propio"] * eco["ticket"] + (ped["rappi"] + ped["pya"]) * eco["ticket_app"] + ev30 * eco["p30"]
+    compras = (total * escala - ev30) * eco["costo"] + ev30 * eco["c30"]
     refer = nuevos_ref[:T]
 
     # MERMA POR CADUCIDAD (2026-10-15). El costeo cuenta la merma de cocción, no la comida que se
@@ -282,6 +313,14 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
             consumo = frac * eco["costo"] * total[a:a + 7].sum() * escala[a:a + 7].mean()
             merma_dia[a:a + 7] = max(0.0, minimo - consumo) / 7.0
     fijos = ex.get("fijos", FIJOS_MES)
+    # `ayudante` = (S/ al mes, desde): alguien que arma y despacha mientras el dueño trabaja.
+    ayud_mes, ayud_dia = np.zeros(len(MESES)), np.zeros(T)
+    if "ayudante" in ex:
+        sueldo, desde_ay = ex["ayudante"]
+        ayud_dia[dia(desde_ay):] = sueldo / 30.4
+        for m in range(len(MESES)):
+            dias_m = [t for t in range(T) if MES_DE[t] == m]
+            ayud_mes[m] = sueldo * sum(1 for t in dias_m if t >= dia(desde_ay)) / len(dias_m)
     # Lo que cuesta salir a buscar clientes (2026-10-15): `gastos` = [(S/ por día, primeros N días
     # abiertos)], p. ej. las muestras para las oficinas o la imprenta de los volantes.
     gasto_dia = np.zeros(T)
@@ -293,17 +332,14 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     for m in range(len(MESES)):
         sel = MES_DE == m
         v, c = ventas[sel].sum(), compras[sel].sum()
-        util = (deja[sel].sum() - fijos - refer[sel].sum() * COSTO_REFERIDO - (prueba if m == MES_DE[dias_pauta[0]] else 0)
+        util = (deja[sel].sum() - fijos - ayud_mes[m] - refer[sel].sum() * COSTO_REFERIDO - (prueba if m == MES_DE[dias_pauta[0]] else 0)
                 - merma_dia[sel].sum() - desc_dia[sel].sum() - gasto_dia[sel].sum()
                 - (pauta_mes if gasta and m >= ex.get("pauta_desde_mes", 2) else 0)
                 - ex.get("oferta_costo", 0.0) * (prueba / cac if m == MES_DE[dias_pauta[0]] else (pauta_mes / cac_mes if gasta and m >= ex.get("pauta_desde_mes", 2) else 0)))
-        if not rmt and max(v, c) > 8000:
-            rmt = True       # el Nuevo RUS acaba en S/8,000 al mes: se pasa al Régimen MYPE
-        if rmt:
-            igv = max(0.0, 18 / 118 * (v - 0.5 * c))      # [SUPUESTO] la mitad de las compras, con factura
-            imp = igv + 0.10 * max(0.0, util - igv)       # renta MYPE: 10% hasta 15 UIT
-        else:
-            imp = 20.0 if max(v, c) <= 5000 else 50.0     # cuotas del Nuevo RUS
+        # `rmt_desde` (2026-10-15): el Nuevo RUS no da factura, y una empresa que paga una bandeja
+        # la pide; desde esa fecha se está en el Régimen MYPE aunque se venda poco.
+        rmt = rmt or max(v, c) > 8000 or ("rmt_desde" in ex and DIAS[np.where(sel)[0][-1]] >= ex["rmt_desde"])
+        imp = impuesto(v, c, util, rmt, ex, MESES[m][0], (ev30[sel] * eco["p30"]).sum())
         n_abiertos = int((ABIERTO & sel).sum())
         out.append(dict(ganancia=util - imp, impuestos=imp, ventas=v, nuevos=nuevos_dia[sel].sum() * escala[sel].mean(),
                         pedidos=sum(ped[c][sel].sum() for c in ped) / n_abiertos,
@@ -313,8 +349,10 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     prueba_dia = np.zeros(T)
     if prueba:
         prueba_dia[dias_pauta] = prueba / len(dias_pauta)
-    neto = deja - refer * COSTO_REFERIDO - merma_dia - desc_dia - gasto_dia - prueba_dia - (pauta_dia * cac_mes if gasta else 0)
-    return out, cac, dict(neto=neto, ventas=ventas, pedidos=total * escala, nuevos=nuevos_dia, merma=merma_dia, fijos=fijos)
+    neto = (deja - refer * COSTO_REFERIDO - merma_dia - desc_dia - gasto_dia - prueba_dia - ayud_dia
+            - (pauta_dia * cac_mes if gasta else 0))
+    return out, cac, dict(neto=neto, ventas=ventas, compras=compras, pedidos=total * escala, nuevos=nuevos_dia,
+                          merma=merma_dia, fijos=fijos, ev30=ev30, propio=ped["propio"], apps=ped["rappi"] + ped["pya"])
 
 
 def simular(sol=(), semilla=20261009, n=CORRIDAS, pauta_mes=0.0, si_cac_menor=None, ex=None):
@@ -324,6 +362,10 @@ def simular(sol=(), semilla=20261009, n=CORRIDAS, pauta_mes=0.0, si_cac_menor=No
     if ex and "empaque" in ex:      # otra ficha de empaque (2026-10-15: la bolsa lisa con sello)
         d = I.por_sandwich(I.EMPAQUE_PEDIDO, sand_por_pedido=1) - I.por_sandwich(ex["empaque"], sand_por_pedido=1)
         eco = dict(eco, costo=eco["costo"] - d, propio=eco["propio"] + d, app=eco["app"] + d)
+    p30, c30 = sandwich_medio(0.0)      # el 30CM medio, para las bandejas de los eventos
+    eco = dict(eco, p30=p30, c30=c30)
+    if ex and "empaque" in ex:
+        eco["c30"] -= I.por_sandwich(I.EMPAQUE_PEDIDO, sand_por_pedido=1) - I.por_sandwich(ex["empaque"], sand_por_pedido=1)
     runs = [correr(s, i, eco, sol, pauta_mes, si_cac_menor, ex) for i in range(n)]
     gan = np.array([[m["ganancia"] for m in r[0]] for r in runs])
     res = dict(meses=[], s=s, total=gan.sum(1), cac=np.array([r[1] for r in runs]))
@@ -349,6 +391,30 @@ def simular(sol=(), semilla=20261009, n=CORRIDAS, pauta_mes=0.0, si_cac_menor=No
         pedidos=float(np.median([r[2]["pedidos"][:30].sum() for r in runs])),
         ventas=float(np.median([r[2]["ventas"][:30].sum() for r in runs])),
         merma=float(np.median([r[2]["merma"][:30].sum() for r in runs])))
+    # Cada MES DESDE LA APERTURA (bloques de 30 días: el 1 es del 20-oct al 18-nov, el 3 del 19-dic al
+    # 17-ene), con sus fijos y sus impuestos. Para la meta del dueño (2026-10-15: «al menos 6000
+    # líquidos al mes… desde el mes 3»): ganancia ANTES del sueldo del dueño, después de impuestos.
+    res["ventanas"] = []
+    for k in range(T // 30):
+        sel = slice(30 * k, 30 * k + 30)
+        g, ped_d, ven, imps = [], [], [], []
+        for r in runs:
+            d = r[2]
+            antes = [(d["ventas"][30 * j:30 * j + 30].sum(), d["compras"][30 * j:30 * j + 30].sum()) for j in range(k + 1)]
+            rmt = any(max(v, c) > 8000 for v, c in antes) or ("rmt_desde" in (ex or {}) and DIAS[30 * k + 29] >= ex["rmt_desde"])
+            v, c = antes[-1]
+            util = d["neto"][sel].sum() - d["fijos"] * 30 / 30.4
+            imp = impuesto(v, c, util, rmt, ex or {}, DIAS[30 * k + 15].year, d["ev30"][sel].sum() * eco["p30"])
+            g.append(util - imp)
+            imps.append(imp)
+            ped_d.append(d["pedidos"][sel].sum() / 26)
+            ven.append(v)
+        g = np.array(g)
+        res["ventanas"].append(dict(p10=float(np.percentile(g, 10)), p50=float(np.median(g)), p90=float(np.percentile(g, 90)),
+                                    meta=float((g >= 6000).mean()), impuestos=float(np.median(imps)), pedidos=float(np.median(ped_d)), ventas=float(np.median(ven)),
+                                    propio=float(np.median([r[2]["propio"][sel].sum() / 26 for r in runs])),
+                                    apps=float(np.median([r[2]["apps"][sel].sum() / 26 for r in runs])),
+                                    ev30=float(np.median([r[2]["ev30"][sel].sum() for r in runs]))))
     res["caja_min_p10"] = float(np.percentile(np.minimum.accumulate(np.cumsum(gan, 1), 1)[:, -1], 10))
     return res
 
