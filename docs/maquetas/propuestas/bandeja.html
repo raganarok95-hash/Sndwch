@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>La bandeja · tres formas de armarla</title>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=EB+Garamond:ital,wght@0,400..700;1,400..700&family=Fraunces:opsz,wght@9..144,400..700&family=Anton&family=Archivo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* Propuesta 2026-10-15 (dueño: la bandeja como producto «aprobado», «muéstramela primero»).
+   Lado SANDO: kraft #C6A579 con su textura, forro naranja #D8823C a la izquierda, acanalado
+   entre bloques, tinta #2A1D0E, Bodoni Moda / EB Garamond / IBM Plex Mono como en el plato
+   (src/shell.html, .m15 .plato.kraft). Nombres y precios de 30CM: la carta vigente de la base
+   (catalog_items, 2026-10-15); en la app todo sale del código. La foto de la bandeja es un
+   MONTAJE con las fotos de la carta: la real se toma con la primera bandeja. */
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#e8e6e1;font-family:Archivo,system-ui,sans-serif;padding:24px;color:#1b1b18}
+h1.lam{font:800 22px/1.2 Archivo;margin-bottom:4px}
+p.lam{font-size:13px;color:#45463f;max-width:1180px;line-height:1.45;margin-bottom:18px}
+.fila{display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap}
+.col{width:390px;flex:none}
+.tit{font-weight:800;font-size:18px;margin-bottom:4px}
+.sub{font-size:13px;color:#45463f;line-height:1.4;min-height:54px;margin-bottom:10px}
+.nota{margin-top:10px;font-size:13px;line-height:1.45;color:#2b2c27}
+.tel{width:390px;height:844px;overflow:hidden;position:relative;border:6px solid #111;border-radius:22px}
+
+/* ── el kraft de SANDO ── */
+.kraft{background:#C6A579;background-image:repeating-linear-gradient(0deg,rgba(80,52,20,.05) 0 1px,transparent 1px 3px),repeating-linear-gradient(90deg,rgba(80,52,20,.045) 0 1px,transparent 1px 4px),radial-gradient(130% 70% at 18% 0%,rgba(255,242,218,.45),transparent 62%)}
+.pant{position:absolute;inset:0;color:#2A1D0E;font-family:'EB Garamond',serif}
+.forro{position:absolute;left:0;top:0;bottom:0;width:7px;background:#D8823C;z-index:6}
+.riel{position:absolute;top:0;left:0;right:0;z-index:7;display:flex;align-items:center;justify-content:space-between;padding:5px 8px 0 12px}
+.riel .x{width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:21px}
+.riel .wm{font-family:'Fraunces',serif;font-weight:620;font-size:13px}
+.riel .wm i,.wmi{font-style:normal;color:#CBA258}
+.claro .riel{color:#F7F4EA;text-shadow:0 2px 10px rgba(0,0,0,.8)}
+.oscuro .riel{color:#2A1D0E}
+.num{font-size:10px;letter-spacing:.34em;font-weight:600;color:#3A2812;text-transform:uppercase}
+.num b{color:#6A2A08;font-weight:600;margin-left:10px;letter-spacing:.2em}
+h2.t{font-family:'Bodoni Moda',serif;font-weight:640;font-size:44px;line-height:.96;color:#2A1D0E;margin:10px 0 0}
+.pitch{font-size:14px;color:#4A3218;line-height:1.55;margin-top:12px}
+.puno{height:9px;background-color:#AE8D62;background-image:repeating-linear-gradient(90deg,rgba(60,38,14,.35) 0 2px,transparent 2px 6px)}
+.mono{font-family:'IBM Plex Mono',monospace}
+.regla{border-top:1px solid rgba(42,29,14,.35);border-bottom:1px solid rgba(42,29,14,.35);padding:9px 0;font:500 11px/1.6 'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:.06em;margin-top:14px}
+.cuenta{display:flex;align-items:flex-end;justify-content:space-between;gap:14px}
+.cuenta .p{font-family:'Bodoni Moda',serif;font-weight:640;font-size:36px;line-height:.9}
+.cuenta .p s{text-decoration:none;display:block;font-family:'EB Garamond',serif;font-size:12px;color:#4A3218;letter-spacing:.06em;margin-top:7px}
+.cuenta .b{background:#2A1D0E;color:#F2E4CA;padding:16px 24px;font-family:'Bodoni Moda',serif;font-weight:640;font-size:15px;flex:0 0 auto}
+.pasar{display:flex;align-items:center;gap:7px;margin-top:22px}
+.pasar i{height:3px;flex:1;background:#A88758;display:block}
+.pasar i.on{background:#2A1D0E}.pasar i.vlt{background:#6E5A86}
+.pasar em{font-style:normal;font-size:9px;letter-spacing:.26em;color:#4A3218;margin-left:9px}
+.voz{font-family:'Instrument Serif',serif;font-style:italic;font-size:19px;line-height:1.25;color:#2A1D0E}
+.voz small{display:block;font-family:'IBM Plex Mono',monospace;font-style:normal;font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:#4A3218;margin-top:6px}
+
+/* ── la bandeja (montaje) ── */
+.bandeja{background:#8A6A43;border-radius:6px;padding:10px;box-shadow:inset 0 2px 0 rgba(255,236,200,.25),inset 0 -3px 0 rgba(0,0,0,.25),0 14px 28px rgba(60,38,14,.35);display:grid;gap:8px}
+.bandeja.dos{grid-template-columns:1fr 1fr}
+.pieza{position:relative;height:74px;border-radius:3px;overflow:hidden;background:#000}
+.pieza img{width:100%;height:100%;object-fit:cover;display:block}
+.pieza .corte{position:absolute;inset:0;background:linear-gradient(90deg,transparent calc(25% - 1px),rgba(255,248,230,.85) calc(25% - 1px) calc(25% + 1px),transparent calc(25% + 1px),transparent calc(50% - 1px),rgba(255,248,230,.85) calc(50% - 1px) calc(50% + 1px),transparent calc(50% + 1px),transparent calc(75% - 1px),rgba(255,248,230,.85) calc(75% - 1px) calc(75% + 1px),transparent calc(75% + 1px))}
+.pieza .n{position:absolute;left:5px;top:5px;background:#F2E4CA;color:#2A1D0E;font:600 9px/1 'IBM Plex Mono';letter-spacing:.08em;padding:3px 5px;border-radius:2px}
+.pieza .nom{position:absolute;left:0;right:0;bottom:0;padding:14px 6px 5px;background:linear-gradient(180deg,transparent,rgba(20,12,4,.85));color:#F7F4EA;font:600 11px/1.15 'EB Garamond',serif}
+.grande .pieza{height:100px}
+.pieza.sel{outline:3px solid #F2E4CA;outline-offset:-3px}
+.pieza.sel .cambia{position:absolute;right:5px;top:5px;background:#2A1D0E;color:#F2E4CA;font:600 9px/1 'IBM Plex Mono';letter-spacing:.1em;padding:4px 6px;text-transform:uppercase}
+
+/* ── días ── */
+.dias{display:flex;gap:6px;margin-top:10px}
+.dia{flex:1;border:1px solid rgba(42,29,14,.45);padding:7px 0 6px;text-align:center;font-family:'IBM Plex Mono',monospace;color:#2A1D0E;background:rgba(255,246,228,.35)}
+.dia b{display:block;font-size:9px;letter-spacing:.14em;font-weight:500;text-transform:uppercase}
+.dia span{display:block;font-size:16px;font-weight:600;margin-top:2px}
+.dia.on{background:#2A1D0E;color:#F2E4CA;border-color:#2A1D0E}
+.dia.no{opacity:.45;text-decoration:line-through}
+.horas{display:flex;gap:6px;margin-top:6px}
+.hora{flex:1;border:1px solid rgba(42,29,14,.45);padding:8px 0;text-align:center;font:600 12px/1 'IBM Plex Mono';background:rgba(255,246,228,.35)}
+.hora.on{background:#2A1D0E;color:#F2E4CA;border-color:#2A1D0E}
+.eti{font:600 9px/1 'IBM Plex Mono';letter-spacing:.24em;text-transform:uppercase;color:#3A2812}
+
+/* ── B: la comanda ── */
+.ticket{background:#FBF4E6;color:#2A1D0E;padding:14px 14px 10px;position:relative;box-shadow:0 10px 24px rgba(60,38,14,.3)}
+.ticket:before,.ticket:after{content:"";position:absolute;top:-10px;width:86px;height:22px;background:rgba(255,250,236,.55);transform:rotate(-6deg)}
+.ticket:before{left:18px}.ticket:after{right:18px;transform:rotate(7deg)}
+.ticket .cab{display:flex;justify-content:space-between;font:600 10px/1 'IBM Plex Mono';letter-spacing:.16em;border-bottom:1px solid #2A1D0E;padding-bottom:8px}
+.ren{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px dashed rgba(42,29,14,.35)}
+.ren .r{font:600 10px/1 'IBM Plex Mono';color:#6A2A08;width:20px}
+.ren .nm{flex:1;font:600 15px/1.1 'EB Garamond',serif}
+.ren .nm s{display:block;text-decoration:none;font:500 10px/1.3 'IBM Plex Mono';color:#4A3218;margin-top:2px}
+.step{display:flex;align-items:center;border:1px solid #2A1D0E}
+.step i{font-style:normal;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font:600 14px/1 'IBM Plex Mono'}
+.step u{text-decoration:none;width:22px;text-align:center;font:600 13px/1 'IBM Plex Mono';border-left:1px solid #2A1D0E;border-right:1px solid #2A1D0E;height:26px;display:flex;align-items:center;justify-content:center}
+.step.cero{opacity:.5}
+.ticket .pie{display:flex;justify-content:space-between;font:600 11px/1 'IBM Plex Mono';letter-spacing:.06em;padding-top:9px}
+
+/* ── C: por personas ── */
+.op{border:1px solid rgba(42,29,14,.5);background:rgba(255,246,228,.35);padding:14px 14px 12px;display:flex;align-items:center;gap:12px}
+.op+.op{margin-top:10px}
+.op .q{font-family:'Bodoni Moda',serif;font-weight:640;font-size:27px;line-height:1;width:112px;flex:none;white-space:nowrap}
+.op .q small{display:block;font:500 10px/1.2 'IBM Plex Mono';letter-spacing:.14em;text-transform:uppercase;margin-top:6px;color:#4A3218}
+.op .d{flex:1;font-size:14px;line-height:1.35;color:#4A3218}
+.op .d b{color:#2A1D0E;font-weight:600}
+.op .s{font:600 13px/1 'IBM Plex Mono'}
+.op.on{background:#2A1D0E;color:#F2E4CA;border-color:#2A1D0E}
+.op.on .d,.op.on .q small{color:#E3CFAB}.op.on .d b{color:#F2E4CA}
+.pasos{display:flex;gap:6px;margin-top:4px}
+.pasos i{height:3px;flex:1;background:#A88758}.pasos i.on{background:#2A1D0E}
+</style></head><body>
+
+<h1 class="lam">La bandeja · cómo llegas y tres formas de armarla</h1>
+<p class="lam">Aprobada como producto (2026-10-15). <b>Lo que va igual en las tres:</b> solo los Signatures de la carta (el secreto no entra: se revela en el pedido 3); 6 de 30CM cortados en 4 = 24 bocados para 10–12; el precio es la suma de la carta, sin descuento; se pide <b>desde mañana hasta 7 días antes</b> (el lunes está cerrado) y llega a la hora que se elija; en el carrito es un solo bloque «Bandeja · cortada en 4 · sáb 24, 1 p.m.» y en la comanda sale como bandeja, con el corte. Datos: la carta vigente de la base. La foto es un montaje con las fotos de la carta: <b>la real se toma desde arriba con tu primera bandeja</b>.</p>
+
+<div class="fila">
+
+<!-- 0 · CÓMO LLEGAS: el plato de la bandeja en el mazo de SANDO -->
+<div class="col">
+  <div class="tit">Cómo llegas · un plato más en el mazo</div>
+  <div class="sub">Tercero, después del pedido en grupo: los dos son «para varios». Se llega pasando las cartas como siempre; también desde una carta en el tarot.</div>
+  <div class="tel"><div class="pant kraft claro">
+    <div class="forro"></div>
+    <div class="riel"><span class="x">✕</span><span class="wm">SND<i>//</i>WCH</span><span style="width:44px"></span></div>
+    <div style="position:absolute;left:0;right:0;top:0;height:52%;padding:62px 22px 0 26px;background:linear-gradient(180deg,#3A2A18 0%,#6E5232 100%)">
+      <div class="bandeja dos">
+        <div class="pieza"><img src="../../../img/sig09.jpg" alt=""><div class="corte"></div></div>
+        <div class="pieza"><img src="../../../img/sig02.jpg" alt=""><div class="corte"></div></div>
+        <div class="pieza"><img src="../../../img/sig10.jpg" alt=""><div class="corte"></div></div>
+        <div class="pieza"><img src="../../../img/sig12.jpg" alt=""><div class="corte"></div></div>
+        <div class="pieza"><img src="../../../img/sig11.jpg" alt=""><div class="corte"></div></div>
+        <div class="pieza"><img src="../../../img/sig04.jpg" alt=""><div class="corte"></div></div>
+      </div>
+    </div>
+    <div style="position:absolute;left:0;right:0;bottom:0;padding:0 20px 28px 26px">
+      <div class="num">Para reuniones <b>por encargo</b></div>
+      <h2 class="t">La bandeja</h2>
+      <div class="pitch">Seis de 30 cm, cortados en cuatro: veinticuatro bocados para diez o doce. La pides con hasta una semana y llega a la hora que digas.</div>
+      <div class="regla">Hasta 7 días antes · cortada en 4</div>
+      <div class="puno" style="margin-top:16px"></div>
+      <div class="cuenta" style="margin-top:16px"><div class="p">S/202.40<s>LA SURTIDA · UNO DE CADA UNO</s></div><div class="b">Armar la bandeja</div></div>
+      <div class="pasar"><i></i><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i class="vlt"></i><i></i><em>Baja ↓</em></div>
+    </div>
+  </div></div>
+  <div class="nota"><b>Fuerte:</b> vive donde el cliente ya pasa el dedo, junto al grupo. <b>Débil:</b> sin una foto real de bandeja no se entiende tan rápido: la primera bandeja se fotografía.</div>
+</div>
+
+<!-- A · LA BANDEJA SERVIDA -->
+<div class="col">
+  <div class="tit">A · La bandeja servida</div>
+  <div class="sub">Se ve la bandeja desde arriba con sus seis lugares. Tocas uno y lo cambias por otro de la carta. Abajo, el día y la hora.</div>
+  <div class="tel"><div class="pant kraft oscuro">
+    <div class="forro"></div>
+    <div class="riel"><span class="x">✕</span><span class="wm">SND<i>//</i>WCH</span><span style="width:44px"></span></div>
+    <div style="position:absolute;inset:0;padding:58px 20px 26px 26px;display:flex;flex-direction:column">
+      <div class="num">6 de 30CM · cortados en 4</div>
+      <h2 class="t" style="font-size:38px">Tu bandeja</h2>
+      <div class="bandeja dos grande" style="margin-top:14px">
+        <div class="pieza"><img src="../../../img/sig09.jpg" alt=""><div class="corte"></div><span class="n">I</span><span class="nom">Philly Cheesesteak</span></div>
+        <div class="pieza"><img src="../../../img/sig02.jpg" alt=""><div class="corte"></div><span class="n">II</span><span class="nom">Meatball Marinara</span></div>
+        <div class="pieza"><img src="../../../img/sig10.jpg" alt=""><div class="corte"></div><span class="n">III</span><span class="nom">Turkey</span></div>
+        <div class="pieza sel"><img src="../../../img/sig09.jpg" alt=""><div class="corte"></div><span class="n">I</span><span class="cambia">Cambiar</span><span class="nom">Philly Cheesesteak</span></div>
+        <div class="pieza"><img src="../../../img/sig11.jpg" alt=""><div class="corte"></div><span class="n">V</span><span class="nom">Italian Hoagie</span></div>
+        <div class="pieza"><img src="../../../img/sig04.jpg" alt=""><div class="corte"></div><span class="n">VI</span><span class="nom">Classic Tuna</span></div>
+      </div>
+      <div style="font-size:13px;color:#4A3218;margin-top:8px;font-style:italic">Toca uno para cambiarlo. Se pueden repetir.</div>
+      <div class="eti" style="margin-top:16px">¿Para cuándo?</div>
+      <div class="dias">
+        <div class="dia"><b>Jue</b><span>22</span></div><div class="dia"><b>Vie</b><span>23</span></div><div class="dia on"><b>Sáb</b><span>24</span></div><div class="dia"><b>Dom</b><span>25</span></div><div class="dia no"><b>Lun</b><span>26</span></div><div class="dia"><b>Mar</b><span>27</span></div><div class="dia"><b>Mié</b><span>28</span></div>
+      </div>
+      <div class="horas"><div class="hora">12:00</div><div class="hora on">13:00</div><div class="hora">14:00</div><div class="hora">19:00</div><div class="hora">20:00</div></div>
+      <div style="margin-top:auto">
+        <div class="puno"></div>
+        <div class="cuenta" style="margin-top:14px"><div class="p">S/202.40<s>≈ S/17 POR PERSONA SI SON 12 · + ENVÍO</s></div><div class="b">Pedir la bandeja</div></div>
+      </div>
+    </div>
+  </div></div>
+  <div class="nota"><b>Fuerte:</b> se entiende sin leer: es una bandeja y se ve lo que trae. <b>Débil:</b> las seis fotos chicas cansan si la carta crece; y pide fotos que se vean bien recortadas.</div>
+</div>
+
+<!-- B · LA COMANDA -->
+<div class="col">
+  <div class="tit">B · La comanda</div>
+  <div class="sub">SANDO te la deja armada, una de cada una, como un ticket. Subes o bajas cada Signature hasta llegar a seis.</div>
+  <div class="tel"><div class="pant kraft oscuro">
+    <div class="forro"></div>
+    <div class="riel"><span class="x">✕</span><span class="wm">SND<i>//</i>WCH</span><span style="width:44px"></span></div>
+    <img src="../../../img/sando2_sonrie.png" alt="" style="position:absolute;right:0;top:50px;width:112px;z-index:3">
+    <div style="position:absolute;inset:0;padding:58px 20px 26px 26px;display:flex;flex-direction:column">
+      <div class="num">Bandeja · para 10 a 12</div>
+      <h2 class="t" style="font-size:40px;max-width:230px">La surtida</h2>
+      <div class="voz" style="margin-top:10px;max-width:230px">Una de cada una. Si tu gente tiene favorita, súbela.<small>— Sando</small></div>
+      <div class="ticket" style="margin-top:18px">
+        <div class="cab"><span>SND//WCH · BANDEJA</span><span>6 DE 6</span></div>
+        <div class="ren"><span class="r">I</span><span class="nm">Philly Cheesesteak<s>30CM · S/33.90</s></span><span class="step"><i>−</i><u>2</u><i>+</i></span></div>
+        <div class="ren"><span class="r">II</span><span class="nm">Meatball Marinara<s>30CM · S/32.90</s></span><span class="step"><i>−</i><u>1</u><i>+</i></span></div>
+        <div class="ren"><span class="r">III</span><span class="nm">Turkey<s>30CM · S/34.90</s></span><span class="step"><i>−</i><u>1</u><i>+</i></span></div>
+        <div class="ren"><span class="r">IV</span><span class="nm">Tuna Melt<s>30CM · S/33.90</s></span><span class="step cero"><i>−</i><u>0</u><i>+</i></span></div>
+        <div class="ren"><span class="r">V</span><span class="nm">Italian Hoagie<s>30CM · S/34.90</s></span><span class="step"><i>−</i><u>1</u><i>+</i></span></div>
+        <div class="ren"><span class="r">VI</span><span class="nm">Classic Tuna<s>30CM · S/31.90</s></span><span class="step"><i>−</i><u>1</u><i>+</i></span></div>
+        <div class="pie"><span>CORTADOS EN 4 · 24 BOCADOS</span><span>S/202.40</span></div>
+      </div>
+      <div class="eti" style="margin-top:18px">¿Para cuándo?</div>
+      <div class="dias"><div class="dia"><b>Jue</b><span>22</span></div><div class="dia"><b>Vie</b><span>23</span></div><div class="dia on"><b>Sáb</b><span>24</span></div><div class="dia"><b>Dom</b><span>25</span></div><div class="dia no"><b>Lun</b><span>26</span></div><div class="dia"><b>Mar</b><span>27</span></div><div class="dia"><b>Mié</b><span>28</span></div></div>
+      <div style="margin-top:auto"><div class="cuenta"><div class="p" style="font-size:30px">S/202.40<s>+ ENVÍO · ELIGES LA HORA AL PAGAR</s></div><div class="b">Pedir la bandeja</div></div></div>
+    </div>
+  </div></div>
+  <div class="nota"><b>Fuerte:</b> es la que menos se equivoca: nombres, precios y cuántos de cada uno, a la vista; y es su voz, la del curador. <b>Débil:</b> es una lista; vende menos que una foto.</div>
+</div>
+
+<!-- C · POR PERSONAS -->
+<div class="col">
+  <div class="tit">C · Por personas</div>
+  <div class="sub">Una pregunta por pantalla. Primero cuántos son; SANDO arma la bandeja de ese tamaño; después el día. Tres pasos.</div>
+  <div class="tel"><div class="pant kraft oscuro">
+    <div class="forro"></div>
+    <div class="riel"><span class="x">✕</span><span class="wm">SND<i>//</i>WCH</span><span style="width:44px"></span></div>
+    <img src="../../../img/sando2_cuerpo.png" alt="" style="position:absolute;right:8px;bottom:100px;width:84px;z-index:3;filter:drop-shadow(0 8px 16px rgba(60,38,14,.35))">
+    <div style="position:absolute;inset:0;padding:58px 20px 26px 26px;display:flex;flex-direction:column">
+      <div class="pasos"><i class="on"></i><i></i><i></i></div>
+      <div class="num" style="margin-top:14px">La bandeja · 1 de 3</div>
+      <h2 class="t" style="font-size:46px">¿Cuántos son?</h2>
+      <div class="voz" style="margin-top:10px">Tú dime cuántos. El resto lo armo yo.<small>— Sando</small></div>
+      <div style="margin-top:22px">
+        <div class="op"><div class="q">6 a 8<small>4 de 30CM</small></div><div class="d"><b>16 bocados.</b> Una reunión chica, un cumpleaños en casa.</div><div class="s">S/135.60</div></div>
+        <div class="op on"><div class="q">10 a 12<small>6 de 30CM</small></div><div class="d"><b>24 bocados.</b> La de siempre: una de cada Signature.</div><div class="s">S/202.40</div></div>
+        <div class="op"><div class="q">16 a 18<small>8 de 30CM</small></div><div class="d"><b>32 bocados.</b></div><div class="s">S/271.20</div></div>
+      </div>
+      <div style="margin-top:auto"><div class="puno"></div><div class="cuenta" style="margin-top:14px"><div class="p" style="font-size:22px;font-family:'EB Garamond',serif;font-weight:500">Después: lo que trae<br>y para cuándo</div><div class="b">Siguiente</div></div></div>
+    </div>
+  </div></div>
+  <div class="nota"><b>Fuerte:</b> responde la pregunta que el cliente sí sabe («somos 12») en vez de la que no («¿cuántos de 30?»), y abre tres tamaños sin más pantallas. <b>Débil:</b> tres pasos en vez de uno; y abre la puerta a bandejas de 4 y de 8, que hay que decidir.</div>
+</div>
+
+</div>
+</body></html>
