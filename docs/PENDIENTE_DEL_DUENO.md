@@ -52,16 +52,16 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 
 ## 1a. ⚠ LO QUE DECIDE EL MES 3 — y casi todo depende de ti, no del código
 
-**Lo más nuevo (2026-10-15): `docs/META_6000.md`**, tu meta de S/6,000 líquidos al mes. Lo que
-necesito para seguir:
+**Lo más nuevo (2026-10-15, noche): `docs/META_6000.md`**, tu meta de S/6,000 líquidos al mes,
+rehecha con tu horario real. Respondiste: armas tú (trabajas en un banco), tu sueldo es S/6,000,
+RUC 10, el banco solo informal, degustaciones después del mes 6. Lo que falta:
 
 | # | Qué | Por qué |
 |---|---|---|
-| P40 | **¿Quién arma y entrega los pedidos del mediodía mientras trabajas?** | Sin alguien al mediodía no hay almuerzo de oficina y el techo es ~S/3,350 al mes |
-| P41 | **¿Cuánto es tu sueldo?** | Para saber si el escalón 1 (bandejas, sin ayudante) ya lo iguala |
-| P42 | **¿Tienes RUC y en qué régimen?** | El Nuevo RUS no da factura y acaba en S/8,000 de ventas al mes: cambia los impuestos |
-| P43 | **¿Tu empleador permite venderle a tus compañeros?** | Tu oficina sería el primer almuerzo de equipo, sin mensaje ni degustación |
-| P44 | Sí o no: la bandeja como producto en la carta, una página para empresas, la lista de oficinas a 3.5 km, y ~S/810 en degustaciones | Concepto antes que código; las degustaciones son gasto real |
+| P40 | **¿A qué hora sales del banco y trabajas los sábados?** | La app abre de martes a domingo **de 11 a 22**: entre semana, los pedidos del mediodía se quedan sin armar y Rappi y PedidosYa te califican mal. Cámbialo antes del martes (Sistema → Horario y pausa, y en las dos apps) o dime la hora y lo cambio yo |
+| P41 | Sí o no: **la bandeja como producto** en la carta (y en las apps), pedible hasta 7 días antes | Todo plan que llega a S/6,000 necesita 40–60 bandejas al mes |
+| P42 | Sí o no: **«entrega en mano» sin envío** para tu banco | Si no, Yape directo |
+| P43 | **Contador en noviembre** | En diciembre pasarías de S/8,000 de ventas; la primera pregunta es si SUNAT trata la bandeja como restaurante |
 
 Lo que sigue abajo es de septiembre (`PREDICCION_V14.md`) y supone una red de 300 personas; tú
 dijiste que son ~30.
