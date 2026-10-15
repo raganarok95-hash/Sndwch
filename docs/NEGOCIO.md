@@ -417,10 +417,11 @@ todo el catálogo.
 
 ## Las tres palancas del modelo: medidas, no supuestas (2026-09-06)
 
-**2026-10-15 — `docs/META_6000.md`**: el dueño trabaja en un banco, home office de 8:50 a 6, y
-arma él solo con la app abierta todo el día (sueldo S/6,000, RUC 10). Con clientes sueltos el mes 3
-deja ~S/630; S/6,000 solo llegan con 40–60 bandejas al mes (6 de 30CM, ~S/127 cada una), y en el
-Nuevo RUS el techo es ~S/3,300–3,600.
+**2026-10-15 — `docs/META_6000.md`**: el dueño trabaja en un banco (home office de 8:50 a 6) y
+arma él solo, con la app abierta todo el día; sueldo S/6,000, RUC 10. Con el negocio principal
+(pedidos sueltos; bandejas opcionales), S/6,000 líquidos son ~19 pedidos al día y llegan en el mes
+8 **solo si la recompra mejora** (de 4–5 a 5–6 de cada 10 vuelven, cada ~20 días en vez de ~27);
+sin eso, no en 12 meses. Desde el mes 3 no llega (~S/2,900).
 
 `PREDICCION_V12.md` concluye que la meta de **S/5,000 netos sostenidos NO se alcanza con más
 publicidad** —a S/20,000/mes el resultado empeora— sino con tres números. Ninguno estaba

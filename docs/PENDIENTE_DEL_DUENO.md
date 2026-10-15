@@ -52,17 +52,17 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 
 ## 1a. ⚠ LO QUE DECIDE EL MES 3 — y casi todo depende de ti, no del código
 
-**Lo más nuevo (2026-10-15, noche): `docs/META_6000.md`**, tu meta de S/6,000 líquidos al mes,
-con tu horario real (home office de 8:50 a 6, fines de semana rotativos, app y apps abiertas
-siempre). Respondido: horario (se queda 11–22), apps abiertas, ayudante desde diciembre si hay
-volumen, la bandeja aprobada con maqueta primero. Lo que falta:
+**Lo más nuevo (2026-10-15, noche): `docs/META_6000.md`**, la meta de S/6,000 con el negocio
+principal (pedidos sueltos; las bandejas, opcionales). Lo que decide es que los clientes vuelvan.
+Lo que falta de ti:
 
 | # | Qué | Por qué |
 |---|---|---|
-| P40 | **Aprobar la maqueta de la bandeja** (`docs/maquetas/`) | Sin eso no se programa; todo plan que llega a S/6,000 necesita 40–60 bandejas al mes |
-| P41 | **Cuándo el ayudante**: las cuentas dicen «más de 50 bandejas o 20 pedidos al día», no «8 bandejas en noviembre» | Con 40 bandejas, el ayudante retrasa la meta del mes 5 al mes 12 |
-| P42 | **Contador en noviembre** | Con 40 bandejas pasas de S/8,000 en diciembre; primera pregunta: si SUNAT trata la bandeja como restaurante |
+| P40 | Sí o no: **ofrecer el pedido fijo al terminar el segundo pedido** («¿te lo dejo fijo los miércoles?») | La recompra es la palanca que decide; el pedido fijo ya existe pero hay que ir a buscarlo |
+| P41 | **El 17-nov, con el costo por cliente de la prueba de Meta**: ¿S/1,500 al mes desde diciembre? | Sin Meta la meta no llega en 12 meses; es gasto real y lo decides con el número |
+| P42 | Sí o no: **la lista de bares, cervecerías y coworkings sin cocina** de la zona (como la de oficinas) | Para los 10 aliados de noche |
 | P43 | Sí o no: que **durante la pausa** el pedido se programe para cuando vuelvas, en vez de rechazarse | Hoy la pausa rechaza todo lo nuevo |
+| P44 | **Contador en diciembre** | El núcleo pasa de S/8,000 de ventas entre diciembre y enero |
 
 Lo que sigue abajo es de septiembre (`PREDICCION_V14.md`) y supone una red de 300 personas; tú
 dijiste que son ~30.
