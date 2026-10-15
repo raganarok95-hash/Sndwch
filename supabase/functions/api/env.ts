@@ -188,7 +188,10 @@ export const META_GRAPH_VERSION = "v21.0";
 // es un secreto (es el número que se ve en el Administrador de anuncios); el token sí. Si
 // META_ADS_TOKEN no está, se usa el de la página: si a ese le falta el permiso de anuncios,
 // Meta lo dice y el panel muestra su mensaje tal cual, no un «no se pudo» mudo.
-export const META_AD_ACCOUNT_ID = Deno.env.get("META_AD_ACCOUNT_ID") || "221839797";
+// La cuenta es la del Business «Sndwch» desde el 2026-10-08; la 221839797 ya no se usa. Con la
+// vieja por defecto (y sin el secret puesto) «Apagar anuncios» listaba esa cuenta y no pausaba
+// la campaña real, sin ningún error a la vista (2026-10-15).
+export const META_AD_ACCOUNT_ID = Deno.env.get("META_AD_ACCOUNT_ID") || "1488138326460689";
 export const META_ADS_TOKEN = Deno.env.get("META_ADS_TOKEN") || META_PAGE_ACCESS_TOKEN;
 // Píxel de Meta + Conversions API (medición de campañas). Opcionales e independientes de
 // la publicación en redes de arriba: mientras no existan, la app no carga ningún píxel y

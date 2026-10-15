@@ -145,6 +145,17 @@ export async function sendComplaintNotification(
   return sendResend([CONTACT_EMAIL], `[${kindLabel}] ${claimCode} — ${BUSINESS_LEGAL_NAME}`, html);
 }
 
+// El aviso al dueño cuando ningún celular suyo recibe push (ver sendPushToAdmins en push.ts).
+// El asunto es el mismo título del push: en la bandeja se lee igual que la notificación.
+export async function sendAdminAlertEmail(to: string[], title: string, body: string): Promise<boolean> {
+  const html = emailShell(title, `
+    <p style="font-size:14px;color:${C["text-body"]};line-height:1.6;white-space:pre-line">${escHtml(body)}</p>
+    <p style="font-size:13px;margin-top:18px"><a href="${SITE_URL}/" style="color:${C.oro}">Abrir el panel</a></p>
+    <p style="font-size:11px;color:${C["text-muted2"]};margin-top:20px">Te llega por correo porque ningún celular tuyo tiene las notificaciones activadas. Actívalas en el panel: Administrar → Este celular → Activar notificaciones. Desde ahí, este aviso llega solo al celular.</p>
+  `, { maxWidth: 520, wordmarkSize: 22 });
+  return sendResend(to, title, html);
+}
+
 // #94 — El reporte de cohortes, al correo del negocio, una vez al mes.
 //
 // LA ADVERTENCIA DE FIABILIDAD VA ARRIBA DEL TODO, antes de cualquier cifra. Si va al pie,
