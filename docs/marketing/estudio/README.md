@@ -46,6 +46,12 @@ recipe stated in this order; real portion, never overfilled.
 
 ## Las reglas que Creatividad cumple al encargar
 
+- **La comida, nombrada o prohibida** (Dirección de arte, 2026-10-15). El bloque fijo pide «la
+  receta real indicada», así que la escena la indica: si sale un sándwich, con su receta de
+  `docs/hechos/CARTA.md` («white sub roll, thin seared beef, sautéed onion…») o envuelto en papel
+  sin relleno a la vista. Si la idea no lleva comida, la escena termina con «No food anywhere in
+  the scene.»: sin eso Flow agrega un sándwich por su cuenta (pasó en `2026-10-19-manana-2`).
+
 - **Los personajes se eligen en Flow, no se describen** (dueño, 2026-10-07). Un hermano por
   referencia; nunca los dos fusionados.
 - **La gramática de cámara** (`UNIVERSO_SNDWCH.md` §4): SANDO quieto y la cámara se mueve;

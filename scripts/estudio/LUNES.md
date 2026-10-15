@@ -28,7 +28,9 @@ LAS REGLAS (todas obligatorias):
 - Ninguna cifra escrita a mano: horas, precios y reglas van como {abre}, {cierra},
   {organizadorDesde}, {pasos_lista}. Ningún precio en las historias.
 - Todo se genera nuevo en Flow: nunca uses imágenes de img/.
-- El sándwich que se vea, fiel a la receta y a la porción real (`docs/hechos/CARTA.md`).
+- El sándwich que se vea, fiel a la receta y a la porción real (`docs/hechos/CARTA.md`): la
+  escena NOMBRA la receta. Si la idea no lleva comida, la escena termina con «No food anywhere in
+  the scene.» (Flow agrega un sándwich si no se lo prohíbe).
 - Nada regional, nada de «gran inauguración», nada que el código no cumpla.
 
 NO HAGAS: git (lo hace el script), cambios fuera de esas carpetas, publicar nada.
