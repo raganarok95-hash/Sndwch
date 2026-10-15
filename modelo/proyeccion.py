@@ -230,7 +230,7 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     cac *= ex.get("cac_factor", 1.0)
     desde = ex.get("prueba_desde", date(2026, 11, 3))
     dias_pauta = [t for t in range(dia(desde), nov30 + 1) if AB[t]]
-    prueba = 0.0 if ex.get("sin_prueba") else PAUTA      # 2026-10-15: la prueba fuera del primer mes
+    prueba = 0.0 if ex.get("sin_prueba") else ex.get("prueba_monto", PAUTA)   # 2026-10-15: `prueba_monto`, una prueba más grande
     meta_dia = (prueba / cac) / len(dias_pauta)
     # Pauta mensual desde diciembre (2026-10-09: «¿con cuánto de publicidad funcionaría?»).
     # [SUPUESTO] Trujillo es chico: cada S/1,000 al mes encarece el cliente un 15%; después de la
@@ -238,11 +238,16 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     # prueba de noviembre midió un costo por cliente menor a ese.
     gasta = pauta_mes > 0 and (si_cac_menor is None or cac <= si_cac_menor)
     cac_mes = cac / APRENDIZAJE * 1.15 * (1 + 0.15 * pauta_mes / 1000)
-    pauta_dia = np.zeros(T)
+    # `pauta_desde` (2026-10-15): escalar el día que se decide (el 17-nov) y no el 1 del mes
+    # siguiente; el primer mes se paga y rinde en proporción a los días abiertos que quedan.
+    pauta_dia, pauta_frac = np.zeros(T), np.zeros(len(MESES))
+    t_pauta = dia(ex["pauta_desde"]) if "pauta_desde" in ex else None
     if gasta:
-        for m in range(ex.get("pauta_desde_mes", 2), len(MESES)):
+        for m in range(MES_DE[t_pauta] if t_pauta is not None else ex.get("pauta_desde_mes", 2), len(MESES)):
             sel = np.where((MES_DE == m) & AB)[0]
-            pauta_dia[sel] = (pauta_mes / cac_mes) / len(sel)
+            van = sel[sel >= t_pauta] if t_pauta is not None else sel
+            pauta_dia[van] = (pauta_mes / cac_mes) / len(sel)
+            pauta_frac[m] = len(van) / len(sel)
     red = 30 * x["red_compra"] / 6
     abiertos = [t for t in range(T) if AB[t]]
     primeros = abiertos[:6]
@@ -380,8 +385,8 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
         v, c = ventas[sel].sum(), compras[sel].sum()
         util = (deja[sel].sum() - fijos - ayud_mes[m] - refer[sel].sum() * COSTO_REFERIDO - (prueba if m == MES_DE[dias_pauta[0]] else 0)
                 - merma_dia[sel].sum() - desc_dia[sel].sum() - gasto_dia[sel].sum()
-                - (pauta_mes if gasta and m >= ex.get("pauta_desde_mes", 2) else 0)
-                - ex.get("oferta_costo", 0.0) * (prueba / cac if m == MES_DE[dias_pauta[0]] else (pauta_mes / cac_mes if gasta and m >= ex.get("pauta_desde_mes", 2) else 0)))
+                - pauta_mes * pauta_frac[m]
+                - ex.get("oferta_costo", 0.0) * (prueba / cac if m == MES_DE[dias_pauta[0]] else pauta_mes * pauta_frac[m] / cac_mes))
         # `rmt_desde` (2026-10-15): el Nuevo RUS no da factura, y una empresa que paga una bandeja
         # la pide; desde esa fecha se está en el Régimen MYPE aunque se venda poco.
         rmt = rmt or max(v, c) > 8000 or ("rmt_desde" in ex and DIAS[np.where(sel)[0][-1]] >= ex["rmt_desde"])

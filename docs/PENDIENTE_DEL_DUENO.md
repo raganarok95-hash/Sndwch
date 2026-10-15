@@ -55,7 +55,7 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 **Lo más nuevo (2026-10-15, noche)**: el plan de S/6,000 (`docs/META_6000.md`) y el estado del
 marketing (`docs/marketing/PULIR.md`, verificado contra Meta). Hecho hoy con tu «sí»: la pausa
 programa los pedidos, el pedido fijo se ofrece en el segundo pedido, «¿Comen dos?» en el carrito.
-La bandeja: no por ahora. Publicidad de otros tipos: `docs/OTRA_PUBLICIDAD.md` (P46). **Lo que bloquea el marketing:**
+La bandeja: no por ahora. Publicidad de otros tipos: `docs/OTRA_PUBLICIDAD.md` (P46); Meta y lo presencial: `docs/META_Y_PRESENCIAL.md` (P47–P48). **Lo que bloquea el marketing:**
 
 | # | Qué | Por qué |
 |---|---|---|
@@ -66,6 +66,8 @@ La bandeja: no por ahora. Publicidad de otros tipos: `docs/OTRA_PUBLICIDAD.md` (
 | ~~P44~~ | ~~«¿cómo nos conociste?»~~ | **Descartado** (dueño, 2026-10-15: «No, eso ya es muy invasivo») |
 | P45 | **TikTok**: abrir la cuenta | Los mismos Reels llegan a más gente nueva |
 | P46 | Sí o no: **anuncios dentro de Rappi (S/300 al mes) y Google (S/300) desde el 3-nov, y PedidosYa (S/200) desde el 1-dic** (`docs/OTRA_PUBLICIDAD.md`); gasto real | Con Meta a ~S/36, la meta pasa del mes 10 al 6 |
+| P47 | Sí o no: **embajadores pagados por resultado** (S/5 + S/5 por cliente nuevo que vuelve; `docs/META_Y_PRESENCIAL.md`) | Lo presencial lo hacen otros; con Meta, la meta en el mes 6; con todo, en el 5 |
+| P48 | Sí o no: **la prueba de Meta de S/700 en vez de S/350** | Con S/350 el número puede errar ±30% y se decide mal el 17-nov |
 
 Lo que sigue abajo es de septiembre (`PREDICCION_V14.md`) y supone una red de 300 personas; tú
 dijiste que son ~30.

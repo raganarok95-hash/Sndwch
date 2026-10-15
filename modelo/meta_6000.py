@@ -111,6 +111,25 @@ OTRA_PUBLICIDAD = [RAPPI_ADS, PYA_ADS, GOOGLE_ADS]           # S/800 al mes
 TIKTOK_ADS = ("propio", 600.0, 80.0, date(2026, 12, 1))
 
 
+# ── Meta y lo presencial, medibles y probados (dueño, 2026-10-15: «Puede ser, o darle otra
+# vuelta a Meta y a las presenciales, pero medibles y probadas») ─────────────────────────────
+# META, OTRA VUELTA: una prueba que dé un número confiable (S/700 ≈ 20 clientes en vez de ~10) y
+# escalar el mismo 17-nov si sale bien, no el 1-dic. Lo demás (el Reel que mejor funcionó gratis,
+# volver a mostrarle el anuncio a quien entró, la zona de reparto y las horas de comida, un enlace
+# por pieza) no se modela como ahorro: se mide. Detalle en docs/META_Y_PRESENCIAL.md.
+META_BIEN = dict(prueba_monto=700.0, pauta_desde=date(2026, 11, 17))
+
+
+# EMBAJADORES: lo presencial lo hace otro y se paga solo por resultado. Gente de Trujillo
+# (universitarios, alguien de una oficina) con su propio enlace (`?src=emb-<nombre>`): S/5 cuando
+# su invitado nuevo recibe el primer pedido y S/5 más en el segundo; como la mitad no vuelve, ~S/8
+# por cliente. Ellos llevan el enlace a su salón, su oficina, su equipo de fútbol. [SUPUESTO: 5
+# activos (hay que reclutar ~15: la mayoría no trae a nadie), 6 clientes nuevos al mes cada uno,
+# desde el 15-nov]. Un referido vale más y se va menos (Schmitt, Skiera y Van den Bulte 2011).
+def embajadores(activos, por_mes, costo=8.0, desde=date(2026, 11, 15)):
+    return ("propio", activos * por_mes * costo, costo, desde)
+
+
 def nucleo(**extra):
     """Lo realista, todo desde su casa: las apps a fondo, el contenido que ya sale solo, los pedidos
     para compartir y la recompra fuerte. Meta va aparte (la pauta y su costo por cliente)."""
@@ -141,6 +160,20 @@ ESCENARIOS = [
      nucleo(canales=OTRA_PUBLICIDAD, ayudante=(1400.0, date(2027, 2, 16)), capacidad=60), 2500.0, 40.0),
     ("  S/800 + Meta a ~S/36, si la recompra no mejora",
      nucleo(canales=OTRA_PUBLICIDAD, p2_extra=0.0, pn_extra=0.0, brecha_factor=1.0), 2500.0, 40.0),
+    # Meta y lo presencial, medibles y probados.
+    ("Meta, otra vuelta (prueba de S/700, escala el 17-nov); cliente a ~S/36", nucleo(**META_BIEN), 2500.0, 40.0),
+    ("Embajadores (5 × 6 al mes), sin Meta", nucleo(canales=[embajadores(5, 6)]), 0.0, None),
+    ("Embajadores + Meta otra vuelta; cliente a ~S/36", nucleo(canales=[embajadores(5, 6)], **META_BIEN), 2500.0, 40.0),
+    ("Embajadores + los S/800, sin Meta", nucleo(canales=OTRA_PUBLICIDAD + [embajadores(5, 6)]), 0.0, None),
+    ("Embajadores + los S/800 + Meta otra vuelta; cliente a ~S/36",
+     nucleo(canales=OTRA_PUBLICIDAD + [embajadores(5, 6)], **META_BIEN), 2500.0, 40.0),
+    ("  lo mismo, si los embajadores traen la mitad de la mitad (3 × 3)",
+     nucleo(canales=OTRA_PUBLICIDAD + [embajadores(3, 3)], **META_BIEN), 2500.0, 40.0),
+    ("  lo mismo (5 × 6) + ayudante desde el 16-ene (cuando pasa de ~20 pedidos al día)",
+     nucleo(canales=OTRA_PUBLICIDAD + [embajadores(5, 6)], ayudante=(1400.0, date(2027, 1, 16)), capacidad=60, **META_BIEN),
+     2500.0, 40.0),
+    ("  lo mismo (5 × 6), si la recompra no mejora",
+     nucleo(canales=OTRA_PUBLICIDAD + [embajadores(5, 6)], p2_extra=0.0, pn_extra=0.0, brecha_factor=1.0, **META_BIEN), 2500.0, 40.0),
 ]
 
 
