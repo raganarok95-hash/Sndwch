@@ -16,7 +16,8 @@
 import { sbGet, sbUpdate, sbInsert, storageUpload, leer, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, verifyCronSecret } from "../session.ts";
-import { logAdminAction } from "../logging.ts";
+import { logAdminAction, debugLog } from "../logging.ts";
+import { sendPushToAdmins } from "../push.ts";
 import { SB_URL, META_PAGE_ACCESS_TOKEN, META_PAGE_ID, META_IG_USER_ID, META_GRAPH_VERSION, META_AD_ACCOUNT_ID, META_ADS_TOKEN } from "../env.ts";
 import type { Entrada, Salida } from "../../_shared/contrato.ts";
 import { fechaLima } from "../franja.ts";
@@ -310,6 +311,29 @@ export function agotadoAlPublicar(entry: any, inventario: { product_code: string
   return sinStock ? `stock: ${sinStock} está agotado al publicar` : null;
 }
 
+// AVISAR CUANDO UNA PUBLICACIÓN AUTOMÁTICA FALLA (2026-10-15). Antes el cron soltaba la entrada y
+// la reintentaba cada 15 minutos sin decirle nada a nadie: con la página sin Instagram vinculado,
+// el marketing «automático» habría estado callado días enteros. Se avisa al dueño (celular, o
+// correo si no tiene uno activado) como máximo una vez cada 12 horas. Pura, para probarla
+// (tests-api/publicacion-fallida-avisa.test.ts).
+const AVISO_FALLO_CADA_MS = 12 * 3600e3;
+export function avisarFalloDePublicacion(fallos: number, ultimoAviso: string | null, ahora: number = Date.now()): boolean {
+  if (!fallos) return false;
+  const t = ultimoAviso ? new Date(ultimoAviso).getTime() : NaN;
+  return !Number.isFinite(t) || ahora - t >= AVISO_FALLO_CADA_MS;
+}
+async function avisarSiFallaronPublicaciones(fallos: { titulo: string; error: string }[]): Promise<void> {
+  if (!fallos.length) return;
+  const previo = await sbGet("debug_logs", "select=created_at&source=eq.api&detail->>context=eq.social-publish-fallo&order=created_at.desc&limit=1").catch(() => []);
+  if (!avisarFalloDePublicacion(fallos.length, previo?.[0]?.created_at ?? null)) return;
+  await debugLog({ stage: "exception", context: "social-publish-fallo", n: fallos.length, error: fallos[0].error.slice(0, 300) });
+  await sendPushToAdmins({
+    title: "No se pudo publicar en Instagram",
+    body: (fallos.length === 1 ? "«" + fallos[0].titulo + "» no salió: " : fallos.length + " publicaciones no salieron: ") + fallos[0].error.slice(0, 140),
+    url: "./index.html",
+  });
+}
+
 export async function actAutoPublishCalendar(b: Entrada<"auto-publish-calendar"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   // El día de LIMA, no el de UTC: con la fecha UTC, desde las 19:00 de Lima salía lo programado
@@ -317,6 +341,7 @@ export async function actAutoPublishCalendar(b: Entrada<"auto-publish-calendar">
   const today = fechaLima(Date.now());
   const due = await sbGet("marketing_calendar", loQueSaleSolo(today));
   const results: { id: string; ok: boolean; error?: string }[] = [];
+  const fallos: { titulo: string; error: string }[] = [];
   const inventario = due.some((e: any) => e?.datos?.sig)
     ? await sbGet("inventory", "select=product_code,in_stock&limit=500").catch(() => [])
     : [];
@@ -345,8 +370,10 @@ export async function actAutoPublishCalendar(b: Entrada<"auto-publish-calendar">
     } catch (e: any) {
       await releaseClaim(entry.id);
       results.push({ id: entry.id, ok: false, error: e?.message || String(e) });
+      fallos.push({ titulo: String(entry.title || "una publicación"), error: e?.message || String(e) });
     }
   }
+  await avisarSiFallaronPublicaciones(fallos).catch(() => {});
   return { success: true, processed: results.length, results };
 }
 

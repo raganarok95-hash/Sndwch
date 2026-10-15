@@ -737,3 +737,16 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
   `status.supabase.com` (ENOTFOUND): no prueba que no existan.
 - **Git en una copia de trabajo**: `git config user.*` sin `--worktree` escribe en `.git/config`
   del repo entero. No poner un autor de prueba ahí.
+
+## Verificar Meta y producción desde la sesión, sin ver secretos (2026-10-15)
+- **«Estado para abrir»** (`estado-apertura.yml`) se puede disparar desde la sesión con
+  `mcp__github__actions_run_trigger` (`run_workflow`, `ref: main`) y leer su salida con
+  `mcp__github__get_job_logs`: lista los secrets por NOMBRE, prueba CAPI y la publicación contra
+  Meta («Instagram NO, puede publicar: NO — …») y lo que recibe el cliente. Así se supo hoy que la
+  página no tiene Instagram vinculado.
+- **El MCP de Meta** ve el píxel por dentro: `ads_get_dataset_stats` (eventos por hora) y
+  `ads_get_ad_account_pages` / `ads_get_ig_accounts` (si la cuenta de anuncios tiene página e
+  Instagram). Hoy: ninguna.
+- **Los robots contra el sitio real** (`tests-real/recorrido.spec.ts` y `scripts/sitio-real.mjs`)
+  bloquean el píxel de Meta (`connect.facebook.net`, `facebook.com/tr`): sus visitas eran los únicos
+  eventos del píxel en 7 días. Un robot nuevo contra sndwch.app tiene que hacer lo mismo.

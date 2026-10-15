@@ -231,6 +231,9 @@ en pantalla. [El objetivo:] la mayor cantidad de pedidos reales fuera de mi red�
 
 ## 9 · Qué existe hoy y qué falta construir (sin adornos)
 
+**2026-10-15, verificado contra Meta: nunca se publicó nada** (Instagram sin vincular a la página,
+la cuenta de anuncios sin página). El estado y el plan para pulirlo: `PULIR.md`.
+
 | pieza | estado |
 |---|---|
 | Calidad (Revisor), publicador, `?src=` en cada pedido | **corre** |
