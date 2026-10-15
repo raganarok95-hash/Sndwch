@@ -673,3 +673,46 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
 - **La foto del esquema tras una migración** no pasa por el chat: se dispara
   `foto-del-esquema.yml` con la rama (`mcp__github__actions_run_trigger`), que la comitea ahí.
   Sin ella, el hook de commit se bloquea (`check:tipos-base`).
+
+## La base se ahoga cada noche: pg_net y su tabla inflada (2026-10-15)
+- **Síntoma** (registros de Supabase, `query_logs`): desde las ~19:00 de Lima hasta las 2:00 en
+  punto, todas las noches (vista el 13 y el 14), los crons fallan con `cron job N job startup
+  timeout`, las consultas se cortan (`statement timeout`), la API tarda 50–150 s y da 546
+  (`WORKER_RESOURCE_LIMIT`) o 504, y hasta `select pg_total_relation_size(...)` tarda más de un
+  minuto. Cada día empieza un poco antes (00:15 UTC el 14, 23:45 UTC el 15). Con la tienda
+  abierta cae en la hora de la cena. `get_project` dice `ACTIVE_HEALTHY` igual.
+- **Causa** (`extensions.pg_stat_statements` ordenado por `total_exec_time`): la limpieza propia de
+  pg_net, `WITH rows AS (SELECT ctid FROM net._http_response WHERE created < now() - $1 ORDER BY
+  created LIMIT $2) DELETE ...`, lleva **143,372 llamadas y 214,559 s (59 h)**, 1.5 s cada una:
+  más de 40 veces todo lo demás junto. `net._http_response` pesa **178 MB con 462 filas**: sin
+  autovacuum desde el 2026-08-05 (sus estadísticas dicen 0 tuplas muertas), cada pasada recorre
+  ~48 mil entradas muertas. La instancia gratis se queda sin procesador y se recupera de noche,
+  cuando casi todo falla y deja de cargarla.
+- **Lo que se puede hacer desde aquí**: `postgres` NO es dueño de la tabla (es `supabase_admin`) ni
+  tiene `pg_maintain`, así que no puede `VACUUM`; sí puede `TRUNCATE` y `DELETE`. Nada del repo lee
+  `net._http_response` (los crons disparan y olvidan), y pg_net borra cada respuesta a las 6 h de
+  todos modos. Con la base ahogada, el `TRUNCATE` por el MCP se corta a los 60 s: hay que hacerlo
+  con la base sana (después de las 2:00 de Lima).
+- **El clasificador de permisos bloquea programar ese vaciado** para que corra solo («Cloud Storage
+  Mass Delete»): necesita la autorización explícita del dueño.
+- Otra consulta pesada, menor: `dead_cron_jobs()` (alert-system-health, cada hora, y el panel)
+  recorre `cron.job_run_details` entera: ~4 s por llamada.
+
+## Flow automático y gratis: la rutina local de la app de Claude (2026-10-15)
+- Las rutinas locales de la app de escritorio (Code → Routines → New routine → Local; desde la
+  versión 1.1.5368) corren en la laptop a la hora elegida mientras la app está abierta y la
+  laptop despierta; si durmió, corren una vez al despertar. Permisos por rutina: con **Run now** y
+  «Always allow» la primera vez, las siguientes no preguntan
+  ([docs](https://code.claude.com/docs/en/desktop-scheduled-tasks)).
+- La app usa Claude in Chrome para el trabajo de navegador cuando está instalado («If the task is
+  browser work and you have Claude in Chrome set up, Claude uses that»,
+  [docs](https://code.claude.com/docs/en/desktop)). El panel Browser propio de la app usa un
+  perfil limpio, sin las sesiones del dueño: no sirve para Flow.
+- Claude in Chrome sube archivos locales (hasta 10 MB por subida) en sesiones locales y remotas.
+  La extensión tiene además atajos programables (diarios como mínimo), pero sin acceso al repo.
+- Las 3 primeras imágenes (`2026-10-19-manana-*`) salieron el 14-oct con `flow-chrome.ps1`, a
+  768×1376, y se parecen a sus referencias. Flow bajó también un `.zip` y un archivo con su
+  nombre original: `FLOW_EN_CHROME.md` ahora pide dejar solo `v1`, `v2` y `estado.json`.
+- `historias.yml` frenaba la unión de `estudio` con un falso positivo: `git diff main...estudio`
+  con varias bases comunes marcaba archivos idénticos. Ahora se une sin confirmar y se mira
+  `git diff --cached HEAD`.
