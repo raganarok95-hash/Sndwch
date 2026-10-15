@@ -1,0 +1,56 @@
+﻿19:39:39  inicio. powershell=5.1.26100.9444
+19:47:06  repo en da5c33e
+19:47:07  Flow: generando con gflow (unos 30 segundos por imagen)
+19:49:58  FLOW: aviso: la verificacion rapida de gflow no confirmo la sesion; se intenta igual.
+19:50:01  FLOW: encargos pendientes: 16
+19:50:03  FLOW: 2026-10-20-cual-1 (1 personajes, 2 variantes)...
+19:51:54  FLOW: 2026-10-20-cual-1: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+19:51:54  ); queda pendiente.
+19:52:05  FLOW: 2026-10-20-cual-2 (1 personajes, 2 variantes)...
+19:54:25  FLOW: 2026-10-20-cual-2: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+19:54:25  ); queda pendiente.
+19:54:40  FLOW: 2026-10-20-puerta-1 (1 personajes, 2 variantes)...
+19:57:00  FLOW: 2026-10-20-puerta-1: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+19:57:00  ); queda pendiente.
+19:57:18  FLOW: 2026-10-20-puerta-2 (1 personajes, 2 variantes)...
+19:57:59  FLOW: 2026-10-20-puerta-2: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+19:57:59  ); queda pendiente.
+19:58:13  FLOW: 2026-10-20-puerta-3 (0 personajes, 2 variantes)...
+19:58:26  FLOW: 2026-10-20-puerta-3: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+19:58:26  ); queda pendiente.
+19:58:43  FLOW: 2026-10-21-lista-1 (1 personajes, 2 variantes)...
+19:58:49  FLOW: 2026-10-21-lista-1: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+19:58:49  ); queda pendiente.
+19:59:03  FLOW: 2026-10-21-lista-2 (0 personajes, 2 variantes)...
+19:59:05  FLOW: 2026-10-21-lista-2: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+19:59:05  ); queda pendiente.
+19:59:13  FLOW: 2026-10-21-lista-3 (1 personajes, 2 variantes)...
+19:59:15  FLOW: 2026-10-21-lista-3: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+19:59:15  ); queda pendiente.
+19:59:32  FLOW: 2026-10-22-pensado-1 (1 personajes, 2 variantes)...
+19:59:39  FLOW: 2026-10-22-pensado-1: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+19:59:39  ); queda pendiente.
+19:59:52  FLOW: 2026-10-22-pensado-2 (1 personajes, 2 variantes)...
+20:00:00  FLOW: 2026-10-22-pensado-2: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+20:00:00  ); queda pendiente.
+20:00:15  FLOW: 2026-10-23-arma-1 (1 personajes, 2 variantes)...
+20:00:17  FLOW: 2026-10-23-arma-1: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+20:00:17  ); queda pendiente.
+20:00:32  FLOW: 2026-10-23-arma-2 (1 personajes, 2 variantes)...
+20:00:34  FLOW: 2026-10-23-arma-2: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+20:00:34  ); queda pendiente.
+20:00:43  FLOW: 2026-10-23-arma-3 (1 personajes, 2 variantes)...
+20:00:45  FLOW: 2026-10-23-arma-3: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+20:00:45  ); queda pendiente.
+20:01:04  FLOW: 2026-10-25-cerramos-1 (1 personajes, 2 variantes)...
+20:01:06  FLOW: 2026-10-25-cerramos-1: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+20:01:06  ); queda pendiente.
+20:01:17  FLOW: 2026-10-25-cerramos-2 (1 personajes, 2 variantes)...
+20:01:18  FLOW: 2026-10-25-cerramos-2: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+20:01:18  ); queda pendiente.
+20:01:38  FLOW: 2026-11-03-oficina-1 (2 personajes, 2 variantes)...
+20:01:39  FLOW: 2026-11-03-oficina-1: gflow salio con 11 (check does not apply. Or re-create the profile with `gflow auth login`.
+20:01:39  ); queda pendiente.
+20:01:53  FLOW: listos 0, con fallo 0, siguen pendientes 16
+20:01:53  encargos con resultado: 21
+20:01:53  fin. hecho: flow
