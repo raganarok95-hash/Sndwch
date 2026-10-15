@@ -52,18 +52,19 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 
 ## 1a. ⚠ LO QUE DECIDE EL MES 3 — y casi todo depende de ti, no del código
 
-**Lo más nuevo (2026-10-15, noche): `docs/META_6000.md`**, el plan realista para S/6,000: todo
-desde tu casa (apps a fondo, Meta según la prueba, contenido, que vuelvan), sin nada presencial;
-las bandejas, opcionales. Lo que falta de ti:
+**Lo más nuevo (2026-10-15, noche)**: el plan de S/6,000 (`docs/META_6000.md`) y el estado del
+marketing (`docs/marketing/PULIR.md`, verificado contra Meta). Hecho hoy con tu «sí»: la pausa
+programa los pedidos, el pedido fijo se ofrece en el segundo pedido, «¿Comen dos?» en el carrito.
+La bandeja: no por ahora. **Lo que bloquea el marketing:**
 
 | # | Qué | Por qué |
 |---|---|---|
-| P40 | **El 17-nov, con el costo por cliente de la prueba de Meta**: el presupuesto desde diciembre | Decide si la meta llega en el mes 6 o en el 10; es gasto real |
-| P41 | Sí o no: **ofrecer el pedido fijo al terminar el segundo pedido** | Que vuelvan es lo que decide; sin eso no llega en 12 meses |
-| P42 | Sí o no: **«para compartir» arriba en la app** (cena para dos, pack del finde) | Más por pedido sin más clientes |
-| P43 | **Rappi y PedidosYa a fondo**: fotos reales, combos, promo propia mientras Rappi no cobra | Lo que trae clientes sin publicidad |
-| P44 | Sí o no: **la bandeja** (opcional) y cuál de las 3 maquetas | 10 al mes adelantan la meta ~2 meses |
-| P45 | Sí o no: que **durante la pausa** el pedido se programe para cuando vuelvas | Hoy la pausa rechaza todo lo nuevo |
+| P40 | **Vincular Instagram a la página** (te dio «error inesperado»; tres caminos en `PULIR.md`) | Verificado: sin esto **no se publica nada** en Instagram; nunca se ha publicado nada |
+| P41 | **Página e Instagram en la cuenta de anuncios, tus permisos y el método de pago** (C3–C5 de `docs/CONFIGURAR_META.md`) | La cuenta de anuncios no tiene ninguna página: **la prueba de Meta del 20 no puede salir** |
+| P42 | **Las imágenes de Flow de la semana del 20** (la rutina del Estudio en tu laptop) | 6 de 7 historias de la apertura no tienen imágenes |
+| P43 | **El 17-nov**: el presupuesto de Meta con el costo por cliente de la prueba | Decide si la meta llega en el mes 6 o en el 10 |
+| P44 | Sí o no: **«¿cómo nos conociste?»** de un toque después del primer pedido | Mide lo que un enlace no ve |
+| P45 | **TikTok**: abrir la cuenta | Los mismos Reels llegan a más gente nueva |
 
 Lo que sigue abajo es de septiembre (`PREDICCION_V14.md`) y supone una red de 300 personas; tú
 dijiste que son ~30.
