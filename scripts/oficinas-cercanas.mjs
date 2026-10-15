@@ -19,14 +19,22 @@ const q = `[out:json][timeout:90];
 );
 out center tags;`;
 
-const servidores = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+// Overpass rechaza (406) una petición sin identificarse y limita (429) a quien insiste: se manda un
+// User-Agent propio y se prueba cada servidor hasta 3 veces, esperando cada vez más.
+const servidores = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+const cabeceras = { 'User-Agent': 'sndwch-oficinas-cercanas/1.0 (github.com/raganarok95-hash/Sndwch)',
+  'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' };
 let datos = null;
-for (const url of servidores) {
-  try {
-    const r = await fetch(url, { method: 'POST', body: new URLSearchParams({ data: q }) });
-    if (r.ok) { datos = await r.json(); break; }
-    console.error(`${url}: ${r.status}`);
-  } catch (e) { console.error(`${url}: ${e.message}`); }
+fuera: for (let intento = 0; intento < 3; intento++) {
+  for (const url of servidores) {
+    try {
+      const r = await fetch(url, { method: 'POST', headers: cabeceras, body: new URLSearchParams({ data: q }) });
+      if (r.ok) { datos = await r.json(); break fuera; }
+      console.error(`${url}: ${r.status}`);
+    } catch (e) { console.error(`${url}: ${e.message}`); }
+  }
+  await new Promise((r) => setTimeout(r, 15000 * (intento + 1)));
 }
 if (!datos) { console.error('Ningún servidor de Overpass respondió.'); process.exit(1); }
 
