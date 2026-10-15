@@ -318,6 +318,17 @@ function recompensaUsable(){
 function en30(etq:string,valor:string,accion:string,fn:string,falta?:boolean){
   return'<button class="en'+(falta?' falta':'')+'" onclick="'+fn+'"><em>'+etq+'</em><n>'+esc(valor)+'</n><u>'+accion+'</u></button>';
 }
+// La línea del único sándwich del pedido (una sola unidad), o -1: a quien ya pidió dos o más, o
+// pide en grupo, no se le ofrece «¿Comen dos?».
+function lineaParaDos():number{
+  if(pendingGroupCode)return -1;
+  var sand=cart.map(function(it,i){return{it:it,i:i};}).filter(function(x){return x.it.type!=='side';});
+  return sand.length===1&&(sand[0].it.qty||1)===1?sand[0].i:-1;
+}
+function sumarOtroIgual(){
+  var i=lineaParaDos();if(i<0)return;
+  cart[i].qty=(cart[i].qty||1)+1;saveCart();render();
+}
 function sOCart(){
   aplicarMetodoPreferido();
   if(!cart.length){
@@ -372,6 +383,12 @@ function sOCart(){
     +'<div class="tt"><em>'+(sinEnvio?'Sin envío':'Total')+'</em><b>'+SOLES_TXT+pz(t)+'</b></div>'
     +'</div></div>'
     +'<div class="err" id="o-err" role="alert"></div>'
+    // «PARA COMPARTIR» (dueño, 2026-10-15: «2 sí»; docs/META_6000.md: más sándwiches por pedido
+    // sin más clientes). Con UN sándwich en el pedido, se ofrece sumar otro igual a su precio de
+    // carta. Para cinco o más está el grupo, justo abajo.
+    +(lineaParaDos()>=0
+      ?'<div class="grupo30 dos"><b>¿Comen dos?</b><span>Suma otro igual por '+SOLES_TXT+pz(itemUnitPrice(cart[lineaParaDos()]))+'.</span><button data-accion="sumar-otro-igual" onclick="sumarOtroIgual()">Sumar otro igual →</button></div>'
+      :'')
     // Maqueta aprobada grupo-4: el pedido se puede volver grupo sin perder lo elegido. No se
     // ofrece si el pedido ya viene de un grupo.
     +(!pendingGroupCode&&cart.some(function(it){return it.type!=='side';})
@@ -403,7 +420,8 @@ function hoja30HTML(){
         var cerrado=!STORE_HOURS[limaDayHour(schedDateForDay(x.k)).weekday];
         return'<button aria-pressed="'+(schedDay===x.k)+'"'+(cerrado?' disabled':'')+' onclick="schedDay=\''+x.k+'\';schedSlot=null;initSchedDefault();render()">'+x.l+'</button>';
       }).join('')
-      +(scheduleMode==='later'&&storeStatus().open?'<button onclick="scheduleMode=\'now\';schedSlot=null;hoja30=null;render()">Lo antes posible</button>':'')+'</div>'
+      +(scheduleMode==='later'&&storeStatus().open&&!pausaHasta()?'<button onclick="scheduleMode=\'now\';schedSlot=null;hoja30=null;render()">Lo antes posible</button>':'')+'</div>'
+      +(pausaHasta()?'<div class="nota" data-accion="aviso-pausa">Estamos en una pausa breve: volvemos a las '+esc(horaDeVuelta())+'<br>Elige desde esa hora y te llega a tiempo.</div>':'')
       +(hojaErr?'<div class="err" role="alert">'+esc(hojaErr)+'</div>':'')
       +(slots.length
         ?'<div class="fr">'+slots.map(function(s){return'<button aria-pressed="'+(scheduleMode==='later'&&schedSlot===s.t)+'"'+(s.full?' disabled':'')+' onclick="scheduleMode=\'later\';schedSlot=\''+s.t+'\';hojaErr=\'\';render()">'+s.t+'</button>';}).join('')+'</div>'
@@ -484,7 +502,7 @@ function faltaSandwich():boolean{return cart.length>0&&!cart.some(function(it:an
 // ninguna hora libre hoy ni mañana, se deja como estaba y el aviso lo dice.
 function programarSiCerrado(){
   if(scheduleMode!=='now'||!businessLaunched)return;
-  if(storeStatus().open&&!hourIsFull(new Date()))return;
+  if(storeStatus().open&&!hourIsFull(new Date())&&!pausaHasta())return;
   scheduleMode='later';schedSlot=null;initSchedDefault();
   if(!schedSlot)scheduleMode='now';
 }
@@ -500,7 +518,7 @@ function irAPagar(){
   if(!recibeListo()){hoja30='recibe';hojaErr='';render();return;}
   var err=problemaDelPedido();
   // Si lo que falla es la hora, se abre donde se elige, no un aviso que manda a buscarla.
-  if(err&&businessLaunched&&(scheduleMode==='later'||!storeStatus().open||hourIsFull(new Date()))){hoja30='programar';hojaErr=err;initSchedDefault();render();return;}
+  if(err&&businessLaunched&&(scheduleMode==='later'||!storeStatus().open||pausaHasta()||hourIsFull(new Date()))){hoja30='programar';hojaErr=err;initSchedDefault();render();return;}
   if(err){var e=document.getElementById('o-err');if(e)e.textContent=err;else showToast(err,'error');return;}
   go('o_pagar');
 }
@@ -641,6 +659,8 @@ function problemaDelPedido():string|null{
     if(isNaN(d.getTime())||d.getTime()<Date.now()-60000)return'La hora programada no es válida.';
     if(!isWithinStoreHours(d))return'Esa hora está fuera de nuestro horario de atención.';
     if(hourIsFull(d))return'Esa hora se llenó mientras armabas el pedido. Elige otra en «Programar».';
+  }else if(pausaHasta()){
+    return'Estamos en una pausa breve: volvemos a las '+horaDeVuelta()+'. Toca «Programar» y elige desde esa hora.';
   }else if(!storeStatus().open){
     return'Estamos cerrados ahora mismo. Toca «Programar» para pedir dentro de nuestro horario.';
   }else if(hourIsFull(new Date())){
@@ -919,6 +939,11 @@ function finalizeOrderSuccess(res,po,chargeId){
   // Guardado aparte de po (que se anula más abajo) para que el botón de respaldo en
   // sOSent pueda reabrir el mismo mensaje si este intento automático no llegó a abrirse
   // (varios navegadores móviles bloquean un window.open que no viene de un tap directo).
+  // EL PEDIDO FIJO, OFRECIDO AL TERMINAR EL SEGUNDO PEDIDO (dueño, 2026-10-15: «1 sí»; docs/
+  // META_6000.md: que vuelvan es lo que decide). Quien ya pidió una vez antes y vuelve es quien
+  // repite: se le ofrece dejar ESTE pedido fijo el mismo día de la semana y a la misma hora. No
+  // a quien pidió desde un fijo ni a quien no tiene cuenta (el fijo vive en la cuenta).
+  window._lFijo=(cust&&prevTot===1&&!pendingRecurringId)?ofertaDeFijo(po):null;
   window._lWaText=po.waLines.join('\n');
   window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(window._lWaText),'_blank');
   localStorage.setItem('sw_last_ref',po.ref);
@@ -995,6 +1020,34 @@ function avisoCampo(id,rotulo,tipo,val,ph,extra){
     +(extra&&extra.im?' inputmode="'+extra.im+'"':'')+(extra&&extra.ac?' autocomplete="'+extra.ac+'"':'')
     +(extra&&extra.max?' maxlength="'+extra.max+'"':'')+'></label>';
 }
+// El día y la franja del fijo que se ofrece: los de la entrega de este pedido (la hora que eligió
+// si lo programó; si no, ahora), en la media hora de Lima.
+function ofertaDeFijo(po){
+  var cuando=po.scheduledFor?new Date(po.scheduledFor):new Date();
+  if(isNaN(cuando.getTime()))return null;
+  var l=limaDayHour(cuando);
+  var min=Math.floor(l.hour*60/30)*30;
+  return{items:(po.items||[]).map(function(it:any){return Object.assign({},it);}),weekday:l.weekday,
+    slot:String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0'),
+    addressId:typeof pickedAddrId==='number'?pickedAddrId:null};
+}
+// «7 p.m.», «1 p.m.», «12:30 p.m.»: como lo dice la pantalla del pedido fijo.
+function horaDelFijo(slot){
+  var h=Number(slot.slice(0,2)),m=Number(slot.slice(3,5));
+  return(h%12||12)+(m?':'+String(m).padStart(2,'0'):'')+(h<12?' a.m.':' p.m.');
+}
+function textoDelFijo(f){
+  var h=Number(f.slot.slice(0,2));
+  return'los '+DIAS_LARGOS[f.weekday]+(h%12===1?' a la ':' a las ')+horaDelFijo(f.slot);
+}
+async function dejarFijoDeEstePedido(){
+  var f=window._lFijo;if(!f)return;
+  try{
+    await api('recurring-add',{token:token,items:f.items,weekday:f.weekday,slot:f.slot,addressId:f.addressId});
+    showToast('Listo: fijo '+textoDelFijo(f)+'. Te avisamos antes y confirmas en un toque: nada se manda ni se cobra solo.');
+    window._lFijo=null;render();
+  }catch(e){showToast('No se pudo dejar fijo: '+e.message,'error');}
+}
 function sOSent(){
   var pending=window._lPendingPayment;
   var methodLabel=window._lPayMethod==='yape'?'Yape':window._lPayMethod==='plin'?'Plin':'';
@@ -1057,6 +1110,8 @@ function sOSent(){
       +(!pushSubscribed&&('serviceWorker' in navigator)&&('PushManager' in window)
         &&((cust&&cust.total_orders===1)||(!cust&&window._lOrderId))
         ?'<button data-accion="avisame-cuando-salga" onclick="'+(cust?'togglePushNotifications()':'avisarSinCuenta()')+'">'+(pushMsg&&!cust?esc(pushMsg):'Avísame cuando salga')+' <span>→</span></button>':'')
+      // El pedido fijo, ofrecido una vez: al terminar el segundo pedido (ver ofertaDeFijo).
+      +(cust&&window._lFijo?'<button data-accion="dejar-fijo" onclick="dejarFijoDeEstePedido()">¿Lo dejamos fijo '+esc(textoDelFijo(window._lFijo))+'? <span>→</span></button>':'')
       // Referidos (dueño, 2026-10-09: «1 y 2 aprobados»). El premio de quien invita vive en su
       // cuenta, así que a quien pidió sin cuenta el mismo botón lo lleva a guardarla (el flujo
       // aprobado de la losa) con el motivo dicho; con cuenta, comparte el link por WhatsApp.

@@ -350,6 +350,8 @@ function schedSlotsDetailed(dayKey){
   for(var totalMin=range[0]*60;totalMin<range[1]*60;totalMin+=30){
     var slotDate=fechaEnLima(diaEnLima(d),totalMin);
     if(isToday&&slotDate.getTime()<now.getTime()+SCHED_LEAD_MINUTES*60000)continue;
+    // Durante la pausa, las franjas antes de que termine no se ofrecen: igual que las que ya pasaron.
+    if(slotDate.getTime()<pausaHasta())continue;
     out.push({t:String(Math.floor(totalMin/60)).padStart(2,'0')+':'+String(totalMin%60).padStart(2,'0'),full:hourIsFull(slotDate)});
   }
   return out;
@@ -763,6 +765,14 @@ var REFERRAL_MILESTONES=REGLAS_N.REFERRAL_MILESTONES;
 var metaPixelId=null,_metaPixelLoaded=false;
 // Pausa temporal de la tienda (se reanuda sola). Llega en get-store-hours.
 var storePausedUntil=null;
+// Hasta cuándo dura la pausa (ms), o 0 si no hay. Desde el 2026-10-15 la pausa no rechaza: el
+// pedido se programa para cuando termina (dueño: «que se programe para cuando vuelva»; el
+// servidor lo valida igual en pedidoCabeEnPausa).
+function pausaHasta():number{
+  var t=storePausedUntil?new Date(storePausedUntil).getTime():0;
+  return t>Date.now()?t:0;
+}
+function horaDeVuelta():string{return horaLima(pausaHasta());}
 // Capacidad (#23/#24/#16), también de get-store-hours. `fullHours` son los inicios de hora
 // (ISO) que ya llegaron al tope; `queueAhead`, los pedidos que la cocina tiene por delante
 // ahora mismo. Los valores por defecto son deliberadamente NEUTROS: si el fetch falla, no se
