@@ -259,3 +259,10 @@ Rango = 1 de cada 10 casos · la mitad · 9 de cada 10.
   haga crecer después.
 - Con todas las palancas de arriba (oficinas, TikTok, Rappi trabajado…): S/6,541 en 6 meses y
   8.5 pedidos al día en marzo.
+
+## Rentables desde el primer mes (2026-10-15)
+Dueño: «busca puntos exactos donde mejorar para poder ser totalmente rentables desde el primer
+mes». Plan y números en `docs/PRIMER_MES.md` (`modelo/primer_mes.py`). Con la merma por caducidad
+que este modelo no veía, hoy los primeros 30 días pierden S/296; con el plan (oficinas, merma
+controlada, Rappi trabajado, PedidosYa antes, sin Meta el primer mes, bolsa lisa) ganan S/613
+(S/313 a S/931).

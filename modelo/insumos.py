@@ -98,6 +98,14 @@ EMPAQUE_CONSERVADOR = Insumo(1.30, SANDWICH, ESTIMADO,
 EMPAQUE_PEDIDO = Insumo(2.50, PEDIDO, COTIZADO,
                         "bolsa a una tinta + papel manteca + sticker, por pedido (dueño)", "2026-10-09")
 
+# La que decidió el dueño (2026-10-10: «compre bolsas lisas y luego con sello le coloco el
+# frontal»): bolsa kraft lisa #20 a S/0.26 (offi.pe, S/220 el millar + IGV), papel manteca
+# S/0.075 y el sticker de cierre ~S/0.10; el sello y la tinta se pagan una vez. Queda ESTIMADO
+# hasta que compre; `EMPAQUE_PEDIDO` sigue siendo el del costeo oficial.
+EMPAQUE_BOLSA_LISA = Insumo(0.50, PEDIDO, ESTIMADO,
+                            "bolsa kraft lisa + papel manteca + sticker de cierre (dueño, 2026-10-10)",
+                            "2026-10-10")
+
 # ═══ PAN ═══════════════════════════════════════════════════════════════════════════════
 PAN_SUB      = Insumo((1.00, 2.00), PORCION, COTIZADO,
                       "pan sub S/2 la unidad; el 15CM usa medio", "2026-08-22")
@@ -217,7 +225,7 @@ def albondiga_porcion():
 
 TODAS = {
     "PAPEL_MANTECA": PAPEL_MANTECA, "BOLSA_KRAFT": BOLSA_KRAFT, "STICKER": STICKER,
-    "EMPAQUE_CONSERVADOR": EMPAQUE_CONSERVADOR, "EMPAQUE_PEDIDO": EMPAQUE_PEDIDO, "PAN_SUB": PAN_SUB,
+    "EMPAQUE_CONSERVADOR": EMPAQUE_CONSERVADOR, "EMPAQUE_PEDIDO": EMPAQUE_PEDIDO, "EMPAQUE_BOLSA_LISA": EMPAQUE_BOLSA_LISA, "PAN_SUB": PAN_SUB,
     "PAN_FOCACCIA": PAN_FOCACCIA, "SALSA_PORCION": SALSA_PORCION,
     "QUESO_PORCION": QUESO_PORCION, "VEGETALES_KG": VEGETALES_KG, "CEBOLLA_KG": CEBOLLA_KG,
     "PIMIENTO_KG": PIMIENTO_KG, "RES_LAMINADA_KG": RES_LAMINADA_KG[0],
