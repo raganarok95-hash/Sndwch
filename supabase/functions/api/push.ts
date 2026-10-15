@@ -2,8 +2,9 @@
 // Notificaciones push (Web Push / VAPID) para avisar cambios de estado de pedido.
 import webpush from "npm:web-push@3.6.7";
 import { VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT } from "./env.ts";
-import { sbGet, sbDelete } from "./db.ts";
+import { sbGet, sbDelete, leer } from "./db.ts";
 import { debugLog } from "./logging.ts";
+import { sendAdminAlertEmail } from "./email.ts";
 
 // Envuelto en try/catch: una llave VAPID mal formada no debe tumbar TODA la función
 // (mismo razonamiento que con SESSION_SECRET en env.ts) — sin esto el envío de push
@@ -105,13 +106,30 @@ export async function sendPushToPhone(
 // push_subscriptions no distingue admin de cliente — un dueño/operador es simplemente una
 // cuenta cuyo teléfono también aparece en admin_accounts, así que para avisarle buscamos sus
 // suscripciones cruzando ambas tablas en vez de necesitar una columna/flag nueva.
+//
+// SIN CELULAR SUSCRITO, POR CORREO (2026-10-15). A cinco días de abrir había 0 suscripciones
+// del dueño: un pedido nuevo, un Yape por confirmar o un pedido trabado no le avisaban a
+// nadie. El panel suena solo si está abierto y en primer plano (con la pantalla bloqueada el
+// navegador frena su sondeo). Mientras no haya un celular suscrito, o falte la llave VAPID,
+// el mismo aviso va al correo de las cuentas admin. Con un celular suscrito, solo push: un
+// correo por cada pedido sería ruido que se aprende a ignorar.
+export function canalDelAvisoAlDueno(suscripciones: number, hayVapid: boolean): "push" | "correo" {
+  return suscripciones > 0 && hayVapid ? "push" : "correo";
+}
 export async function sendPushToAdmins(
   payload: PushPayload,
 ) {
-  if (!VAPID_PRIVATE_KEY) return;
-  const admins = await sbGet("admin_accounts", "select=phone");
+  const admins = await leer("admin_accounts", ["phone"]);
   if (!admins.length) return;
-  const phones = admins.map((a: any) => `"${a.phone}"`).join(",");
-  const subs = await sbGet("push_subscriptions", `customer_phone=in.(${phones})`);
-  await sendPushToSubs(subs, payload);
+  const phones = admins.map((a) => `"${a.phone}"`).join(",");
+  const subs = VAPID_PRIVATE_KEY ? await sbGet("push_subscriptions", `customer_phone=in.(${phones})`) : [];
+  if (canalDelAvisoAlDueno(subs.length, !!VAPID_PRIVATE_KEY) === "push") {
+    await sendPushToSubs(subs, payload);
+    return;
+  }
+  const cuentas = await leer("customers", ["email"], `phone=in.(${phones})`);
+  const correos = Array.from(new Set(cuentas.map((c) => String(c.email || "").trim()).filter((e) => e.includes("@"))));
+  if (!correos.length || !(await sendAdminAlertEmail(correos, payload.title, payload.body))) {
+    await debugLog({ stage: "exception", context: "sendPushToAdmins", error: "aviso al dueño sin canal: ni celular suscrito ni correo enviado", title: payload.title });
+  }
 }

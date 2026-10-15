@@ -110,7 +110,7 @@ La portada de Administrar es un solo resumen: lo que pide atención hoy (lo que 
 - **Entrada**: con la tienda abierta el panel abre en Cocina; cerrada, en Administrar; después
   manda el último modo elegido en esa visita.
 - **Anuncios de Meta** (Marketing → Anuncios de Meta): Apagar pausa todas las campañas activas
-  de la cuenta 221839797 y anota cuáles; Prender reactiva solo esas. Las publicaciones
+  de la cuenta 1488138326460689 (antes la 221839797) y anota cuáles; Prender reactiva solo esas. Las publicaciones
   programadas del calendario ya se publicaban solas (cron cada 15 min).
 - Pruebas: `tests/cocina-abierta.spec.ts`, `tests-api/anuncios-boton.test.ts` (defectos inyectados).
 

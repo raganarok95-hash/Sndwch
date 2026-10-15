@@ -1,0 +1,32 @@
+name: Vigía de la API
+
+# La base se ahogó dos noches seguidas (13 y 14 de octubre, ~19:00 a 2:00 de Lima) y nadie se
+# enteró: la alarma de salud (alert-system-health) corre DENTRO de Supabase, y cuando la base no
+# responde tampoco puede avisar. Esto mira desde afuera, cada 30 minutos en el horario de
+# atención, lo mismo que pide la app al abrir. Si la API no responde bien o tarda más de 15 s
+# (lo que la app aguanta antes de decir «La conexión tardó demasiado»), el workflow falla y
+# GitHub le manda un correo al dueño. Tres intentos separados por 20 s, para no alarmar por una
+# petición suelta. No escribe nada en la base.
+on:
+  schedule:
+    - cron: '*/30 15-23,0-4 * * *'   # 10:00 a 23:30 de Lima (UTC-5)
+  workflow_dispatch: {}
+
+jobs:
+  vigia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Pedir el horario como lo pide la app
+        run: |
+          url=https://rjosezuoyngiadunfzyn.supabase.co/functions/v1/api
+          for i in 1 2 3; do
+            r=$(curl -s -o /tmp/r.json -w '%{http_code} %{time_total}' --max-time 15 -X POST "$url" \
+                -H 'Content-Type: application/json' -d '{"action":"get-store-hours"}') || r="000 15"
+            set -- $r
+            echo "intento $i: HTTP $1 en $2 s"
+            if [ "$1" = "200" ] && grep -q '"hours"' /tmp/r.json; then exit 0; fi
+            sleep 20
+          done
+          echo "::error::La API no respondió bien en 3 intentos: un cliente vería que la app no carga o no lo deja pedir. Revisa los registros de Supabase (docs/ENTORNO.md, «La base se ahoga cada noche»)."
+          exit 1
