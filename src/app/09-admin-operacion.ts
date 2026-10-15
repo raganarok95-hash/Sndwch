@@ -459,6 +459,7 @@ function sAdminHome(){
     +'<div class="adm-top"><b>Administrar</b>'
     +'<button class="adm-x" data-accion="salir-del-panel" onclick="stopPoll();sndScreen=\'o_home\';sndTab=\'order\';render()">Salir</button></div>'
     +(pollFailing?'<div class="adm-alerta">No se pudo actualizar la cola. Revisa tu conexión.</div>':'')
+    +avisoDeAvisos()
     +'<button class="adm-cocina" data-accion="abrir-cocina" onclick="abrirCocina()">'
     +'<span class="t">Te toca →</span>'
     +'<span class="s">'+(ao.length?ao.length+' pedido'+(ao.length===1?'':'s')+' en curso'+(pagos?' · '+pagos+' pago'+(pagos===1?'':'s')+' por confirmar':''):'Sin pedidos en curso')
@@ -474,6 +475,22 @@ function sAdminHome(){
     +'</div>';
 }
 // «Este celular»: lo que antes ocupaba el final de la portada y se ajusta una vez.
+// LOS AVISOS DEL DUEÑO, A UN TOQUE (2026-10-15). A cinco días de abrir había 0 celulares
+// suscritos: un pedido nuevo o un Yape por confirmar solo sonaban con el panel abierto. Mientras
+// este celular no reciba avisos, el inicio del panel lo dice arriba con el botón que los activa
+// (el permiso lo da el navegador con un toque del dueño; nadie puede darlo por él). En iPhone, el
+// push web solo existe con la app agregada a la pantalla de inicio: ahí se dice cómo.
+function avisoDeAvisos(){
+  if(pushSubscribed)return'';
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)){
+    return /iPhone|iPad|iPod/.test(navigator.userAgent)
+      ?'<div class="adm-alerta">Este iPhone no recibe los avisos de pedidos. Toca Compartir → «Agregar a pantalla de inicio», abre SND//WCH desde ese ícono y vuelve aquí para activarlos.</div>'
+      :'';
+  }
+  return'<button class="adm-alerta adm-avisos" data-accion="activar-avisos" onclick="togglePushNotifications()">'
+    +(pushMsg&&pushMsg.indexOf('activadas')<0?esc(pushMsg)+' ':'Este celular no recibe los avisos de pedidos nuevos ni de Yape por confirmar. ')
+    +'<b>Activarlos</b></button>';
+}
 function sAdminCelular(){
   return'<div class="adm">'+H('ESTE CELULAR',"irAAdministrar()")
     +'<div class="adm-cajon">'
