@@ -148,3 +148,8 @@ pasada por semana dejando volantes. Origen `?src=oficina`.
   el anuncio sale en Instagram con la página como identidad.
 - Se pierde la medición limpia de cuánta gente llega sola los primeros 14 días (P1b): se separa
   con los `?src=` y la atribución de Meta.
+
+## Después del primer mes: la meta de S/6,000
+Dueño: «no haré volantes… la meta sería al menos 6000 líquidos al mes». Está en
+`docs/META_6000.md`: sin volantes, la fila «+ volantes o stickers» de arriba no aplica, y la
+alternativa son las bandejas y los almuerzos de equipo.

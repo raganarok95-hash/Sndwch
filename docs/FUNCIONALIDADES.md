@@ -126,6 +126,10 @@ Signature o build.
   **Sin B2B ni puerta a puerta, la publicidad pagada es prácticamente el único canal de
   adquisición**, junto con los referidos de clientes que ya existen. Cualquier plan de
   crecimiento parte de ahí.
+  **2026-10-15**: el dueño pidió la lista de oficinas (`docs/marketing/OFICINAS_CERCANAS.md`) y
+  una alternativa a los volantes para llegar a S/6,000 al mes. `docs/META_6000.md` SÍ proyecta
+  almuerzos de equipo semanales, pero como trabajo de venta explícito (mensajes de noche +
+  degustación por delivery), nunca como un canal que llega solo: si nadie vende, no existen.
 - **`?grupo=1` — el QR de la tarjeta de la bolsa** (2026-08-22). Promoción **pasiva** dentro
   de un pedido que ya entregaste: la tarjeta va en la bolsa y quien la escanea abre un pedido
   grupal directo. No exige ningún trabajo de venta del dueño — por eso sigue vigente aunque
