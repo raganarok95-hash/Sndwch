@@ -1,6 +1,6 @@
 // SND//WCH — piezas/historias: monta las historias de una semana (docs/marketing/AGENCIA.md).
 // Lee `semanas/<lunes>/historias.json` (lo escribe Creatividad) y compone cada cuadro a 1080×1920:
-// la imagen de Flow si el Estudio ya la dejó en `estudio/hecho/<encargo>/v1.*`, o un BOCETO (un
+// la imagen de Flow que eligió la Dirección de arte en `estudio/hecho/<encargo>/` (v1 sin revisión), o un BOCETO (un
 // esquema con la escena encargada) mientras tanto. Nunca recicla las imágenes de img/. El texto lo pone el código con las fuentes de la
 // marca y los datos vivos (horario, regla del grupo, pasos del armador): nunca va en la imagen.
 //
@@ -40,13 +40,19 @@ const VAR = {
 const interpola = (t) => t.replace(/\{(\w+)\}/g, (_, k) => { if (!(k in VAR)) throw new Error(`Sin dato para {${k}}`); return VAR[k]; });
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
+// La Dirección de arte (scripts/estudio/DIRECCION_DE_ARTE.md, dueño 2026-10-15) deja
+// `revision.json`: elige la variante y aprueba o devuelve. Sin revisión la imagen se ve en el
+// tablero, marcada, pero no se publica; «rehacer» la devuelve al boceto.
 function flowDe(encargo) {
   const dir = `docs/marketing/estudio/hecho/${encargo}`;
   if (!encargo || !existsSync(`${dir}/estado.json`)) return null;
   const e = JSON.parse(readFileSync(`${dir}/estado.json`, 'utf8'));
   if (e.estado !== 'listo') return null;
-  const f = readdirSync(dir).find((x) => /^v1\.(png|jpe?g|webp)$/i.test(x));
-  return f ? `${dir}/${f}` : null;
+  const rev = existsSync(`${dir}/revision.json`) ? JSON.parse(readFileSync(`${dir}/revision.json`, 'utf8')) : null;
+  if (rev && rev.veredicto === 'rehacer') return null;
+  const elegida = rev && rev.elegida && existsSync(`${dir}/${rev.elegida}`) ? rev.elegida : null;
+  const f = elegida || readdirSync(dir).find((x) => /^v1\.(png|jpe?g|webp)$/i.test(x));
+  return f ? { ruta: `${dir}/${f}`, revisada: !!rev && rev.veredicto === 'aprobada' } : null;
 }
 function curvas(color) {
   let p = '';
@@ -55,7 +61,7 @@ function curvas(color) {
 }
 function fondo(c, h) {
   const flow = flowDe(c.encargo);
-  if (flow) return { html: `<img src="${img(flow)}" style="position:absolute;inset:0;width:1080px;height:1920px;object-fit:cover"><div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.55),transparent 32%,transparent 70%,rgba(0,0,0,.45))"></div>`, oscuro: true, boceto: false };
+  if (flow && (flow.revisada || !FINAL)) return { sinRevisar: !flow.revisada, html: `<img src="${img(flow.ruta)}" style="position:absolute;inset:0;width:1080px;height:1920px;object-fit:cover"><div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.55),transparent 32%,transparent 70%,rgba(0,0,0,.45))"></div>`, oscuro: true, boceto: false };
   // Boceto: un ESQUEMA, nunca una imagen que ya existe (dueño, 2026-10-08: «no tiene sentido que
   // la agencia recicle las imágenes que ya tenemos cuando puede generar gratis en Flow»).
   const mundo = c.personaje === 'WICHO' ? `<div style="position:absolute;inset:0;background:${C.celeste}">${curvas('#7DBBE0')}</div>`
@@ -78,6 +84,7 @@ const nombre = (c, oscuro) => c.personaje ? `<div style="position:absolute;left:
 const pie = (oscuro) => `<div style="position:absolute;left:90px;right:90px;bottom:300px;display:flex;flex-direction:column;gap:12px;color:${oscuro ? C.papel : C.tinta}">
   <div style="font:600 58px 'IBM Plex Mono',monospace;letter-spacing:.01em">sndwch.app</div>
   <div style="font:600 26px 'IBM Plex Mono',monospace;letter-spacing:.14em;opacity:.8">ENLACE EN EL PERFIL</div></div>`;
+const etiquetaSinRevisar = () => `<div style="position:absolute;left:0;right:0;top:0;background:${C.navy};color:#fff;font:600 24px 'IBM Plex Mono',monospace;padding:14px 30px;letter-spacing:.06em">SIN REVISAR · falta la Dirección de arte</div>`;
 const etiquetaBoceto = (c) => `<div style="position:absolute;left:0;right:0;top:0;background:${C.naranja};color:#fff;font:600 24px 'IBM Plex Mono',monospace;padding:14px 30px;letter-spacing:.06em">BOCETO · falta la imagen de Flow${c.encargo ? ` (${c.encargo})` : ''}</div>`;
 
 const b = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_PATH ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } : {});
@@ -114,7 +121,7 @@ for (const h of H) {
     if (f.boceto) bocetos++;
     total++;
     const ultimo = i === h.cuadros.length - 1;
-    const base = f.html + nombre(c, f.oscuro) + texto(c, f.oscuro) + (ultimo ? pie(f.oscuro) : '') + (f.boceto ? etiquetaBoceto(c) : '');
+    const base = f.html + nombre(c, f.oscuro) + texto(c, f.oscuro) + (ultimo ? pie(f.oscuro) : '') + (f.boceto ? etiquetaBoceto(c) : '') + (f.sinRevisar ? etiquetaSinRevisar() : '');
     const nombreArchivo = `${h.dia}-${h.id}-${i + 1}`;
     await foto(base, `${OUT}/${nombreArchivo}.png`, 1080, 1920);
     miniaturas.push(`${nombreArchivo}.png`);

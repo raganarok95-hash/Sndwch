@@ -1,0 +1,18 @@
+{
+ "veredicto": "aprobada",
+ "elegida": "v1.jpg",
+ "por_que_se_usa": "Cierra la historia con el dato: la puerta cerrada con luz por debajo y «Martes, desde las 11:00», más el pie sndwch.app.",
+ "como_funciona": "El texto grande ocupa el techo oscuro y el pie queda sobre el piso; la línea de luz bajo la puerta queda entre los dos, que es lo que se tiene que mirar.",
+ "por_que_esta": "v1: la puerta grande y centrada, la luz bien visible. v2 aleja la puerta al fondo de un pasillo y la luz queda chica bajo el texto.",
+ "criterios": {
+  "personaje": 5,
+  "escena": 5,
+  "lectura": 5,
+  "marca": 5,
+  "verdad": 5,
+  "serie": 5
+ },
+ "observaciones": [],
+ "cambio": null,
+ "revisado": "2026-10-15T07:30:00-05:00"
+}

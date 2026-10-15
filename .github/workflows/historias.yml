@@ -5,8 +5,11 @@ name: Historias
 # sus imágenes (scripts/piezas/subir-historias.mjs). Sale a su hora por el cron de Supabase
 # (`publicar_desde`), no por este workflow. Una vez al día por si un push no lo disparó.
 on:
+  # main también: la Dirección de arte (scripts/estudio/DIRECCION_DE_ARTE.md) aprueba en main, y sin
+  # esto lo aprobado esperaría a la corrida diaria de las 8:30. Lo que este workflow empuja a main
+  # no lo vuelve a disparar (GitHub no encadena los push hechos con GITHUB_TOKEN).
   push:
-    branches: [estudio]
+    branches: [estudio, main]
     paths: ['docs/marketing/estudio/**', 'docs/marketing/semanas/**']
   schedule:
     - cron: '30 13 * * *'
