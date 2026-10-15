@@ -922,6 +922,11 @@ function finalizeOrderSuccess(res,po,chargeId){
   // Guardado aparte de po (que se anula más abajo) para que el botón de respaldo en
   // sOSent pueda reabrir el mismo mensaje si este intento automático no llegó a abrirse
   // (varios navegadores móviles bloquean un window.open que no viene de un tap directo).
+  // EL PEDIDO FIJO, OFRECIDO AL TERMINAR EL SEGUNDO PEDIDO (dueño, 2026-10-15: «1 sí»; docs/
+  // META_6000.md: que vuelvan es lo que decide). Quien ya pidió una vez antes y vuelve es quien
+  // repite: se le ofrece dejar ESTE pedido fijo el mismo día de la semana y a la misma hora. No
+  // a quien pidió desde un fijo ni a quien no tiene cuenta (el fijo vive en la cuenta).
+  window._lFijo=(cust&&prevTot===1&&!pendingRecurringId)?ofertaDeFijo(po):null;
   window._lWaText=po.waLines.join('\n');
   window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(window._lWaText),'_blank');
   localStorage.setItem('sw_last_ref',po.ref);
@@ -998,6 +1003,34 @@ function avisoCampo(id,rotulo,tipo,val,ph,extra){
     +(extra&&extra.im?' inputmode="'+extra.im+'"':'')+(extra&&extra.ac?' autocomplete="'+extra.ac+'"':'')
     +(extra&&extra.max?' maxlength="'+extra.max+'"':'')+'></label>';
 }
+// El día y la franja del fijo que se ofrece: los de la entrega de este pedido (la hora que eligió
+// si lo programó; si no, ahora), en la media hora de Lima.
+function ofertaDeFijo(po){
+  var cuando=po.scheduledFor?new Date(po.scheduledFor):new Date();
+  if(isNaN(cuando.getTime()))return null;
+  var l=limaDayHour(cuando);
+  var min=Math.floor(l.hour*60/30)*30;
+  return{items:(po.items||[]).map(function(it:any){return Object.assign({},it);}),weekday:l.weekday,
+    slot:String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0'),
+    addressId:typeof pickedAddrId==='number'?pickedAddrId:null};
+}
+// «7 p.m.», «1 p.m.», «12:30 p.m.»: como lo dice la pantalla del pedido fijo.
+function horaDelFijo(slot){
+  var h=Number(slot.slice(0,2)),m=Number(slot.slice(3,5));
+  return(h%12||12)+(m?':'+String(m).padStart(2,'0'):'')+(h<12?' a.m.':' p.m.');
+}
+function textoDelFijo(f){
+  var h=Number(f.slot.slice(0,2));
+  return'los '+DIAS_LARGOS[f.weekday]+(h%12===1?' a la ':' a las ')+horaDelFijo(f.slot);
+}
+async function dejarFijoDeEstePedido(){
+  var f=window._lFijo;if(!f)return;
+  try{
+    await api('recurring-add',{token:token,items:f.items,weekday:f.weekday,slot:f.slot,addressId:f.addressId});
+    showToast('Listo: fijo '+textoDelFijo(f)+'. Te avisamos antes y confirmas en un toque: nada se manda ni se cobra solo.');
+    window._lFijo=null;render();
+  }catch(e){showToast('No se pudo dejar fijo: '+e.message,'error');}
+}
 function sOSent(){
   var pending=window._lPendingPayment;
   var methodLabel=window._lPayMethod==='yape'?'Yape':window._lPayMethod==='plin'?'Plin':'';
@@ -1060,6 +1093,8 @@ function sOSent(){
       +(!pushSubscribed&&('serviceWorker' in navigator)&&('PushManager' in window)
         &&((cust&&cust.total_orders===1)||(!cust&&window._lOrderId))
         ?'<button data-accion="avisame-cuando-salga" onclick="'+(cust?'togglePushNotifications()':'avisarSinCuenta()')+'">'+(pushMsg&&!cust?esc(pushMsg):'Avísame cuando salga')+' <span>→</span></button>':'')
+      // El pedido fijo, ofrecido una vez: al terminar el segundo pedido (ver ofertaDeFijo).
+      +(cust&&window._lFijo?'<button data-accion="dejar-fijo" onclick="dejarFijoDeEstePedido()">¿Lo dejamos fijo '+esc(textoDelFijo(window._lFijo))+'? <span>→</span></button>':'')
       // Referidos (dueño, 2026-10-09: «1 y 2 aprobados»). El premio de quien invita vive en su
       // cuenta, así que a quien pidió sin cuenta el mismo botón lo lleva a guardarla (el flujo
       // aprobado de la losa) con el motivo dicho; con cuenta, comparte el link por WhatsApp.

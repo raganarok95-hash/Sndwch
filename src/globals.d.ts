@@ -37,6 +37,8 @@ interface Window {
   // Desbloqueo del menú secreto — evento propio, independiente del rango. El umbral es
   // editable desde el panel admin y ya no coincide con ningún rango de RANKS.
   _lSecretUnlock?: boolean;
+  /** El pedido fijo que se ofrece en la losa del segundo pedido (ofertaDeFijo), o null. */
+  _lFijo?: { items: any[]; weekday: number; slot: string; addressId: number | null } | null;
   _mLat?: number;
   _mLon?: number;
 }
