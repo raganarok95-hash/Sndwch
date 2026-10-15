@@ -208,6 +208,12 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     AB = ABIERTO & np.array([d.weekday() not in ex.get("cerrado_extra", ()) for d in DIAS])
     habiles = max(1, sum(1 for wd in (1, 2, 3, 4) if wd not in ex.get("cerrado_extra", ())))
     x = {k: v[i] for k, v in s.items()}
+    # Recompra movida a mano (2026-10-15, la meta de S/6,000 con el negocio principal): `p2_extra`
+    # y `pn_extra` suben la probabilidad de volver (todos los canales); `brecha_factor` acorta (o
+    # alarga) el tiempo entre pedidos. Para medir cuánto pesa la recompra, no son datos.
+    x["p2"] = min(0.95, x["p2"] + ex.get("p2_extra", 0.0))
+    x["pn"] = min(0.95, x["pn"] + ex.get("pn_extra", 0.0))
+    x["brecha"] = x["brecha"] * ex.get("brecha_factor", 1.0)
     if "referidos" in sol:
         x["referidos"] = SOLUCIONES["referidos"][1][0] + (x["referidos"] - 0.03) / 0.05 * 0.07
     p2_propio = x["p2"] + (SOLUCIONES["recompra"][1] if "recompra" in sol else 0.0)
@@ -280,7 +286,8 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
                       + (meta_dia if t in dias_pauta else 0) + pauta_dia[t] + (red if t in primeros else 0) + nuevos_ref[t],
             "rappi": x["rappi_dia"] * ex.get("rappi_factor", 1.0) * (1 - corte_alm if DIAS[t].weekday() < 5 and t < t_alm else 1),
             "pya": (x["pya_dia"] if t >= dia(ex.get("pya_desde", date(2026, 11, 17))) else 0.0)
-                   * (1 - corte_alm if DIAS[t].weekday() < 5 and t < t_alm else 1) * ex.get("sueltos_factor", 1.0),
+                   * (1 - corte_alm if DIAS[t].weekday() < 5 and t < t_alm else 1) * ex.get("sueltos_factor", 1.0)
+                   * ex.get("pya_factor", 1.0),
         }
         nuevos_dia[t] = sum(nuevos.values())
         migra = x["qr_a_propio"] if t >= qr else x["app_a_propio"]

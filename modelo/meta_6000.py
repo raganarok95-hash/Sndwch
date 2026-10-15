@@ -75,16 +75,37 @@ def motores(n_bandejas, **extra):
     return dict(REAL, **COMPARTIR, aliados=ALIADOS, nuevos_por_30cm=0.05, eventos=bandejas(n_bandejas), **extra)
 
 
+# ── El negocio principal (2026-10-15, noche: «las bandejas no pueden ser el producto principal…
+# bandejas opcionales. Busquemos otra forma») ─────────────────────────────────────────────
+# APPS A FONDO: fotos reales, combo, promo propia, aceptar rápido y cuidar la calificación; trae el
+# doble de clientes nuevos que el supuesto conservador [SUPUESTO], con ~S/150 al mes de promos.
+APPS = dict(rappi_factor=2.0, pya_factor=2.0)
+PROMO_APPS = (5.0, 400)
+# RECOMPRA FUERTE: el pedido fijo ofrecido en el segundo pedido, los avisos, los puntos y el secreto
+# en el pedido 3: vuelve 1 de cada 10 más la segunda vez y de ahí en adelante, y cada ~25% menos
+# días [SUPUESTO: es la meta a medir, no un dato].
+RECOMPRA = dict(p2_extra=0.10, pn_extra=0.10, brecha_factor=0.75)
+
+
+def nucleo(**extra):
+    return {**REAL, **COMPARTIR, "aliados": ALIADOS, **APPS, "gastos": list(REAL["gastos"]) + [PROMO_APPS],
+            **RECOMPRA, **extra}
+
+
+# (título, ex, pauta de Meta al mes desde diciembre, solo si la prueba midió un cliente a menos de)
+META_PAUTA = (1500.0, 40.0)
 ESCENARIOS = [
-    ("Así abres: todo el día, tú solo", REAL),
-    ("El piso: 20 bandejas al mes, en el Nuevo RUS", dict(REAL, eventos=bandejas(20), nuevos_por_30cm=0.05)),
-    ("Solo aliados: 10 bares o coworkings con tu QR", dict(REAL, aliados=ALIADOS)),
-    ("Solo «para compartir»", dict(REAL, **COMPARTIR)),
-    ("Los tres motores, 30 bandejas al mes, tú solo", motores(30)),
-    ("Los tres motores, 40 bandejas al mes, tú solo", motores(40)),
-    ("  y si SUNAT trata la bandeja como delivery de restaurante", motores(40, bandeja_es_restaurante=True)),
-    ("Los tres motores, 40 bandejas, con ayudante desde diciembre", motores(40, **AYUDANTE)),
-    ("Los tres motores, 60 bandejas, con ayudante desde diciembre", motores(60, **AYUDANTE)),
+    ("Así abres (todo el día, tú solo, para compartir)", dict(REAL, **COMPARTIR), 0.0, None),
+    ("+ aliados de noche", dict(REAL, **COMPARTIR, aliados=ALIADOS), 0.0, None),
+    ("+ apps a fondo", dict(REAL, **COMPARTIR, aliados=ALIADOS, **APPS, gastos=list(REAL["gastos"]) + [PROMO_APPS]), 0.0, None),
+    ("+ Meta S/1,500 al mes desde diciembre (si la prueba sale bien)",
+     dict(REAL, **COMPARTIR, aliados=ALIADOS, **APPS, gastos=list(REAL["gastos"]) + [PROMO_APPS]), *META_PAUTA),
+    ("+ recompra fuerte = EL NÚCLEO", nucleo(), *META_PAUTA),
+    ("  el núcleo + 10 bandejas al mes (opcionales)", nucleo(eventos=bandejas(10), nuevos_por_30cm=0.05), *META_PAUTA),
+    ("  el núcleo sin Meta", nucleo(), 0.0, None),
+    ("  el núcleo con Meta S/2,500", nucleo(), 2500.0, 40.0),
+    ("  el núcleo si la recompra no mejora", nucleo(p2_extra=0.0, pn_extra=0.0, brecha_factor=1.0), *META_PAUTA),
+    ("  el núcleo si las apps rinden como hoy", nucleo(rappi_factor=1.3, pya_factor=1.0), *META_PAUTA),
 ]
 
 
@@ -104,8 +125,8 @@ S = lambda v: ("−" if v < 0 else "") + f"S/{abs(v):,.0f}"
 def main():
     print(f"S/6,000 LÍQUIDOS AL MES, CON TU HORARIO REAL · {N} corridas · mes = 30 días desde el 20-oct")
     print("mediana (y % de casos que llegan a S/6,000) en los meses 1, 3, 6, 9 y 12\n")
-    for titulo, ex in ESCENARIOS:
-        r = P.simular(SOL, n=N, ex=ex)
+    for titulo, ex, pauta, cac_max in ESCENARIOS:
+        r = P.simular(SOL, n=N, ex=ex, pauta_mes=pauta, si_cac_menor=cac_max)
         w = r["ventanas"]
         llega = next((k + 1 for k in range(len(w)) if all(y["p50"] >= 6000 for y in w[k:])), None)
         print(titulo)
