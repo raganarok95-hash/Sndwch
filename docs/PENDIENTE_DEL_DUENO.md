@@ -1,6 +1,6 @@
 # Lo que depende de ti — SND//WCH
 
-Última actualización: 2026-10-08 · **Apertura al público: martes 20 de octubre de 2026** (los lunes cerrado; el dueño la movió del 13 el 2026-10-08: «retrasamos la apertura una semana»). Permisos, precios reales y motorizados: listos.
+Última actualización: 2026-10-15 · **Apertura al público: martes 20 de octubre de 2026** (los lunes cerrado; el dueño la movió del 13 el 2026-10-08: «retrasamos la apertura una semana»). Permisos, precios reales y motorizados: listos.
 
 Todo lo de esta lista está bloqueado por algo que **solo tú** puedes conseguir: una cuenta,
 un secret, una cotización, una fecha real. Yo no lo puedo inventar — es la misma regla que
@@ -47,6 +47,8 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 | ~~P2~~ | ~~ITSE / Licencia de Funcionamiento~~ — **listo** (mismo mensaje) | — |
 | ~~P3~~ | ~~Cerrar los lunes~~ — **hecho 2026-10-07**: `store_hours` lunes `closed=true`. **Apertura al público: martes 13 de octubre** (dueño: «Abrimos martes 13») | — |
 | ~~P4~~ | ~~Precios reales~~ — **listo** (dueño, 2026-10-07: «Ya todo está con precios reales»). Motorizados listos. El inventario lo llena el dueño al abrir («Abro con N porciones») | — |
+| P38 | **Activa las notificaciones en el celular con el que vas a atender** (2026-10-15). En el panel: **Administrar → Este celular → Activar notificaciones**, y acepta el permiso. En iPhone, primero «Agregar a pantalla de inicio» y ábrelo desde ahí. | Verificado contra la base: **0 celulares tuyos suscritos**. Sin eso, un pedido nuevo, un Yape por confirmar o un pedido trabado solo suenan si el panel está abierto y en primer plano. Desde hoy, mientras no actives ninguno, el aviso te llega **por correo**; con un celular activado, solo al celular |
+| ~~P39~~ | ~~¿La app acepta pedidos antes del martes?~~ — **sí, sin pausa** (dueño, 2026-10-15: «que la app acepte pedidos, sin pausa, igual nadie la conoce») | — |
 
 ## 1a. ⚠ LO QUE DECIDE EL MES 3 — y casi todo depende de ti, no del código
 

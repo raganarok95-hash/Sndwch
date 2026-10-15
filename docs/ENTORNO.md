@@ -721,3 +721,19 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
 - `historias.yml` frenaba la unión de `estudio` con un falso positivo: `git diff main...estudio`
   con varias bases comunes marcaba archivos idénticos. Ahora se une sin confirmar y se mira
   `git diff --cached HEAD`.
+
+## Avisos al dueño y vigía externo (2026-10-15)
+- **Push del dueño**: `sendPushToAdmins` cruza `admin_accounts` con `push_subscriptions`. Había 0
+  suscripciones: todo aviso de admin se perdía sin rastro. Ahora cae a correo (Resend, a los
+  correos de las cuentas admin en `customers`) mientras no haya un celular suscrito o falte VAPID.
+  En iPhone el push web exige iOS 16.4+ y la app agregada a la pantalla de inicio.
+- **Vigía**: `vigia-api.yml` llama a `get-store-hours` desde GitHub cada 30 min (10:00–23:30 de
+  Lima). La API no pide llave para esa acción. El aviso es el correo de GitHub por un workflow
+  programado que falla (va a quien modificó el cron por última vez: el push sale con la cuenta del
+  dueño). Desde el contenedor de las sesiones no se llega a `*.supabase.co/functions` con curl
+  (da 000): se prueba en GitHub.
+- **Vercel por el MCP**: `list_projects` sí ve el proyecto `sndwch`, pero leer sus dominios da 403
+  (scope «raganarok95-6561s-projects»). WebFetch no resuelve `www.sndwch.app` ni
+  `status.supabase.com` (ENOTFOUND): no prueba que no existan.
+- **Git en una copia de trabajo**: `git config user.*` sin `--worktree` escribe en `.git/config`
+  del repo entero. No poner un autor de prueba ahí.
