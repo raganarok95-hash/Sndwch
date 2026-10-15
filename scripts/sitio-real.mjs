@@ -12,6 +12,10 @@ const SITIO = process.env.SITIO || 'https://sndwch.app';
 const problemas = [];
 const navegador = await chromium.launch(process.env.CHROMIUM ? { executablePath: process.env.CHROMIUM } : {});
 const pagina = await navegador.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+// Sin píxel de Meta (2026-10-15): este chequeo corre tras cada publicación y le mandaba a Meta
+// visitas de un robot, que Meta usa para aprender a quién mostrar la pauta.
+const META_PIXEL = /connect\.facebook\.net|facebook\.com\/tr/i;
+await pagina.route(META_PIXEL, (r) => r.abort());
 const errores = [];
 pagina.on('pageerror', (e) => errores.push(String(e.message || e)));
 // Culqi (dueño, 2026-10-01: «Pagar con culqi no funciona»): todo lo que su widget diga o pida mal.
@@ -109,6 +113,7 @@ try {
   else {
     www = `responde ${r.status()} sin redirigir`;
     const p2 = await navegador.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    await p2.route(META_PIXEL, (r) => r.abort());
     await p2.goto('https://www.sndwch.app/', { waitUntil: 'networkidle', timeout: 60000 });
     await p2.waitForFunction(() => !!window.googleMapsKey, null, { timeout: 20000 }).catch(() => {});
     const m2 = await revisarMaps(p2);

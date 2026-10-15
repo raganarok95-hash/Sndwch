@@ -13,6 +13,9 @@ type Hallazgo = { paso: string; que: string };
 const hallazgos: Hallazgo[] = [];
 let pasoActual = '';
 
+// El píxel de Meta (el script y sus envíos): un robot no es un cliente.
+const META_PIXEL = /connect\.facebook\.net|facebook\.com\/tr/i;
+
 // Ruido conocido de terceros que no es de la app (se anota abajo si cambia).
 const IGNORAR = [
   /favicon/i,
@@ -66,6 +69,9 @@ test.afterAll(async () => {
 
 test('un cliente nuevo recorre la app real sin errores', async ({ page }) => {
   vigilar(page);
+  // Sin píxel de Meta (2026-10-15): el recorrido de cada mañana le mandaba a Meta visitas y
+  // «agregar al carrito» de un robot, y Meta aprende de esos eventos para la pauta y los públicos.
+  await page.route(META_PIXEL, (r) => r.abort());
   await page.addInitScript(() => { (window as any).open = () => null; });
 
   await paso(page, 'puerta', async () => {
