@@ -59,9 +59,9 @@ def bandejas(meta, desde=date(2026, 11, 7), hasta=date(2026, 12, 19)):
     return [(desde + paso * i, meta / 4, 6) for i in range(4)]
 
 
-# ALIADOS: bares, cervecerías, salas de juego o coworkings SIN cocina que ponen el QR en sus mesas,
-# con permiso: 10 puntos hacia el 19-dic, cada uno 0.1 clientes nuevos por día abierto [SUPUESTO].
-ALIADOS = [(3, date(2026, 11, 7), 0.1), (4, date(2026, 11, 28), 0.1), (3, date(2026, 12, 19), 0.1)]
+# ALIADOS (bares o coworkings con el QR en sus mesas): DESCARTADO (dueño, 2026-10-15: «No hay la
+# opción de aliados y coworking con QR en mesas… físicamente es sumamente complicado… imagina que
+# no conozco a nadie. Necesito un plan realista»). Todo lo que queda se hace desde su casa.
 # PARA COMPARTIR: la cena para dos y el pack del finde: 1.3 sándwiches por pedido en vez de 1
 # [SUPUESTO; el modelo suponía 1].
 COMPARTIR = dict(sand_por_pedido=1.3)
@@ -69,10 +69,6 @@ COMPARTIR = dict(sand_por_pedido=1.3)
 # bandejas): cocina en su casa mientras él hace home office. Tiempo completo en microempresa: RMV
 # S/1,230 + EsSalud + vacaciones ≈ S/1,400 [SUPUESTO]. Con dos personas, capacidad 60.
 AYUDANTE = dict(ayudante=(1400.0, date(2026, 12, 1)), capacidad=60)
-
-
-def motores(n_bandejas, **extra):
-    return dict(REAL, **COMPARTIR, aliados=ALIADOS, nuevos_por_30cm=0.05, eventos=bandejas(n_bandejas), **extra)
 
 
 # ── El negocio principal (2026-10-15, noche: «las bandejas no pueden ser el producto principal…
@@ -87,25 +83,30 @@ PROMO_APPS = (5.0, 400)
 RECOMPRA = dict(p2_extra=0.10, pn_extra=0.10, brecha_factor=0.75)
 
 
+# CONTENIDO: el Estudio ya arma los videos e historias solo; subirlos también a TikTok [SUPUESTO:
+# +0.2 clientes nuevos al día].
+CONTENIDO = dict(tiktok=0.2)
+
+
 def nucleo(**extra):
-    return {**REAL, **COMPARTIR, "aliados": ALIADOS, **APPS, "gastos": list(REAL["gastos"]) + [PROMO_APPS],
+    """Lo realista, todo desde su casa: las apps a fondo, el contenido que ya sale solo, los pedidos
+    para compartir y la recompra fuerte. Meta va aparte (la pauta y su costo por cliente)."""
+    return {**REAL, **COMPARTIR, **APPS, **CONTENIDO, "gastos": list(REAL["gastos"]) + [PROMO_APPS],
             **RECOMPRA, **extra}
 
 
 # (título, ex, pauta de Meta al mes desde diciembre, solo si la prueba midió un cliente a menos de)
-META_PAUTA = (1500.0, 40.0)
+# `cac_factor`: el costo por cliente que mida la prueba, contra el que supone el modelo (~S/36).
+# Las fuentes para restaurantes en Perú dan S/10.51–25.23 (docs/FUNCIONALIDADES.md): ×0.6 ≈ S/21.
 ESCENARIOS = [
     ("Así abres (todo el día, tú solo, para compartir)", dict(REAL, **COMPARTIR), 0.0, None),
-    ("+ aliados de noche", dict(REAL, **COMPARTIR, aliados=ALIADOS), 0.0, None),
-    ("+ apps a fondo", dict(REAL, **COMPARTIR, aliados=ALIADOS, **APPS, gastos=list(REAL["gastos"]) + [PROMO_APPS]), 0.0, None),
-    ("+ Meta S/1,500 al mes desde diciembre (si la prueba sale bien)",
-     dict(REAL, **COMPARTIR, aliados=ALIADOS, **APPS, gastos=list(REAL["gastos"]) + [PROMO_APPS]), *META_PAUTA),
-    ("+ recompra fuerte = EL NÚCLEO", nucleo(), *META_PAUTA),
-    ("  el núcleo + 10 bandejas al mes (opcionales)", nucleo(eventos=bandejas(10), nuevos_por_30cm=0.05), *META_PAUTA),
-    ("  el núcleo sin Meta", nucleo(), 0.0, None),
-    ("  el núcleo con Meta S/2,500", nucleo(), 2500.0, 40.0),
-    ("  el núcleo si la recompra no mejora", nucleo(p2_extra=0.0, pn_extra=0.0, brecha_factor=1.0), *META_PAUTA),
-    ("  el núcleo si las apps rinden como hoy", nucleo(rappi_factor=1.3, pya_factor=1.0), *META_PAUTA),
+    ("Desde casa, sin Meta", nucleo(), 0.0, None),
+    ("Desde casa + Meta S/2,500 al mes; cliente a ~S/36 (lo que supone el modelo)", nucleo(), 2500.0, 40.0),
+    ("Desde casa + Meta S/2,500 al mes; cliente a ~S/29", nucleo(cac_factor=0.8), 2500.0, 40.0),
+    ("Desde casa + Meta S/1,500 al mes; cliente a ~S/21 (lo que dicen las fuentes)", nucleo(cac_factor=0.6), 1500.0, 40.0),
+    ("  cliente a ~S/36 + 10 bandejas al mes (opcionales)", nucleo(eventos=bandejas(10), nuevos_por_30cm=0.05), 2500.0, 40.0),
+    ("  cliente a ~S/36, si la recompra no mejora", nucleo(p2_extra=0.0, pn_extra=0.0, brecha_factor=1.0), 2500.0, 40.0),
+    ("  cliente a ~S/36, si las apps rinden como hoy", nucleo(rappi_factor=1.3, pya_factor=1.0), 2500.0, 40.0),
 ]
 
 
