@@ -199,7 +199,8 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     cac *= ex.get("cac_factor", 1.0)
     desde = ex.get("prueba_desde", date(2026, 11, 3))
     dias_pauta = [t for t in range(dia(desde), nov30 + 1) if ABIERTO[t]]
-    meta_dia = (PAUTA / cac) / len(dias_pauta)
+    prueba = 0.0 if ex.get("sin_prueba") else PAUTA      # 2026-10-15: la prueba fuera del primer mes
+    meta_dia = (prueba / cac) / len(dias_pauta)
     # Pauta mensual desde diciembre (2026-10-09: «¿con cuánto de publicidad funcionaría?»).
     # [SUPUESTO] Trujillo es chico: cada S/1,000 al mes encarece el cliente un 15%; después de la
     # prueba, Meta ya aprendió algo (×1.15 en vez de ×1.30). `si_cac_menor`: solo se gasta si la
@@ -212,7 +213,8 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
             sel = np.where((MES_DE == m) & ABIERTO)[0]
             pauta_dia[sel] = (pauta_mes / cac_mes) / len(sel)
     red = 30 * x["red_compra"] / 6
-    primeros = [t for t in range(T) if ABIERTO[t]][:6]
+    abiertos = [t for t in range(T) if ABIERTO[t]]
+    primeros = abiertos[:6]
 
     for t in range(T):
         if not ABIERTO[t]:        # lo que caía en lunes pasa al martes
@@ -223,7 +225,8 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
         crece = (1 + x["crecimiento"]) ** (t / 30.4)
         nuevos = {
             "propio": (x["google_dia"] + (x["instagram_dia"] if t >= ig else 0) + (ex.get("tiktok", 0.0) if t >= ig else 0)) * crece
-                      + (ex.get("oficinas", 0.0) if t >= dia(date(2026, 11, 3)) else 0)
+                      + (ex.get("oficinas", 0.0) if t >= dia(ex.get("oficinas_desde", date(2026, 11, 3))) else 0)
+                      + (ex["volanteo"][0] if "volanteo" in ex and t in abiertos[:ex["volanteo"][1]] else 0)
                       + (meta_dia if t in dias_pauta else 0) + pauta_dia[t] + (red if t in primeros else 0) + nuevos_ref[t],
             "rappi": x["rappi_dia"] * ex.get("rappi_factor", 1.0),
             "pya": x["pya_dia"] if t >= dia(ex.get("pya_desde", date(2026, 11, 17))) else 0.0,
@@ -245,6 +248,16 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
             pend[c][2, t:t + MAXG] += (repite[1] + repite[2]) * x["pn"] * f
         nuevos_ref[t + 7] += ped["propio"][t] * x["referidos"]
 
+    # Pedido fijo de una oficina (2026-10-15): `oficina_fija` = (pedidos por semana, desde). Una
+    # oficina que pide el mismo día cada semana; no suma clientes nuevos, suma pedidos propios. El
+    # descuento del grupo (`descuento_grupo`, S/ por pedido) se resta de lo que deja.
+    desc_dia = np.zeros(T)
+    if "oficina_fija" in ex:
+        n_sem, desde_of = ex["oficina_fija"]
+        sel_of = np.array([ABIERTO[t] and t >= dia(desde_of) for t in range(T)])
+        ped["propio"][sel_of] += n_sem / 6.0
+        desc_dia[sel_of] = n_sem / 6.0 * ex.get("descuento_grupo", 0.0)
+
     # capacidad: lo que pasa de 40 al día no se cocina
     total = ped["propio"] + ped["rappi"] + ped["pya"]
     escala = np.where(total > CAPACIDAD_DIA, CAPACIDAD_DIA / np.maximum(total, 1e-9), 1.0)
@@ -258,14 +271,32 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     compras = total * escala * eco["costo"]
     refer = nuevos_ref[:T]
 
+    # MERMA POR CADUCIDAD (2026-10-15). El costeo cuenta la merma de cocción, no la comida que se
+    # vence sin venderse. Con la carta entera disponible hay un mínimo de perecibles abiertos por
+    # semana (pan, verduras, quesos y fiambres abiertos, salsas): `merma` = (S/ mínimos por
+    # semana, parte del costo de un pedido que es perecible). Lo que la semana no consume, se bota.
+    merma_dia = np.zeros(T)
+    if "merma" in ex:
+        minimo, frac = ex["merma"]
+        for a in range(0, T, 7):
+            consumo = frac * eco["costo"] * total[a:a + 7].sum() * escala[a:a + 7].mean()
+            merma_dia[a:a + 7] = max(0.0, minimo - consumo) / 7.0
+    fijos = ex.get("fijos", FIJOS_MES)
+    # Lo que cuesta salir a buscar clientes (2026-10-15): `gastos` = [(S/ por día, primeros N días
+    # abiertos)], p. ej. las muestras para las oficinas o la imprenta de los volantes.
+    gasto_dia = np.zeros(T)
+    for monto, n_dias in ex.get("gastos", []):
+        gasto_dia[abiertos[:n_dias]] += monto
+
     out = []
     rmt = False
     for m in range(len(MESES)):
         sel = MES_DE == m
         v, c = ventas[sel].sum(), compras[sel].sum()
-        util = (deja[sel].sum() - FIJOS_MES - refer[sel].sum() * COSTO_REFERIDO - (PAUTA if m == MES_DE[dias_pauta[0]] else 0)
+        util = (deja[sel].sum() - fijos - refer[sel].sum() * COSTO_REFERIDO - (prueba if m == MES_DE[dias_pauta[0]] else 0)
+                - merma_dia[sel].sum() - desc_dia[sel].sum() - gasto_dia[sel].sum()
                 - (pauta_mes if gasta and m >= ex.get("pauta_desde_mes", 2) else 0)
-                - ex.get("oferta_costo", 0.0) * (PAUTA / cac if m == MES_DE[dias_pauta[0]] else (pauta_mes / cac_mes if gasta and m >= ex.get("pauta_desde_mes", 2) else 0)))
+                - ex.get("oferta_costo", 0.0) * (prueba / cac if m == MES_DE[dias_pauta[0]] else (pauta_mes / cac_mes if gasta and m >= ex.get("pauta_desde_mes", 2) else 0)))
         if not rmt and max(v, c) > 8000:
             rmt = True       # el Nuevo RUS acaba en S/8,000 al mes: se pasa al Régimen MYPE
         if rmt:
@@ -278,13 +309,21 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
                         pedidos=sum(ped[c][sel].sum() for c in ped) / n_abiertos,
                         propio=ped["propio"][sel].sum() / n_abiertos, rappi=ped["rappi"][sel].sum() / n_abiertos,
                         pya=ped["pya"][sel].sum() / n_abiertos))
-    return out, cac
+    # Lo de cada día, para medir el PRIMER MES (los primeros 30 días desde que se abre).
+    prueba_dia = np.zeros(T)
+    if prueba:
+        prueba_dia[dias_pauta] = prueba / len(dias_pauta)
+    neto = deja - refer * COSTO_REFERIDO - merma_dia - desc_dia - gasto_dia - prueba_dia - (pauta_dia * cac_mes if gasta else 0)
+    return out, cac, dict(neto=neto, ventas=ventas, pedidos=total * escala, nuevos=nuevos_dia, merma=merma_dia, fijos=fijos)
 
 
 def simular(sol=(), semilla=20261009, n=CORRIDAS, pauta_mes=0.0, si_cac_menor=None, ex=None):
     rng = np.random.default_rng(semilla)
     s = sortear(rng, n)
     eco = pedido(**SOLUCIONES["ticket"][1]) if "ticket" in sol else pedido()
+    if ex and "empaque" in ex:      # otra ficha de empaque (2026-10-15: la bolsa lisa con sello)
+        d = I.por_sandwich(I.EMPAQUE_PEDIDO, sand_por_pedido=1) - I.por_sandwich(ex["empaque"], sand_por_pedido=1)
+        eco = dict(eco, costo=eco["costo"] - d, propio=eco["propio"] + d, app=eco["app"] + d)
     runs = [correr(s, i, eco, sol, pauta_mes, si_cac_menor, ex) for i in range(n)]
     gan = np.array([[m["ganancia"] for m in r[0]] for r in runs])
     res = dict(meses=[], s=s, total=gan.sum(1), cac=np.array([r[1] for r in runs]))
@@ -301,6 +340,15 @@ def simular(sol=(), semilla=20261009, n=CORRIDAS, pauta_mes=0.0, si_cac_menor=No
             pedidos_p90=float(np.percentile(col("pedidos"), 90)), nuevos=float(np.median(col("nuevos"))),
             clientes=float(np.median(acum[:, m])), clientes_p10=float(np.percentile(acum[:, m], 10)),
             clientes_p90=float(np.percentile(acum[:, m], 90))))
+    # El primer mes: los 30 días desde que se abre (20-oct a 18-nov), con los fijos de 30 días y
+    # la cuota del Nuevo RUS.
+    pm = np.array([r[2]["neto"][:30].sum() - r[2]["fijos"] * 30 / 30.4 - 20.0 for r in runs])
+    res["primer_mes"] = dict(
+        p10=float(np.percentile(pm, 10)), p50=float(np.median(pm)), p90=float(np.percentile(pm, 90)),
+        positivo=float((pm > 0).mean()),
+        pedidos=float(np.median([r[2]["pedidos"][:30].sum() for r in runs])),
+        ventas=float(np.median([r[2]["ventas"][:30].sum() for r in runs])),
+        merma=float(np.median([r[2]["merma"][:30].sum() for r in runs])))
     res["caja_min_p10"] = float(np.percentile(np.minimum.accumulate(np.cumsum(gan, 1), 1)[:, -1], 10))
     return res
 
