@@ -236,6 +236,12 @@ de margen hecho sin esto usa el precio del insumo crudo y sale ~1.85x optimista.
   (~9/día) sino mucho más alto (~40+/día); el cuello de botella real es la demanda, no la
   cocina. `MAX_ORDERS_PER_HOUR` en `orders.ts` se subió de 6 a 10 por esto. Cualquier
   modelo de capacidad futuro parte de acá.
+- **Operación al abrir (dueño, 2026-10-15)**: despacha desde casa, zona El Golf (Prolongación
+  César Vallejo, Víctor Larco; el número no va al repo, que es público; las coordenadas son
+  `STORE_LAT/LON` de `_shared/reglas.ts`). **Todo se congela.** El pan llega con S/15 de envío por
+  pedido. **El dueño tiene un trabajo formal**: no puede hacer visitas diarias. Bolsas lisas y
+  sellos ya comprados. PedidosYa, Rappi y la web abren juntos el 20-oct; la prueba de Meta va al
+  inicio.
 - **Costos fijos mensuales: menos de S/500 — opera desde casa** (confirmado por el dueño
   2026-08-15). Sin alquiler de local. Los S/950 que usó el modelo v5 eran una estimación a
   ojo y estaban altos por casi el doble.
