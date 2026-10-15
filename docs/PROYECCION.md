@@ -229,3 +229,30 @@ El sello (S/80–250 en MercadoLibre Perú, según tamaño y si es autoentintabl
 con los primeros ~70 pedidos. Con **dos** stickers por bolsa (cierre y QR, decisión del dueño) el
 empaque sube a ~S/0.65 si el del QR sale ~S/0.20: unos S/75 menos en 6 meses, sin cotizar aún. El costo del modelo (`insumos.EMPAQUE_PEDIDO`) se cambia cuando el
 dueño compre: hasta entonces queda en S/2.50, por el lado seguro.
+
+## Desde cero clientes (2026-10-15)
+Dueño: «genérame un estimado de ventas también pensando que empezaremos con 0 clientes». El modelo
+ya arrancaba en cero; ahora además cuenta los clientes que piden por primera vez y da el rango de
+cada mes (`python3 modelo/proyeccion.py`, bloque «DESDE CERO CLIENTES»). Mismos supuestos que
+arriba: Rappi desde el día 1 (primer mes sin comisión), PedidosYa desde el 17-nov, Instagram desde
+el 27-oct, la prueba de Meta de S/350 en noviembre y empaque a S/2.50 (el lado seguro).
+
+Rango = 1 de cada 10 casos · la mitad · 9 de cada 10.
+
+| mes | clientes nuevos | clientes acumulados | pedidos al día | ventas del mes | ganancia antes de tu sueldo |
+|---|---|---|---|---|---|
+| oct (11 días) | 10 | 10 (6–14) | 0.9 (0.6–1.3) | S/285 (S/171–405) | −S/341 |
+| nov | 38 | 48 (34–62) | 1.9 (1.3–2.5) | S/1,306 (S/913–1,719) | −S/157 |
+| dic | 36 | 84 (58–108) | 2.3 (1.5–3.1) | S/1,717 (S/1,149–2,316) | S/271 |
+| ene | 36 | 120 (83–156) | 2.6 (1.8–3.5) | S/1,969 (S/1,314–2,667) | S/389 |
+| feb | 33 | 153 (105–200) | 2.9 (1.9–3.9) | S/1,923 (S/1,283–2,599) | S/368 |
+| mar | 37 | 190 (129–248) | 3.1 (2.1–4.2) | S/2,244 (S/1,486–3,027) | S/515 |
+| **6 meses** | **~190** | | | **~S/9,400** | **S/1,049** (−S/375 a S/2,573) |
+
+- Hace falta un colchón de ~S/800 para octubre y noviembre (la caja más baja del caso malo).
+- Con la bolsa lisa y los sellos que decidiste (~S/0.50 por pedido en vez de S/2.50) la ganancia
+  de 6 meses sube ~S/700. Se cambia en `insumos.EMPAQUE_PEDIDO` cuando compres.
+- Lo que más mueve el número sigue siendo Rappi (correlación +0.69) e Instagram (+0.49): con
+  Instagram sin vincular, cada semana de atraso le resta.
+- Con todas las palancas de arriba (oficinas, TikTok, Rappi trabajado…): S/6,541 en 6 meses y
+  8.5 pedidos al día en marzo.

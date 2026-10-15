@@ -194,6 +194,7 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     pend = {c: np.zeros((3, T + MAXG)) for c in ("propio", "rappi", "pya")}
     ped = {c: np.zeros(T) for c in pend}
     nuevos_ref = np.zeros(T + 8)
+    nuevos_dia = np.zeros(T)     # clientes que piden por PRIMERA vez (2026-10-15: «empezaremos con 0 clientes»)
     cac = x["cpm"] / (1000 * x["ctr"] * x["cvr"]) * 1.18 * APRENDIZAJE
     cac *= ex.get("cac_factor", 1.0)
     desde = ex.get("prueba_desde", date(2026, 11, 3))
@@ -227,6 +228,7 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
             "rappi": x["rappi_dia"] * ex.get("rappi_factor", 1.0),
             "pya": x["pya_dia"] if t >= dia(ex.get("pya_desde", date(2026, 11, 17))) else 0.0,
         }
+        nuevos_dia[t] = sum(nuevos.values())
         migra = x["qr_a_propio"] if t >= qr else x["app_a_propio"]
         for c in pend:
             p2 = p2_propio if c == "propio" else x["p2"]
@@ -272,7 +274,8 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
         else:
             imp = 20.0 if max(v, c) <= 5000 else 50.0     # cuotas del Nuevo RUS
         n_abiertos = int((ABIERTO & sel).sum())
-        out.append(dict(ganancia=util - imp, impuestos=imp, ventas=v,
+        out.append(dict(ganancia=util - imp, impuestos=imp, ventas=v, nuevos=nuevos_dia[sel].sum() * escala[sel].mean(),
+                        pedidos=sum(ped[c][sel].sum() for c in ped) / n_abiertos,
                         propio=ped["propio"][sel].sum() / n_abiertos, rappi=ped["rappi"][sel].sum() / n_abiertos,
                         pya=ped["pya"][sel].sum() / n_abiertos))
     return out, cac
@@ -285,13 +288,19 @@ def simular(sol=(), semilla=20261009, n=CORRIDAS, pauta_mes=0.0, si_cac_menor=No
     runs = [correr(s, i, eco, sol, pauta_mes, si_cac_menor, ex) for i in range(n)]
     gan = np.array([[m["ganancia"] for m in r[0]] for r in runs])
     res = dict(meses=[], s=s, total=gan.sum(1), cac=np.array([r[1] for r in runs]))
+    acum = np.cumsum(np.array([[m["nuevos"] for m in r[0]] for r in runs]), 1)
     for m, (a, mm) in enumerate(MESES):
         col = lambda k: np.array([r[0][m][k] for r in runs])
         res["meses"].append(dict(
             mes=NOMBRE_MES[mm], p10=float(np.percentile(gan[:, m], 10)), p50=float(np.median(gan[:, m])),
             p90=float(np.percentile(gan[:, m], 90)), ventas=float(np.median(col("ventas"))),
             impuestos=float(np.median(col("impuestos"))), propio=float(np.median(col("propio"))),
-            rappi=float(np.median(col("rappi"))), pya=float(np.median(col("pya")))))
+            rappi=float(np.median(col("rappi"))), pya=float(np.median(col("pya"))),
+            ventas_p10=float(np.percentile(col("ventas"), 10)), ventas_p90=float(np.percentile(col("ventas"), 90)),
+            pedidos=float(np.median(col("pedidos"))), pedidos_p10=float(np.percentile(col("pedidos"), 10)),
+            pedidos_p90=float(np.percentile(col("pedidos"), 90)), nuevos=float(np.median(col("nuevos"))),
+            clientes=float(np.median(acum[:, m])), clientes_p10=float(np.percentile(acum[:, m], 10)),
+            clientes_p90=float(np.percentile(acum[:, m], 90))))
     res["caja_min_p10"] = float(np.percentile(np.minimum.accumulate(np.cumsum(gan, 1), 1)[:, -1], 10))
     return res
 
@@ -338,6 +347,11 @@ if __name__ == "__main__":
                   f"({S(m['p10'])} a {S(m['p90'])})")
         print(f"  6 meses: {S(np.median(r['total']))} ({S(np.percentile(r['total'], 10))} a "
               f"{S(np.percentile(r['total'], 90))}) · caja más baja (caso malo): {S(r['caja_min_p10'])}")
+    print("\nDESDE CERO CLIENTES (HOY; caso malo · medio · bueno = 1 de cada 10 · mitad · 9 de cada 10)")
+    for m in hoy["meses"]:
+        print(f"  {m['mes']}  clientes nuevos {m['nuevos']:4.0f} · acumulados {m['clientes']:4.0f} ({m['clientes_p10']:.0f}-{m['clientes_p90']:.0f})"
+              f" · pedidos/día {m['pedidos']:.1f} ({m['pedidos_p10']:.1f}-{m['pedidos_p90']:.1f})"
+              f" · ventas {S(m['ventas'])} ({S(m['ventas_p10'])}-{S(m['ventas_p90'])})")
     print("\nCada solución sola, sobre HOY (6 meses, mediana):")
     for k, v in solas.items():
         print(f"  +{S(np.median(v - hoy['total']))}  {k}: {SOLUCIONES[k][2]}")

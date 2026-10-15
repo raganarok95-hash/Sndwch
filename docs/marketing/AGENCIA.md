@@ -87,7 +87,7 @@ con la hora de cada pedido real desde el día 13.
 
 ---
 
-## 3 · Los siete departamentos, y quién los hace de verdad
+## 3 · Los ocho departamentos, y quién los hace de verdad
 
 Cada departamento existe en las agencias reales. La diferencia con el organigrama anterior es
 que **cada uno tiene un ejecutor concreto** y un entregable en un lugar fijo.
@@ -98,6 +98,7 @@ que **cada uno tiene un ejecutor concreto** y un entregable en un lugar fijo.
 | **2 · Estrategia** | *planner* | la sesión del lunes | el diagnóstico y **el brief** | `semanas/<lunes>/BRIEF.md` + `marketing_plan` |
 | **3 · Creatividad** | director creativo + duplas | la sesión del lunes | 30 ideas → 7 propuestas con guion, cada una con sus **encargos a Flow** | `semanas/<lunes>/IDEAS.md`, `GUIONES.md`; `estudio/encargos/` |
 | **4 · Estudio** | productora | **tu laptop llama a Flow sola** (7:30 y 19:30); GitHub monta las piezas | imágenes y clips; piezas terminadas | `estudio/hecho/`; `marketing-images` |
+| **4b · Dirección de arte** (2026-10-15) | director de arte | Claude, cada mañana después del Estudio (`scripts/estudio/DIRECCION_DE_ARTE.md`) | cada imagen de Flow con su porqué, montada como sale en Instagram, con la variante elegida y el veredicto: aprobada o «rehacer» con el cambio exacto | `estudio/hecho/<id>/revision.json`; `semanas/<lunes>/DIRECCION_DE_ARTE.md` |
 | **5 · Calidad** | *standards & practices* | código (el Revisor) | cada pieza aprobada o bloqueada, con motivo | `marketing_calendar.revision` |
 | **6 · Medios** | social, comunidad y pauta | el cron publica; las respuestas automáticas de Meta responden; la pauta va por el MCP de Meta desde el 27 oct | lo publicado, lo respondido, la campaña | Instagram, Facebook, Meta Ads |
 | **7 · Datos** | analista | código: el correo del domingo, y un archivo de datos de la semana | qué trajo pedidos y qué aprendimos | `semanas/<lunes>/DATOS.md` |
@@ -117,6 +118,7 @@ memoria de la agencia. Así cualquier sesión, en la nube o en la laptop, sabe q
 | Lunes | Cuenta | El **resumen para ti**: el brief, las 7 ideas y lo que necesita tu decisión |
 | **Lunes, al aprobar** | **Tú** | un mensaje: «sí», o cambias o tachas ideas. Si no respondes hasta el martes a las 9:00, **se producen las que no tocan plata, lo legal ni la marca** |
 | Lunes a martes | Estudio | la laptop genera en Flow lo encargado y GitHub monta y programa |
+| Cada mañana, después del Estudio | Dirección de arte | revisa lo que volvió de Flow: para qué se usa cada imagen, cómo queda montada, cuál variante y por qué. Sin su aprobación una imagen no se publica; lo que no sirve vuelve a Flow con el cambio exacto |
 | **Martes a domingo** | Medios + Calidad | una pieza del feed por día y las historias del día (`INSTAGRAM.md` §4) |
 | Todos los días | Medios | respuestas en minutos; lo que no se puede responder solo te llega a ti |
 

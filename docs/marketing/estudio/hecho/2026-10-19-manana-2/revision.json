@@ -1,0 +1,20 @@
+{
+ "veredicto": "aprobada",
+ "elegida": "v1.jpg",
+ "por_que_se_usa": "La respuesta de SANDO: quieto, seguro, «Mañana.». Presenta al hermano que lleva la carta y la noche.",
+ "como_funciona": "«Mañana.» en cursiva arriba a la izquierda, sobre la pared; SANDO al centro y la tabla abajo, fuera de la barra de Instagram. Misma cocina verde y misma bombilla que el cuadro 1.",
+ "por_que_esta": "v1: brazos cruzados y la tabla limpia al frente. v2 es casi igual pero suma un cuchillo, que no aporta y endurece la escena.",
+ "criterios": {
+  "personaje": 5,
+  "escena": 4,
+  "lectura": 5,
+  "marca": 5,
+  "verdad": 4,
+  "serie": 5
+ },
+ "observaciones": [
+  "La escena no pedía sándwich y Flow lo agregó en las dos variantes. El que salió parece el Italian Hoagie (embutido, queso, lechuga, tomate) en pan largo y porción real: pasa. Creatividad: cuando el sándwich no es parte de la idea, escribir «an empty cutting board»; cuando lo es, nombrar la receta de docs/hechos/CARTA.md."
+ ],
+ "cambio": null,
+ "revisado": "2026-10-15T07:30:00-05:00"
+}
