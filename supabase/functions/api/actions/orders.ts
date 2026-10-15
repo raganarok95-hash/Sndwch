@@ -17,7 +17,7 @@ import { loadCatalogPrices, carritoSinEnvio, deriveCart, priceCartItem, REWARDS,
 import { organizerFreeSandwichApplies, cerrarGrupoSiTodosPagaron } from "./group.ts";
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
 import { sendPurchaseEvent } from "../meta-capi.ts";
-import { storePausedUntil, promosKilled } from "./hours.ts";
+import { storePausedUntil, promosKilled, pedidoCabeEnPausa } from "./hours.ts";
 import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../email.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 import { cargasPorHora, horaLlena, fijoPropio } from "../capacidad.ts";
@@ -152,7 +152,7 @@ const MANUAL_ORDER_RATE_WINDOW_MINUTES = 30;
 //
 // Se valida en el servidor y no solo escondiendo el botón: el cliente es reemplazable
 // (una llamada directa a la API, una pestaña vieja en caché) y esto mueve dinero real.
-async function assertBusinessLaunched(): Promise<void> {
+async function assertBusinessLaunched(scheduledFor: string | null): Promise<void> {
   let launched = false;
   try {
     const rows = await sbGet("app_settings", "select=business_launched&id=eq.true");
@@ -172,11 +172,12 @@ async function assertBusinessLaunched(): Promise<void> {
   // Pausa temporal ("hoy ya no puedo", "vuelvo en 2 horas"). Va dentro del mismo guard que
   // ya atraviesan los DOS caminos de cobro, así que ningún pedido puede colarse por un
   // lado mientras el otro rechaza. Se reanuda sola comparando contra la hora actual: no
-  // hay nada que acordarse de revertir.
+  // hay nada que acordarse de revertir. Desde el 2026-10-15 lo programado para cuando termina
+  // la pausa SÍ entra (pedidoCabeEnPausa): el cliente lo programa y no se pierde la venta.
   const pausedUntil = await storePausedUntil();
-  if (pausedUntil) {
-    const hora = new Date(pausedUntil).toLocaleTimeString("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit" });
-    throw new ApiError("Estamos con una pausa breve — volvemos a las " + hora + ". Gracias por la paciencia.", 503);
+  if (!pedidoCabeEnPausa(pausedUntil, scheduledFor)) {
+    const hora = new Date(pausedUntil!).toLocaleTimeString("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit" });
+    throw new ApiError("Estamos con una pausa breve hasta las " + hora + ". Programa tu pedido desde esa hora y te llega a tiempo.", 503);
   }
 }
 
@@ -889,9 +890,9 @@ export async function actPrepareOrder(b: Entrada<"prepare-order"> & { _ip?: stri
   // extendido (hallazgo de auditoría de código).
   // El negocio todavía no abre → ningún pedido se acepta, en ninguno de los dos caminos
   // de pago (ver assertBusinessLaunched). Va ANTES de cualquier reserva o cobro.
-  await assertBusinessLaunched();
-  await loadStoreHours();
   const scheduledFor = b.scheduledFor ? String(b.scheduledFor) : null;
+  await assertBusinessLaunched(scheduledFor);
+  await loadStoreHours();
   if (scheduledFor) {
     const schedDate = new Date(scheduledFor);
     const t = schedDate.getTime();
@@ -1273,9 +1274,9 @@ export async function actPlaceOrder(b: Entrada<"place-order"> & { _ip?: string }
   // auditoría de código, mismo motivo que en actPrepareOrder arriba).
   // El negocio todavía no abre → ningún pedido se acepta, en ninguno de los dos caminos
   // de pago (ver assertBusinessLaunched). Va ANTES de cualquier reserva o cobro.
-  await assertBusinessLaunched();
-  await loadStoreHours();
   const scheduledFor = b.scheduledFor ? String(b.scheduledFor) : null;
+  await assertBusinessLaunched(scheduledFor);
+  await loadStoreHours();
   if (scheduledFor) {
     const schedDate = new Date(scheduledFor);
     const t = schedDate.getTime();

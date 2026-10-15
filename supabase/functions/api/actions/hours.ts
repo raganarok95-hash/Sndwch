@@ -24,6 +24,17 @@ export async function storePausedUntil(): Promise<string | null> {
   return new Date(until).getTime() > Date.now() ? until : null;
 }
 
+// La pausa ya no rechaza todo (dueño, 2026-10-15: que el pedido «se programe para cuando
+// vuelva»). Con la pausa puesta entra solo lo programado para la hora en que termina o después;
+// lo de «ahora» y lo programado dentro de la pausa, no. Pura, para probarla sin la base
+// (tests-api/pausa-programa.test.ts).
+export function pedidoCabeEnPausa(pausedUntil: string | null, scheduledFor: string | null): boolean {
+  if (!pausedUntil) return true;
+  if (!scheduledFor) return false;
+  const t = new Date(scheduledFor).getTime();
+  return Number.isFinite(t) && t >= new Date(pausedUntil).getTime();
+}
+
 // ── EL KILL SWITCH DE PROMOCIONES ─────────────────────────────────────────────────────
 //
 // Vive junto a `storePausedUntil` porque es su hermano, pero con el modo de fallo AL REVÉS:

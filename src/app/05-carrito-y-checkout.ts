@@ -403,7 +403,8 @@ function hoja30HTML(){
         var cerrado=!STORE_HOURS[limaDayHour(schedDateForDay(x.k)).weekday];
         return'<button aria-pressed="'+(schedDay===x.k)+'"'+(cerrado?' disabled':'')+' onclick="schedDay=\''+x.k+'\';schedSlot=null;initSchedDefault();render()">'+x.l+'</button>';
       }).join('')
-      +(scheduleMode==='later'&&storeStatus().open?'<button onclick="scheduleMode=\'now\';schedSlot=null;hoja30=null;render()">Lo antes posible</button>':'')+'</div>'
+      +(scheduleMode==='later'&&storeStatus().open&&!pausaHasta()?'<button onclick="scheduleMode=\'now\';schedSlot=null;hoja30=null;render()">Lo antes posible</button>':'')+'</div>'
+      +(pausaHasta()?'<div class="nota" data-accion="aviso-pausa">Estamos en una pausa breve hasta las '+esc(horaDeVuelta())+'.<br>Elige desde esa hora y te llega a tiempo.</div>':'')
       +(hojaErr?'<div class="err" role="alert">'+esc(hojaErr)+'</div>':'')
       +(slots.length
         ?'<div class="fr">'+slots.map(function(s){return'<button aria-pressed="'+(scheduleMode==='later'&&schedSlot===s.t)+'"'+(s.full?' disabled':'')+' onclick="scheduleMode=\'later\';schedSlot=\''+s.t+'\';hojaErr=\'\';render()">'+s.t+'</button>';}).join('')+'</div>'
@@ -484,7 +485,7 @@ function faltaSandwich():boolean{return cart.length>0&&!cart.some(function(it:an
 // ninguna hora libre hoy ni mañana, se deja como estaba y el aviso lo dice.
 function programarSiCerrado(){
   if(scheduleMode!=='now'||!businessLaunched)return;
-  if(storeStatus().open&&!hourIsFull(new Date()))return;
+  if(storeStatus().open&&!hourIsFull(new Date())&&!pausaHasta())return;
   scheduleMode='later';schedSlot=null;initSchedDefault();
   if(!schedSlot)scheduleMode='now';
 }
@@ -500,7 +501,7 @@ function irAPagar(){
   if(!recibeListo()){hoja30='recibe';hojaErr='';render();return;}
   var err=problemaDelPedido();
   // Si lo que falla es la hora, se abre donde se elige, no un aviso que manda a buscarla.
-  if(err&&businessLaunched&&(scheduleMode==='later'||!storeStatus().open||hourIsFull(new Date()))){hoja30='programar';hojaErr=err;initSchedDefault();render();return;}
+  if(err&&businessLaunched&&(scheduleMode==='later'||!storeStatus().open||pausaHasta()||hourIsFull(new Date()))){hoja30='programar';hojaErr=err;initSchedDefault();render();return;}
   if(err){var e=document.getElementById('o-err');if(e)e.textContent=err;else showToast(err,'error');return;}
   go('o_pagar');
 }
@@ -641,6 +642,8 @@ function problemaDelPedido():string|null{
     if(isNaN(d.getTime())||d.getTime()<Date.now()-60000)return'La hora programada no es válida.';
     if(!isWithinStoreHours(d))return'Esa hora está fuera de nuestro horario de atención.';
     if(hourIsFull(d))return'Esa hora se llenó mientras armabas el pedido. Elige otra en «Programar».';
+  }else if(pausaHasta()){
+    return'Estamos en una pausa breve hasta las '+horaDeVuelta()+'. Toca «Programar» y elige desde esa hora.';
   }else if(!storeStatus().open){
     return'Estamos cerrados ahora mismo. Toca «Programar» para pedir dentro de nuestro horario.';
   }else if(hourIsFull(new Date())){

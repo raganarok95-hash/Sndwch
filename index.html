@@ -3519,6 +3519,9 @@ function schedSlotsDetailed(dayKey) {
         var slotDate = fechaEnLima(diaEnLima(d), totalMin);
         if (isToday && slotDate.getTime() < now.getTime() + SCHED_LEAD_MINUTES * 60000)
             continue;
+        // Durante la pausa, las franjas antes de que termine no se ofrecen: igual que las que ya pasaron.
+        if (slotDate.getTime() < pausaHasta())
+            continue;
         out.push({ t: String(Math.floor(totalMin / 60)).padStart(2, '0') + ':' + String(totalMin % 60).padStart(2, '0'), full: hourIsFull(slotDate) });
     }
     return out;
@@ -3956,6 +3959,16 @@ var REFERRAL_MILESTONES = REGLAS_N.REFERRAL_MILESTONES;
 var metaPixelId = null, _metaPixelLoaded = false;
 // Pausa temporal de la tienda (se reanuda sola). Llega en get-store-hours.
 var storePausedUntil = null;
+// Hasta cuándo dura la pausa (ms), o 0 si no hay. Desde el 2026-10-15 la pausa no rechaza: el
+// pedido se programa para cuando termina (dueño: «que se programe para cuando vuelva»; el
+// servidor lo valida igual en pedidoCabeEnPausa).
+function pausaHasta() {
+    var t = storePausedUntil ? new Date(storePausedUntil).getTime() : 0;
+    return t > Date.now() ? t : 0;
+}
+function horaDeVuelta() {
+    return new Date(pausaHasta()).toLocaleTimeString('es-PE', { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit' });
+}
 // Capacidad (#23/#24/#16), también de get-store-hours. `fullHours` son los inicios de hora
 // (ISO) que ya llegaron al tope; `queueAhead`, los pedidos que la cocina tiene por delante
 // ahora mismo. Los valores por defecto son deliberadamente NEUTROS: si el fetch falla, no se
@@ -4313,7 +4326,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '091fb71761';
+var APP_BUILD = '3692a42bd5';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -8674,7 +8687,8 @@ function hoja30HTML() {
             var cerrado = !STORE_HOURS[limaDayHour(schedDateForDay(x.k)).weekday];
             return '<button aria-pressed="' + (schedDay === x.k) + '"' + (cerrado ? ' disabled' : '') + ' onclick="schedDay=\'' + x.k + '\';schedSlot=null;initSchedDefault();render()">' + x.l + '</button>';
         }).join('')
-            + (scheduleMode === 'later' && storeStatus().open ? '<button onclick="scheduleMode=\'now\';schedSlot=null;hoja30=null;render()">Lo antes posible</button>' : '') + '</div>'
+            + (scheduleMode === 'later' && storeStatus().open && !pausaHasta() ? '<button onclick="scheduleMode=\'now\';schedSlot=null;hoja30=null;render()">Lo antes posible</button>' : '') + '</div>'
+            + (pausaHasta() ? '<div class="nota" data-accion="aviso-pausa">Estamos en una pausa breve hasta las ' + esc(horaDeVuelta()) + '.<br>Elige desde esa hora y te llega a tiempo.</div>' : '')
             + (hojaErr ? '<div class="err" role="alert">' + esc(hojaErr) + '</div>' : '')
             + (slots.length
                 ? '<div class="fr">' + slots.map(function (s) { return '<button aria-pressed="' + (scheduleMode === 'later' && schedSlot === s.t) + '"' + (s.full ? ' disabled' : '') + ' onclick="scheduleMode=\'later\';schedSlot=\'' + s.t + '\';hojaErr=\'\';render()">' + s.t + '</button>'; }).join('') + '</div>'
@@ -8807,7 +8821,7 @@ function faltaSandwich() { return cart.length > 0 && !cart.some(function (it) { 
 function programarSiCerrado() {
     if (scheduleMode !== 'now' || !businessLaunched)
         return;
-    if (storeStatus().open && !hourIsFull(new Date()))
+    if (storeStatus().open && !hourIsFull(new Date()) && !pausaHasta())
         return;
     scheduleMode = 'later';
     schedSlot = null;
@@ -8845,7 +8859,7 @@ function irAPagar() {
     }
     var err = problemaDelPedido();
     // Si lo que falla es la hora, se abre donde se elige, no un aviso que manda a buscarla.
-    if (err && businessLaunched && (scheduleMode === 'later' || !storeStatus().open || hourIsFull(new Date()))) {
+    if (err && businessLaunched && (scheduleMode === 'later' || !storeStatus().open || pausaHasta() || hourIsFull(new Date()))) {
         hoja30 = 'programar';
         hojaErr = err;
         initSchedDefault();
@@ -9009,6 +9023,9 @@ function problemaDelPedido() {
             return 'Esa hora está fuera de nuestro horario de atención.';
         if (hourIsFull(d))
             return 'Esa hora se llenó mientras armabas el pedido. Elige otra en «Programar».';
+    }
+    else if (pausaHasta()) {
+        return 'Estamos en una pausa breve hasta las ' + horaDeVuelta() + '. Toca «Programar» y elige desde esa hora.';
     }
     else if (!storeStatus().open) {
         return 'Estamos cerrados ahora mismo. Toca «Programar» para pedir dentro de nuestro horario.';
