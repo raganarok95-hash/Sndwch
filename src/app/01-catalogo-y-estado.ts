@@ -772,9 +772,7 @@ function pausaHasta():number{
   var t=storePausedUntil?new Date(storePausedUntil).getTime():0;
   return t>Date.now()?t:0;
 }
-function horaDeVuelta():string{
-  return new Date(pausaHasta()).toLocaleTimeString('es-PE',{timeZone:'America/Lima',hour:'2-digit',minute:'2-digit'});
-}
+function horaDeVuelta():string{return horaLima(pausaHasta());}
 // Capacidad (#23/#24/#16), también de get-store-hours. `fullHours` son los inicios de hora
 // (ISO) que ya llegaron al tope; `queueAhead`, los pedidos que la cocina tiene por delante
 // ahora mismo. Los valores por defecto son deliberadamente NEUTROS: si el fetch falla, no se

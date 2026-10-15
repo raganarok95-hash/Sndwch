@@ -18,6 +18,7 @@ import { organizerFreeSandwichApplies, cerrarGrupoSiTodosPagaron } from "./group
 import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText } from "../push.ts";
 import { sendPurchaseEvent } from "../meta-capi.ts";
 import { storePausedUntil, promosKilled, pedidoCabeEnPausa } from "./hours.ts";
+import { horaLimaHHMM } from "../franja.ts";
 import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../email.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 import { cargasPorHora, horaLlena, fijoPropio } from "../capacidad.ts";
@@ -176,8 +177,9 @@ async function assertBusinessLaunched(scheduledFor: string | null): Promise<void
   // la pausa SÍ entra (pedidoCabeEnPausa): el cliente lo programa y no se pierde la venta.
   const pausedUntil = await storePausedUntil();
   if (!pedidoCabeEnPausa(pausedUntil, scheduledFor)) {
-    const hora = new Date(pausedUntil!).toLocaleTimeString("es-PE", { timeZone: "America/Lima", hour: "2-digit", minute: "2-digit" });
-    throw new ApiError("Estamos con una pausa breve hasta las " + hora + ". Programa tu pedido desde esa hora y te llega a tiempo.", 503);
+    const [h, m] = horaLimaHHMM(new Date(pausedUntil!).getTime()).split(":").map(Number);
+    const hora = (h % 12 || 12) + (m ? ":" + String(m).padStart(2, "0") : "") + (h < 12 ? " a.m." : " p.m.");
+    throw new ApiError("Estamos en una pausa breve: volvemos a las " + hora + ". Programa tu pedido desde esa hora y te llega a tiempo.", 503);
   }
 }
 

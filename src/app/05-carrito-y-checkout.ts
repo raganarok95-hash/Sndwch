@@ -318,6 +318,17 @@ function recompensaUsable(){
 function en30(etq:string,valor:string,accion:string,fn:string,falta?:boolean){
   return'<button class="en'+(falta?' falta':'')+'" onclick="'+fn+'"><em>'+etq+'</em><n>'+esc(valor)+'</n><u>'+accion+'</u></button>';
 }
+// La línea del único sándwich del pedido (una sola unidad), o -1: a quien ya pidió dos o más, o
+// pide en grupo, no se le ofrece «¿Comen dos?».
+function lineaParaDos():number{
+  if(pendingGroupCode)return -1;
+  var sand=cart.map(function(it,i){return{it:it,i:i};}).filter(function(x){return x.it.type!=='side';});
+  return sand.length===1&&(sand[0].it.qty||1)===1?sand[0].i:-1;
+}
+function sumarOtroIgual(){
+  var i=lineaParaDos();if(i<0)return;
+  cart[i].qty=(cart[i].qty||1)+1;saveCart();render();
+}
 function sOCart(){
   aplicarMetodoPreferido();
   if(!cart.length){
@@ -372,6 +383,12 @@ function sOCart(){
     +'<div class="tt"><em>'+(sinEnvio?'Sin envío':'Total')+'</em><b>'+SOLES_TXT+pz(t)+'</b></div>'
     +'</div></div>'
     +'<div class="err" id="o-err" role="alert"></div>'
+    // «PARA COMPARTIR» (dueño, 2026-10-15: «2 sí»; docs/META_6000.md: más sándwiches por pedido
+    // sin más clientes). Con UN sándwich en el pedido, se ofrece sumar otro igual a su precio de
+    // carta. Para cinco o más está el grupo, justo abajo.
+    +(lineaParaDos()>=0
+      ?'<div class="grupo30 dos"><b>¿Comen dos?</b><span>Suma otro igual por '+SOLES_TXT+pz(itemUnitPrice(cart[lineaParaDos()]))+'.</span><button data-accion="sumar-otro-igual" onclick="sumarOtroIgual()">Sumar otro igual →</button></div>'
+      :'')
     // Maqueta aprobada grupo-4: el pedido se puede volver grupo sin perder lo elegido. No se
     // ofrece si el pedido ya viene de un grupo.
     +(!pendingGroupCode&&cart.some(function(it){return it.type!=='side';})
@@ -404,7 +421,7 @@ function hoja30HTML(){
         return'<button aria-pressed="'+(schedDay===x.k)+'"'+(cerrado?' disabled':'')+' onclick="schedDay=\''+x.k+'\';schedSlot=null;initSchedDefault();render()">'+x.l+'</button>';
       }).join('')
       +(scheduleMode==='later'&&storeStatus().open&&!pausaHasta()?'<button onclick="scheduleMode=\'now\';schedSlot=null;hoja30=null;render()">Lo antes posible</button>':'')+'</div>'
-      +(pausaHasta()?'<div class="nota" data-accion="aviso-pausa">Estamos en una pausa breve hasta las '+esc(horaDeVuelta())+'.<br>Elige desde esa hora y te llega a tiempo.</div>':'')
+      +(pausaHasta()?'<div class="nota" data-accion="aviso-pausa">Estamos en una pausa breve: volvemos a las '+esc(horaDeVuelta())+'<br>Elige desde esa hora y te llega a tiempo.</div>':'')
       +(hojaErr?'<div class="err" role="alert">'+esc(hojaErr)+'</div>':'')
       +(slots.length
         ?'<div class="fr">'+slots.map(function(s){return'<button aria-pressed="'+(scheduleMode==='later'&&schedSlot===s.t)+'"'+(s.full?' disabled':'')+' onclick="scheduleMode=\'later\';schedSlot=\''+s.t+'\';hojaErr=\'\';render()">'+s.t+'</button>';}).join('')+'</div>'
@@ -643,7 +660,7 @@ function problemaDelPedido():string|null{
     if(!isWithinStoreHours(d))return'Esa hora está fuera de nuestro horario de atención.';
     if(hourIsFull(d))return'Esa hora se llenó mientras armabas el pedido. Elige otra en «Programar».';
   }else if(pausaHasta()){
-    return'Estamos en una pausa breve hasta las '+horaDeVuelta()+'. Toca «Programar» y elige desde esa hora.';
+    return'Estamos en una pausa breve: volvemos a las '+horaDeVuelta()+'. Toca «Programar» y elige desde esa hora.';
   }else if(!storeStatus().open){
     return'Estamos cerrados ahora mismo. Toca «Programar» para pedir dentro de nuestro horario.';
   }else if(hourIsFull(new Date())){
