@@ -694,7 +694,12 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
   todos modos. Con la base ahogada, el `TRUNCATE` por el MCP se corta a los 60 s: hay que hacerlo
   con la base sana (después de las 2:00 de Lima).
 - **El clasificador de permisos bloquea programar ese vaciado** para que corra solo («Cloud Storage
-  Mass Delete»): necesita la autorización explícita del dueño.
+  Mass Delete»): necesita la autorización explícita del dueño. Con ella («continúa hasta
+  acabarlo») se aplicó `20261015102041_limpiar_respuestas_de_pg_net`: un cron diario a las 7:45
+  UTC y un job de un solo uso que vació la tabla desde dentro de la base y se borró solo (179 MB
+  → 48 kB). La API pasó de 3.3 s a 1.7 s de promedio (máximo de 5.1 s a 2.1 s) en la primera
+  media hora. Ojo: el reloj del contenedor puede atrasarse horas; la hora real es `now()` de la
+  base.
 - Otra consulta pesada, menor: `dead_cron_jobs()` (alert-system-health, cada hora, y el panel)
   recorre `cron.job_run_details` entera: ~4 s por llamada.
 
