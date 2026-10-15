@@ -39,13 +39,15 @@ with contextlib.redirect_stdout(io.StringIO()):
     import costo_bebidas as CB                       # noqa: E402  (imprime su tabla al importar)
 
 CORRIDAS = 2000
-INICIO, FIN = date(2026, 10, 20), date(2027, 3, 31)
+# `PROYECCION_HASTA` (2026-10-15): para mirar más allá de marzo (la meta de S/6,000 del dueño).
+INICIO, FIN = date(2026, 10, 20), date.fromisoformat(os.environ.get("PROYECCION_HASTA", "2027-03-31"))
 DIAS = [INICIO + timedelta(days=i) for i in range((FIN - INICIO).days + 1)]
 T = len(DIAS)
 ABIERTO = np.array([d.weekday() != 0 for d in DIAS])          # [MEDIDO] lunes cerrado
 MESES = sorted({(d.year, d.month) for d in DIAS})
 MES_DE = np.array([MESES.index((d.year, d.month)) for d in DIAS])
-NOMBRE_MES = {10: "oct", 11: "nov", 12: "dic", 1: "ene", 2: "feb", 3: "mar"}
+NOMBRE_MES = {1: "ene", 2: "feb", 3: "mar", 4: "abr", 5: "may", 6: "jun", 7: "jul", 8: "ago", 9: "set",
+              10: "oct", 11: "nov", 12: "dic"}
 dia = lambda d: (d - INICIO).days
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -190,6 +192,8 @@ def impuesto(v, c, util, rmt, ex, anio=2026, v_encargo=0.0):
     (`v_encargo`, CIIU 5621) no entran y, si pasan del 30%, se pierde para todo."""
     if not rmt:
         return 20.0 if max(v, c) <= 5000 else 50.0     # cuotas del Nuevo RUS
+    if ex.get("bandeja_es_restaurante"):     # si SUNAT la trata como delivery de restaurante
+        v_encargo = 0.0
     tasa = (0.105 if anio <= 2026 else 0.15) if ex.get("igv_reducido") and v_encargo <= 0.30 * v else 0.18
     debito = tasa / (1 + tasa) * (v - v_encargo) + 18 / 118 * v_encargo
     igv = max(0.0, debito - 18 / 118 * ex.get("compras_con_factura", 0.5) * c)
@@ -199,6 +203,10 @@ def impuesto(v, c, util, rmt, ex, anio=2026, v_encargo=0.0):
 def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     ex = ex or {}
     """Una corrida con los supuestos s[*][i]. Devuelve totales por mes."""
+    # `cerrado_extra` (2026-10-15, «con menos esfuerzo»): días que se cierran además del lunes
+    # (0 = lunes … 6 = domingo). Lo que caía ese día pasa al siguiente abierto.
+    AB = ABIERTO & np.array([d.weekday() not in ex.get("cerrado_extra", ()) for d in DIAS])
+    habiles = max(1, sum(1 for wd in (1, 2, 3, 4) if wd not in ex.get("cerrado_extra", ())))
     x = {k: v[i] for k, v in s.items()}
     if "referidos" in sol:
         x["referidos"] = SOLUCIONES["referidos"][1][0] + (x["referidos"] - 0.03) / 0.05 * 0.07
@@ -215,7 +223,7 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     cac = x["cpm"] / (1000 * x["ctr"] * x["cvr"]) * 1.18 * APRENDIZAJE
     cac *= ex.get("cac_factor", 1.0)
     desde = ex.get("prueba_desde", date(2026, 11, 3))
-    dias_pauta = [t for t in range(dia(desde), nov30 + 1) if ABIERTO[t]]
+    dias_pauta = [t for t in range(dia(desde), nov30 + 1) if AB[t]]
     prueba = 0.0 if ex.get("sin_prueba") else PAUTA      # 2026-10-15: la prueba fuera del primer mes
     meta_dia = (prueba / cac) / len(dias_pauta)
     # Pauta mensual desde diciembre (2026-10-09: «¿con cuánto de publicidad funcionaría?»).
@@ -227,26 +235,52 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     pauta_dia = np.zeros(T)
     if gasta:
         for m in range(ex.get("pauta_desde_mes", 2), len(MESES)):
-            sel = np.where((MES_DE == m) & ABIERTO)[0]
+            sel = np.where((MES_DE == m) & AB)[0]
             pauta_dia[sel] = (pauta_mes / cac_mes) / len(sel)
     red = 30 * x["red_compra"] / 6
-    abiertos = [t for t in range(T) if ABIERTO[t]]
+    abiertos = [t for t in range(T) if AB[t]]
     primeros = abiertos[:6]
 
+    # `eventos` (2026-10-15): bandejas para reuniones, capacitaciones y celebraciones, pedidas con
+    # días de anticipación. Una lista de (desde, eventos al mes, sándwiches de 30CM por evento),
+    # repartidos en los días abiertos. Cada 30CM deja su precio de carta menos su costo, la tarjeta
+    # y los puntos, y menos `descuento_evento` (S/ por 30CM). No tienen recompra propia, pero cada
+    # bandeja la comen 10-12 personas: `nuevos_por_30cm` son los clientes nuevos que deja cada 30CM
+    # servido, una semana después (una degustación que paga el cliente).
+    ev30 = np.zeros(T)
+    for desde_ev, por_mes, n30 in ex.get("eventos", []):
+        dias_ev = [t for t in range(T) if AB[t] and t >= dia(desde_ev)]
+        ev30[dias_ev] += por_mes * n30 / (25.5 * AB.sum() / ABIERTO.sum())   # ~25.5 días abiertos al mes
+    ev_nuevos = np.zeros(T)
+    ev_nuevos[7:] = ev30[:-7] * ex.get("nuevos_por_30cm", 0.0)
+    # `aliados` = [(puntos, desde, clientes nuevos por punto y día abierto)] (2026-10-15): bares,
+    # cervecerías, salas de juego o coworkings SIN cocina que ponen el QR de SND//WCH en sus mesas,
+    # con permiso. Su gente pide de noche y el fin de semana, que es cuando el dueño cocina.
+    # `almuerzo_cerrado` = (parte, hasta) (2026-10-15: el dueño trabaja en un banco y arma él solo):
+    # de martes a viernes se atiende solo de noche; se pierde esa parte de los clientes nuevos de
+    # esos días (los que ya son clientes piden en otro momento). `hasta`: None = siempre.
+    corte_alm, hasta_alm = ex.get("almuerzo_cerrado", (0.0, None))
+    t_alm = dia(hasta_alm) if hasta_alm else T
+
     for t in range(T):
-        if not ABIERTO[t]:        # lo que caía en lunes pasa al martes
+        if not AB[t]:        # lo que caía en lunes pasa al martes
             for c in pend:
                 pend[c][:, t + 1] += pend[c][:, t]
             nuevos_ref[t + 1] += nuevos_ref[t]
             continue
         crece = (1 + x["crecimiento"]) ** (t / 30.4)
+        if DIAS[t].weekday() < 5 and t < t_alm:
+            crece *= 1 - corte_alm
+        crece *= ex.get("sueltos_factor", 1.0)    # 2026-10-15: «por encargo», sin delivery al momento
         nuevos = {
             "propio": (x["google_dia"] + (x["instagram_dia"] if t >= ig else 0) + (ex.get("tiktok", 0.0) if t >= ig else 0)) * crece
+                      + ev_nuevos[t] + sum(n * k for n, desde_al, k in ex.get("aliados", []) if t >= dia(desde_al))
                       + (ex.get("oficinas", 0.0) if t >= dia(ex.get("oficinas_desde", date(2026, 11, 3))) else 0)
                       + (ex["volanteo"][0] if "volanteo" in ex and t in abiertos[:ex["volanteo"][1]] else 0)
                       + (meta_dia if t in dias_pauta else 0) + pauta_dia[t] + (red if t in primeros else 0) + nuevos_ref[t],
-            "rappi": x["rappi_dia"] * ex.get("rappi_factor", 1.0),
-            "pya": x["pya_dia"] if t >= dia(ex.get("pya_desde", date(2026, 11, 17))) else 0.0,
+            "rappi": x["rappi_dia"] * ex.get("rappi_factor", 1.0) * (1 - corte_alm if DIAS[t].weekday() < 5 and t < t_alm else 1),
+            "pya": (x["pya_dia"] if t >= dia(ex.get("pya_desde", date(2026, 11, 17))) else 0.0)
+                   * (1 - corte_alm if DIAS[t].weekday() < 5 and t < t_alm else 1) * ex.get("sueltos_factor", 1.0),
         }
         nuevos_dia[t] = sum(nuevos.values())
         migra = x["qr_a_propio"] if t >= qr else x["app_a_propio"]
@@ -273,17 +307,9 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
     # desde). Solo de lunes a viernes: el almuerzo de oficina no existe el fin de semana.
     fijas = list(ex.get("oficinas_fijas", [])) + ([ex["oficina_fija"]] if "oficina_fija" in ex else [])
     for n_sem, desde_of in fijas:
-        dias_of = [t for t in range(T) if ABIERTO[t] and t >= dia(desde_of) and DIAS[t].weekday() < 5]
-        ped["propio"][dias_of] += n_sem / 4.0       # martes a viernes: 4 días hábiles abiertos
-        desc_dia[dias_of] += n_sem / 4.0 * ex.get("descuento_grupo", 0.0)
-    # `eventos` (2026-10-15): bandejas para reuniones, capacitaciones y celebraciones, pedidas con
-    # días de anticipación. Una lista de (desde, eventos al mes, sándwiches de 30CM por evento),
-    # repartidos en los días abiertos. Cada 30CM deja su precio de carta menos su costo, la tarjeta
-    # y los puntos, y menos `descuento_evento` (S/ por 30CM). No suman clientes ni recompra.
-    ev30 = np.zeros(T)
-    for desde_ev, por_mes, n30 in ex.get("eventos", []):
-        dias_ev = [t for t in range(T) if ABIERTO[t] and t >= dia(desde_ev)]
-        ev30[dias_ev] += por_mes * n30 / 25.5           # ~25.5 días abiertos al mes
+        dias_of = [t for t in range(T) if AB[t] and t >= dia(desde_of) and DIAS[t].weekday() < 5]
+        ped["propio"][dias_of] += n_sem / habiles       # martes a viernes: los días hábiles abiertos
+        desc_dia[dias_of] += n_sem / habiles * ex.get("descuento_grupo", 0.0)
 
     # capacidad: lo que pasa de 40 al día no se cocina (`capacidad`: con un ayudante, más). Un 30CM
     # de bandeja cuenta como un pedido.
@@ -340,7 +366,7 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
         # la pide; desde esa fecha se está en el Régimen MYPE aunque se venda poco.
         rmt = rmt or max(v, c) > 8000 or ("rmt_desde" in ex and DIAS[np.where(sel)[0][-1]] >= ex["rmt_desde"])
         imp = impuesto(v, c, util, rmt, ex, MESES[m][0], (ev30[sel] * eco["p30"]).sum())
-        n_abiertos = int((ABIERTO & sel).sum())
+        n_abiertos = int((AB & sel).sum())
         out.append(dict(ganancia=util - imp, impuestos=imp, ventas=v, nuevos=nuevos_dia[sel].sum() * escala[sel].mean(),
                         pedidos=sum(ped[c][sel].sum() for c in ped) / n_abiertos,
                         propio=ped["propio"][sel].sum() / n_abiertos, rappi=ped["rappi"][sel].sum() / n_abiertos,
@@ -362,6 +388,13 @@ def simular(sol=(), semilla=20261009, n=CORRIDAS, pauta_mes=0.0, si_cac_menor=No
     if ex and "empaque" in ex:      # otra ficha de empaque (2026-10-15: la bolsa lisa con sello)
         d = I.por_sandwich(I.EMPAQUE_PEDIDO, sand_por_pedido=1) - I.por_sandwich(ex["empaque"], sand_por_pedido=1)
         eco = dict(eco, costo=eco["costo"] - d, propio=eco["propio"] + d, app=eco["app"] + d)
+    # `sand_por_pedido` (2026-10-15): pedidos para compartir (cena para dos, el pack del finde). El
+    # modelo suponía 1 sándwich por pedido; con f, el pedido trae f veces el ticket y el costo, y
+    # el gasto por pedido (gas, coordinación) se paga una sola vez.
+    f = (ex or {}).get("sand_por_pedido", 1.0)
+    if f != 1.0:
+        eco = dict(eco, ticket=eco["ticket"] * f, ticket_app=eco["ticket_app"] * f, costo=eco["costo"] * f,
+                   propio=(eco["propio"] + GASTO_PEDIDO) * f - GASTO_PEDIDO, app=(eco["app"] + GASTO_PEDIDO) * f - GASTO_PEDIDO)
     p30, c30 = sandwich_medio(0.0)      # el 30CM medio, para las bandejas de los eventos
     eco = dict(eco, p30=p30, c30=c30)
     if ex and "empaque" in ex:
@@ -407,13 +440,13 @@ def simular(sol=(), semilla=20261009, n=CORRIDAS, pauta_mes=0.0, si_cac_menor=No
             imp = impuesto(v, c, util, rmt, ex or {}, DIAS[30 * k + 15].year, d["ev30"][sel].sum() * eco["p30"])
             g.append(util - imp)
             imps.append(imp)
-            ped_d.append(d["pedidos"][sel].sum() / 26)
+            ped_d.append(d["pedidos"][sel].sum())
             ven.append(v)
         g = np.array(g)
         res["ventanas"].append(dict(p10=float(np.percentile(g, 10)), p50=float(np.median(g)), p90=float(np.percentile(g, 90)),
                                     meta=float((g >= 6000).mean()), impuestos=float(np.median(imps)), pedidos=float(np.median(ped_d)), ventas=float(np.median(ven)),
-                                    propio=float(np.median([r[2]["propio"][sel].sum() / 26 for r in runs])),
-                                    apps=float(np.median([r[2]["apps"][sel].sum() / 26 for r in runs])),
+                                    propio=float(np.median([r[2]["propio"][sel].sum() for r in runs])),
+                                    apps=float(np.median([r[2]["apps"][sel].sum() for r in runs])),
                                     ev30=float(np.median([r[2]["ev30"][sel].sum() for r in runs]))))
     res["caja_min_p10"] = float(np.percentile(np.minimum.accumulate(np.cumsum(gan, 1), 1)[:, -1], 10))
     return res

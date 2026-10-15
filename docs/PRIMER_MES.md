@@ -151,5 +151,7 @@ pasada por semana dejando volantes. Origen `?src=oficina`.
 
 ## Después del primer mes: la meta de S/6,000
 Dueño: «no haré volantes… la meta sería al menos 6000 líquidos al mes». Está en
-`docs/META_6000.md`: sin volantes, la fila «+ volantes o stickers» de arriba no aplica, y la
-alternativa son las bandejas y los almuerzos de equipo.
+`docs/META_6000.md`: sin volantes, la fila «+ volantes o stickers» de arriba no aplica. Y las
+cifras de arriba suponen la app abierta de 11 a 22 con alguien cocinando; con tu horario real
+(trabajas en un banco: entre semana solo de noche) el primer mes «así abres» queda en ~−S/57. La
+alternativa está allá: las bandejas por encargo.
