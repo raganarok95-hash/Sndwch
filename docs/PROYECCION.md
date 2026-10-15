@@ -252,7 +252,10 @@ Rango = 1 de cada 10 casos · la mitad · 9 de cada 10.
 - Hace falta un colchón de ~S/800 para octubre y noviembre (la caja más baja del caso malo).
 - Con la bolsa lisa y los sellos que decidiste (~S/0.50 por pedido en vez de S/2.50) la ganancia
   de 6 meses sube ~S/700. Se cambia en `insumos.EMPAQUE_PEDIDO` cuando compres.
-- Lo que más mueve el número sigue siendo Rappi (correlación +0.69) e Instagram (+0.49): con
-  Instagram sin vincular, cada semana de atraso le resta.
+- Lo que más mueve el número sigue siendo Rappi (correlación +0.69) e Instagram (+0.49). Cada
+  semana de atraso de Instagram resta ~S/40 de ganancia en 6 meses (800 corridas, `ig_desde`):
+  desde el 27-oct S/1,018, desde el 3-nov S/977, desde el 10-nov S/937, desde el 24-nov S/857.
+  Pesa poco porque una cuenta nueva trae pocos clientes al principio; pesa más lo que Instagram
+  haga crecer después.
 - Con todas las palancas de arriba (oficinas, TikTok, Rappi trabajado…): S/6,541 en 6 meses y
   8.5 pedidos al día en marzo.

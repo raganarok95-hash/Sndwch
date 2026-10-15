@@ -187,7 +187,7 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
         x["referidos"] = SOLUCIONES["referidos"][1][0] + (x["referidos"] - 0.03) / 0.05 * 0.07
     p2_propio = x["p2"] + (SOLUCIONES["recompra"][1] if "recompra" in sol else 0.0)
     f = nucleo(x["brecha"])
-    ig, qr, pya, nov30, = dia(date(2026, 10, 27)), dia(date(2026, 11, 1)), dia(date(2026, 11, 17)), dia(date(2026, 11, 30))
+    ig, qr, pya, nov30, = dia(ex.get("ig_desde", date(2026, 10, 27))), dia(date(2026, 11, 1)), dia(date(2026, 11, 17)), dia(date(2026, 11, 30))
     mes_frac = np.array([m for m in MES_DE], float)
 
     # tres canales × tres estados (falta el 2.º, falta el 3.º, ya es habitual)
