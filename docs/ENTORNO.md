@@ -675,6 +675,9 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
   Sin ella, el hook de commit se bloquea (`check:tipos-base`).
 
 ## La base se ahoga cada noche: pg_net y su tabla inflada (2026-10-15)
+- **2026-10-16: resuelto** (el Guardián, con evidencia): la noche del 15 al 16, 0 crons fallidos
+  (antes 73–81 por hora), la API sin 5xx y con 0.7–1.6 s de promedio, `net._http_response` en
+  2.2 MB. Queda confirmar que la limpieza diaria (cron 53, 07:45 UTC) corra.
 - **Síntoma** (registros de Supabase, `query_logs`): desde las ~19:00 de Lima hasta las 2:00 en
   punto, todas las noches (vista el 13 y el 14), los crons fallan con `cron job N job startup
   timeout`, las consultas se cortan (`statement timeout`), la API tarda 50–150 s y da 546
