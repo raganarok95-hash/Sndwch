@@ -55,7 +55,7 @@ Ordenado por qué tan cerca está de la apertura y de la plata.
 **Lo más nuevo (2026-10-15, noche)**: el plan de S/6,000 (`docs/META_6000.md`) y el estado del
 marketing (`docs/marketing/PULIR.md`, verificado contra Meta). Hecho hoy con tu «sí»: la pausa
 programa los pedidos, el pedido fijo se ofrece en el segundo pedido, «¿Comen dos?» en el carrito.
-La bandeja: no por ahora. Publicidad de otros tipos: `docs/OTRA_PUBLICIDAD.md` (P46); Meta y lo presencial: `docs/META_Y_PRESENCIAL.md` (P47–P48). **Lo que bloquea el marketing:**
+La bandeja: no por ahora. **Plan desde el 16-oct: `docs/PLAN_DESDE_HOY.md`.** Publicidad de otros tipos: `docs/OTRA_PUBLICIDAD.md` (P46); Meta y lo presencial: `docs/META_Y_PRESENCIAL.md` (P47–P48). **Lo que bloquea el marketing:**
 
 | # | Qué | Por qué |
 |---|---|---|
@@ -65,9 +65,10 @@ La bandeja: no por ahora. Publicidad de otros tipos: `docs/OTRA_PUBLICIDAD.md` (
 | P43 | **El 17-nov**: el presupuesto de Meta con el costo por cliente de la prueba | Decide si la meta llega en el mes 6 o en el 10 |
 | ~~P44~~ | ~~«¿cómo nos conociste?»~~ | **Descartado** (dueño, 2026-10-15: «No, eso ya es muy invasivo») |
 | P45 | **TikTok**: abrir la cuenta | Los mismos Reels llegan a más gente nueva |
-| P46 | Sí o no: **anuncios dentro de Rappi (S/300 al mes) y Google (S/300) desde el 3-nov, y PedidosYa (S/200) desde el 1-dic** (`docs/OTRA_PUBLICIDAD.md`); gasto real | Con Meta a ~S/36, la meta pasa del mes 10 al 6 |
+| P46 | **Rappi primero** (dueño, 2026-10-16: «comenzar en el punto 4 primero en PedidosYa o en Rappi»): la vitrina de Rappi y su anuncio a S/10 al día desde el jueves 22, mientras no cobra comisión (`docs/PLAN_DESDE_HOY.md` §1). PedidosYa y Google, después | Cada pedido del anuncio ese mes deja el margen entero |
 | P49 | **Embajadores**: publicar el aviso (está en el panel → Marketing → Embajadores) en 3–4 grupos de Facebook de la UCV, la UPAO y la UNT; crear el enlace de quien te escriba | Con Meta, la meta en el mes 6; con todo, en el 5 |
-| P50 | Sí o no: **dejar programada la prueba de Meta** (arranca sola el martes 20 a las 11:00, S/700 hasta el 16-nov; se puede pausar cuando quieras) | Sin esto, el 17-nov no hay número |
+| P50 | **Meta: «aún no lo programes»** (2026-10-16). Propuesta: viernes 23, con el Philly, la oficina y un video de tus clips (`docs/PLAN_DESDE_HOY.md` §2) | Sin esto, el 20-nov no hay número |
+| P51 | **Fotos reales de los 6 Signatures** (una tarde) **o imágenes generadas fieles a la receta**: tú eliges | Las de stock no calzan: no sirven para un anuncio pagado y son lo que más vende en Rappi |
 | ~~P47~~ | ~~Embajadores~~ | **Aprobado** (2026-10-16: «Sí, amé los embajadores») |
 | ~~P48~~ | ~~La prueba de Meta de S/700~~ | **Aprobado** (2026-10-16). Armada en pausa (`PAUTA_BARATA.md`); falta tu sí para que arranque sola el 20 a las 11:00 |
 

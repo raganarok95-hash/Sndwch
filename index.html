@@ -4330,7 +4330,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '8c5d95e198';
+var APP_BUILD = '23b9ef1aa7';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -8665,7 +8665,10 @@ function sOCart() {
         + (!appliedReward
             ? (appliedPromo ? en30('Código', appliedPromo.code, 'Quitar', 'removePromoCode()') : en30('Código', codigoGuardado() || '¿Tienes uno?', 'Poner', "hoja30='codigo';hojaErr='';render()"))
             : '');
-    var t = payableTotal();
+    // Sin dirección, lo que se muestra es SOLO la comida: el pin del mapa ya puede existir (el
+    // cliente lo movió y cerró sin confirmar) y payableTotal() le sumaba el envío bajo el rótulo
+    // «Sin envío» y «+ envío» (visto el 2026-10-16: Philly S/22.90 → «Sin envío S/30.90»).
+    var t = dirOk ? payableTotal() : cartFinalTotal();
     var sinEnvio = !dirOk || envio === 0;
     var h = '<div class="m30 kraft fi"><button class="sal" onclick="go(\'o_home\')" aria-label="Seguir pidiendo">←</button>'
         + '<div class="tit"><em>Va saliendo</em><b>' + esc(cuantasCosas(cart.length)).replace(' ', '<br>') + '</b></div>'

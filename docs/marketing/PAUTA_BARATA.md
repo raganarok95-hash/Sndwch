@@ -177,6 +177,10 @@ haciendo falta para **publicar** (lo orgánico) y para que el anuncio salga con 
   - `120252544925700076` **La carta** (carrusel de 7, `02-la-carta-*.jpg`) → `sndwch.app/?src=meta-carta`
   Los textos son los de `docs/marketing/lanzamiento/TEXTOS.md` (salen de la carta), sin «enlace en
   el perfil»; botón «Pedir ahora».
+- **2026-10-16: «La carta» queda fuera de la prueba** (renombrada «NO ACTIVAR…»): el carrusel
+  muestra fotos de stock que no calzan con la receta (Turkey con pepino, Tuna Melt abierto,
+  Meatball con otro queso). Plan nuevo de piezas y fechas en `docs/PLAN_DESDE_HOY.md` (Meta desde
+  el viernes 23, si el dueño aprueba; él dijo «aún no lo programes»).
 - **Todo en pausa.** Falta un sí del dueño para dejarla programada (arranca sola el 20 a las 11:00;
   se puede pausar en cualquier momento). El video del día entra como 4.ª pieza cuando el Revisor lo
   apruebe.
