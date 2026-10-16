@@ -57,14 +57,15 @@ G = 1 / 1000
 QUESO = {"cheddar": I.queso_porcion(I.QUESO_CHEDDAR_KG), "americano": I.queso_porcion(I.QUESO_AMERICANO_KG)}
 VEG_ESTANDAR = [(21, I.LECHUGA_KG), (35, I.TOMATE_KG), (10, I.CEBOLLA_KG), (7, I.PIMIENTO_KG)]  # 73 g
 CARTA = {   # proteína, precio 15CM, precio 30CM, salsas, queso, vegetales (g, ficha)
-    "Philly Cheesesteak": ("P09", 22.90, 33.90, 0, "cheddar", [(70, I.CEBOLLA_KG), (20, I.PIMIENTO_KG)]),
-    "Meatball Marinara":  ("P06", 21.90, 32.90, 1, "americano", [(35, I.TOMATE_KG), (10, I.CEBOLLA_KG)]),
-    "Turkey":             ("P08", 23.90, 34.90, 1, None, VEG_ESTANDAR),
-    "Tuna Melt":          ("P04", 22.90, 33.90, 0, "cheddar", []),
-    "Italian Hoagie":     ("P05", 23.90, 34.90, 1, "americano", VEG_ESTANDAR),
-    "Classic Tuna":       ("P04", 20.90, 31.90, 0, None, []),
+    # Precios del 2026-10-16 (dueño aprobó 15CM S/19.90 y 30CM S/30.90 tras el estudio de mercado).
+    "Philly Cheesesteak": ("P09", 19.90, 30.90, 0, "cheddar", [(70, I.CEBOLLA_KG), (20, I.PIMIENTO_KG)]),
+    "Meatball Marinara":  ("P06", 19.90, 30.90, 1, "americano", [(35, I.TOMATE_KG), (10, I.CEBOLLA_KG)]),
+    "Turkey":             ("P08", 19.90, 30.90, 1, None, VEG_ESTANDAR),
+    "Tuna Melt":          ("P04", 19.90, 30.90, 0, "cheddar", []),
+    "Italian Hoagie":     ("P05", 19.90, 30.90, 1, "americano", VEG_ESTANDAR),
+    "Classic Tuna":       ("P04", 19.90, 30.90, 0, None, []),
 }
-ARMADOR = {"P04": (22.90, 33.90), "P06": (21.90, 32.90), "P08": (23.90, 34.90), "P09": (22.90, 33.90)}
+ARMADOR = {"P04": (19.90, 30.90), "P06": (19.90, 30.90), "P08": (19.90, 30.90), "P09": (19.90, 30.90)}
 
 
 def costo_sandwich(prot, i, salsas, queso, veg, queso_frac=1.0):

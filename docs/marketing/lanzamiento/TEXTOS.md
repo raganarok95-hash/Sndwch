@@ -55,12 +55,12 @@ Pide en sndwch.app · enlace en el perfil.
 ```
 La carta: 6 Signatures. Cada uno, como tiene que ser. — SANDO
 
-Philly Cheesesteak · 15CM S/22.90 · 30CM S/33.90
-Meatball Marinara · 15CM S/21.90 · 30CM S/32.90
-Turkey · 15CM S/23.90 · 30CM S/34.90
-Tuna Melt · 15CM S/22.90 · 30CM S/33.90
-Italian Hoagie · 15CM S/23.90 · 30CM S/34.90
-Classic Tuna · 15CM S/20.90 · 30CM S/31.90
+Philly Cheesesteak · 15CM S/19.90 · 30CM S/30.90
+Meatball Marinara · 15CM S/19.90 · 30CM S/30.90
+Turkey · 15CM S/19.90 · 30CM S/30.90
+Tuna Melt · 15CM S/19.90 · 30CM S/30.90
+Italian Hoagie · 15CM S/19.90 · 30CM S/30.90
+Classic Tuna · 15CM S/19.90 · 30CM S/30.90
 
 Pide en sndwch.app · enlace en el perfil.
 ```

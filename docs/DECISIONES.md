@@ -1296,3 +1296,25 @@ de un 30CM cuenta dos veces (`porTamano`, `api/catalog.ts`), y la pantalla no of
 alcanza. No se toca la base: la foto `snapIngredients` de cada pedido guarda lo que reservó, así
 que cancelar un pedido viejo devuelve lo mismo que reservó. Prueba: `tests-api/stock-30cm.test.ts`.
 
+
+## El 15CM a S/19.90 y el 30CM a S/30.90 (2026-10-16)
+
+- **Qué**: los seis Signatures y ARMA EL TUYO pasan a 15CM S/19.90 y 30CM S/30.90 (antes S/20.90–
+  23.90 y S/31.90–34.90). Migración `20261016164953_precio_15cm_1990`. El menú secreto y la doble
+  porción no cambian. Las apps siguen cobrando +10% (`RECARGO_APPS` en `_shared/reglas.ts`).
+- **Por qué**: el estudio de mercado (`docs/MERCADO.md` §5–7). Las sangucherías comparables de
+  Trujillo cobran S/15.90–19.90 en Rappi y PedidosYa, y las de S/18.90–19.90 van en un pan francés
+  de desayuno. S/19.90 es el techo que ve el cliente; con él quedas a la par en precio y con más
+  comida. Dueño: «1, 2 y 3, puntos aprobados» (no bajar a S/16–17; 15CM a S/19.90; que el tamaño
+  se vea) y, sobre el +10% de las apps: «sí, todos en sí cobran más en Rappi y PedidosYa que en sus
+  locales».
+- **Lo que cuesta**: con la misma cantidad de pedidos, cada pedido deja ~S/2.80 menos
+  (`modelo/proyeccion.py`). El precio se paga solo si trae ~21% más pedidos (`docs/PRECIOS.md` §4).
+  Se mide con la primera semana y con el mes 1 de Rappi.
+- **El 30CM pasa el techo de costo del 45% en tres** (Italian Hoagie y pavo 30CM 49.0%, atún del
+  armador 30CM 45.7%). Se le dio a elegir entre subirlo a S/33.90, volver al de antes o dejarlo;
+  respondió «C»: queda en S/30.90 con la excepción anotada en `TECHO_EXCEPCIONES`
+  (`modelo/rentabilidad_por_parte.py`), cada una con su propio techo para que vuelva a fallar si el
+  costo sube más.
+- **El tamaño a la vista**: la vitrina de las apps abre con «15 cm · 85 g de …»
+  (`PORCION_PROTEINA_G` en `_shared/carta.ts`, generado en `docs/hechos/CARTA.md`).

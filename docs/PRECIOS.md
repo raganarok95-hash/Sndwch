@@ -7,9 +7,10 @@ mejor». Nada de esto cambió un precio: se decide con su sí y la cifra exacta.
 
 ## 1 · Los precios de hoy (verificados en la base)
 
-Manda la fila más reciente de cada Signature en `catalog_items` (y `catalog_prices` para el arma
-el tuyo); coinciden con la carta. El «Sándwich Prueba» de S/0.10 está inactivo. En Rappi y
-PedidosYa todo va 10% más caro.
+**Desde el 2026-10-16** (dueño: «1, 2 y 3, puntos aprobados», tras `docs/MERCADO.md`): todos los
+Signatures y ARMA EL TUYO a **15CM S/19.90 · 30CM S/30.90**. El menú secreto sigue en S/24.90 /
+S/35.90. En Rappi y PedidosYa, +10% (S/21.89 / S/33.99; lo que se pega en cada portal está en
+`docs/hechos/CARTA.md`). Antes de ese día eran estos:
 
 | Signature | 15CM | 30CM |
 |---|---|---|

@@ -18,6 +18,12 @@ REGLA: [COTIZADO] precio real de proveedor · [ESTIMADO] investigado, sin provee
 """
 
 TECHO = 0.45   # [DECISIÓN del dueño] insumos+empaque como % del precio
+# Excepciones al techo, cada una con su propio techo para que un costo que siga subiendo vuelva a
+# fallar. [DECISIÓN del dueño, 2026-10-16]: con el 30CM a S/30.90, tres quedaban sobre el 45%
+# (Italian Hoagie y pavo 49.0%, atún del armador 45.7%). Se le dio a elegir entre subir el 30CM a
+# S/33.90, volver al de antes o dejarlo; respondió «C»: dejar S/30.90 con la excepción anotada.
+# Clave: (código, tamaño). Solo el sándwich, no el recargo de doble.
+TECHO_EXCEPCIONES = {("SIG11", "30"): 0.50, ("P08", "30"): 0.50, ("P04", "30"): 0.47}
 
 # ── COSTOS DE INSUMO ──────────────────────────────────────────────────────────────────
 # ── EMPAQUE — dejó de ser un número suelto (2026-09-23) ───────────────────────────────

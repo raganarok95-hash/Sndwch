@@ -266,3 +266,12 @@ mes». Plan y números en `docs/PRIMER_MES.md` (`modelo/primer_mes.py`). Con la 
 que este modelo no veía, hoy los primeros 30 días pierden S/296; con el plan (oficinas, merma
 controlada, Rappi trabajado, PedidosYa antes, sin Meta el primer mes, bolsa lisa) ganan S/613
 (S/313 a S/931).
+
+## Precio nuevo: 15CM S/19.90 (2026-10-16)
+
+El dueño aprobó 15CM S/19.90 y 30CM S/30.90 tras el estudio de mercado (`docs/MERCADO.md`). El
+modelo no mueve los pedidos con el precio (no hay datos de Trujillo para eso), así que muestra
+solo lo que cuesta: **un pedido deja S/12.56 en vez de S/15.39** (ticket S/23.27 en vez de
+S/26.18), y en el escenario de hoy los 6 meses pasan de S/853 a −S/13 (mediana; −S/1,071 a
+S/1,157). Para quedar igual hacen falta ~21% más pedidos (`docs/PRECIOS.md` §4). Es la apuesta: el
+precio a la par de las mejores sangucherías tiene que traer esos pedidos. Se mide la primera semana.
