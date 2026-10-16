@@ -12,9 +12,13 @@
 // Uso: node scripts/mercado/rappi.mjs [tope de locales]
 import { mkdirSync, writeFileSync } from 'node:fs';
 
-const TOPE = Number(process.argv[2] || 70);
+const TOPE = Number(process.argv[2] || 150);
 const BASE = 'https://www.rappi.com.pe';
-const CATEGORIAS = ['/trujillo/restaurantes/category/sandwiches', '/trujillo/restaurantes/category/s%C3%A1ndwiches'];
+const CATEGORIAS = ['/trujillo/restaurantes/category/sandwiches', '/trujillo/restaurantes/category/s%C3%A1ndwiches',
+  '/trujillo/restaurantes/category/hamburguesas', '/trujillo/restaurantes/category/comida-rapida',
+  '/trujillo/restaurantes/category/desayunos'];
+// La categoría mezcla locales destacados de Lima: solo cuentan los del Trujillo metropolitano.
+const DE_TRUJILLO = /trujillo|v[ií]ctor larco|la esperanza|el porvenir|florencia de mora|huanchaco|moche|laredo|salaverry/i;
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36';
 mkdirSync('mercado/crudo', { recursive: true });
 const pausa = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -79,6 +83,11 @@ for (const [id, ruta] of locales) {
   local.envio = tienda.delivery_price ?? tienda.deliveryPrice ?? null;
   // Los productos: objetos con nombre y precio.
   const prods = juntar(d, (o) => typeof o.name === 'string' && (typeof o.price === 'number' || typeof o.real_price === 'number'));
+  if (!DE_TRUJILLO.test(`${local.ciudad} ${local.nombre} ${local.direccion}`)) {
+    console.log(`(fuera de Trujillo) ${local.nombre} · ${local.ciudad}`);
+    await pausa(1000);
+    continue;
+  }
   local.productos = prods.map((p) => ({
     nombre: limpio(p.name), descripcion: limpio(p.description).slice(0, 300),
     precio: p.price ?? null, precio_lista: p.real_price ?? null, categoria: limpio(p.corridor_name || p.category || ''),
