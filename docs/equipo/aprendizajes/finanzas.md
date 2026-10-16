@@ -14,3 +14,6 @@
   preguntó si el costo «es tan bajo ya contando empaquetado, etc.»: el costo de hacerlo se da con
   cocina, empaque y gas, y aparte lo que se paga por venta (tarjeta, puntos, IGV) y al mes
   (`docs/PRECIOS.md`). Regla: ante una frase sobre precios que admite dos lecturas, se pregunta.
+- **2026-10-16 · El empaque, desglosado siempre.** El dueño creyó que faltaban el papel manteca y los
+  stickers porque el resumen decía solo «S/0.50». Regla: un costo compuesto se muestra con sus
+  piezas (bolsa S/0.26, papel S/0.075, sticker ~S/0.10, tinta <S/0.01; el sello es compra única).

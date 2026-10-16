@@ -40,9 +40,20 @@ Un 30CM cuesta entre S/9.65 y S/14.98.
   tanda de albóndigas). El pavo (S/44.20/kg) y el atún (S/4 la lata) están cotizados.
 - ¹ **Cocina** S/0.15 por pedido [supuesto]: aceite y sal de cocción, film, guantes, servilletas,
   limpieza. No estaba sumado antes.
-- ² **Empaque** S/0.50 por pedido [estimado]: la bolsa kraft lisa con tu sello, papel manteca y
-  sticker (tu decisión del 10-oct). **Si usas la bolsa impresa a una tinta que cotizaste (S/2.50 por
-  pedido), súmale S/2.00 a cada fila.**
+- ² **Empaque** S/0.50 por pedido, desglosado (dueño, 2026-10-16: «bolsa con mi sello; los sellos
+  son compras únicas y solo se gastaría en tinta; no solo es la kraft, también el papel manteca ya
+  cotizado y los stickers»):
+
+  | pieza | por pedido | estado |
+  |---|---|---|
+  | bolsa kraft lisa #20 | S/0.26 | cotizada en offi.pe (S/220 el millar + IGV) |
+  | papel manteca (uno por sándwich) | S/0.075 | cotizado (S/150 los 2 millares) |
+  | sticker de cierre | ~S/0.10 | por cotizar (rango normal S/0.04–0.15) |
+  | tinta del sello | menos de S/0.01 | un frasco alcanza para miles de sellos |
+  | el sello | S/0 | compra única, no va por pedido |
+  | **total** | **~S/0.44** | se costea con S/0.50 para quedar del lado seguro |
+
+  Un pedido con dos sándwiches lleva dos papeles manteca (+S/0.075).
 - ³ **Gas, frío y coordinación** S/0.50 por pedido [supuesto del modelo].
 - El delivery no entra: lo paga el cliente al motorizado.
 
