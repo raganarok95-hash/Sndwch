@@ -2,14 +2,17 @@ name: Estudio de mercado
 
 # Lee las páginas públicas de Rappi de los sándwiches de Trujillo (la categoría y la carta de cada
 # local) para el estudio de mercado (docs/MERCADO.md). Solo a mano, una vez por estudio, despacio.
-# Deja el resultado como artefacto: no toca main.
+# Deja el resultado en la rama `mercado` (las sesiones no bajan artefactos): no toca main.
 on:
   workflow_dispatch:
     inputs:
       tope:
         description: 'Máximo de locales a leer'
         required: false
-        default: '70'
+        default: '150'
+
+permissions:
+  contents: write
 
 jobs:
   rappi:
@@ -22,8 +25,14 @@ jobs:
           node-version: 22
       - name: Leer Rappi
         run: node scripts/mercado/rappi.mjs ${{ inputs.tope }}
-      - uses: actions/upload-artifact@v4
+      - name: Subir a la rama mercado
         if: always()
-        with:
-          name: mercado-rappi
-          path: mercado/
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mv mercado /tmp/mercado
+          git fetch -q origin mercado && git checkout -q -B mercado origin/mercado || git checkout -q --orphan mercado
+          git rm -rfq . 2>/dev/null || true
+          rm -rf mercado && mkdir -p mercado && cp /tmp/mercado/rappi.json /tmp/mercado/rappi-productos.csv mercado/ 2>/dev/null || true
+          git add mercado && git commit -qm "Estudio de mercado: Rappi Trujillo ($(date -u +%F))" || echo "nada nuevo"
+          git push -q origin HEAD:mercado
