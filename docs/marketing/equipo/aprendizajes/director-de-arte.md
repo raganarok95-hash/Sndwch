@@ -19,3 +19,7 @@
 - **2026-10-16 · Las tres A.** El dueño eligió los conceptos más creativos de cada anuncio («Las tres
   A»): el titular detrás del pan (Philly), lo que te dijiste tachado (Meatball), la frase partida
   por el sándwich (Turkey). Cada anuncio con un recurso distinto, salido de su momento.
+- **2026-10-16 · Las fotos de la carta del lanzamiento.** Del Tuna Melt abierto sobre pan tostado
+  y del Meatball con otro queso, el dueño: «Tuna Melt consérvalo, está bien; Meatball igual». No
+  se retienen por eso. El Turkey sí: «Quita pepino» (un ingrediente que la receta no lleva). En
+  el lanzamiento va la foto fiel generada; en la app, la de Stock recortada sin el pepino.

@@ -150,7 +150,7 @@ cambiarlas en cuanto haya foto propia.
 
 | archivo | producto | Adobe Stock | recorte aplicado al original | en qué NO calza con la receta |
 |---|---|---|---|---|
-| `sig10.jpg` | **Turkey** (SIG10) | `214459869` (6000×4000) | el sub de abajo a la izquierda, rotado −65.4° alrededor de (790, 3150) y recortado a (85, 2547)-(2235, 3995) | trae **pepino**; no se ven tomate, cebolla ni pimiento. Pan sub blanco, pavo en lonjas, lechuga y **sin queso**, como la receta |
+| `sig10.jpg` | **Turkey** (SIG10) | `214459869` (6000×4000) | el sub de abajo a la izquierda, rotado −65.4° alrededor de (790, 3150) y recortado a (85, 2547)-(2235, 3995); el 2026-10-16, recortado otra vez a (540, 300)-(1400, 880) de ese archivo para dejar fuera el pepino | **ya sin pepino** (dueño, 2026-10-16: «Quita pepino»: estaba en los dos bordes y quedó fuera del recorte); no se ven tomate, cebolla ni pimiento. Pan sub blanco, pavo en lonjas, lechuga y **sin queso**, como la receta |
 | `sig12.jpg` | **Tuna Melt** (SIG12) | `325349325` (7360×4912) | (600, 1900)-(4600, 4597) — deja fuera la rúcula, el limón y la salsa | es un tuna melt **abierto sobre pan tostado**, no en pan sub; el queso fundido se ve más blanco que un cheddar |
 
 Se descartó otra vez `591239613` (tuna melt con cheddar bien amarillo, pero con **tomate**, que
@@ -179,14 +179,14 @@ a 2400 px:
 |---|---|---|---|---|
 | `sig09_v.jpg` | **Philly Cheesesteak** (SIG09) | `394767354` (1571×2356 a 2400) | ancho completo, desde y=300, alto 2014 (ratio 0.78) | a sangre |
 | `sig02_v.jpg` | **Meatball Marinara** (SIG02) | `434960991` (1571×2356 a 2400) | ancho completo, desde y=300, alto 2014 | a sangre |
-| `sig10_v.jpg` | **Turkey** (SIG10) | `284405872` (2356×1571 a 2400) | (1130, 0)-(2356, 1571) — solo el sub, visto desde arriba | entera sobre su fondo |
+| ~~`sig10_v.jpg`~~ | **Turkey** (SIG10) | ~~`284405872`~~ | **retirada el 2026-10-16**: era una baguette enharinada con pepino y queso (la receta no lleva ninguno de los dos). Desde ese día la vertical del Turkey se compone con `sig10.jpg` entera, como la del Hoagie | — |
 
 - El Philly trae res, pimiento verde, cebolla y queso fundido: calza con la receta. Se ve el
   borde de un segundo sándwich igual a la derecha.
 - El Meatball trae queso blanco fundido y perejil encima; la receta lleva queso americano. Se
   ve la punta de un segundo sándwich igual arriba a la derecha.
-- ⚠ El Turkey trae **pepino** (igual que `sig10.jpg`) y el pavo queda tapado por el pan: sigue
-  siendo una aproximación hasta la foto propia.
+- El Turkey ya no trae pepino (2026-10-16): su vertical sale de `sig10.jpg`. Sigue siendo una
+  aproximación (no se ven tomate, cebolla ni pimiento) hasta la foto propia.
 - Hoagie, Tuna Melt, Classic Tuna y el secreto no tienen encuadre vertical propio: su vertical
   se compone con la misma `sigNN.jpg` puesta **entera** arriba, sobre la misma foto ampliada,
   desenfocada y oscurecida. No se encontró en la categoría gratuita un Hoagie ni un atún en
