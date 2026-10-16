@@ -60,14 +60,14 @@ La bandeja: no por ahora. Publicidad de otros tipos: `docs/OTRA_PUBLICIDAD.md` (
 | # | Qué | Por qué |
 |---|---|---|
 | P40 | **Vincular Instagram a la página** (te dio «error inesperado»; tres caminos en `PULIR.md`) | Verificado: sin esto **no se publica nada** en Instagram; nunca se ha publicado nada |
-| P41 | **Página e Instagram en la cuenta de anuncios, tus permisos y el método de pago** (C3–C5 de `docs/CONFIGURAR_META.md`) | La cuenta de anuncios no tiene ninguna página: **la prueba de Meta del 20 no puede salir** |
+| ~~P41~~ | ~~Página en la cuenta de anuncios, permisos y método de pago~~ | **Hecho** (verificado 2026-10-16: hay método de pago y se pueden crear anuncios con la página; no hace falta el Instagram para anunciar en Instagram) |
 | P42 | **Las imágenes de Flow de la semana del 20** (la rutina del Estudio en tu laptop) | 6 de 7 historias de la apertura no tienen imágenes |
 | P43 | **El 17-nov**: el presupuesto de Meta con el costo por cliente de la prueba | Decide si la meta llega en el mes 6 o en el 10 |
 | ~~P44~~ | ~~«¿cómo nos conociste?»~~ | **Descartado** (dueño, 2026-10-15: «No, eso ya es muy invasivo») |
 | P45 | **TikTok**: abrir la cuenta | Los mismos Reels llegan a más gente nueva |
 | P46 | Sí o no: **anuncios dentro de Rappi (S/300 al mes) y Google (S/300) desde el 3-nov, y PedidosYa (S/200) desde el 1-dic** (`docs/OTRA_PUBLICIDAD.md`); gasto real | Con Meta a ~S/36, la meta pasa del mes 10 al 6 |
-| P47 | Sí o no: **embajadores pagados por resultado** (S/5 + S/5 por cliente nuevo que vuelve; `docs/META_Y_PRESENCIAL.md`) | Lo presencial lo hacen otros; con Meta, la meta en el mes 6; con todo, en el 5 |
-| P48 | Sí o no: **la prueba de Meta de S/700 en vez de S/350** | Con S/350 el número puede errar ±30% y se decide mal el 17-nov |
+| ~~P47~~ | ~~Embajadores~~ | **Aprobado** (2026-10-16: «Sí, amé los embajadores») |
+| ~~P48~~ | ~~La prueba de Meta de S/700~~ | **Aprobado** (2026-10-16). Armada en pausa (`PAUTA_BARATA.md`); falta tu sí para que arranque sola el 20 a las 11:00 |
 
 Lo que sigue abajo es de septiembre (`PREDICCION_V14.md`) y supone una red de 300 personas; tú
 dijiste que son ~30.

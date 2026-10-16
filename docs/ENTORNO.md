@@ -750,3 +750,15 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
 - **Los robots contra el sitio real** (`tests-real/recorrido.spec.ts` y `scripts/sitio-real.mjs`)
   bloquean el píxel de Meta (`connect.facebook.net`, `facebook.com/tr`): sus visitas eran los únicos
   eventos del píxel en 7 días. Un robot nuevo contra sndwch.app tiene que hacer lo mismo.
+
+## Anunciar en Instagram sin el Instagram vinculado (2026-10-16)
+
+- Con la cuenta `1488138326460689` y la página «Snd//wch», `ads_create_creative` **sin**
+  `instagram_user_id` da vistas previas válidas de Instagram Feed, Historias y Reels: la página es
+  la identidad del anuncio en Instagram (ayuda de Meta 272348126756182). No hace falta esperar a
+  que se vincule @snd__wch para que la pauta salga; sí para publicar lo orgánico.
+- Las imágenes para anuncios se suben con `ads_creative_upload_media` desde la URL pública del
+  bucket `marketing-images` (Meta sí llega; el contenedor no: `*.supabase.co` da 403 en el CONNECT).
+  Para mirarlas aquí, usar las copias del repo (`docs/marketing/lanzamiento/`).
+- `ads_get_ad_entities` con `object_state=draft` todavía no está habilitado en esta cuenta; los
+  anuncios se crearon como objetos vivos en pausa.

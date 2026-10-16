@@ -151,7 +151,8 @@ SUPUESTOS = {
     "ctr":            (0.0185, 0.0297, "clic: 1.85% alimentos y bebidas a 2.97% restaurantes (2026)"),
     "cvr":            (0.0154, 0.0189, "compra después del clic: 1.54% a 1.89% (2026)"),
 }
-PAUTA = 350.0              # [DECISIÓN del dueño]
+PAUTA = 350.0              # [DECISIÓN del dueño] 2026-10-16: aprobó S/700 (`prueba_monto`, META_BIEN de
+                           # meta_6000.py); los escenarios sin ella guardan la de S/350 para comparar
 APRENDIZAJE = 1.30         # [SUPUESTO] una cuenta nueva paga más mientras Meta aprende
 
 # Las soluciones que pidió el dueño (3, 4 y 5): lo que cambian en el modelo.
