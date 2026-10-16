@@ -16,7 +16,8 @@ La que empieza el **próximo lunes** (o la del argumento): `docs/marketing/seman
 **Si esa carpeta ya existe, no la toques**: responde «la semana <fecha> ya estaba hecha» y termina.
 
 ## 1 · Entender (en paralelo)
-- `analista` → `DATOS.md` de la semana que termina (si no tiene acceso a la base, lo dirá).
+- `analista` → `DATOS.md` de la semana que acaba de terminar, en SU carpeta
+  (`semanas/<lunes de esa semana>/`), desde su `DATOS-base.json` (si no está, lo dirá).
 - `investigador` → `INSUMOS.md`.
 
 ## 2 · El brief
@@ -47,6 +48,8 @@ La que empieza el **próximo lunes** (o la del argumento): `docs/marketing/seman
 ## 6 · Pauta y crecimiento (en paralelo; si no hay acceso, se dice)
 - `media-buyer` → `PAUTA.md`.
 - `growth` → `CRECER.md`.
+- `apps` → solo si hay números o comentarios de Rappi o PedidosYa que el dueño haya pegado en
+  `docs/marketing/apps/` esa semana.
 
 ## 7 · El resumen para el dueño
 `RESUMEN.md`, una pantalla: la idea de la semana, las historias en una tabla, lo que cortó arte o

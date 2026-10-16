@@ -11,6 +11,13 @@ Dueño, en tres mensajes seguidos:
 
 Esquema en una imagen: `esquema.png` (sale de `esquema.html`).
 
+> **Estado (2026-10-16, noche): construido.** Dueño, al repetir el pedido: «Correcto, eso es lo de
+> marketing. Revísalo, necesitamos pulirlo al máximo». Los 13 subagentes están en `.claude/agents/`,
+> sus skills y los orquestadores en `.claude/skills/`, lo aprendido en `aprendizajes/`. El lunes de
+> la laptop ya corre `/agencia-semana` y la tarea de las 8:10 y 20:10 corre `/revisar-lo-producido`.
+> Las tres decisiones de §9 quedaron con lo propuesto (equipo y fases; el lunes sigue en la laptop;
+> el estilo «Lo que llega»), cambiables cuando el dueño diga. El resto del negocio: `docs/equipo/PLAN.md`.
+
 ## 0 · Por qué se rehace
 
 Hoy el marketing tiene piezas sueltas que funcionan, pero no un equipo:

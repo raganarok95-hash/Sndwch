@@ -762,3 +762,21 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
   Para mirarlas aquí, usar las copias del repo (`docs/marketing/lanzamiento/`).
 - `ads_get_ad_entities` con `object_state=draft` todavía no está habilitado en esta cuenta; los
   anuncios se crearon como objetos vivos en pausa.
+
+## Subagentes y skills del proyecto (2026-10-16)
+- **Se cargan en caliente**: al escribir `.claude/agents/*.md` y `.claude/skills/*/SKILL.md` en la
+  sesión, aparecen solos (las skills al instante; los agentes en el turno siguiente). No hace falta
+  abrir otra sesión.
+- **`.gitignore` ignoraba `.claude/*`**: se abrió para `.claude/agents/` y `.claude/skills/`, porque
+  las tareas programadas (clonan `main`) y la laptop los leen del repo.
+- **En la laptop**, `estudio.ps1` corre `claude -p` con `--allowedTools`: para que el lunes pueda
+  lanzar subagentes hay que permitir `Agent` (y `Task`, `Skill`). Lo que un subagente no tenga
+  permitido ahí (Bash, los MCP de la nube) lo dice y sigue.
+- **`historias.yml` filtra lo que la laptop sube a `main`** por carpeta: si el equipo escribe en una
+  carpeta nueva, hay que agregarla a su lista o la unión se rechaza entera.
+- **`document.fonts.check()` da verdadero si la fuente ni siquiera está declarada**: para fallar
+  sin `FUENTES_CSS` hay que buscar una `FontFace` de esa familia con `status === 'loaded'`
+  (`scripts/piezas/maqueta.mjs`, `anuncios.mjs`).
+- **Desde la nube no se lee `orders` en soles hacia el repo**: el repo es público. Los números del
+  equipo salen por `datos-semana.yml` (solo conteos y porcentajes) y las cifras en soles se dan en
+  la sesión.

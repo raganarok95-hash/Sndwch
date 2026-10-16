@@ -10,6 +10,11 @@ user-invocable: false
 «me gusta», seguidores) es contexto, nunca el resultado.
 
 ## De dónde salen los números
+- **`DATOS-base.json`** de la semana (`docs/marketing/semanas/<lunes>/`, lo escribe GitHub cada
+  domingo a las 23:15 con `scripts/datos/semana.mjs`): pedidos válidos, nuevos y que vuelven, por
+  origen con visitas y conversión, por hora y por día, gasto de pauta y costo por cliente de
+  Meta. **Es la fuente primera**: sirve aunque no haya acceso a la base. Para una semana que no
+  está, se corre a mano el workflow «Datos de la semana» con su lunes.
 - **La base** (Supabase, solo lectura: `execute_sql` con `select`; nunca `insert`, `update`,
   migraciones ni funciones):
   - `orders`: `created_at` (UTC; Lima = UTC−5), `total`, `payment_status` (`'paid'` = pagado),
@@ -45,7 +50,9 @@ user-invocable: false
   número, no la decisión.
 
 ## La entrega: `docs/marketing/semanas/<lunes>/DATOS.md`
-1. La semana en tres líneas (pedidos, clientes nuevos, ingreso) y contra la anterior.
+`<lunes>` es el de **la semana que se mide** (lo planeado y lo que pasó quedan en la misma carpeta).
+1. La semana en tres líneas (pedidos, clientes nuevos, ticket promedio) y contra la anterior. Las
+   ventas en soles van en tu respuesta, no en el archivo (`reglas-sndwch`: el repo es público).
 2. La tabla por origen (visitas, pedidos, conversión, clientes nuevos, gasto, costo por cliente).
 3. Por momento y por hora: dónde se concentra.
 4. **Lo que aprendimos** (máximo tres, con su número) y **lo que no sabemos todavía**.

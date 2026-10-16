@@ -55,6 +55,7 @@ FUENTES_CSS=$(bash scripts/piezas/fuentes-locales.sh)  # + PLAYWRIGHT_CHROMIUM_P
 | anuncio (4:5 feed + 9:16 historias y reels) | `scripts/piezas/anuncios.mjs` |
 | historias de la semana | `scripts/piezas/historias.mjs <semana> /tmp/datos.json` |
 | lanzamiento, bolsa, stickers | `lanzamiento.mjs`, `bolsa.mjs`, `stickers.mjs` |
+| una maqueta o pieza única en HTML | `scripts/piezas/maqueta.mjs <html> <png> [ancho] [alto]` |
 
 Los scripts **fallan a propósito** si falta una fuente o un producto ya no está en la carta: no los
 fuerces, arregla la causa.

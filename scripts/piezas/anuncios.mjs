@@ -112,7 +112,10 @@ for (const p of P) {
   const faltan = await page.evaluate(async () => {
     const usadas = ['400 40px "Anton"', '800 40px "Archivo"', '600 40px "IBM Plex Mono"', 'italic 400 40px "Instrument Serif"'];
     await Promise.all(usadas.map((f) => document.fonts.load(f)));
-    return usadas.filter((f) => !document.fonts.check(f));
+    // `document.fonts.check` da verdadero si la fuente ni siquiera está declarada (sin FUENTES_CSS):
+    // se exige una FontFace de esa familia realmente cargada.
+    const cargada = (fam) => [...document.fonts].some((x) => x.family.replace(/["']/g, '') === fam && x.status === 'loaded');
+    return usadas.filter((f) => !cargada(f.split('"')[1]));
   });
   if (faltan.length) throw new Error(`Faltan fuentes (${faltan.join(', ')}): corre scripts/piezas/fuentes-locales.sh y pasa FUENTES_CSS.`);
   await page.screenshot({ path: `${OUT}/${p.archivo}.jpg`, type: 'jpeg', quality: 92 });

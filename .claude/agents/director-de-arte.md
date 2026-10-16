@@ -23,10 +23,13 @@ Lee primero `docs/marketing/equipo/aprendizajes/director-de-arte.md`.
 Recibes un concepto (`piezas/<id>/CONCEPTOS.md` y `TEXTOS.md`). Haz una **maqueta** por concepto:
 un HTML en `docs/marketing/piezas/<id>/maquetas/` con el layout real (formato, zonas, las tres
 voces de letra, el texto real) y la foto disponible o un recuadro gris que diga qué foto va.
-Ríndela a PNG (Playwright: `node` con `@playwright/test`, Chromium en
-`/opt/pw-browsers/chromium` en la nube; fuentes con `FUENTES_CSS=$(bash
-scripts/piezas/fuentes-locales.sh)`, cargando la página desde un archivo, no con `setContent`) y
-**mírala** (abre el PNG). Puntúa con la rúbrica de arte y di qué foto hay que generar (encuadre,
+Ríndela a PNG con el script del repo, desde la raíz:
+```
+FUENTES_CSS=$(bash scripts/piezas/fuentes-locales.sh) PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium \
+  node scripts/piezas/maqueta.mjs <maqueta.html> <maqueta.png> 1080 1350   # 1080 1920 para 9:16
+```
+(en la laptop, sin `PLAYWRIGHT_CHROMIUM_PATH`). Falla a propósito si una fuente no cargó. Las fotos
+se referencian con ruta relativa al HTML. Después **mírala** (abre el PNG). Puntúa con la rúbrica de arte y di qué foto hay que generar (encuadre,
 lugar, hora) para que el Productor la pida.
 
 ### B · Puerta 2: la pieza terminada

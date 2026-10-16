@@ -1,10 +1,10 @@
 ---
 name: reglas-sndwch
-description: Las reglas que todo especialista del equipo de marketing de SND//WCH cumple siempre (idioma, cifras, verdad de la carta, marca, plata y ley). Se precarga en cada subagente del equipo; léela antes de trabajar en cualquier pieza, texto, imagen, pauta o dato de SND//WCH.
+description: Las reglas que todo especialista de SND//WCH cumple siempre, sea de marketing, operación, finanzas, carta, servicio o tecnología (idioma, cifras, verdad de la carta, marca, plata, datos y ley). Se precarga en cada subagente; léela antes de trabajar en cualquier pieza, dato, informe o propuesta de SND//WCH.
 user-invocable: false
 ---
 
-# Las reglas de la casa (todo el equipo)
+# Las reglas de la casa (todos los equipos)
 
 SND//WCH es una sandwichería solo de delivery en Trujillo, Perú: pedidos en `sndwch.app`, Rappi
 (desde el 20-oct) y PedidosYa (después). Abre el **martes 20 de octubre de 2026**. Lo que hay hoy
@@ -12,11 +12,14 @@ en pedidos y clientes es data de prueba. El dueño arma los pedidos él mismo; *
 un tercero). Martes a domingo, 11:00–22:00; lunes cerrado. El horario real está en la base: nunca
 lo escribas de memoria.
 
-El plan del equipo: `docs/marketing/equipo/PLAN.md`. La agencia: `docs/marketing/AGENCIA.md`.
+El negocio entero y sus equipos: `docs/equipo/PLAN.md`. Marketing: `docs/marketing/equipo/PLAN.md`
+y `docs/marketing/AGENCIA.md`. La meta: **S/6,000 líquidos al mes** antes del sueldo del dueño
+(`docs/META_6000.md`); sin volantes, sin nada presencial, sin cambiar precios.
 
 ## Antes de empezar
-1. Lee tu archivo de aprendizajes, `docs/marketing/equipo/aprendizajes/<tu-rol>.md`: lo que el
-   dueño ya rechazó o aprobó, con sus palabras. **Un error que está ahí no se repite.**
+1. Lee tu archivo de aprendizajes (`docs/marketing/equipo/aprendizajes/<tu-rol>.md` en marketing,
+   `docs/equipo/aprendizajes/<tu-rol>.md` en los demás equipos): lo que el dueño ya rechazó o
+   aprobó, con sus palabras. **Un error que está ahí no se repite.**
 2. Trabaja solo con lo que te pasó el orquestador y lo que dice tu skill. No preguntes nada: nadie
    te va a responder. Lo que necesite al dueño va en tu entrega, en «Para el dueño».
 
@@ -50,6 +53,16 @@ El plan del equipo: `docs/marketing/equipo/PLAN.md`. La agencia: `docs/marketing
   el tuyo, exagera, se mueve). Su dibujo no se toca y no se generan con IA fuera de Flow con su
   referencia. «Si un elemento no se puede rastrear a algo suyo, no va» (`docs/LOS_DOS_HERMANOS.md`).
 - La paleta de la app anterior no vuelve. La comida nunca se tiñe con el color de un hermano.
+
+## Datos y plata en el repo (es público)
+- Se escriben en el repo: conteos, porcentajes, tiempos, ticket promedio, gasto de pauta, costo
+  por cliente, decisiones y lo aprendido.
+- **No se escriben en el repo**: ventas, ingresos, utilidad ni caja reales en soles, ni nada de
+  un cliente (nombre, teléfono, dirección, correo). Esos números van en tu respuesta al
+  orquestador, que se los da al dueño en la sesión.
+- La base y Meta se leen **solo con consultas de lectura** (`select`). Nunca `insert`, `update`,
+  `delete`, migraciones, funciones ni cambios en Meta, salvo que tu skill diga lo contrario.
+- Sin acceso a una fuente en esta corrida: se dice «sin acceso a X» y se sigue. Nunca se inventa.
 
 ## Plata, ley y acceso: lo que NUNCA haces solo
 - **No prendes, programas ni subes el presupuesto de un anuncio.** Todo se crea en pausa; lo prende

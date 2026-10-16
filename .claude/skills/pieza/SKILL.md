@@ -39,6 +39,10 @@ salta a la maqueta (paso 4) con esa idea.
 | 9 | `media-buyer` | el anuncio en Meta, **en pausa** | el dueño lo prende |
 
 - 4 y 5 pueden ir en paralelo (los dos leen lo mismo).
+- **Si la pieza es un video**, el paso 6 es del `editor-video` (con los clips reales del dueño), no
+  del Productor.
+- **Antes del paso 1**, mira `docs/marketing/piezas/` y los aprendizajes: si ya existe una pieza
+  parecida o el dueño ya rechazó algo igual, empieza desde ahí.
 - **La elección del dueño**: en una sesión con él, muéstrale las maquetas que pasaron
   (`SendUserFile`) y pregúntale. En una corrida sin nadie, para en el paso 5 y deja `RESUMEN.md`.
 - **Un «rehacer»** del paso 7 vuelve al 6 con el cambio exacto. Máximo dos vueltas; después, al

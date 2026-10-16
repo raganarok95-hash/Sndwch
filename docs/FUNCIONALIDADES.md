@@ -322,3 +322,13 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   (lo calcula el servidor, no el panel). Docs: `docs/META_Y_PRESENCIAL.md`.
 - **Meta: la prueba de apertura** (S/700, 20-oct a 16-nov) con tres anuncios, cada uno con su
   origen (`meta-philly`, `meta-oficina`, `meta-carta`): `docs/marketing/PAUTA_BARATA.md`.
+- **Los equipos de agentes** (`docs/equipo/PLAN.md`): 19 subagentes (`.claude/agents/`: 13 de
+  marketing más operación, finanzas, carta, conversión, servicio y guardián) con sus skills y los
+  orquestadores `/pieza`, `/agencia-semana`, `/revisar-pauta`, `/revisar-lo-producido`,
+  `/buenos-dias`, `/domingo` y `/mes` (`.claude/skills/`). Solo leen y proponen.
+- **La semana en números** (`datos-semana.yml`, domingo 23:15 de Lima; `scripts/datos/`): escribe
+  `docs/marketing/semanas/<lunes>/DATOS-base.json` con pedidos válidos por origen, nuevos y que
+  vuelven, conversión por enlace, horas, días, gasto de pauta y costo por cliente de Meta. Sin
+  ventas totales ni datos de clientes (el repo es público). Prueba: `tests-api/datos-de-la-semana.test.ts`.
+- **`scripts/piezas/maqueta.mjs`**: cualquier HTML de maqueta a PNG con las fuentes de la marca;
+  falla si una fuente no cargó.

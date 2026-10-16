@@ -54,6 +54,9 @@ relatos están en `docs/MANUAL_DETALLADO.md`** (copia íntegra del archivo anter
   registrada en la base**. Se aplican con `mcp__Supabase__apply_migration` y se escribe el mismo SQL
   en un archivo en la misma sesión. 4 archivos llevan el secreto de cron redactado a propósito.
 - **`orders.id` es `text` con check de uuid, a propósito** (un id mal escrito da 404, no 500).
+- **Equipos de agentes** (`docs/equipo/PLAN.md`): subagentes en `.claude/agents`, manuales en
+  `.claude/skills` (se commitean). Un anuncio o pieza nueva pasa por `/pieza`; lo que el dueño diga
+  de una pieza o informe va a `aprendizajes/<rol>.md` con sus palabras y la fecha.
 
 ## ⚠ Precios
 
