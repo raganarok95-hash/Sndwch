@@ -100,6 +100,11 @@ Por Rappi, desde el segundo mes (comisión ~25%), cada pedido deja unos S/3 meno
   pierde lo mínimo (~S/2.50 por pedido) y necesita ~4 pedidos más al día. Bajar a S/16.90–17.90 pide
   8–9 pedidos más al día con la misma cocina.
 
+- **Lo que añadió el estudio de mercado** (`docs/MERCADO.md` §5–7, 16-oct): las sangucherías
+  comparables de Trujillo cobran S/15.90–19.90 en Rappi y PedidosYa, y las de S/18.90–19.90 (San
+  Agustín, Don Pacho) van en un pan francés de desayuno. Bajar a S/16–17 no hace falta; **S/19.90 es
+  el techo que ve el cliente**, y lo que queda por decidir es el +10% de las apps.
+
 ## 6 · Cómo se cambia (cuando decidas)
 
 Una migración con la fila nueva de cada Signature en `catalog_items` y el arma el tuyo en

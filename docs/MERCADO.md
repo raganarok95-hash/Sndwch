@@ -18,7 +18,7 @@ que hagamos bien el estudio».
      Se compara precio de app contra precio de app.
   2. **Ninguna carta dice gramos ni centímetros.** «Más caro y más pequeño» no se puede saber leyendo:
      hay que comprarlos y pesarlos (§5).
-  3. **PedidosYa no está**: sus páginas no salen en Google y desde aquí no cargan.
+  3. **PedidosYa** no se puede leer desde aquí: está con las capturas del dueño (§5).
   4. Falta el número de reseñas de cada local, que es la mejor pista de cuánto vende.
 
 ## 2 · Lo que cuesta un sándwich en Trujillo (Rappi)
@@ -61,26 +61,67 @@ Tu precio en Rappi es el de la web + 10%:
 | Meatball Marinara 15CM | 21.90 | **24.09** | (no hay albóndiga en Trujillo) |
 
 **Hoy estás S/6–7 por encima de las mejores sangucherías de Trujillo en la misma app**, y por encima
-del techo de pavo y de res de todo el mercado (S/19–19.90). Solo te pasan Chili's (con papas) y los
-club sándwiches. Con el 15CM a **S/16.90–19.90 en la web**, en Rappi quedarías en **S/18.59–21.89**:
-a la par de Don Pacho y San Agustín.
+del techo de pavo y de res de todo el mercado (S/19–19.90). Solo te pasan Chili's (con papas), los
+club sándwiches y los cafés de §5.
 
-Lo que la tabla no dice todavía, y decide si tu precio se sostiene: **cuánto relleno traen ellos**.
-Tu 15CM lleva ~85 g de proteína en un pan de 15 cm. Si el pavo de S/18.90 trae 60 g, estás caro por
-poco; si trae 120 g, estás caro de verdad.
+## 5 · PedidosYa (capturas del dueño, 16-oct-2026, 11:15, búsqueda «sandwich»)
 
-## 5 · Lo que falta para cerrar el estudio
+Solo se anota lo que en la captura queda debajo del nombre de su local.
 
-1. **Comprar y pesar** (la prueba que responde «más caro y más pequeño»): 5 sándwiches comparables
-   por Rappi, el mismo día y a la misma hora — Don Pacho pavo (S/18.90) y asado de res (S/19.90), La
-   Casera atún (S/17), San Agustín pavo (S/19) y Labs pavo (S/19). Unos **S/95 más el envío**: es
-   gasto real, va con tu sí. Con una balanza de cocina y una cinta: largo del pan, peso total, peso
-   del relleno (sacándolo), qué proteína es y cuánta, cómo llegó (temperatura, empaque, tiempo).
-   Una hoja por sándwich con foto. Con eso sale el **precio por 100 g de relleno** de cada uno, que es
-   la comparación justa.
-2. **PedidosYa**: 10 capturas tuyas de la búsqueda «sándwich» en Trujillo (la lista con precios y
-   calificaciones, y la carta de los 4–5 primeros), como hiciste con Subway.
-3. **Cuánto vende cada uno**: agregar al lector el número de reseñas de cada local (un ajuste chico y
-   otra corrida de GitHub, sin tokens).
+| local (calificación) | qué vende | precios |
+|---|---|---|
+| **La Lucha Sanguchería Criolla** – Húsares (4.5) | lechón a la leña, pollo deshilachado | lechón **S/19.90** (promo S/16.90), pollo **S/18.50** |
+| **San Agustín de Carlos Fhon** – El Golf (4.8) | asado, pollo, lechón | **S/15.90–19.90** (asado S/18.90) |
+| San Agustín – Av. América Oeste (4.4) | asado, lomito, ternera | S/12.50–19 |
+| San Agustín – San Andrés (4.6) | pollo, ternera, hot dog | S/12.50–13.50 |
+| **La Casera** Sanguchería (4.7) | **atún S/17** (5.0 con 10 calificaciones, «relación precio calidad»: trozos de atún, sarza, lechuga, tomate), club S/33.50 | S/17–33.50 |
+| Juguería Sandoval – Paseo Las Aguas (4.3) | lechón, pollo | S/12.90–18.50 |
+| Ristr3tto Coffee Shop (4.2) | tres jamones, panini de pollo, flauta italiana | S/15–16.25 |
+| Starbucks – Mall Aventura (4.4) | panino y ciabatta de pollo, queso | S/15.50 |
+| Frutea – Av. Fátima (4.4) | bondiola ahumada, apaltado | S/23–25 |
+| Vital Foods – El Golf (4.4) | capresse, atún, teriyaki | S/20.60–30.60 |
+| Elevaria Café (4.5) | mediterráneo, picaña al chimichurri, club | S/28–37 |
+| Triples Wow, Yuls, Soandi | triples, pan con lomo o pollo, sándwich de desayuno | S/7–15 |
 
-Con eso se decide el precio con datos de Trujillo, no con una regla promedio.
+Lo que dice la pantalla, además de los precios:
+- **Las sangucherías que se parecen a ti cobran S/15.90–19.90** por su sándwich estrella, igual que
+  en Rappi. Por encima solo están los **cafés** (Frutea, Vital Foods, Elevaria: S/23–37, con
+  4.4–4.5), con pan de ciabatta o integral: existe un público que paga más de S/20 en Trujillo.
+- **Casi todos los primeros resultados son pagados** («Anuncio») y llevan descuento (15–43%).
+- Siete muestran **«Mismo precio que en local»**. Tú cobras 10% más en las apps: ese sello no lo
+  tendrías.
+- La Lucha y San Agustín llevan **«Solo en PedidosYa»**: la exclusividad es algo que las apps
+  negocian (va con la pregunta de exclusividad a Rappi, P55).
+
+## 6 · Lo que viste al pedirlos (16-oct)
+
+Dueño: «Pedí los sándwiches; no los pesé, pero el de San Agustín es un pan pequeño, tradicional,
+pan francés: alguien en el desayuno se come dos o tres. Mismo pan Don Pacho. No encontré disponible
+el de atún (La Casera), pero el pan es pequeño».
+
+**«Más caro y más pequeño» se confirma, al menos en el pan.** Los sándwiches de S/18.90–19.90 de
+San Agustín y Don Pacho van en un pan de desayuno. Tu 15CM va en medio pan sub (la unidad pesa ~150 g;
+el 15CM lleva ~75 g de pan) con ~85 g de proteína: es un almuerzo, no un pan del desayuno. Falta la
+balanza para decir cuánto relleno traen ellos, pero el tamaño ya cambia la comparación: **por lo que
+llega, tu precio no es caro; parece caro en la tarjeta de la app**, donde el cliente solo ve una
+foto y un número.
+
+## 7 · Lo que esto le dice al precio
+
+1. **No hace falta bajar el 15CM a S/16–17.** Ahí estarías regalando margen contra sándwiches más
+   chicos.
+2. **El techo que el cliente ve es S/19.90.** Es el precio de las mejores sangucherías en las dos
+   apps. Un 15CM a **S/19.90 en la web** queda a la par de ellos en precio, con más comida. Decirlo
+   en un anuncio con cifras («el doble») pide la balanza primero (§8).
+3. **La pregunta que queda es el +10% de las apps**: con él, el 15CM a S/19.90 sale a S/21.89 en
+   Rappi y PedidosYa, otra vez arriba de la banda y sin el sello «Mismo precio que en local».
+4. **El tamaño tiene que verse**: en la foto (con algo que dé escala) y en el texto de la vitrina
+   («15 cm», la proteína real). Si no se ve, el cliente compara solo el número.
+5. **El mes 1 de Rappi ya es la prueba de precio** (30% de descuento obligatorio: el 15CM sale a
+   S/16.09–18.40 en la app). Si con el descuento vende y sin él se cae, el número era la barrera.
+
+## 8 · Lo que falta (opcional)
+
+- **Pesar** uno de San Agustín o Don Pacho y uno tuyo (pan y relleno por separado) para escribir
+  la comparación con gramos y no con palabras. Sin esto el estudio ya alcanza para decidir.
+- El número de reseñas de cada local en Rappi (otra corrida de GitHub, sin tokens).
