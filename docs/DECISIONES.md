@@ -1309,8 +1309,9 @@ que cancelar un pedido viejo devuelve lo mismo que reservó. Prueba: `tests-api/
   se vea) y, sobre el +10% de las apps: «sí, todos en sí cobran más en Rappi y PedidosYa que en sus
   locales».
 - **Lo que cuesta**: con la misma cantidad de pedidos, cada pedido deja ~S/2.80 menos
-  (`modelo/proyeccion.py`). El precio se paga solo si trae ~21% más pedidos (`docs/PRECIOS.md` §4).
-  Se mide con la primera semana y con el mes 1 de Rappi.
+  (`modelo/proyeccion.py`): en el escenario conservador (1–3 pedidos al día), la suma de los 6
+  meses pasa de S/853 a −S/13, entre S/120 y S/200 menos al mes (el cuadro mes a mes está en
+  `docs/PROYECCION.md`). Con +22.5% de clientes queda igual. Se mide las dos primeras semanas.
 - **El 30CM pasa el techo de costo del 45% en tres** (Italian Hoagie y pavo 30CM 49.0%, atún del
   armador 30CM 45.7%). Se le dio a elegir entre subirlo a S/33.90, volver al de antes o dejarlo;
   respondió «C»: queda en S/30.90 con la excepción anotada en `TECHO_EXCEPCIONES`

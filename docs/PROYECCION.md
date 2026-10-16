@@ -269,9 +269,29 @@ controlada, Rappi trabajado, PedidosYa antes, sin Meta el primer mes, bolsa lisa
 
 ## Precio nuevo: 15CM S/19.90 (2026-10-16)
 
-El dueño aprobó 15CM S/19.90 y 30CM S/30.90 tras el estudio de mercado (`docs/MERCADO.md`). El
-modelo no mueve los pedidos con el precio (no hay datos de Trujillo para eso), así que muestra
-solo lo que cuesta: **un pedido deja S/12.56 en vez de S/15.39** (ticket S/23.27 en vez de
-S/26.18), y en el escenario de hoy los 6 meses pasan de S/853 a −S/13 (mediana; −S/1,071 a
-S/1,157). Para quedar igual hacen falta ~21% más pedidos (`docs/PRECIOS.md` §4). Es la apuesta: el
-precio a la par de las mejores sangucherías tiene que traer esos pedidos. Se mide la primera semana.
+El dueño aprobó 15CM S/19.90 y 30CM S/30.90 tras el estudio de mercado (`docs/MERCADO.md`). Un
+pedido deja **S/12.56 en vez de S/15.39** (ticket S/23.27 en vez de S/26.18).
+
+**Ojo al leerlo** (el dueño lo leyó como «el primer mes gano 13 soles en vez de 800»): S/853 y
+−S/13 son la **suma de los 6 meses** (octubre a marzo) en el escenario «HOY», el más conservador:
+1 a 3 pedidos al día. No es el primer mes ni el escenario de la meta. Mes a mes (mediana):
+
+| mes | precio de antes | precio nuevo, mismos pedidos | precio nuevo, +10% clientes | precio nuevo, +22.5% clientes |
+|---|---|---|---|---|
+| oct (desde el 20) | −397 | −422 | −414 | −405 |
+| nov | −252 | −375 | −326 | −263 |
+| dic | +265 | +107 | +171 | +252 |
+| ene | +377 | +196 | +270 | +363 |
+| feb | +359 | +183 | +256 | +348 |
+| mar | +504 | +301 | +387 | +494 |
+| **6 meses** | **+853** | **−13** | **+342** | **+787** |
+
+- **Mismos pedidos**: el modelo no mueve los pedidos con el precio. Con ~2.8 pedidos al día cada
+  uno deja S/2.83 menos: entre S/120 y S/200 menos al mes.
+- **+10% clientes**: lo que predice la evidencia (elasticidad −0.81, Andreyeva 2010; −12% de precio).
+- **+22.5% clientes**: lo que hace falta para quedar igual (S/15.39 ÷ S/12.56).
+
+Lo que decide el resultado en este escenario no es el precio, es que hay muy pocos pedidos: con 1–3
+al día ningún precio llega a la meta (`docs/META_6000.md`). El precio nuevo es una apuesta a que la
+tarjeta a S/19.90 convierta más; se mide en las dos primeras semanas (pedidos nuevos por día contra
+este cuadro) y, si no sube, el precio se puede volver a cambiar con una migración.

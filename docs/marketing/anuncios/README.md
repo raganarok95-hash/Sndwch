@@ -63,3 +63,7 @@ laptop y la botella. Pedida así:
 tercios, en tres cuartos). La segunda variante no salió: se acabaron los créditos de IA de Figma del
 día (vuelven a las 00:00 UTC). Se pide otra más cerca apenas vuelvan.
 
+
+`fotos/foto-turkey-v3-cerca.jpg` es la v3 recortada más cerca del sándwich (sin generar nada
+nuevo). La usa el lanzamiento de Instagram (la carta y la lámina del Turkey) en vez de
+`img/sig10.jpg`, que muestra pepino (dueño, 2026-10-16: «Sí, foto fiel»).
