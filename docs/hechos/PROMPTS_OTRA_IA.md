@@ -29,32 +29,32 @@ Abre a más tardar la segunda semana de octubre de 2026: todavía no hay cliente
 ## Signatures (6 en la carta pública)
 
 ### Philly Cheesesteak ★ (la estrella: la que más deja por unidad)
-- **Precio:** 15CM S/22.90 · 30CM S/33.90 · doble proteína +S/7 / +S/13.90
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/7 / +S/13.90
 - **Receta:** pan Classic // White · Res // Laminada · vegetales: Cebolla // Salteada, Pimiento // Verde · salsas: — · queso: Cheddar
 - **Cómo se vende:** El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. Tan jugoso que no lleva salsa. Es el que pides cuando el hambre va en serio.
 
 ### Meatball Marinara
-- **Precio:** 15CM S/21.90 · 30CM S/32.90 · doble proteína +S/6.90 / +S/13.90
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/6.90 / +S/13.90
 - **Receta:** pan Classic // White · Albóndiga // Marinara · vegetales: Tomate // Fresco, Cebolla // Morada juliana · salsas: Oil & Vinegar // Classic · queso: Americano
 - **Cómo se vende:** Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. Caliente, contundente, de los que se comen con las dos manos. Para la noche en que ya decidiste no cocinar.
 
 ### Turkey
-- **Precio:** 15CM S/23.90 · 30CM S/34.90 · doble proteína +S/9 / +S/17
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/9 / +S/17
 - **Receta:** pan Classic // White · Pavo // Horneado · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: no lleva
 - **Cómo se vende:** Pavo horneado en lonjas finas con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. Llena sin pesar: el almuerzo que no te tumba la tarde.
 
 ### Tuna Melt
-- **Precio:** 15CM S/22.90 · 30CM S/33.90 · doble proteína +S/10.90 / +S/21.90
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/10.90 / +S/21.90
 - **Receta:** pan Classic // White · Atún // House · vegetales: — · salsas: — · queso: Cheddar
 - **Cómo se vende:** Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco. Cremoso, caliente y con todo el sabor del clásico americano.
 
 ### Italian Hoagie
-- **Precio:** 15CM S/23.90 · 30CM S/34.90 · doble proteína +S/9.90 / +S/19.90
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/9.90 / +S/19.90
 - **Receta:** pan Classic // White · Embutido // Italiano · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: Americano
 - **Cómo se vende:** Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. El sándwich de deli de toda la vida: cada capa suma sabor y ninguna sobra. Para cuando quieres de todo en un solo pan.
 
 ### Classic Tuna
-- **Precio:** 15CM S/20.90 · 30CM S/31.90 · doble proteína +S/10.90 / +S/21.90
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/10.90 / +S/21.90
 - **Receta:** pan Classic // White · Atún // House · vegetales: — · salsas: — · queso: no lleva
 - **Cómo se vende:** Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Simple y bien hecho: no lleva nada suelto, así que se come con una mano, en el escritorio o en camino.
 
@@ -73,10 +73,10 @@ El precio lo pone la proteína (más el recargo del pan, si tiene). Vegetales y 
 
 | proteína | 15CM | 30CM | doble 15 | doble 30 | cómo es |
 |---|---|---|---|---|---|
-| Atún // House | S/22.90 | S/33.90 | +S/10.90 | +S/21.90 | En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca. |
-| Albóndiga // Marinara | S/21.90 | S/32.90 | +S/6.90 | +S/13.90 | Albóndigas chicas hechas acá, cocidas dentro de su propia marinara. |
-| Pavo // Horneado | S/23.90 | S/34.90 | +S/9 | +S/17 | Lonjas de un milímetro puestas en pliegues, laminadas el mismo día. |
-| Res // Laminada | S/22.90 | S/33.90 | +S/7 | +S/13.90 | Laminada fina y salteada al momento. |
+| Atún // House | S/19.90 | S/30.90 | +S/10.90 | +S/21.90 | En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca. |
+| Albóndiga // Marinara | S/19.90 | S/30.90 | +S/6.90 | +S/13.90 | Albóndigas chicas hechas acá, cocidas dentro de su propia marinara. |
+| Pavo // Horneado | S/19.90 | S/30.90 | +S/9 | +S/17 | Lonjas de un milímetro puestas en pliegues, laminadas el mismo día. |
+| Res // Laminada | S/19.90 | S/30.90 | +S/7 | +S/13.90 | Laminada fina y salteada al momento. |
 
 Proteínas que existen pero NO se eligen acá: Pollo // Cajun (solo menú secreto), Embutido // Italiano (solo dentro de su Signature).
 
@@ -103,6 +103,22 @@ Por cada par sándwich + bebida el pedido cuesta S/1 menos (el combo).
 | Bebida Gratis | 160 | Bebida a elección | S/6 |
 | Tamaño 30CM | 320 | Tu sándwich 15CM sube a 30CM gratis | S/8 |
 | Sándwich Gratis | 400 | Sándwich 15CM gratis — no aplica al menú secreto | el monto entero |
+
+## Para pegar en Rappi y PedidosYa
+
+Precio de app = el de la web + 10%. La descripción abre con el tamaño y la proteína
+real (el pan francés de la competencia no la dice: docs/MERCADO.md §6) y sigue con la primera
+frase de «Cómo se vende». Si en el portal redondeas, se anota en `docs/PENDIENTE_DEL_DUENO.md`
+(esta ficha no se edita a mano).
+
+| Signature | app 15CM | app 30CM | descripción |
+|---|---|---|---|
+| Philly Cheesesteak | S/21.89 | S/33.99 | 15 cm · 85 g de res laminada (30 cm: 170 g). El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. |
+| Meatball Marinara | S/21.89 | S/33.99 | 15 cm · 85 g de albóndiga marinara (30 cm: 170 g). Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. |
+| Turkey | S/21.89 | S/33.99 | 15 cm · 85 g de pavo horneado (30 cm: 170 g). Pavo horneado en lonjas finas con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. |
+| Tuna Melt | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco. |
+| Italian Hoagie | S/21.89 | S/33.99 | 15 cm · 85 g de embutido italiano (30 cm: 170 g). Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. |
+| Classic Tuna | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. |
 
 
 
@@ -167,32 +183,32 @@ Abre a más tardar la segunda semana de octubre de 2026: todavía no hay cliente
 ## Signatures (6 en la carta pública)
 
 ### Philly Cheesesteak ★ (la estrella: la que más deja por unidad)
-- **Precio:** 15CM S/22.90 · 30CM S/33.90 · doble proteína +S/7 / +S/13.90
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/7 / +S/13.90
 - **Receta:** pan Classic // White · Res // Laminada · vegetales: Cebolla // Salteada, Pimiento // Verde · salsas: — · queso: Cheddar
 - **Cómo se vende:** El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. Tan jugoso que no lleva salsa. Es el que pides cuando el hambre va en serio.
 
 ### Meatball Marinara
-- **Precio:** 15CM S/21.90 · 30CM S/32.90 · doble proteína +S/6.90 / +S/13.90
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/6.90 / +S/13.90
 - **Receta:** pan Classic // White · Albóndiga // Marinara · vegetales: Tomate // Fresco, Cebolla // Morada juliana · salsas: Oil & Vinegar // Classic · queso: Americano
 - **Cómo se vende:** Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. Caliente, contundente, de los que se comen con las dos manos. Para la noche en que ya decidiste no cocinar.
 
 ### Turkey
-- **Precio:** 15CM S/23.90 · 30CM S/34.90 · doble proteína +S/9 / +S/17
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/9 / +S/17
 - **Receta:** pan Classic // White · Pavo // Horneado · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: no lleva
 - **Cómo se vende:** Pavo horneado en lonjas finas con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. Llena sin pesar: el almuerzo que no te tumba la tarde.
 
 ### Tuna Melt
-- **Precio:** 15CM S/22.90 · 30CM S/33.90 · doble proteína +S/10.90 / +S/21.90
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/10.90 / +S/21.90
 - **Receta:** pan Classic // White · Atún // House · vegetales: — · salsas: — · queso: Cheddar
 - **Cómo se vende:** Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco. Cremoso, caliente y con todo el sabor del clásico americano.
 
 ### Italian Hoagie
-- **Precio:** 15CM S/23.90 · 30CM S/34.90 · doble proteína +S/9.90 / +S/19.90
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/9.90 / +S/19.90
 - **Receta:** pan Classic // White · Embutido // Italiano · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: Americano
 - **Cómo se vende:** Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. El sándwich de deli de toda la vida: cada capa suma sabor y ninguna sobra. Para cuando quieres de todo en un solo pan.
 
 ### Classic Tuna
-- **Precio:** 15CM S/20.90 · 30CM S/31.90 · doble proteína +S/10.90 / +S/21.90
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/10.90 / +S/21.90
 - **Receta:** pan Classic // White · Atún // House · vegetales: — · salsas: — · queso: no lleva
 - **Cómo se vende:** Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Simple y bien hecho: no lleva nada suelto, así que se come con una mano, en el escritorio o en camino.
 
@@ -211,10 +227,10 @@ El precio lo pone la proteína (más el recargo del pan, si tiene). Vegetales y 
 
 | proteína | 15CM | 30CM | doble 15 | doble 30 | cómo es |
 |---|---|---|---|---|---|
-| Atún // House | S/22.90 | S/33.90 | +S/10.90 | +S/21.90 | En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca. |
-| Albóndiga // Marinara | S/21.90 | S/32.90 | +S/6.90 | +S/13.90 | Albóndigas chicas hechas acá, cocidas dentro de su propia marinara. |
-| Pavo // Horneado | S/23.90 | S/34.90 | +S/9 | +S/17 | Lonjas de un milímetro puestas en pliegues, laminadas el mismo día. |
-| Res // Laminada | S/22.90 | S/33.90 | +S/7 | +S/13.90 | Laminada fina y salteada al momento. |
+| Atún // House | S/19.90 | S/30.90 | +S/10.90 | +S/21.90 | En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca. |
+| Albóndiga // Marinara | S/19.90 | S/30.90 | +S/6.90 | +S/13.90 | Albóndigas chicas hechas acá, cocidas dentro de su propia marinara. |
+| Pavo // Horneado | S/19.90 | S/30.90 | +S/9 | +S/17 | Lonjas de un milímetro puestas en pliegues, laminadas el mismo día. |
+| Res // Laminada | S/19.90 | S/30.90 | +S/7 | +S/13.90 | Laminada fina y salteada al momento. |
 
 Proteínas que existen pero NO se eligen acá: Pollo // Cajun (solo menú secreto), Embutido // Italiano (solo dentro de su Signature).
 
@@ -241,6 +257,22 @@ Por cada par sándwich + bebida el pedido cuesta S/1 menos (el combo).
 | Bebida Gratis | 160 | Bebida a elección | S/6 |
 | Tamaño 30CM | 320 | Tu sándwich 15CM sube a 30CM gratis | S/8 |
 | Sándwich Gratis | 400 | Sándwich 15CM gratis — no aplica al menú secreto | el monto entero |
+
+## Para pegar en Rappi y PedidosYa
+
+Precio de app = el de la web + 10%. La descripción abre con el tamaño y la proteína
+real (el pan francés de la competencia no la dice: docs/MERCADO.md §6) y sigue con la primera
+frase de «Cómo se vende». Si en el portal redondeas, se anota en `docs/PENDIENTE_DEL_DUENO.md`
+(esta ficha no se edita a mano).
+
+| Signature | app 15CM | app 30CM | descripción |
+|---|---|---|---|
+| Philly Cheesesteak | S/21.89 | S/33.99 | 15 cm · 85 g de res laminada (30 cm: 170 g). El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. |
+| Meatball Marinara | S/21.89 | S/33.99 | 15 cm · 85 g de albóndiga marinara (30 cm: 170 g). Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. |
+| Turkey | S/21.89 | S/33.99 | 15 cm · 85 g de pavo horneado (30 cm: 170 g). Pavo horneado en lonjas finas con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. |
+| Tuna Melt | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco. |
+| Italian Hoagie | S/21.89 | S/33.99 | 15 cm · 85 g de embutido italiano (30 cm: 170 g). Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. |
+| Classic Tuna | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. |
 
 
 Lo que quiero de ti: [p. ej. fichas de cocina, descripciones para la carta impresa, propuestas de
@@ -340,22 +372,22 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
   15CM
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
-  SIG09 Philly Cheesesteak             22.90    6.48    16.42    28.3%
-  SIG02 Meatball Marinara              21.90    6.76    15.14    30.8%
-  SIG10 Turkey                         23.90    6.58    17.31    27.6%
-  SIG12 Tuna Melt                      22.90    6.45    16.45    28.2%
-  SIG11 Italian Hoagie                 23.90    8.21    15.69    34.4%
-  SIG04 Classic Tuna                   20.90    5.55    15.35    26.6%
+  SIG09 Philly Cheesesteak             19.90    6.48    13.42    32.5%
+  SIG02 Meatball Marinara              19.90    6.76    13.14    33.9%
+  SIG10 Turkey                         19.90    6.58    13.31    33.1%
+  SIG12 Tuna Melt                      19.90    6.45    13.45    32.4%
+  SIG11 Italian Hoagie                 19.90    8.21    11.69    41.3%
+  SIG04 Classic Tuna                   19.90    5.55    14.35    27.9%
 
   30CM
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
-  SIG09 Philly Cheesesteak             33.90   11.65    22.25    34.4%
-  SIG02 Meatball Marinara              32.90   12.21    20.69    37.1%
-  SIG10 Turkey                         34.90   11.86    23.04    34.0%
-  SIG12 Tuna Melt                      33.90   11.60    22.30    34.2%
-  SIG11 Italian Hoagie                 34.90   15.13    19.77    43.4%
-  SIG04 Classic Tuna                   31.90    9.80    22.10    30.7%
+  SIG09 Philly Cheesesteak             30.90   11.65    19.25    37.7%
+  SIG02 Meatball Marinara              30.90   12.21    18.69    39.5%
+  SIG10 Turkey                         30.90   11.86    19.04    38.4%
+  SIG12 Tuna Melt                      30.90   11.60    19.30    37.5%
+  SIG11 Italian Hoagie                 30.90   15.13    15.77    49.0%  <-- PASA EL TECHO
+  SIG04 Classic Tuna                   30.90    9.80    21.10    31.7%
 
 ============================================================================================
                           2 · ARMA EL TUYO — 4 proteinas armables                           
@@ -365,21 +397,21 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
   Pollo // Cajun (fuera del armador)   13.90    6.95     6.95    50.0%  <-- PASA EL TECHO
-  Atún // House                        22.90    7.71    15.19    33.7%
+  Atún // House                        19.90    7.71    12.19    38.8%
   Embutido // Italiano (fuera del armador)   16.90    8.75     8.15    51.8%  <-- PASA EL TECHO
-  Albóndiga // Marinara                21.90    7.42    14.48    33.9%
-  Pavo // Horneado                     23.90    8.22    15.68    34.4%
-  Res // Laminada                      22.90    7.50    15.40    32.8%
+  Albóndiga // Marinara                19.90    7.42    12.48    37.3%
+  Pavo // Horneado                     19.90    8.22    11.68    41.3%
+  Res // Laminada                      19.90    7.50    12.40    37.7%
 
   30CM
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
   Pollo // Cajun (fuera del armador)   23.90   12.60    11.30    52.7%  <-- PASA EL TECHO
-  Atún // House                        33.90   14.13    19.77    41.7%
+  Atún // House                        30.90   14.13    16.77    45.7%  <-- PASA EL TECHO
   Embutido // Italiano (fuera del armador)   32.90   16.22    16.68    49.3%  <-- PASA EL TECHO
-  Albóndiga // Marinara                32.90   13.53    19.37    41.1%
-  Pavo // Horneado                     34.90   15.14    19.76    43.4%
-  Res // Laminada                      33.90   13.70    20.20    40.4%
+  Albóndiga // Marinara                30.90   13.53    17.37    43.8%
+  Pavo // Horneado                     30.90   15.14    15.76    49.0%  <-- PASA EL TECHO
+  Res // Laminada                      30.90   13.70    17.20    44.3%
 
   DOBLE PROTEINA (el recargo contra lo que cuesta la porcion extra)
                                       precio   costo     deja  costo %
@@ -503,8 +535,11 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
                              7 · LO QUE PASA EL TECHO, EN ORDEN                             
 ============================================================================================
 
-  Nada pasa el techo.
-
+  parte                                      costo %   cuanto se pasa
+  ----------------------------------------------------------------------
+  BYO Pavo // Horneado 30CM                    49.0%            4.0 pts
+  SIG11 Italian Hoagie 30CM                    49.0%            4.0 pts
+  BYO Atún // House 30CM                       45.7%            0.7 pts
 
   ⚠ NADA DE ESTO SE ARREGLA CON PUBLICIDAD. Al contrario: la publicidad multiplica el
   volumen de lo que ya esta mal. Por eso hacer rentable cada parte va ANTES de gastar en

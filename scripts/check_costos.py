@@ -138,16 +138,19 @@ def c6_techo():
                 pct = R.costo_sig(sid, i) / precio
             except KeyError:
                 continue  # le falta un costo: eso lo señala c4, no es una pregunta de techo
-            if pct > R.TECHO:
-                falla(f"techo {sid}", f"{fila[0]} {('15', '30')[i]}CM cuesta {pct:.1%} de su precio (techo {R.TECHO:.0%})")
+            techo = R.TECHO_EXCEPCIONES.get((sid, ('15', '30')[i]), R.TECHO)
+            if pct > techo:
+                falla(f"techo {sid}", f"{fila[0]} {('15', '30')[i]}CM cuesta {pct:.1%} de su precio (techo {techo:.0%})")
     for p, (p15, p30, d15, d30) in R.BYO.items():
         if p in R.FUERA_DEL_ARMADOR or p not in R.PROT:
             continue
-        for i, precio, costo in ((0, p15, R.costo_byo(p, 0)), (1, p30, R.costo_byo(p, 1)),
-                                 (0, d15, R.PROT[p][0]), (1, d30, R.PROT[p][1])):
+        for i, precio, costo, doble in ((0, p15, R.costo_byo(p, 0), False), (1, p30, R.costo_byo(p, 1), False),
+                                        (0, d15, R.PROT[p][0], True), (1, d30, R.PROT[p][1], True)):
             pct = costo / precio
-            if pct > R.TECHO:
-                falla(f"techo {p}", f"{R.PROT_NOM[p]} {('15', '30')[i]}CM cuesta {pct:.1%} de su precio (techo {R.TECHO:.0%})")
+            # La excepción del dueño vale para el sándwich, nunca para el recargo de doble.
+            techo = R.TECHO if doble else R.TECHO_EXCEPCIONES.get((p, ('15', '30')[i]), R.TECHO)
+            if pct > techo:
+                falla(f"techo {p}", f"{R.PROT_NOM[p]} {('15', '30')[i]}CM cuesta {pct:.1%} de su precio (techo {techo:.0%})")
 
 
 CHEQUEOS = [("fichas completas", c1_fichas), ("guarda de unidad", c2_guarda_de_unidad),

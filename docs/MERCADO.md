@@ -51,7 +51,7 @@ que hagamos bien el estudio».
 
 ## 4 · Dónde quedas tú
 
-Tu precio en Rappi es el de la web + 10%:
+Con los precios de antes del 16-oct (tu precio en Rappi es el de la web + 10%):
 
 | | web | **Rappi** | lo comparable en Rappi |
 |---|---|---|---|
@@ -99,12 +99,18 @@ Dueño: «Pedí los sándwiches; no los pesé, pero el de San Agustín es un pan
 pan francés: alguien en el desayuno se come dos o tres. Mismo pan Don Pacho. No encontré disponible
 el de atún (La Casera), pero el pan es pequeño».
 
-**«Más caro y más pequeño» se confirma, al menos en el pan.** Los sándwiches de S/18.90–19.90 de
-San Agustín y Don Pacho van en un pan de desayuno. Tu 15CM va en medio pan sub (la unidad pesa ~150 g;
+**«Más caro y más pequeño» se confirma en San Agustín y Don Pacho, no en La Casera.** Los
+sándwiches de S/18.90–19.90 de San Agustín y Don Pacho van en un pan de desayuno. Tu 15CM va en medio pan sub (la unidad pesa ~150 g;
 el 15CM lleva ~75 g de pan) con ~85 g de proteína: es un almuerzo, no un pan del desayuno. Falta la
 balanza para decir cuánto relleno traen ellos, pero el tamaño ya cambia la comparación: **por lo que
 llega, tu precio no es caro; parece caro en la tarjeta de la app**, donde el cliente solo ve una
 foto y un número.
+
+**La Casera, atún (S/17), fotos del dueño del 16-oct**: no es un pan chico. Es un pan plano tipo
+ciabatta, rectangular, de unos 18–20 cm de largo (a ojo, contra la mano) y ~8 cm de ancho, cortado
+en diagonal. El relleno se ve delgado: una capa fina de atún con lechuga, tomate y cebolla. **Contra
+La Casera tu ventaja no es el pan, es el relleno** (tus ~85 g de proteína en una capa que se ve), y
+eso solo se puede decir con la balanza. A S/19.90 quedas S/2.90 por encima de su atún.
 
 ## 7 · Lo que esto le dice al precio
 
@@ -119,6 +125,10 @@ foto y un número.
    («15 cm», la proteína real). Si no se ve, el cliente compara solo el número.
 5. **El mes 1 de Rappi ya es la prueba de precio** (30% de descuento obligatorio: el 15CM sale a
    S/16.09–18.40 en la app). Si con el descuento vende y sin él se cae, el número era la barrera.
+
+**Decidido el 16-oct** (dueño: «1, 2 y 3, puntos aprobados»): 15CM S/19.90, 30CM S/30.90, el +10%
+de las apps se queda («todos en sí cobran más en Rappi y PedidosYa que en sus locales») y la vitrina
+abre con el tamaño y la proteína (`docs/hechos/CARTA.md`).
 
 ## 8 · Lo que falta (opcional)
 

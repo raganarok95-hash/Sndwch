@@ -12,7 +12,7 @@ import { writeFileSync, mkdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CARTA, etiqueta } from '../supabase/functions/_shared/carta.ts';
+import { CARTA, etiqueta, PORCION_PROTEINA_G } from '../supabase/functions/_shared/carta.ts';
 import * as R from '../supabase/functions/_shared/reglas.ts';
 import { REGLAS } from '../supabase/functions/_shared/dinero.ts';
 
@@ -90,6 +90,22 @@ ${CARTA.bebidas.map((b) => `- **${etiqueta(b)}** — ${S(b.precio)} sola · en c
 | recompensa | puntos | qué perdona | tope |
 |---|---|---|---|
 ${CARTA.recompensas.map((r) => `| ${r.nombre} ${r.sabor} | ${r.pts} | ${r.desc} | ${r.tope ? S(r.tope) : 'el monto entero'} |`).join('\n')}
+
+## Para pegar en Rappi y PedidosYa
+
+Precio de app = el de la web + ${Math.round(R.RECARGO_APPS * 100)}%. La descripción abre con el tamaño y la proteína
+real (el pan francés de la competencia no la dice: docs/MERCADO.md §6) y sigue con la primera
+frase de «Cómo se vende». Si en el portal redondeas, se anota en \`docs/PENDIENTE_DEL_DUENO.md\`
+(esta ficha no se edita a mano).
+
+| Signature | app 15CM | app 30CM | descripción |
+|---|---|---|---|
+${sigs.map((s) => {
+  const app = (n) => S(Math.round(n * (1 + R.RECARGO_APPS) * 100) / 100);
+  const prot = P[s.prot] ? etiqueta(P[s.prot]).replace(' // ', ' ').toLowerCase() : s.prot;
+  const frase = String(s.pitch || '').split(/(?<=\.)\s/)[0];
+  return `| ${s.nombre} | ${app(s.p15)} | ${app(s.p30)} | 15 cm · ${PORCION_PROTEINA_G.p15} g de ${prot} (30 cm: ${PORCION_PROTEINA_G.p30} g). ${frase} |`;
+}).join('\n')}
 
 ## Comprobar contra la base (manda la base)
 

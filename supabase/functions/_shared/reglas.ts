@@ -64,6 +64,10 @@ export const MAX_ORDERS_PER_HOUR = 10;
 export const QUEUE_MINUTES_PER_ORDER = 5;
 /** Minutos de la ventana que se promete con la cocina vacía: [desde, hasta]. */
 export const ESTIMATED_DELIVERY_RANGE: [number, number] = [25, 40];
+/** Rappi y PedidosYa cobran el precio de la web más este recargo (dueño, 2026-10-09; confirmado el
+ *  2026-10-16: «todos cobran más en Rappi y PedidosYa que en sus locales»). Las apps no tienen API:
+ *  el dueño pega en su portal lo que calcula `npm run hechos` (docs/hechos/CARTA.md). */
+export const RECARGO_APPS = 0.10;
 export const NOTE_ALERT_WORDS = ["alergi", "alérgi", "intoleran", "celiac", "celíac", "gluten", "lactosa", "diabet"];
 
 // ── Envío ──────────────────────────────────────────────────────────────────────────

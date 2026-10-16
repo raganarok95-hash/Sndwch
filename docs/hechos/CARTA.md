@@ -8,32 +8,32 @@ Todo en soles. 15CM y 30CM son los dos tamaños. «Doble» es lo que suma pedir 
 ## Signatures (6 en la carta pública)
 
 ### Philly Cheesesteak ★ (la estrella: la que más deja por unidad)
-- **Precio:** 15CM S/22.90 · 30CM S/33.90 · doble proteína +S/7 / +S/13.90
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/7 / +S/13.90
 - **Receta:** pan Classic // White · Res // Laminada · vegetales: Cebolla // Salteada, Pimiento // Verde · salsas: — · queso: Cheddar
 - **Cómo se vende:** El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. Tan jugoso que no lleva salsa. Es el que pides cuando el hambre va en serio.
 
 ### Meatball Marinara
-- **Precio:** 15CM S/21.90 · 30CM S/32.90 · doble proteína +S/6.90 / +S/13.90
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/6.90 / +S/13.90
 - **Receta:** pan Classic // White · Albóndiga // Marinara · vegetales: Tomate // Fresco, Cebolla // Morada juliana · salsas: Oil & Vinegar // Classic · queso: Americano
 - **Cómo se vende:** Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. Caliente, contundente, de los que se comen con las dos manos. Para la noche en que ya decidiste no cocinar.
 
 ### Turkey
-- **Precio:** 15CM S/23.90 · 30CM S/34.90 · doble proteína +S/9 / +S/17
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/9 / +S/17
 - **Receta:** pan Classic // White · Pavo // Horneado · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: no lleva
 - **Cómo se vende:** Pavo horneado en lonjas finas con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. Llena sin pesar: el almuerzo que no te tumba la tarde.
 
 ### Tuna Melt
-- **Precio:** 15CM S/22.90 · 30CM S/33.90 · doble proteína +S/10.90 / +S/21.90
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/10.90 / +S/21.90
 - **Receta:** pan Classic // White · Atún // House · vegetales: — · salsas: — · queso: Cheddar
 - **Cómo se vende:** Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco. Cremoso, caliente y con todo el sabor del clásico americano.
 
 ### Italian Hoagie
-- **Precio:** 15CM S/23.90 · 30CM S/34.90 · doble proteína +S/9.90 / +S/19.90
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/9.90 / +S/19.90
 - **Receta:** pan Classic // White · Embutido // Italiano · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: Americano
 - **Cómo se vende:** Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. El sándwich de deli de toda la vida: cada capa suma sabor y ninguna sobra. Para cuando quieres de todo en un solo pan.
 
 ### Classic Tuna
-- **Precio:** 15CM S/20.90 · 30CM S/31.90 · doble proteína +S/10.90 / +S/21.90
+- **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/10.90 / +S/21.90
 - **Receta:** pan Classic // White · Atún // House · vegetales: — · salsas: — · queso: no lleva
 - **Cómo se vende:** Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Simple y bien hecho: no lleva nada suelto, así que se come con una mano, en el escritorio o en camino.
 
@@ -52,10 +52,10 @@ El precio lo pone la proteína (más el recargo del pan, si tiene). Vegetales y 
 
 | proteína | 15CM | 30CM | doble 15 | doble 30 | cómo es |
 |---|---|---|---|---|---|
-| Atún // House | S/22.90 | S/33.90 | +S/10.90 | +S/21.90 | En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca. |
-| Albóndiga // Marinara | S/21.90 | S/32.90 | +S/6.90 | +S/13.90 | Albóndigas chicas hechas acá, cocidas dentro de su propia marinara. |
-| Pavo // Horneado | S/23.90 | S/34.90 | +S/9 | +S/17 | Lonjas de un milímetro puestas en pliegues, laminadas el mismo día. |
-| Res // Laminada | S/22.90 | S/33.90 | +S/7 | +S/13.90 | Laminada fina y salteada al momento. |
+| Atún // House | S/19.90 | S/30.90 | +S/10.90 | +S/21.90 | En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca. |
+| Albóndiga // Marinara | S/19.90 | S/30.90 | +S/6.90 | +S/13.90 | Albóndigas chicas hechas acá, cocidas dentro de su propia marinara. |
+| Pavo // Horneado | S/19.90 | S/30.90 | +S/9 | +S/17 | Lonjas de un milímetro puestas en pliegues, laminadas el mismo día. |
+| Res // Laminada | S/19.90 | S/30.90 | +S/7 | +S/13.90 | Laminada fina y salteada al momento. |
 
 Proteínas que existen pero NO se eligen acá: Pollo // Cajun (solo menú secreto), Embutido // Italiano (solo dentro de su Signature).
 
@@ -82,6 +82,22 @@ Por cada par sándwich + bebida el pedido cuesta S/1 menos (el combo).
 | Bebida Gratis | 160 | Bebida a elección | S/6 |
 | Tamaño 30CM | 320 | Tu sándwich 15CM sube a 30CM gratis | S/8 |
 | Sándwich Gratis | 400 | Sándwich 15CM gratis — no aplica al menú secreto | el monto entero |
+
+## Para pegar en Rappi y PedidosYa
+
+Precio de app = el de la web + 10%. La descripción abre con el tamaño y la proteína
+real (el pan francés de la competencia no la dice: docs/MERCADO.md §6) y sigue con la primera
+frase de «Cómo se vende». Si en el portal redondeas, se anota en `docs/PENDIENTE_DEL_DUENO.md`
+(esta ficha no se edita a mano).
+
+| Signature | app 15CM | app 30CM | descripción |
+|---|---|---|---|
+| Philly Cheesesteak | S/21.89 | S/33.99 | 15 cm · 85 g de res laminada (30 cm: 170 g). El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. |
+| Meatball Marinara | S/21.89 | S/33.99 | 15 cm · 85 g de albóndiga marinara (30 cm: 170 g). Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. |
+| Turkey | S/21.89 | S/33.99 | 15 cm · 85 g de pavo horneado (30 cm: 170 g). Pavo horneado en lonjas finas con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. |
+| Tuna Melt | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco. |
+| Italian Hoagie | S/21.89 | S/33.99 | 15 cm · 85 g de embutido italiano (30 cm: 170 g). Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. |
+| Classic Tuna | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. |
 
 ## Comprobar contra la base (manda la base)
 
