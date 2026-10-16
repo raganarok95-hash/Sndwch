@@ -9,3 +9,8 @@
 - **2026-10-16 · No adivinar un precio.** El dueño pidió «verifica los precios» con una frase
   ambigua; se leyó «30CM a S/20» y corrigió: «interpretaste mal, nunca dije 30 cm a 20 soles».
   Regla: ante una frase sobre precios que admite dos lecturas, se pregunta antes de simular.
+- **2026-10-16 · No adivinar un precio; contar entero.** El dueño pidió «verifica los precios» y se
+  leyó «30CM a S/20»: «nunca dije 30 cm a 20 soles… la idea es el de 15 cm a 16–20 soles». Y
+  preguntó si el costo «es tan bajo ya contando empaquetado, etc.»: el costo de hacerlo se da con
+  cocina, empaque y gas, y aparte lo que se paga por venta (tarjeta, puntos, IGV) y al mes
+  (`docs/PRECIOS.md`). Regla: ante una frase sobre precios que admite dos lecturas, se pregunta.
