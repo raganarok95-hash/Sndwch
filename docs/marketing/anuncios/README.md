@@ -42,3 +42,24 @@ la que se sirve: ~85 g de proteína en un pan de 15 cm, una capa, sin desbordar.
 | `fotos/foto-oficina.jpg` | empty office table at lunchtime: five 15 cm subs fully wrapped in white paper (no filling shown), two plain brown delivery bags, a laptop, iced tea; no people; no logos |
 
 WICHO (`img/wicho2_celebra.png`) es el personaje real de la marca, puesto encima: no se genera.
+
+## El Turkey, regenerado (2026-10-16, Calidad; dueño: «Regenerar en Figma»)
+
+Calidad retuvo la foto del Turkey en la Puerta 1: el pan era una baguette enharinada de corteza
+gruesa y llega un pan blanco suave (Classic // White); además traía el logo de la laptop y una
+botella de agua. `fotos/foto-turkey-v3.jpg` (Figma, `gemini-3.1-flash-image`) corrige el pan, la
+laptop y la botella. Pedida así:
+
+> Realistic food photograph, natural midday window light. A single 15 cm submarine sandwich on a
+> SOFT WHITE SUB ROLL: pale golden thin soft crust, soft white crumb, smooth top, no flour dusting,
+> not a baguette, not crusty, not rustic, no seeds. Filling, single layer, moderate realistic
+> portion (about 85 g of turkey), not overstuffed: thin folded slices of roasted turkey breast,
+> crisp green lettuce, fresh red tomato slices, thin raw red onion rings, thin green bell pepper
+> strips, a light drizzle of oil and vinegar. NO cheese, NO cucumber, NO mayonnaise, NO herbs. […]
+> On the left edge, part of a closed plain silver laptop with a completely blank lid […] No people,
+> no hands, no bottles, no glasses, no salt or pepper shakers, no logos, no text, no alcohol.
+
+**Pendiente**: el sándwich quedó chico en el cuadro y de costado (el estilo pide la mitad a dos
+tercios, en tres cuartos). La segunda variante no salió: se acabaron los créditos de IA de Figma del
+día (vuelven a las 00:00 UTC). Se pide otra más cerca apenas vuelvan.
+
