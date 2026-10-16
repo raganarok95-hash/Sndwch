@@ -152,7 +152,8 @@ function BYO_MITADES(ops){
 // La foto a sangre ES la fila: es lo que de verdad decide el sándwich. Lo elegido se tiñe de
 // lila y lleva la marca al borde, como en la maqueta.
 function BYO_PROTEINA(pr){
-  var av=isAvail(pr.id),sel=prot===pr.id;
+  // Con 30CM elegido, una sola porción contada no alcanza (P53): se dice, no se rechaza al pagar.
+  var hay=isAvail(pr.id),av=hay&&alcanzanPorciones(pr.id,porcionesQueGasta(size||'15',false)),sel=prot===pr.id;
   var img=PROT_IMG[pr.id];
   var precio=size==='30'?pr.p30:pr.p15;
   return'<button type="button" class="wb'+(sel?' sel':'')+'" aria-pressed="'+(sel?'true':'false')+'" '
@@ -160,7 +161,7 @@ function BYO_PROTEINA(pr){
     +' aria-label="'+esc(pr.l+' '+pr.s)+'">'
     +'<div class="foto">'+(img?'<img src="'+img+'" alt="" aria-hidden="true" loading="lazy">':'')+'<div class="velo"></div>'
     +'<div class="txt"><div class="n">'+esc(pr.l)+'<s>'+esc(pr.s)+'</s></div>'
-    +'<div class="d">'+esc(av?pr.d:'Agotada hoy')+'</div>'
+    +'<div class="d">'+esc(av?pr.d:hay?'Queda '+invQty[pr.id]+' hoy: solo alcanza para 15CM':'Agotada hoy')+'</div>'
     // «Quedan N hoy» junto al precio, que es lo que siempre se ve de la tarjeta.
     +'<div class="p">'+SOLES+pz(precio)+(av&&quedanHoy(pr.id)?' <i data-quedan="'+pr.id+'">· quedan '+quedanHoy(pr.id)+'</i>':'')+'</div></div></div>'
     +'</button>';
@@ -347,13 +348,13 @@ function sOBuild(){
     var dispo=PROTS.filter(function(x){return!x.vaultOnly&&!x.sigOnly;});
     var elegida=PROTS.find(function(x){return x.id===prot;});
     var puedeDoble=elegida&&!(size==='30'?elegida.noDouble30:elegida.noDouble);
-    var alcanzaDoble=!elegida||alcanzaParaDoble(elegida.id);
+    var alcanzaDoble=!elegida||alcanzaParaDoble(elegida.id,size||'15');
     if(!alcanzaDoble)doubleProt=false;
     var recargoDbl=elegida?(size==='30'?elegida.pDbl30:elegida.pDbl):0;
     cuerpo=BYO_PREGUNTA('¿Qué va adentro?','Lo que elijas acá es el sándwich.')
       +'<div class="rej">'+dispo.map(BYO_PROTEINA).join('')+'</div>'
       +(puedeDoble
-        ?'<div class="extra">'+BYO_PIEZA({t:'Doble de '+elegida.l,s:alcanzaDoble?'+'+SOLES_TXT+pz(recargoDbl):'Queda 1 hoy: no alcanza para doble',sel:doubleProt,off:!alcanzaDoble,
+        ?'<div class="extra">'+BYO_PIEZA({t:'Doble de '+elegida.l,s:alcanzaDoble?'+'+SOLES_TXT+pz(recargoDbl):(invQty[elegida.id]===1?'Queda 1':'Quedan '+invQty[elegida.id])+' hoy: no alcanza para doble',sel:doubleProt,off:!alcanzaDoble,
                      fn:"doubleProt=!doubleProt;render()"})+'</div>':'')
       +BYO_PUENTE()+BYO_SECRETO();
 

@@ -1287,3 +1287,12 @@ preguntar antes de pagar. El dueño dudó de que tres pasos antes de pagar no fr
 - **La foto del producto**: «Nunca inventar … fotos de producto» (CLAUDE.md, Restricciones
   permanentes). Los personajes y las escenas pueden ser generados; el sándwich que se vende es
   siempre la foto real.
+
+## El stock se cuenta en porciones de 15CM (2026-10-16)
+Operación encontró, al planear la apertura, que un 30CM descontaba una porción y gastaba dos: con
+«Abro con 4», dos 30CM se acababan la proteína y la web seguía vendiendo. El dueño: «Sí, que cuente
+doble». El 30CM es «el doble de pan y el doble de relleno» (lo dice el armador), así que cada insumo
+de un 30CM cuenta dos veces (`porTamano`, `api/catalog.ts`), y la pantalla no ofrece lo que no
+alcanza. No se toca la base: la foto `snapIngredients` de cada pedido guarda lo que reservó, así
+que cancelar un pedido viejo devuelve lo mismo que reservó. Prueba: `tests-api/stock-30cm.test.ts`.
+

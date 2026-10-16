@@ -1818,8 +1818,14 @@ function sOSig(){
   if(queso)filas.push(['Queso',nombreDe(CHEESE,queso)]);
   if(s.tops&&s.tops.length)filas.push(['Verdes',s.tops.map(function(t){return nombreDe(TOPS,t);}).filter(Boolean).join(' · ')]);
   filas.push(['Salsa',s.sauces&&s.sauces.length?s.sauces.map(function(t){return nombreDe(SAUCES,t);}).filter(Boolean).join(' · '):'Sin salsa']);
+  // Un 30CM gasta dos porciones de la proteína (P53): con una sola contada no se ofrece, y la doble
+  // solo si alcanza para el tamaño elegido. Lo que no alcanza se dice aquí, no al pagar.
+  var alcanza30=alcanzanPorciones(s.prot,porcionesQueGasta('30',false));
+  if(size==='30'&&!alcanza30)size='15';
+  if(doubleProt&&!alcanzaParaDoble(s.prot,size))doubleProt=false;
   var tam=function(sz){
     var p=itemUnitPrice({type:'sig',sigId:s.id,size:sz,doubleProt:false,extraSauce:false,cheese:cheese,qty:1});
+    if(sz==='30'&&!alcanza30)return'<button disabled aria-disabled="true">30CM<s>'+(invQty[s.prot]===1?'Queda 1 hoy':'Agotado hoy')+'</s></button>';
     return'<button class="'+(size===sz?'on':'')+'" aria-pressed="'+(size===sz)+'" onclick="size=\''+sz+'\';render()">'+sz+'CM<s>'+SOLES_TXT+pz(p)+'</s></button>';
   };
   // QUITAR (dueño 2026-09-30): cada vegetal, salsa y el queso fijo se pueden sacar; nada se
@@ -1831,7 +1837,7 @@ function sOSig(){
     +'</div></div>':'';
   var dbl=dblProtRef();
   var fila='';
-  if(dbl){
+  if(dbl&&alcanzaParaDoble(s.prot,size)){
     var recargo=dblFee(dbl,size);
     fila='<button class="dp" aria-pressed="'+(!!doubleProt)+'" onclick="doubleProt=!doubleProt;render()">'
       +'<span><em>Doble proteína</em><n>El doble de '+esc((dbl.l||'').toLowerCase())+'</n></span>'

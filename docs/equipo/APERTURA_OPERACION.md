@@ -18,8 +18,8 @@ el atún con mayonesa vencen rápido, así que bajan (el atún se mezcla de 2 en
 3 días: lo que sobra sale primero y cada noche se repone solo lo vendido.
 
 ## Lo que cuesta ventas (ver P53 y P54 en `docs/PENDIENTE_DEL_DUENO.md`)
-- **Un 30CM descuenta 1 porción y gasta 2** (`api/catalog.ts:608`: lo que se reserva no depende
-  del tamaño). Mientras no se arregle: restar 1 más a mano por cada 30CM.
+- ~~Un 30CM descuenta 1 porción y gasta 2~~ **Arreglado el 2026-10-16** (P53): el contador cuenta
+  porciones de 15CM y un 30CM descuenta 2 solo. «Abro con N» es en porciones de 15CM.
 - **Los pedidos de Rappi y PedidosYa no descuentan el stock de la web**: bajarlo a mano con cada
   pedido de las apps, o la web vende lo que ya no hay.
 - **La albóndiga se carga como tanda** (reponer por tanda): «Abro con N» no guarda la fecha y sin
