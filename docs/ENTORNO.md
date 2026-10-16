@@ -745,11 +745,17 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
 - **«Estado para abrir»** (`estado-apertura.yml`) se puede disparar desde la sesión con
   `mcp__github__actions_run_trigger` (`run_workflow`, `ref: main`) y leer su salida con
   `mcp__github__get_job_logs`: lista los secrets por NOMBRE, prueba CAPI y la publicación contra
-  Meta («Instagram NO, puede publicar: NO — …») y lo que recibe el cliente. Así se supo hoy que la
-  página no tiene Instagram vinculado.
+  Meta («Instagram NO, puede publicar: NO — …») y lo que recibe el cliente.
+- **«Sin Instagram» no prueba que falte el vínculo** (corregido el 2026-10-16): si el token no trae
+  `instagram_basic`, Meta esconde el campo `instagram_business_account` de la página y la respuesta
+  es igual a la de una página sin Instagram. Desde ese día la verificación trae también los permisos
+  del token (`debug_token`, con las cuentas a las que alcanza cada uno) y lo que dice la página con
+  cada token, y lo imprime «Estado para abrir». El primer resultado: token `SYSTEM_USER` sin
+  ningún permiso de Instagram ni `pages_manage_posts`.
 - **El MCP de Meta** ve el píxel por dentro: `ads_get_dataset_stats` (eventos por hora) y
   `ads_get_ad_account_pages` / `ads_get_ig_accounts` (si la cuenta de anuncios tiene página e
-  Instagram). Hoy: ninguna.
+  Instagram). `ads_get_ig_accounts` da `[]` también cuando la app no tiene `instagram_basic`:
+  tampoco prueba que falte el vínculo.
 - **Los robots contra el sitio real** (`tests-real/recorrido.spec.ts` y `scripts/sitio-real.mjs`)
   bloquean el píxel de Meta (`connect.facebook.net`, `facebook.com/tr`): sus visitas eran los únicos
   eventos del píxel en 7 días. Un robot nuevo contra sndwch.app tiene que hacer lo mismo.
