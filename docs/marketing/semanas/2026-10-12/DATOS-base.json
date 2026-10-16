@@ -1,0 +1,59 @@
+{
+ "semana": "2026-10-12",
+ "prueba": true,
+ "pedidos": 0,
+ "clientesNuevos": 0,
+ "clientesQueVuelven": 0,
+ "ticketPromedio": null,
+ "enGrupo": 0,
+ "conPedidoFijo": 0,
+ "porOrigen": [
+  {
+   "origen": "directo",
+   "visitas": 82,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  },
+  {
+   "origen": "meta-meatball",
+   "visitas": 10,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  },
+  {
+   "origen": "meta-carta",
+   "visitas": 10,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  },
+  {
+   "origen": "meta-philly",
+   "visitas": 10,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  },
+  {
+   "origen": "meta-oficina",
+   "visitas": 9,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  },
+  {
+   "origen": "meta-turkey",
+   "visitas": 8,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  }
+ ],
+ "porHora": {},
+ "porDia": {},
+ "gastoDePauta": {},
+ "costoPorClienteNuevoMeta": null,
+ "generado": "2026-10-16T05:34:50.523Z"
+}
