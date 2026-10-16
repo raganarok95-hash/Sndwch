@@ -5,10 +5,10 @@
  "formato": "anuncio de Meta: 4:5 feed (1080x1350) + 9:16 historias y reels (1080x1920)",
  "canal": "meta",
  "src": "meta-philly",
- "estado": "conceptos",
+ "estado": "maquetas",
  "foto_aprobada": "docs/marketing/anuncios/fotos/foto-philly.jpg",
  "puertas": {
-  "concepto": null,
+  "concepto": "arte: A · Detrás del pan (C, La ventana, también pasa; B no cabe en la foto). Ver ARTE.md",
   "arte": null,
   "calidad": null
  },
