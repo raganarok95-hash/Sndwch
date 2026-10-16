@@ -20,6 +20,10 @@ mkdirSync(OUT, { recursive: true });
 const ROOT = resolve('.');
 const img = (p) => 'file://' + resolve(ROOT, p);
 const precio = (n) => 'S/' + Number(n).toFixed(2);
+// Donde la foto de la app no es fiel a la receta, va la generada fiel (2026-10-16, dueño: «Sí, foto
+// fiel»): la del Turkey muestra pepino y la receta no lo lleva (docs/marketing/anuncios/README.md).
+const FOTO_FIEL = { SIG10: 'docs/marketing/anuncios/fotos/foto-turkey-v3-cerca.jpg' };
+const fotoDe = (s) => FOTO_FIEL[s.id] || s.foto;
 const ultimaFrase = (t) => t.split('.').map((x) => x.trim()).filter(Boolean).pop() + '.';
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -115,7 +119,7 @@ pieza('02-la-carta-1', pagina(`<div class="p sando"><div class="forro"></div>
   </div>
   <div class="pie"><div class="mono" style="font-size:24px;color:${C.oliva}">15CM · desliza →</div>${marca()}</div></div>`));
 D.sigs.forEach((s, i) => pieza(`02-la-carta-${i + 2}`, pagina(`<div class="p sando"><div class="forro"></div>
-  <div style="position:absolute;left:22px;right:0;top:0;height:760px;background:url('${img(s.foto)}') center/cover"></div>
+  <div style="position:absolute;left:22px;right:0;top:0;height:760px;background:url('${img(fotoDe(s))}') center/cover"></div>
   <div style="position:absolute;left:96px;right:84px;top:810px">
     <div class="disp" style="font-size:${s.nombre.length > 14 ? 96 : 120}px">${s.nombre}</div>
     <div class="voz" style="font-size:48px;line-height:1.1;margin-top:18px">${ultimaFrase(s.pitch)}</div>
@@ -173,7 +177,7 @@ pieza('04-arma-el-tuyo-2', pagina(`<div class="p wicho">${curvas(1080, 1350)}
 // 5 · PHILLY — producto: la foto real y su situación.
 const sigPorId = (id) => D.sigs.find((s) => s.id === id);
 // La versión vertical de la foto (la genera scripts/tratar_fotos.py) encuadra el relleno, no el pan.
-const fotoVertical = (s) => { const v = s.foto.replace(/\.jpg$/, '_v.webp'); return existsSync(resolve(ROOT, v)) ? v : s.foto; };
+const fotoVertical = (s) => { if (FOTO_FIEL[s.id]) return FOTO_FIEL[s.id]; const v = s.foto.replace(/\.jpg$/, '_v.webp'); return existsSync(resolve(ROOT, v)) ? v : s.foto; };
 const fotoSola = (archivo, s) => pieza(archivo, pagina(`<div class="p sando"><div class="forro"></div>
   <div style="position:absolute;left:22px;right:0;top:0;height:900px;background:url('${img(fotoVertical(s))}') center/cover"></div>
   <div style="position:absolute;left:96px;right:84px;top:950px">
