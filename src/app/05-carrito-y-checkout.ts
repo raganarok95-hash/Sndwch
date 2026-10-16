@@ -373,7 +373,10 @@ function sOCart(){
     +(!appliedReward
       ?(appliedPromo?en30('Código',appliedPromo.code,'Quitar','removePromoCode()'):en30('Código',codigoGuardado()||'¿Tienes uno?','Poner',"hoja30='codigo';hojaErr='';render()"))
       :'');
-  var t=payableTotal();
+  // Sin dirección, lo que se muestra es SOLO la comida: el pin del mapa ya puede existir (el
+  // cliente lo movió y cerró sin confirmar) y payableTotal() le sumaba el envío bajo el rótulo
+  // «Sin envío» y «+ envío» (visto el 2026-10-16: Philly S/22.90 → «Sin envío S/30.90»).
+  var t=dirOk?payableTotal():cartFinalTotal();
   var sinEnvio=!dirOk||envio===0;
   var h='<div class="m30 kraft fi"><button class="sal" onclick="go(\'o_home\')" aria-label="Seguir pidiendo">←</button>'
     +'<div class="tit"><em>Va saliendo</em><b>'+esc(cuantasCosas(cart.length)).replace(' ','<br>')+'</b></div>'
