@@ -241,6 +241,6 @@ la cuenta de anuncios sin página). El estado y el plan para pulirlo: `PULIR.md`
 | El correo del domingo con «de dónde vinieron» | **corre** |
 | El Estudio y el lunes, solos en la laptop | **hecho**; falta que lo instales una vez (`estudio/INSTALAR.md`) |
 | Respuestas automáticas de Meta y WhatsApp | guía lista (`RESPUESTAS_AUTOMATICAS.md`); las activas tú |
-| `DATOS.md` semanal (pedidos por hora y por momento) | **falta**: un workflow de GitHub, después de la primera semana con pedidos |
+| `DATOS.md` semanal (pedidos por hora y por momento) | **hecho** (2026-10-16): `datos-semana.yml` escribe `DATOS-base.json` cada domingo 23:15 y el Analista escribe `DATOS.md` (`docs/equipo/PLAN.md`) |
 | Montar y programar las historias (sin stickers, por API) | **hecho** (`historias.yml`); sale cuando estén el token de la página (P33) y las imágenes |
 | Hora exacta de publicación (`publicar_desde`) | **hecho**: GitHub atrasa 5–9 h y ya no importa |

@@ -1,0 +1,44 @@
+name: Datos de la semana
+
+# La semana en números para el equipo (docs/equipo/PLAN.md): pedidos por origen, clientes nuevos y
+# que vuelven, conversión por enlace, por hora y por día, gasto de pauta y costo por cliente.
+# Escribe docs/marketing/semanas/<lunes>/DATOS-base.json en main. Sin ventas totales, utilidad,
+# caja ni datos de clientes: el repo es público (scripts/datos/resumen.mjs).
+on:
+  schedule:
+    - cron: '15 4 * * 1'   # domingo 23:15 de Lima, después del cierre
+  workflow_dispatch:
+    inputs:
+      lunes:
+        description: 'AAAA-MM-DD del lunes de la semana a medir (vacío = la que acaba de terminar)'
+        required: false
+
+permissions:
+  contents: write
+
+concurrency: datos-semana
+
+jobs:
+  datos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Medir
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: node scripts/datos/semana.mjs ${{ github.event.inputs.lunes }}
+      - name: Subir a main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/marketing/semanas/*/DATOS-base.json
+          git diff --cached --quiet && { echo "sin cambios"; exit 0; }
+          git commit -q -m "Datos de la semana (automático)"
+          for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep $((i * 5)); done
+          exit 1

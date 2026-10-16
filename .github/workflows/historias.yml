@@ -36,12 +36,13 @@ jobs:
           if git ls-remote --exit-code origin estudio >/dev/null; then
             git fetch -q origin estudio
             if git merge-base --is-ancestor origin/estudio HEAD; then echo "estudio ya está en main"; exit 0; fi
-            # La laptop solo puede traer lo de la agencia: la semana y el Estudio. Nada de código.
+            # La laptop solo puede traer lo de la agencia: la semana, el Estudio y lo aprendido por el
+            # equipo (2026-10-16: el lunes lo hacen los subagentes y anotan sus aprendizajes). Nada de código.
             # Se mira lo que la unión CAMBIARÍA en main, no `main...estudio`: la laptop une main a su
             # rama, y con varias bases comunes ese diff marcaba archivos idénticos en las dos ramas
             # (2026-10-15, corridas 12 y 13: las 3 primeras imágenes de Flow se quedaron fuera).
             git merge --no-ff --no-commit -q origin/estudio || { git merge --abort; echo "::error::la rama estudio no se une limpia a main"; exit 1; }
-            fuera=$(git diff --cached --name-only HEAD | grep -v -E '^docs/marketing/(estudio|semanas)/' || true)
+            fuera=$(git diff --cached --name-only HEAD | grep -v -E '^docs/marketing/(estudio|semanas|equipo/aprendizajes)/' || true)
             if [ -n "$fuera" ]; then git merge --abort; echo "::error::la rama estudio trae archivos fuera de la agencia: $fuera"; exit 1; fi
             git commit -q -m "Merge: la agencia y el Estudio"
             git push -q origin HEAD:main

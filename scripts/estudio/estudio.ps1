@@ -71,10 +71,13 @@ try {
   if (-not $hayClaude) { Anota 'no encuentro Claude Code: el ciclo del lunes no corre (pega otra vez la linea del instalador)' 'Red' }
 
   # 2 - Los lunes: el ciclo de la agencia (brief, historias y encargos de la semana que viene).
+  # Desde 2026-10-16 lo orquesta la skill agencia-semana con el equipo de subagentes
+  # (.claude/agents, docs/marketing/equipo/PLAN.md): por eso puede lanzar agentes (Agent) y
+  # buscar en la web (el Investigador). Sigue sin Bash ni git: el git lo hace este script.
   if ($hayClaude -and (Get-Date).DayOfWeek -eq 'Monday' -and (Get-Date).Hour -lt 12) {
     Anota 'lunes: ciclo de la agencia' 'Cyan'
     & $claude -p 'Lee scripts/estudio/LUNES.md y cumplelo al pie de la letra.' `
-      --allowedTools 'Read,Write,Edit,Glob,Grep' --max-turns 60 2>&1 | ForEach-Object { Anota $_ }
+      --allowedTools 'Read,Write,Edit,Glob,Grep,Agent,Task,Skill,WebSearch,WebFetch' --max-turns 80 2>&1 | ForEach-Object { Anota $_ }
     $hecho += 'agencia'
   }
 
