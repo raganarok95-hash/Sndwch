@@ -9,7 +9,9 @@ name: Vigía de la API
 # petición suelta. No escribe nada en la base.
 on:
   schedule:
-    - cron: '*/30 15-23,0-4 * * *'   # 10:00 a 23:30 de Lima (UTC-5)
+    # Minutos 13 y 43, no :00 y :30: GitHub atrasa o se salta los horarios en punto (2026-10-16, el
+    # Guardián: corrió 3 de 28 veces entre las 15:00 y las 04:30 UTC). De 10:13 a 23:43 de Lima.
+    - cron: '13,43 15-23,0-4 * * *'
   workflow_dispatch: {}
 
 jobs:

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Maqueta · Meatball · C «Ya está» · 4:5</title>
+<!-- Maqueta de la Puerta 1 (Director de arte, 2026-10-16). C · 4:5: la foto entera.
+     Se rinde con scripts/piezas/maqueta.mjs (las fuentes salen de FUENTES_CSS). El nombre del
+     producto en la pieza final sale de la carta (scripts/piezas/datos.ts), no se escribe a mano. -->
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1350px;overflow:hidden;background:#1E2B22}
+body{-webkit-font-smoothing:antialiased}
+.lienzo{position:relative;width:1080px;height:1350px;overflow:hidden;background:#1E2B22}
+.c{position:absolute}
+img.f{position:absolute;display:block;max-width:none}
+.disp{font-family:'Anton',sans-serif;font-weight:400;text-transform:uppercase;color:#EFE6D4;white-space:nowrap}
+.voz{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#EFE6D4;white-space:nowrap}
+.mono{font-family:'IBM Plex Mono',monospace;font-weight:600;color:#EFE6D4;letter-spacing:.06em;white-space:nowrap}
+/* La marca: la regla .wm-mark de CLAUDE.md, como el compositor (scripts/piezas/anuncios.mjs). */
+.wm{font:800 46px/1 'Archivo',sans-serif;display:inline-flex;align-items:center;letter-spacing:.01em;color:#EFE6D4}
+.mk{display:inline-flex;gap:.16em;margin:0 .1em}.mk i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
+.mk i:first-child{background:#CBA258}.mk i:last-child{background:#8CC8EC}
+/* El tachado de A: la frase al 50% del papel y una raya recta en papel pleno, del grueso del trazo de
+   la Anton (0.17em), a media altura de las mayúsculas, del borde de la H al punto. Ni más larga ni
+   inclinada: es SANDO que corrige, no WICHO que garabatea. */
+.tachada{position:relative;display:inline-block;line-height:1;color:rgba(239,230,212,.5)}
+.tachada::after{content:"";position:absolute;left:.03em;right:.03em;top:.41em;height:.17em;background:#EFE6D4}
+</style>
+</head><body><div class="lienzo">
+  <!-- Fondo de seguridad: la misma foto difuminada (como el compositor). -->
+  <img class="f" src="../../../anuncios/fotos/foto-meatball.jpg" style="left:0;top:0;width:1080px;height:1350px;object-fit:cover;filter:blur(30px) brightness(.45);transform:scale(1.15)">
+  <!-- La foto aprobada, sin tocar. -->
+  <img class="f" src="../../../anuncios/fotos/foto-meatball.jpg" style="left:-4px;top:0px;width:1088px;height:1351px;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 100%)">
+  <!-- APROXIMADO · el limón del vaso borrado: un parche de la misma bebida (de más abajo) encima de la
+       rodaja. En la final lo borra el Productor con el modelo; Calidad decide. -->
+  <div class="c" style="left:856.5517241379309px;top:293.10344827586204px;width:185.24137931034483px;height:114.89655172413792px;background:url('../../../anuncios/fotos/foto-meatball.jpg') -860.5517241379309px -405.6551724137931px/1088px 1351px no-repeat;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 52% 50%,#000 66%,transparent 100%)"></div>
+  
+  <!-- El único velo: tinta, solo detrás del texto; llega a 0 en y 546, antes del borde del pan. -->
+  <div class="c" style="left:0;top:0px;width:100%;height:546px;background:linear-gradient(180deg,rgba(30,43,34,0.82) 0,rgba(30,43,34,0.7) 500px,rgba(30,43,34,0) 100%);-webkit-mask-image:linear-gradient(90deg,#000 680px,transparent 900px)"></div>
+  <div class="c disp" style="left:56px;top:44px;font-size:170px;line-height:.95">Hoy no<br>cocinas.</div>
+  <div class="c voz" style="left:56px;top:380px;font-size:56px">Ya está. — SANDO</div>
+  <div class="c mono" style="left:58px;top:462px;font-size:24px">MEATBALL MARINARA · PIDE EN SNDWCH.APP</div>
+  <div class="c" style="right:56px;bottom:52px"><span class="wm">SND<span class="mk"><i></i><i></i></span>WCH</span></div>
+</div></body></html>

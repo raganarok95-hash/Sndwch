@@ -1,0 +1,17 @@
+{
+ "id": "2026-10-anuncio-philly",
+ "pedido": "Dueño, 2026-10-16: «Mejora los anuncios, ya lo vi y no me gusta, mejóralo» · sobre la v2: «no necesitas ponerle la franja naranja, seamos más creativos, pero la idea de cada uno sí está bien» · «Las imágenes de los sándwich estaban bien, la franja era lo disonante».",
+ "producto": "Philly Cheesesteak",
+ "formato": "anuncio de Meta: 4:5 feed (1080x1350) + 9:16 historias y reels (1080x1920)",
+ "canal": "meta",
+ "src": "meta-philly",
+ "estado": "maquetas",
+ "foto_aprobada": "docs/marketing/anuncios/fotos/foto-philly.jpg",
+ "puertas": {
+  "concepto": "arte: A · Detrás del pan (C, La ventana, también pasa; B no cabe en la foto). Ver ARTE.md · calidad: pasa (A y C; ver CALIDAD.md)",
+  "arte": null,
+  "calidad": null
+ },
+ "concepto_elegido": "La idea aprobada por el dueño: «Hambre en serio.» Lo que se rehace es la ejecución, sin la franja y más creativa.",
+ "anterior": "docs/marketing/anuncios/philly-feed.jpg y philly-vertical.jpg (v2, con la franja: no aprobada)"
+}

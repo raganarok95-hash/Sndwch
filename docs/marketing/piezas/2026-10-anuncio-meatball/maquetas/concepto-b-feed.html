@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Maqueta · Meatball · B «Detrás del pan» · 4:5</title>
+<!-- Maqueta de la Puerta 1 (Director de arte, 2026-10-16). B · 4:5: la foto entera; el pan recortado tapa el pie de «COCINAS.».
+     Se rinde con scripts/piezas/maqueta.mjs (las fuentes salen de FUENTES_CSS). El nombre del
+     producto en la pieza final sale de la carta (scripts/piezas/datos.ts), no se escribe a mano. -->
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1350px;overflow:hidden;background:#1E2B22}
+body{-webkit-font-smoothing:antialiased}
+.lienzo{position:relative;width:1080px;height:1350px;overflow:hidden;background:#1E2B22}
+.c{position:absolute}
+img.f{position:absolute;display:block;max-width:none}
+.disp{font-family:'Anton',sans-serif;font-weight:400;text-transform:uppercase;color:#EFE6D4;white-space:nowrap}
+.voz{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#EFE6D4;white-space:nowrap}
+.mono{font-family:'IBM Plex Mono',monospace;font-weight:600;color:#EFE6D4;letter-spacing:.06em;white-space:nowrap}
+/* La marca: la regla .wm-mark de CLAUDE.md, como el compositor (scripts/piezas/anuncios.mjs). */
+.wm{font:800 46px/1 'Archivo',sans-serif;display:inline-flex;align-items:center;letter-spacing:.01em;color:#EFE6D4}
+.mk{display:inline-flex;gap:.16em;margin:0 .1em}.mk i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
+.mk i:first-child{background:#CBA258}.mk i:last-child{background:#8CC8EC}
+/* El tachado de A: la frase al 50% del papel y una raya recta en papel pleno, del grueso del trazo de
+   la Anton (0.17em), a media altura de las mayúsculas, del borde de la H al punto. Ni más larga ni
+   inclinada: es SANDO que corrige, no WICHO que garabatea. */
+.tachada{position:relative;display:inline-block;line-height:1;color:rgba(239,230,212,.5)}
+.tachada::after{content:"";position:absolute;left:.03em;right:.03em;top:.41em;height:.17em;background:#EFE6D4}
+</style>
+</head><body><div class="lienzo">
+  <!-- Fondo de seguridad: la misma foto difuminada (como el compositor). -->
+  <img class="f" src="../../../anuncios/fotos/foto-meatball.jpg" style="left:0;top:0;width:1080px;height:1350px;object-fit:cover;filter:blur(30px) brightness(.45);transform:scale(1.15)">
+  <!-- La foto aprobada, sin tocar. -->
+  <img class="f" src="../../../anuncios/fotos/foto-meatball.jpg" style="left:-4px;top:0px;width:1088px;height:1351px;-webkit-mask-image:linear-gradient(180deg,#000 0,#000 100%)">
+  <!-- APROXIMADO · el limón del vaso borrado: un parche de la misma bebida (de más abajo) encima de la
+       rodaja. En la final lo borra el Productor con el modelo; Calidad decide. -->
+  <div class="c" style="left:856.5517241379309px;top:293.10344827586204px;width:185.24137931034483px;height:114.89655172413792px;background:url('../../../anuncios/fotos/foto-meatball.jpg') -860.5517241379309px -405.6551724137931px/1088px 1351px no-repeat;-webkit-mask-image:radial-gradient(ellipse 50% 50% at 52% 50%,#000 66%,transparent 100%)"></div>
+  
+  <!-- El único velo: tinta, solo detrás del texto, se apaga antes del pan. -->
+  <div class="c" style="inset:0;background:radial-gradient(ellipse 780px 430px at 300px 340px,rgba(30,43,34,0.82) 0%,rgba(30,43,34,0.64) 55%,rgba(30,43,34,0.2) 85%,rgba(30,43,34,0) 100%)"></div>
+  <div class="c disp" style="left:56px;top:238px;font-size:190px;line-height:.97">Hoy no<br>cocinas.</div>
+  
+  <!-- APROXIMADO · «Detrás del pan»: la misma foto, recortada con el contorno del sándwich medido a mano
+       (clip-path), encima del titular. En la final es una máscara limpia del borde del pan. -->
+  <img class="f" src="../../../anuncios/fotos/foto-meatball.jpg" style="left:-4px;top:0px;width:1088px;height:1351px;clip-path:polygon(24.35% 43.66%,25.22% 42.53%,27.16% 41.75%,30.17% 41.41%,34.48% 41.15%,38.79% 41.23%,43.10% 41.67%,47.41% 42.53%,51.72% 43.58%,56.03% 44.88%,60.34% 46.18%,64.66% 47.74%,67.89% 49.22%,71.12% 51.13%,73.81% 53.13%,75.97% 55.30%,77.59% 57.73%,78.56% 60.07%,78.88% 62.07%,78.45% 64.24%,77.16% 65.80%,75.97% 67.27%,76.08% 69.44%,75.75% 72.05%,74.89% 73.78%,72.74% 75.17%,68.97% 75.69%,64.66% 75.69%,60.34% 75.52%,53.88% 74.83%,48.49% 74.05%,43.10% 73.18%,37.72% 72.05%,32.33% 70.75%,26.94% 69.18%,22.63% 67.71%,18.86% 65.97%,16.16% 64.06%,14.87% 61.81%,14.44% 59.46%,14.87% 57.29%,15.95% 55.99%,17.78% 54.86%,18.53% 52.95%,19.18% 51.91%,20.26% 50.52%,21.55% 49.74%,23.17% 49.13%,24.46% 48.26%,24.57% 47.05%,24.25% 45.83%,24.14% 44.62%)">
+  <div class="c" style="right:64px;top:48px;text-align:right"><span class="wm">SND<span class="mk"><i></i><i></i></span>WCH</span><div class="mono" style="font-size:22px;margin-top:14px">PIDE EN SNDWCH.APP</div></div>
+  <div class="c voz" style="left:56px;top:1250px;font-size:40px">Meatball Marinara. Albóndigas cocidas en su propia marinara.</div>
+</div></body></html>

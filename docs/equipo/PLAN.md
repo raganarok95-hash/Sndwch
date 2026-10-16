@@ -98,11 +98,21 @@ corre solo no se rehace con un agente (más caro y menos confiable):
    vigías corren cada 30 minutos) y las imágenes de los anuncios ya no se le podrían pasar a Meta
    por su URL pública. Por eso lo dejé público y sin cifras.
 
-## 7 · Costo
+## 7 · Costo (medido el 2026-10-16)
 
-Cada especialista empieza de cero y lee solo su oficio. A la semana: 14 revisiones de arte (salen
-en un minuto si no hay nada), 7 mañanas (3 especialistas cada una), 1 domingo (6), 1 lunes (~9) y
-las piezas que pidas. Opus solo para estrategia, creatividad, arte, pauta y carta.
+Cada especialista empieza de cero y lee su oficio y sus archivos. **Medido en la primera corrida**:
+un especialista gasta entre 120 mil y 235 mil tokens por encargo (Estratega 123 mil, Creativo 234
+mil, Redactor 192 mil, Guardián 174 mil, Operación 200 mil). El recorrido de los tres anuncios hasta
+las maquetas, con tres Directores de arte en paralelo, **tocó el límite de uso de la sesión** (se
+reinició a las pocas horas y siguieron donde estaban).
+
+Lo que eso deja como regla:
+- **Pocos a la vez**: máximo 2 o 3 especialistas en paralelo; el resto, en fila.
+- **Las tareas programadas, cortas**: `/buenos-dias` con 3 especialistas en Sonnet; las revisiones
+  de arte terminan en un minuto si no hay nada que revisar.
+- **Opus solo donde decide**: estrategia, creatividad, arte, pauta y carta.
+- A la semana, lo programado: 14 revisiones de arte (casi siempre vacías), 7 mañanas, 1 domingo y
+  1 lunes, más las piezas que pidas.
 
 ## 8 · Lo que sigue (ideas que suman, para decidir con datos)
 

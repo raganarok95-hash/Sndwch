@@ -38,7 +38,8 @@ salta a la maqueta (paso 4) con esa idea.
 | 8 | `calidad` | `CALIDAD.md` | **3 · calidad** |
 | 9 | `media-buyer` | el anuncio en Meta, **en pausa** | el dueño lo prende |
 
-- 4 y 5 pueden ir en paralelo (los dos leen lo mismo).
+- 4 y 5 pueden ir en paralelo (los dos leen lo mismo). **Nunca más de 3 especialistas a la vez**:
+  cada uno gasta 120–235 mil tokens y en paralelo tocan el límite de uso (2026-10-16).
 - **Si la pieza es un video**, el paso 6 es del `editor-video` (con los clips reales del dueño), no
   del Productor.
 - **Antes del paso 1**, mira `docs/marketing/piezas/` y los aprendizajes: si ya existe una pieza
