@@ -40,6 +40,8 @@ if (hay.has('META_CAPI_TOKEN')) {
       console.log(pub.token
         ? `${pub.puedePublicar ? '✓' : '✗'} Publicar probado contra Meta: página ${pub.pagina || '?'}, Instagram ${pub.instagram || 'NO'}, puede publicar: ${pub.puedePublicar ? 'sí' : 'NO'}${pub.detalle ? ` — ${pub.detalle}` : ''}`
         : '✗ Publicar: falta META_PAGE_ACCESS_TOKEN');
+      if (pub.permisos) console.log(`  · permisos del token: ${pub.permisos}`);
+      if (pub.vinculo) console.log(`  · lo que dice la página: ${pub.vinculo}`);
       for (const [id, c] of Object.entries(v.candidatos || {})) {
         console.log(`  · el token contra el conjunto ${id}: ${c.puedeEscribirAlPixel ? 'SÍ puede escribir' : c.puedeEscribirAlPixel === false ? 'no tiene permiso' : '?'}${c.detalle ? ` — ${c.detalle.slice(0, 120)}` : ''}`);
       }
