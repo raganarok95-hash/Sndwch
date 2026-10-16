@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<!--
+  Maqueta · Puerta 1 · 2026-10-anuncio-turkey · Concepto C «Lo que lleva» · 9:16 (1080x1920)
+  Director de arte, 2026-10-16. Foto aprobada por ruta relativa. Sin velo, sin franja, sin precio.
+  Textos: CONCEPTOS.md (titular aprobado, literal; la itálica de «Cómo se vende», CARTA.md).
+  La foto a lo ancho, arriba en y 100. Texto solo entre y 269 y 1248.
+-->
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#1E2B22}
+body{-webkit-font-smoothing:antialiased}
+.p{position:relative;width:1080px;height:1920px;overflow:hidden}
+/* La foto aprobada en su proporción real (928x1152). Los parches van en % de la foto. */
+.foto{position:absolute;background:url('../../../anuncios/fotos/foto-turkey.jpg') 0 0/100% 100% no-repeat}
+/* APROXIMADO: el logo de la laptop y la botella se tapan con el color de alrededor.
+   En el final se BORRAN de una copia de la foto (el sándwich no se toca). */
+.tapa-logo{position:absolute;left:0;top:25.6%;width:9.6%;height:4.6%;background:linear-gradient(90deg,rgb(149,162,168),rgb(160,173,179) 55%,rgb(166,179,185));-webkit-mask-image:radial-gradient(closest-side,#000 62%,transparent)}
+.tapa-botella{position:absolute;left:91.6%;top:0;width:8.4%;height:34.4%;background:linear-gradient(180deg,rgb(205,213,214) 0%,rgb(223,227,228) 7.5%,rgb(246,247,247) 22.5%,rgb(247,248,248) 31%,rgb(206,208,208) 37.5%,rgb(200,196,188) 45%,rgb(214,209,201) 57.5%,rgb(240,240,240) 62%,rgb(239,239,239) 85%,rgb(224,222,219) 92%,rgb(228,226,225) 100%);-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 38%)}
+/* APROXIMADO (solo 9:16): el fondo extendido es la misma foto difuminada, como el compositor.
+   En el final, el Productor extiende la mesa hacia abajo (y un poco de pared arriba): solo fondo. */
+.fondo{position:absolute;left:-90px;top:-90px;right:-90px;bottom:-90px;background:url('../../../anuncios/fotos/foto-turkey.jpg') center/cover no-repeat;filter:blur(38px)}
+/* Las tres voces, en tinta, sin velo. */
+.disp{position:absolute;font-family:Anton,sans-serif;font-weight:400;text-transform:uppercase;line-height:.9;letter-spacing:-.005em;color:#1E2B22;white-space:nowrap}
+.voz{position:absolute;font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#1E2B22;white-space:nowrap}
+.mono{position:absolute;font-family:'IBM Plex Mono',monospace;font-weight:600;letter-spacing:.08em;color:#1E2B22;white-space:nowrap}
+/* La marca: .wm-mark de CLAUDE.md, el // dorado y celeste (el único lugar de esos colores). */
+.wm{position:absolute;font:800 44px/1 Archivo,sans-serif;display:inline-flex;align-items:center;letter-spacing:.01em;color:#1E2B22;white-space:nowrap}
+.mk{display:inline-flex;gap:.16em;margin:0 .1em}
+.mk i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
+.mk i:first-child{background:#CBA258}.mk i:last-child{background:#8CC8EC}
+/* C: la línea que señala un ingrediente (2 px, tinta). */
+.linea{position:absolute;width:2px;background:#1E2B22}
+</style></head>
+<body><div class="p">
+  <div class="fondo"></div>
+  <div class="foto" style="left:0;top:100px;width:1080px;height:1340.7px;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 120px,#000 calc(100% - 220px),transparent 100%)"><div class="tapa-logo"></div><div class="tapa-botella"></div></div>
+
+  <div class="wm" style="right:56px;top:280px">SND<span class="mk"><i></i><i></i></span>WCH</div>
+  <div class="mono" style="right:58px;top:338px;font-size:22px">PIDE EN SNDWCH.APP</div>
+
+  <div class="disp" style="left:52px;top:276px;font-size:104px">El almuerzo<br>que no te tumba<br>la tarde.</div>
+  <div class="voz" style="left:58px;top:574px;font-size:40px">Turkey. Llena sin pesar.</div>
+
+  <div class="linea" style="left:410px;top:942px;height:256px"></div>
+  <div class="mono" style="left:409px;top:1204px;font-size:20px;letter-spacing:.06em">PAVO // HORNEADO</div>
+  <div class="linea" style="left:618px;top:939px;height:210px"></div>
+  <div class="mono" style="left:617px;top:1155px;font-size:20px;letter-spacing:.06em">TOMATE // FRESCO</div>
+  <div class="linea" style="left:797px;top:892px;height:207px"></div>
+  <div class="mono" style="left:796px;top:1105px;font-size:20px;letter-spacing:.06em">LECHUGA // FRESCA</div>
+</div></body></html>
