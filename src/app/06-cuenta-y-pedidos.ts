@@ -564,7 +564,7 @@ function doLogout(){
   searchResults=null;searchTruncated=false;auditLog=null;
   ratingsList=null;ratingsOnlyConsented=false;prepListData=null;timeReportData=null;problemAddressesData=null;marketingContentData=null;
   rtConsent=false;justRatedRef=null;
-  promoCodesData=null;pcCode='';pcType='percent';pcValue='';pcMaxUses='';pcMinOrder='';pcValidUntil='';pcCampaignTag='';pcMsg='';campaignPerfData=null;
+  embData=null;embMsg='';promoCodesData=null;pcCode='';pcType='percent';pcValue='';pcMaxUses='';pcMinOrder='';pcValidUntil='';pcCampaignTag='';pcMsg='';campaignPerfData=null;
   calendarData=null;calDate='';calChannel='instagram';calTitle='';calCaption='';calWhatsapp='';calPhoto='';calTag='';calMsg='';waitlistData=null;
   calImageUploadingId=null;calPublishingId=null;
   adminOrders=[];bulkSelected={};focusIdx=0;focusRef='';

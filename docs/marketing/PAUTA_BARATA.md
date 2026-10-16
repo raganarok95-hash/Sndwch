@@ -158,3 +158,26 @@ Instagram → Configuración → Herramientas para empresas → **Preguntas frec
 - **¿Qué hay hoy?** → «La carta con precios, al día: sndwch.app/?src=ig-dm . Abrimos de martes a
   domingo.»
 Enlace de la bio: `sndwch.app/?src=ig-bio`.
+
+## La prueba de apertura, armada (2026-10-16, dueño: «3 aprobado», «hazlo lo mejor que puedas»)
+
+Verificado contra Meta hoy: la cuenta `1488138326460689` **ya tiene método de pago** y el usuario
+del MCP **puede crear anuncios con la página «Snd//wch»** (`1188463894356831`). **No hace falta el
+Instagram vinculado para anunciar en Instagram**: la página es la «voz» del anuncio (Meta, [Run ads
+on Instagram with your Facebook Page](https://www.facebook.com/business/help/272348126756182)); las
+vistas previas de Instagram Feed, Historias y Reels salen bien. El Instagram vinculado sigue
+haciendo falta para **publicar** (lo orgánico) y para que el anuncio salga con @snd__wch.
+
+- Campaña `120252427032810076` → **«SNDWCH · Prueba de apertura (S/700)»**: presupuesto total
+  S/700, del **martes 20-oct 11:00 al lunes 16-nov 23:00** (la prueba se movió al inicio: dueño,
+  2026-10-15). El conjunto `120252427034590076` con las mismas fechas, lo demás igual.
+- 3 anuncios, cada uno con su enlace para saber qué pieza trae **pedidos**:
+  - `120252544924290076` **Philly** (`05-philly.jpg`) → `sndwch.app/?src=meta-philly`
+  - `120252544924810076` **Oficina** (`09-para-la-oficina.jpg`) → `sndwch.app/?grupo=1&src=meta-oficina`
+  - `120252544925700076` **La carta** (carrusel de 7, `02-la-carta-*.jpg`) → `sndwch.app/?src=meta-carta`
+  Los textos son los de `docs/marketing/lanzamiento/TEXTOS.md` (salen de la carta), sin «enlace en
+  el perfil»; botón «Pedir ahora».
+- **Todo en pausa.** Falta un sí del dueño para dejarla programada (arranca sola el 20 a las 11:00;
+  se puede pausar en cualquier momento). El video del día entra como 4.ª pieza cuando el Revisor lo
+  apruebe.
+- El 17-nov: costo por cliente = gasto ÷ clientes nuevos con origen `meta-*` (correo del domingo).

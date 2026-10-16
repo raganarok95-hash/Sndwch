@@ -7,7 +7,7 @@
 // Regenerar después de cada migración (con la herramienta de Supabase generate_typescript_types)
 // y actualizar la línea de abajo con la versión de la última migración aplicada.
 // `npm run check:tipos-base` falla si hay una migración más nueva que esta.
-// generado-contra-migracion: 20261015102041
+// generado-contra-migracion: 20261016002621
 export type Json =
   | string
   | number
@@ -577,6 +577,65 @@ export type Database = {
           deleted_at?: string
           dni?: string | null
           phone?: string
+        }
+        Relationships: []
+      }
+      embajador_pagos: {
+        Row: {
+          created_at: string
+          embajador_id: number
+          id: number
+          monto: number
+          pagado_por: string
+        }
+        Insert: {
+          created_at?: string
+          embajador_id: number
+          id?: never
+          monto: number
+          pagado_por: string
+        }
+        Update: {
+          created_at?: string
+          embajador_id?: number
+          id?: never
+          monto?: number
+          pagado_por?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "embajador_pagos_embajador_id_fkey"
+            columns: ["embajador_id"]
+            isOneToOne: false
+            referencedRelation: "embajadores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      embajadores: {
+        Row: {
+          activo: boolean
+          codigo: string
+          created_at: string
+          id: number
+          nombre: string
+          telefono: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          created_at?: string
+          id?: never
+          nombre: string
+          telefono: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          created_at?: string
+          id?: never
+          nombre?: string
+          telefono?: string
         }
         Relationships: []
       }

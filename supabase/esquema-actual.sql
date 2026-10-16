@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20261015102041
+-- foto-tomada-tras-migracion: 20261016002621
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -190,6 +190,23 @@ create table public.deleted_account_identities (
   phone text not null,
   dni text,
   deleted_at timestamp with time zone default now() not null
+);
+
+create table public.embajador_pagos (
+  id bigint generated always as identity not null,
+  embajador_id bigint not null,
+  monto numeric(10,2) not null,
+  pagado_por text not null,
+  created_at timestamp with time zone default now() not null
+);
+
+create table public.embajadores (
+  id bigint generated always as identity not null,
+  nombre text not null,
+  codigo text not null,
+  telefono text not null,
+  activo boolean default true not null,
+  created_at timestamp with time zone default now() not null
 );
 
 create table public.favorites (
@@ -654,6 +671,22 @@ alter table public.debug_logs add constraint debug_logs_pkey PRIMARY KEY (id);
 
 alter table public.deleted_account_identities add constraint deleted_account_identities_pkey PRIMARY KEY (phone);
 
+alter table public.embajador_pagos add constraint embajador_pagos_monto_check CHECK ((monto > (0)::numeric));
+
+alter table public.embajador_pagos add constraint embajador_pagos_pkey PRIMARY KEY (id);
+
+alter table public.embajadores add constraint embajadores_codigo_check CHECK ((codigo ~ '^[a-z0-9-]{2,30}$'::text));
+
+alter table public.embajadores add constraint embajadores_codigo_key UNIQUE (codigo);
+
+alter table public.embajadores add constraint embajadores_nombre_check CHECK (((length(btrim(nombre)) >= 2) AND (length(btrim(nombre)) <= 60)));
+
+alter table public.embajadores add constraint embajadores_pkey PRIMARY KEY (id);
+
+alter table public.embajadores add constraint embajadores_telefono_check CHECK ((telefono ~ '^9[0-9]{8}$'::text));
+
+alter table public.embajadores add constraint embajadores_telefono_key UNIQUE (telefono);
+
 alter table public.favorites add constraint favorites_pkey PRIMARY KEY (id);
 
 alter table public.group_order_items add constraint group_order_items_pkey PRIMARY KEY (id);
@@ -774,6 +807,8 @@ alter table public.content_uploads add constraint content_uploads_linked_calenda
 
 alter table public.credit_ledger add constraint credit_ledger_customer_phone_fkey FOREIGN KEY (customer_phone) REFERENCES customers(phone);
 
+alter table public.embajador_pagos add constraint embajador_pagos_embajador_id_fkey FOREIGN KEY (embajador_id) REFERENCES embajadores(id);
+
 alter table public.favorites add constraint favorites_customer_phone_fkey FOREIGN KEY (customer_phone) REFERENCES customers(phone);
 
 alter table public.group_order_items add constraint group_order_items_group_order_id_fkey FOREIGN KEY (group_order_id) REFERENCES group_orders(id) ON DELETE CASCADE;
@@ -809,6 +844,8 @@ CREATE UNIQUE INDEX customers_google_id_idx ON public.customers USING btree (goo
 CREATE INDEX customers_monthly_recap_ym_idx ON public.customers USING btree (monthly_recap_ym);
 
 CREATE INDEX deleted_account_identities_dni_idx ON public.deleted_account_identities USING btree (dni);
+
+CREATE INDEX embajador_pagos_embajador_idx ON public.embajador_pagos USING btree (embajador_id);
 
 CREATE INDEX group_order_items_group_order_id_idx ON public.group_order_items USING btree (group_order_id);
 
@@ -2379,6 +2416,10 @@ alter table public.debug_logs enable row level security;
 
 alter table public.deleted_account_identities enable row level security;
 
+alter table public.embajador_pagos enable row level security;
+
+alter table public.embajadores enable row level security;
+
 alter table public.favorites enable row level security;
 
 alter table public.group_order_items enable row level security;
@@ -2466,6 +2507,10 @@ grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on
 grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.debug_logs to service_role;
 
 grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.deleted_account_identities to service_role;
+
+grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.embajador_pagos to service_role;
+
+grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.embajadores to service_role;
 
 grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.favorites to service_role;
 
