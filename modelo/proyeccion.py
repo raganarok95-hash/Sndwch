@@ -102,6 +102,7 @@ TARJETA, CULQI = 0.30, 0.055   # [SUPUESTO] 30% paga con tarjeta; [MEDIDO] CULQI
 RECOMPENSAS = 0.014   # [DERIVADO] docs/hechos: las recompensas devuelven ~1.4% de lo gastado
 
 
+RAPPI_DESCUENTO_MES1 = 0.30   # [OFERTA de Rappi 2026-10-16] descuento obligatorio en la carta el mes 1
 SOBREPRECIO_APPS = 0.10   # [DECISIÓN del dueño 2026-10-09] la carta en Rappi y PedidosYa, 10% más cara
 
 
@@ -135,7 +136,7 @@ SUPUESTOS = {
     "red_compra":     (0.00, 0.10, "de las ~30 personas de tu red, qué parte pide (dueño: «probablemente ninguno»)"),
     # apps
     "rappi_dia":      (0.15, 1.00, "nuevos/día por Rappi en Trujillo, local nuevo y sin calificaciones (conservador; dueño: «sé realista»)"),
-    "rappi_comision": (0.20, 0.30, "comisión de Rappi desde el día 31 (el 1.er mes es 0%, acuerdo del dueño). Confírmala"),
+    "rappi_comision": (0.26, 0.26, "comisión de Rappi desde el mes 2: 26% [OFERTA de Rappi al dueño, 2026-10-16; falta saber si es + IGV]"),
     "pya_dia":        (0.10, 0.60, "nuevos/día por PedidosYa, desde el 17 de noviembre (alta pendiente). Conservador"),
     "pya_comision":   (0.22, 0.30, "comisión de PedidosYa. No hay cifra pública en Perú; en Argentina ~26%"),
     "app_a_propio":   (0.03, 0.08, "de los pedidos repetidos de las apps, cuántos pasan al canal propio sin QR"),
@@ -344,7 +345,10 @@ def correr(s, i, eco, sol=(), pauta_mes=0.0, si_cac_menor=None, ex=None):
         ped[c] *= escala
     ev30 = ev30 * escala
 
-    com_rappi = np.where(np.arange(T) < 30, 0.0, x["rappi_comision"])
+    # El mes 1 no es gratis: Rappi pide un 30% de descuento en toda la carta a cambio de 0% de
+    # comisión (oferta del 2026-10-16). Para lo que deja un pedido, ese descuento pesa como una
+    # comisión del 30% sobre el precio de la app.
+    com_rappi = np.where(np.arange(T) < 30, RAPPI_DESCUENTO_MES1, x["rappi_comision"])
     deja = (ped["propio"] * eco["propio"] + ped["rappi"] * (eco["app"] - com_rappi * eco["ticket_app"])
             + ped["pya"] * (eco["app"] - x["pya_comision"] * eco["ticket_app"])
             + ev30 * (eco["p30"] * (1 - TARJETA * CULQI - RECOMPENSAS) - eco["c30"] - ex.get("descuento_evento", 0.0)))

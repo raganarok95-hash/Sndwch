@@ -19,6 +19,20 @@ negocio, donde ajustamos, qué más hacemos».
 
 ## 1 · Rappi primero
 
+> **La oferta de Rappi (WhatsApp al dueño, 2026-10-16).** «Mes 1: 0% de comisión. Mes 2 en adelante:
+> 26%. Durante el primer mes debes aplicar un 30% de descuento en tu menú para aumentar la
+> visibilidad y captar nuevos clientes», más cobertura, visibilidad, soporte en la activación,
+> desprendibles de pago y envío gratis para RappiPro el primer mes.
+> - **El mes 1 no es gratis**: el 30% de descuento reemplaza a la comisión. Un 15CM deja S/10.26–11.97
+>   el mes 1 y S/11.22–13.02 desde el mes 2 (con el 26%; S/10.09–11.79 si es 26% + IGV). En la web,
+>   S/14.63–16.74. `modelo/proyeccion.py` ya lo cuenta así.
+> - **Lo bueno**: con el 30%, tu 15CM queda en Rappi a **S/16.09–18.40**, justo donde vende el mercado
+>   de Trujillo (Don Pacho S/18.90–19.90; `docs/MERCADO.md`). Es una **prueba de precio real y
+>   gratis**: cuántos pedidos trae a ~S/17 el mes 1 contra ~S/25 el mes 2 decide el precio con datos.
+> - Con el descuento empujando la visibilidad, **el anuncio dentro de Rappi del mes 1 sobra**: se
+>   deja para el mes 2, si los pedidos caen al quitar el descuento.
+> - Las preguntas antes de decir que sí: P55 en `docs/PENDIENTE_DEL_DUENO.md`.
+
 **Antes del anuncio, la vitrina.** Un anuncio manda gente a tu tienda en Rappi; si la tienda se ve
 pobre, se paga el clic y no hay pedido. Una sola vez, ~1 hora (tú, en el portal de aliados):
 
