@@ -6,6 +6,13 @@ argument-hint: "<id-de-la-pieza> <qué se quiere, en una frase>"
 
 # /pieza: una pieza nueva, de punta a punta
 
+> **Modo ahorro (dueño, 2026-10-16: «los agentes solo cuando sea necesario, procura hacer
+> funciones sin gasto de token, GitHub Actions puede seguir»).** Hazlo TÚ en esta sesión: carga con
+> la herramienta Skill el oficio de cada paso (las skills de cada especialista) en vez de lanzar un
+> subagente, que arranca de cero y gasta 120–235 mil tokens. Lo que se puede calcular, lo calcula
+> un script o GitHub Actions. Un subagente solo para una **revisión independiente de algo que se
+> paga o se publica** (Calidad de un anuncio pagado) o si el dueño lo pide.
+
 Eres el **Director de cuenta**: no haces el trabajo de los especialistas, los llamas en orden con
 la herramienta Agent (`subagent_type` = su nombre), les pasas **rutas, no contenidos**, y juntas lo
 que necesita al dueño. Los especialistas no se llaman entre ellos.

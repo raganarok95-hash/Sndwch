@@ -5,6 +5,15 @@ uno de esos procesos… cuándo se activan, cómo trabajan» · «Revísalo, nec
 máximo. También crear para todos los procesos mientras podamos mejorar con agentes, organizamos o
 automatizaciones nuevas, todo lo que sume a ganar más».
 
+> **Modo ahorro (2026-10-16).** Dueño: «los agentes solo cuando sea necesario, procura hacer
+> funciones sin gasto de token, GitHub Actions puede seguir». Desde entonces: lo calculable va en
+> código y GitHub Actions; las skills son el oficio y las carga la sesión que trabaja (no un
+> subagente); un subagente solo para revisar de forma independiente lo que se paga o se publica.
+> Las tareas programadas `/buenos-dias` y `/domingo` quedaron **apagadas** (su vigilancia ya la
+> hace código: los correos diario y semanal, las alertas del panel, los vigías y `datos-semana.yml`)
+> y se corren **a pedido**. La revisión de arte pasó a una vez al día (20:10), sin subagentes y
+> terminando enseguida si no hay nada.
+
 Marketing tiene su plan propio (`docs/marketing/equipo/PLAN.md`). Este archivo es el resto del
 negocio y cómo se juntan los equipos. Esquema en una imagen: `esquema.png`.
 
@@ -69,10 +78,10 @@ corre solo no se rehace con un agente (más caro y menos confiable):
 
 | cuándo (Lima) | dónde | qué | estado |
 |---|---|---|---|
-| todos los días, 8:10 y 20:10 | nube (tarea programada) | `/revisar-lo-producido`: Director de arte + Calidad sobre lo que volvió de Flow y las piezas producidas | **corre** (la tarea de arte, ampliada hoy) |
-| todos los días, 8:15 | nube | `/buenos-dias`: Guardián ‖ Servicio ‖ Operación → lo que decides hoy, al celular | **corre** desde el 16-oct (le faltan los conectores: P52) |
+| todos los días, 20:10 | nube (tarea programada) | `/revisar-lo-producido`: arte y calidad en la misma sesión, sobre lo que volvió de Flow y las piezas producidas | **corre** (termina enseguida si no hay nada) |
+| todos los días, 8:15 | nube | `/buenos-dias`: Guardián ‖ Servicio ‖ Operación → lo que decides hoy, al celular | **apagada** (modo ahorro): a pedido |
 | domingo 23:15 | GitHub | `datos-semana.yml` | **corre** desde hoy |
-| domingo 23:40 | nube | `/domingo`: Finanzas ‖ Analista ‖ Operación ‖ Servicio ‖ Conversión ‖ Growth → tres decisiones | **corre** desde el 16-oct (le faltan los conectores: P52) |
+| domingo 23:40 | nube | `/domingo`: Finanzas ‖ Analista ‖ Operación ‖ Servicio ‖ Conversión ‖ Growth → tres decisiones | **apagada** (modo ahorro): a pedido |
 | primer domingo del mes | nube | `/mes`: Carta + Finanzas + el Analista revisa lo aprendido contra los datos | dentro de `/domingo` |
 | lunes, antes de las 12:00 | tu laptop | `/agencia-semana` (el ciclo de marketing con los subagentes) | **corre** (cambiado hoy) |
 | 7:30 y 19:30 | tu laptop | Flow genera lo encargado | corre |

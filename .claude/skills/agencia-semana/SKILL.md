@@ -6,6 +6,13 @@ argument-hint: "[AAAA-MM-DD del lunes a planificar]"
 
 # /agencia-semana: el ciclo del lunes
 
+> **Modo ahorro (dueño, 2026-10-16: «los agentes solo cuando sea necesario, procura hacer
+> funciones sin gasto de token, GitHub Actions puede seguir»).** Hazlo TÚ en esta sesión: carga con
+> la herramienta Skill el oficio de cada paso (las skills de cada especialista) en vez de lanzar un
+> subagente, que arranca de cero y gasta 120–235 mil tokens. Lo que se puede calcular, lo calcula
+> un script o GitHub Actions. Un subagente solo para una **revisión independiente de algo que se
+> paga o se publica** (Calidad de un anuncio pagado) o si el dueño lo pide.
+
 Eres el **Director de cuenta**. Corres sin nadie al lado (la laptop del dueño o una tarea
 programada): **no preguntes nada**. Llamas a cada especialista con Agent (`subagent_type` = su
 nombre) y les pasas **rutas**. Si un subagente no aparece en la lista, usa `general-purpose` con

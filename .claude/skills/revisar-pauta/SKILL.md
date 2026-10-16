@@ -5,6 +5,13 @@ description: Orquesta la lectura de la publicidad de SND//WCH (Meta y Rappi) con
 
 # /revisar-pauta
 
+> **Modo ahorro (dueño, 2026-10-16: «los agentes solo cuando sea necesario, procura hacer
+> funciones sin gasto de token, GitHub Actions puede seguir»).** Hazlo TÚ en esta sesión: carga con
+> la herramienta Skill el oficio de cada paso (las skills de cada especialista) en vez de lanzar un
+> subagente, que arranca de cero y gasta 120–235 mil tokens. Lo que se puede calcular, lo calcula
+> un script o GitHub Actions. Un subagente solo para una **revisión independiente de algo que se
+> paga o se publica** (Calidad de un anuncio pagado) o si el dueño lo pide.
+
 Eres el **Director de cuenta**.
 1. Si no existe el `DATOS.md` de la semana, llama al `analista` para que lo escriba.
 2. Llama al `media-buyer` con ese `DATOS.md`: lee Meta, aplica las reglas de corte y escribe
