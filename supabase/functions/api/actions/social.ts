@@ -137,9 +137,9 @@ async function instagramDeLaPagina(pagina: { id: string; token: string }): Promi
 // la página tenga su Instagram profesional y que el token pueda publicar en él. El límite de
 // publicación de Instagram solo responde si el token trae `instagram_content_publish`: leerlo
 // prueba el permiso sin crear ningún contenedor. La usa verificar-meta (Estado para abrir).
-export type VerificacionPublicacion = { token: boolean; pagina: string | null; instagram: string | null; puedePublicar: boolean | null; detalle: string | null };
+export type VerificacionPublicacion = { token: boolean; pagina: string | null; instagram: string | null; puedePublicar: boolean | null; detalle: string | null; permisos: string | null; vinculo: string | null };
 export async function verificarPublicacion(): Promise<VerificacionPublicacion> {
-  const v: VerificacionPublicacion = { token: !!META_PAGE_ACCESS_TOKEN, pagina: null, instagram: null, puedePublicar: null, detalle: null };
+  const v: VerificacionPublicacion = { token: !!META_PAGE_ACCESS_TOKEN, pagina: null, instagram: null, puedePublicar: null, detalle: null, permisos: null, vinculo: null };
   if (!v.token) return v;
   try {
     const pagina = await paginaDelToken();
@@ -147,7 +147,14 @@ export async function verificarPublicacion(): Promise<VerificacionPublicacion> {
     const p = await metaGraphGet(pagina.id, { fields: "name,instagram_business_account{username}", access_token: pagina.token });
     v.pagina = `${p?.name || "?"} (${pagina.id})`;
     const ig = p?.instagram_business_account;
-    if (!ig?.id) { v.puedePublicar = false; v.detalle = "la página no tiene un Instagram profesional vinculado"; return v; }
+    if (!ig?.id) {
+      v.puedePublicar = false;
+      const d = await porQueNoSeVeElInstagram(pagina);
+      v.permisos = d.permisos;
+      v.vinculo = d.vinculo;
+      v.detalle = d.detalle;
+      return v;
+    }
     v.instagram = `@${ig.username || "?"} (${ig.id})`;
     await metaGraphGet(`${ig.id}/content_publishing_limit`, { fields: "quota_usage", access_token: pagina.token });
     v.puedePublicar = true;
@@ -156,6 +163,58 @@ export async function verificarPublicacion(): Promise<VerificacionPublicacion> {
     v.detalle = String(e?.message || e).slice(0, 220);
   }
   return v;
+}
+
+// Por qué la página no muestra su Instagram (2026-10-16). El dueño lo ve vinculado «en todos lados»
+// y la página dice que no: eso pasa igual si el token no tiene permiso para verlo. Se separan los
+// casos con lo que Meta dice del token (sus permisos y a qué cuentas alcanza cada uno) y de la
+// página, con el token de la página y con el del usuario del sistema. Nada de esto es secreto.
+async function porQueNoSeVeElInstagram(pagina: { id: string; token: string }): Promise<{ permisos: string | null; vinculo: string | null; detalle: string }> {
+  const token = META_PAGE_ACCESS_TOKEN!;
+  let permisos: string | null = null;
+  let scopes: string[] = [];
+  let alcance: Record<string, string[]> = {};
+  try {
+    const d = (await metaGraphGet("debug_token", { input_token: token, access_token: token }))?.data || {};
+    scopes = Array.isArray(d.scopes) ? d.scopes.map(String) : [];
+    for (const g of Array.isArray(d.granular_scopes) ? d.granular_scopes : []) {
+      if (Array.isArray(g?.target_ids)) alcance[String(g.scope)] = g.target_ids.map(String);
+    }
+    const utiles = scopes.filter((x) => /instagram|pages|business/.test(x));
+    permisos = `token ${d.type || "?"}: ` + (utiles.map((x) => alcance[x] ? `${x}[${alcance[x].join(",")}]` : x).join(" ") || "sin permisos de páginas ni de Instagram");
+  } catch (e: any) {
+    // debug_token pide a veces un token de la app; `me/permissions` sirve con el del usuario del sistema.
+    try {
+      const d = await metaGraphGet("me/permissions", { access_token: token });
+      scopes = (Array.isArray(d?.data) ? d.data : []).filter((x: any) => x?.status === "granted").map((x: any) => String(x.permission));
+      permisos = "token (me/permissions): " + (scopes.filter((x) => /instagram|pages|business/.test(x)).join(" ") || "sin permisos de páginas ni de Instagram");
+    } catch (e2: any) {
+      permisos = "no pude leer los permisos del token: " + String(e?.message || e).slice(0, 100) + " / " + String(e2?.message || e2).slice(0, 100);
+    }
+  }
+  const vistas: string[] = [];
+  for (const [quien, tok] of [["con el token de la página", pagina.token], ["con el token del usuario del sistema", token]] as const) {
+    try {
+      const p = await metaGraphGet(pagina.id, { fields: "instagram_business_account{username},connected_instagram_account{username}", access_token: tok });
+      const a = p?.instagram_business_account, b = p?.connected_instagram_account;
+      vistas.push(`${quien}: profesional ${a?.id ? `@${a.username || "?"} (${a.id})` : "no"}, conectada ${b?.id ? `@${b.username || "?"} (${b.id})` : "no"}`);
+    } catch (e: any) {
+      vistas.push(`${quien}: ${String(e?.message || e).slice(0, 100)}`);
+    }
+  }
+  const vinculo = vistas.join(" · ");
+  const faltan = ["instagram_basic", "instagram_content_publish"].filter((x) => !scopes.includes(x));
+  let detalle: string;
+  if (scopes.length && faltan.length) {
+    detalle = `el token no trae ${faltan.join(" ni ")}: no es que falte el vínculo, es que el token no puede ver ni publicar en Instagram. Hay que generarlo otra vez marcando esos permisos`;
+  } else if (scopes.length && !(alcance["instagram_basic"]?.length)) {
+    detalle = "el token trae los permisos de Instagram pero ninguna cuenta de Instagram asignada: hay que asignarle la cuenta al usuario del sistema y generar el token de nuevo";
+  } else if (/conectada @/.test(vinculo)) {
+    detalle = "la página tiene un Instagram conectado pero Meta no lo da como cuenta profesional para la API: hay que conectarlo desde la configuración de la página (no solo en el Centro de cuentas)";
+  } else {
+    detalle = "la página no tiene un Instagram profesional vinculado";
+  }
+  return { permisos, vinculo, detalle };
 }
 
 // Qué contenedores pide Instagram para una entrada: un Reel, una imagen o un CARRUSEL. El carrusel
