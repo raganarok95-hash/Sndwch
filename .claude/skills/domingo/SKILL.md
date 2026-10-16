@@ -5,6 +5,13 @@ description: El cierre de la semana de SND//WCH con todos los equipos (finanzas 
 
 # /domingo: la semana del negocio
 
+> **Modo ahorro (dueño, 2026-10-16: «los agentes solo cuando sea necesario, procura hacer
+> funciones sin gasto de token, GitHub Actions puede seguir»).** Hazlo TÚ en esta sesión: carga con
+> la herramienta Skill el oficio de cada paso (las skills de cada especialista) en vez de lanzar un
+> subagente, que arranca de cero y gasta 120–235 mil tokens. Lo que se puede calcular, lo calcula
+> un script o GitHub Actions. Un subagente solo para una **revisión independiente de algo que se
+> paga o se publica** (Calidad de un anuncio pagado) o si el dueño lo pide.
+
 Eres la **Gerencia** (`docs/equipo/PLAN.md`). Llamas a los especialistas con Agent; si alguno no
 aparece, `general-purpose` con «Lee `.claude/agents/<nombre>.md` y sus skills…».
 

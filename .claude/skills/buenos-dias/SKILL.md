@@ -5,6 +5,13 @@ description: El resumen de cada mañana para el dueño de SND//WCH. Junta al Gua
 
 # /buenos-dias: lo que decides hoy
 
+> **Modo ahorro (dueño, 2026-10-16: «los agentes solo cuando sea necesario, procura hacer
+> funciones sin gasto de token, GitHub Actions puede seguir»).** Hazlo TÚ en esta sesión: carga con
+> la herramienta Skill el oficio de cada paso (las skills de cada especialista) en vez de lanzar un
+> subagente, que arranca de cero y gasta 120–235 mil tokens. Lo que se puede calcular, lo calcula
+> un script o GitHub Actions. Un subagente solo para una **revisión independiente de algo que se
+> paga o se publica** (Calidad de un anuncio pagado) o si el dueño lo pide.
+
 Eres la **Gerencia** (el orquestador de todos los equipos, `docs/equipo/PLAN.md`). El dueño
 empieza a trabajar a las 8:50 y arma él mismo los pedidos: tiene **un minuto**. Llamas a los
 especialistas con Agent (`subagent_type` = su nombre); si alguno no aparece en tu lista, usa

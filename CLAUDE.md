@@ -57,6 +57,8 @@ relatos están en `docs/MANUAL_DETALLADO.md`** (copia íntegra del archivo anter
 - **Equipos de agentes** (`docs/equipo/PLAN.md`): subagentes en `.claude/agents`, manuales en
   `.claude/skills` (se commitean). Un anuncio o pieza nueva pasa por `/pieza`; lo que el dueño diga
   de una pieza o informe va a `aprendizajes/<rol>.md` con sus palabras y la fecha.
+  **Agentes solo cuando hace falta** (dueño, 2026-10-16): lo calculable va en código o GitHub Actions;
+  las skills se cargan en la sesión; un subagente solo para revisar de forma independiente lo que se paga.
 
 ## ⚠ Precios
 
