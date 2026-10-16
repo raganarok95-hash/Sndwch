@@ -16,3 +16,6 @@
 - **2026-10-16 · «Seamos más creativos».** El estilo no es una plantilla: cada concepto puede
   mover el encuadre, el lugar y la composición dentro de las reglas; lo fijo es la letra, el color
   y la verdad.
+- **2026-10-16 · Las tres A.** El dueño eligió los conceptos más creativos de cada anuncio («Las tres
+  A»): el titular detrás del pan (Philly), lo que te dijiste tachado (Meatball), la frase partida
+  por el sándwich (Turkey). Cada anuncio con un recurso distinto, salido de su momento.

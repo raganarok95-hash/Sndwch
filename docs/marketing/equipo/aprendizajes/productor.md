@@ -11,3 +11,6 @@
   `traer-imagenes.yml` a la rama `imagenes-generadas`.
 - **2026-10-16 · Fuentes.** Con `page.setContent` no cargan las fuentes locales ni las fotos: se
   escribe un HTML temporal y se abre con `file://`, y se comprueban los pesos que se usan.
+- **2026-10-16 · El pan también es la receta.** La foto aprobada del Turkey traía una baguette
+  enharinada; llega un pan blanco suave (Classic // White). El prompt nombra el pan con su forma:
+  «soft white sub roll, thin soft crust, no flour dusting, not a baguette».

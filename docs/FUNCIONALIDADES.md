@@ -332,3 +332,7 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   ventas totales ni datos de clientes (el repo es público). Prueba: `tests-api/datos-de-la-semana.test.ts`.
 - **`scripts/piezas/maqueta.mjs`**: cualquier HTML de maqueta a PNG con las fuentes de la marca;
   falla si una fuente no cargó.
+- **El stock cuenta porciones de 15CM** (P53): un 30CM descuenta 2 de cada insumo (`porTamano` en
+  `api/catalog.ts`), igual en la reserva, la devolución al cancelar, la lista de preparación y el
+  plan. El armador y el plato del Signature no ofrecen un 30CM ni una doble que no alcanzan
+  (`porcionesQueGasta`, `alcanzanPorciones` en `01-catalogo-y-estado.ts`).

@@ -5,13 +5,14 @@
  "formato": "anuncio de Meta: 4:5 feed (1080x1350) + 9:16 historias y reels (1080x1920)",
  "canal": "meta",
  "src": "meta-turkey",
- "estado": "maquetas",
+ "estado": "produccion",
  "foto_aprobada": "docs/marketing/anuncios/fotos/foto-turkey.jpg",
  "puertas": {
-  "concepto": "arte: A · calidad: retener (el pan de la foto no es el Classic // White: regenerarla sin pan rústico, sin logo y sin botella; ver CALIDAD.md)",
+  "concepto": "arte: A · calidad: retener (el pan de la foto no es el Classic // White: regenerarla sin pan rústico, sin logo y sin botella; ver CALIDAD.md) · dueño: A",
   "arte": null,
   "calidad": null
  },
- "concepto_elegido": "La idea aprobada por el dueño: «El almuerzo que no te tumba la tarde.» Lo que se rehace es la ejecución, sin la franja y más creativa.",
- "anterior": "docs/marketing/anuncios/turkey-feed.jpg y turkey-vertical.jpg (v2, con la franja: no aprobada)"
+ "concepto_elegido": "A · La frase que dura la tarde (con la foto regenerada: pan Classic // White, sin logo ni botella)",
+ "anterior": "docs/marketing/anuncios/turkey-feed.jpg y turkey-vertical.jpg (v2, con la franja: no aprobada)",
+ "eleccion_del_dueno": "2026-10-16: «Las tres A» · foto: «Regenerar en Figma»"
 }

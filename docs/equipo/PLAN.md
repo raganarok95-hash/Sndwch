@@ -70,9 +70,9 @@ corre solo no se rehace con un agente (más caro y menos confiable):
 | cuándo (Lima) | dónde | qué | estado |
 |---|---|---|---|
 | todos los días, 8:10 y 20:10 | nube (tarea programada) | `/revisar-lo-producido`: Director de arte + Calidad sobre lo que volvió de Flow y las piezas producidas | **corre** (la tarea de arte, ampliada hoy) |
-| todos los días, ~8:15 | nube | `/buenos-dias`: Guardián ‖ Servicio ‖ Operación → lo que decides hoy, al celular | **por crear** (§6) |
+| todos los días, 8:15 | nube | `/buenos-dias`: Guardián ‖ Servicio ‖ Operación → lo que decides hoy, al celular | **corre** desde el 16-oct (le faltan los conectores: P52) |
 | domingo 23:15 | GitHub | `datos-semana.yml` | **corre** desde hoy |
-| domingo ~23:40 | nube | `/domingo`: Finanzas ‖ Analista ‖ Operación ‖ Servicio ‖ Conversión ‖ Growth → tres decisiones | **por crear** (§6) |
+| domingo 23:40 | nube | `/domingo`: Finanzas ‖ Analista ‖ Operación ‖ Servicio ‖ Conversión ‖ Growth → tres decisiones | **corre** desde el 16-oct (le faltan los conectores: P52) |
 | primer domingo del mes | nube | `/mes`: Carta + Finanzas + el Analista revisa lo aprendido contra los datos | dentro de `/domingo` |
 | lunes, antes de las 12:00 | tu laptop | `/agencia-semana` (el ciclo de marketing con los subagentes) | **corre** (cambiado hoy) |
 | 7:30 y 19:30 | tu laptop | Flow genera lo encargado | corre |

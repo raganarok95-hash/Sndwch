@@ -589,6 +589,16 @@ type PricedBuild = {
 // carrito — deriveOrder (favoritos, un solo build) y priceCartItem (una línea de
 // carrito) repetían este mismo cálculo carácter por carácter, cada uno con su propia
 // copia (hallazgo de la auditoría de código).
+// Un 30CM es «el doble de pan y el doble de relleno» (lo dice el armador) y el stock se cuenta en
+// porciones de 15CM («Abro con N porciones»): cada insumo de un 30CM va DOS veces. Antes contaba
+// uno y gastaba dos, así que la web seguía vendiendo proteína que ya no había (2026-10-16, P53,
+// lo encontró Operación; dueño: «Sí, que cuente doble»). Lo usan la reserva, la devolución al
+// cancelar (por la foto `snapIngredients`), la lista de preparación y el plan del día: todos
+// cuentan apariciones, ninguno multiplica por el tamaño (tests-api/stock-30cm.test.ts).
+function porTamano(insumos: string[], size: "15" | "30"): string[] {
+  return size === "30" ? [...insumos, ...insumos] : insumos;
+}
+
 function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, extraSauce: boolean, cheese: string | null = null): PricedBuild {
   const sig = SIG_DATA[sigId];
   if (!sig) throw new ApiError("Signature inválida.");
@@ -634,7 +644,7 @@ function priceSigBuild(sigId: string, size: "15" | "30", doubleProt: boolean, ex
   // salsas no hay nada que duplicar, así que no se cobra ni se descuenta nada.
   const canExtraSauce = extraSauce && sig.sauces.length > 0;
   if (canExtraSauce) ingredientsPerUnit.push(sig.sauces[sig.sauces.length - 1]);
-  return { basePrice, dblSurcharge, sauceSurcharge: t.salsa / 100, sizeUpgradeDiff, ingredientsPerUnit, label: SIG_LABEL[sigId] || sigId };
+  return { basePrice, dblSurcharge, sauceSurcharge: t.salsa / 100, sizeUpgradeDiff, ingredientsPerUnit: porTamano(ingredientsPerUnit, size), label: SIG_LABEL[sigId] || sigId };
 }
 function priceByoBuild(
   base: string, prot: string, cheese: string | null, tops: string[], sauces: string[],
@@ -674,7 +684,7 @@ function priceByoBuild(
   // La salsa extra es una porción doble de una salsa ya elegida (no una salsa nueva sin
   // especificar) — se descuenta del inventario real de esa misma salsa.
   if (extraSauce) ingredientsPerUnit.push(sauces[sauces.length - 1]);
-  return { basePrice, dblSurcharge, sauceSurcharge: t.salsa / 100, sizeUpgradeDiff, ingredientsPerUnit, label: PROT_LABEL[prot] || prot };
+  return { basePrice, dblSurcharge, sauceSurcharge: t.salsa / 100, sizeUpgradeDiff, ingredientsPerUnit: porTamano(ingredientsPerUnit, size), label: PROT_LABEL[prot] || prot };
 }
 
 // Valida y tasa un solo build (signature o build-your-own) — usado para favoritos,

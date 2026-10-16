@@ -878,11 +878,19 @@ function quedanHoy(code:string):number|null{
   var q=invQty[code];
   return typeof q==='number'&&q>0&&q<=QUEDAN_POCAS?q:null;
 }
-// Doble proteína gasta DOS porciones: con una sola contada, no se ofrece (antes el cliente se
-// enteraba al pagar, cuando el servidor rechazaba la reserva).
-function alcanzaParaDoble(code:string):boolean{
+// Cuántas porciones de 15CM gasta un sándwich: el 30CM es «el doble de todo» y la doble
+// proteína, el doble de proteína. El servidor cuenta igual (porTamano en api/catalog.ts, P53).
+function porcionesQueGasta(size:string,doble:boolean):number{
+  return (size==='30'?2:1)*(doble?2:1);
+}
+// Lo que no alcanza no se ofrece (antes el cliente se enteraba al pagar, cuando el servidor
+// rechazaba la reserva). Sin conteo (null) todo alcanza.
+function alcanzanPorciones(code:string,n:number):boolean{
   var q=invQty[code];
-  return !(typeof q==='number'&&q<2);
+  return !(typeof q==='number'&&q<n);
+}
+function alcanzaParaDoble(code:string,size?:string):boolean{
+  return alcanzanPorciones(code,porcionesQueGasta(size||'15',true));
 }
 
 // STATE
