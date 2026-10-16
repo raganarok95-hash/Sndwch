@@ -1,0 +1,17 @@
+{
+ "id": "2026-10-anuncio-meatball",
+ "pedido": "Dueño, 2026-10-16: «Mejora los anuncios, ya lo vi y no me gusta, mejóralo» · sobre la v2: «no necesitas ponerle la franja naranja, seamos más creativos, pero la idea de cada uno sí está bien» · «Las imágenes de los sándwich estaban bien, la franja era lo disonante».",
+ "producto": "Meatball Marinara",
+ "formato": "anuncio de Meta: 4:5 feed (1080x1350) + 9:16 historias y reels (1080x1920)",
+ "canal": "meta",
+ "src": "meta-meatball",
+ "estado": "brief",
+ "foto_aprobada": "docs/marketing/anuncios/fotos/foto-meatball.jpg",
+ "puertas": {
+  "concepto": null,
+  "arte": null,
+  "calidad": null
+ },
+ "concepto_elegido": "La idea aprobada por el dueño: «Hoy no cocinas.» Lo que se rehace es la ejecución, sin la franja y más creativa.",
+ "anterior": "docs/marketing/anuncios/meatball-feed.jpg y meatball-vertical.jpg (v2, con la franja: no aprobada)"
+}

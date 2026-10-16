@@ -67,8 +67,9 @@ La bandeja: no por ahora. **Plan desde el 16-oct: `docs/PLAN_DESDE_HOY.md`.** Pu
 | P45 | **TikTok**: abrir la cuenta | Los mismos Reels llegan a más gente nueva |
 | P46 | **Rappi primero** (dueño, 2026-10-16: «comenzar en el punto 4 primero en PedidosYa o en Rappi»): la vitrina de Rappi y su anuncio a S/10 al día desde el jueves 22, mientras no cobra comisión (`docs/PLAN_DESDE_HOY.md` §1). PedidosYa y Google, después | Cada pedido del anuncio ese mes deja el margen entero |
 | P49 | **Embajadores**: publicar el aviso (está en el panel → Marketing → Embajadores) en 3–4 grupos de Facebook de la UCV, la UPAO y la UNT; crear el enlace de quien te escriba | Con Meta, la meta en el mes 6; con todo, en el 5 |
-| P50 | **Meta: el viernes 23** (dueño, 2026-10-16: «Meta sí me sirve»). Los 4 anuncios nuevos están en pausa (`docs/marketing/anuncios/`): falta tu sí a las piezas para dejarla programada | Sin esto, el 20-nov no hay número |
+| P50 | **Meta: el viernes 23** (dueño, 2026-10-16: «Meta sí me sirve»). La oficina quedó fuera («está horrible»); Philly, Meatball y Turkey se rehacen sin la franja por `/pieza` (`docs/marketing/piezas/`) y te los muestro antes del viernes. Falta tu sí a esas piezas para dejarla programada | Sin esto, el 20-nov no hay número |
 | ~~P51~~ | ~~Fotos de los Signatures~~ | **Hecho** (dueño, 2026-10-16: «genera imágenes fieles»): Philly, Meatball y Turkey generadas fieles a la receta (`docs/marketing/anuncios/fotos/`). Sirven también para la tienda de Rappi |
+| P52 | **Las tareas programadas de la gerencia** (`docs/equipo/PLAN.md` §6): `/buenos-dias` cada mañana (~8:15) y `/domingo` cada domingo (~23:40). Para que valgan, necesitan **leer la base y Meta** (solo lectura). Tu sí crea las dos | sin eso, se piden a mano en una sesión |
 | ~~P47~~ | ~~Embajadores~~ | **Aprobado** (2026-10-16: «Sí, amé los embajadores») |
 | ~~P48~~ | ~~La prueba de Meta de S/700~~ | **Aprobado** (2026-10-16). Armada en pausa (`PAUTA_BARATA.md`); falta tu sí para que arranque sola el 20 a las 11:00 |
 
