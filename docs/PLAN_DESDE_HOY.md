@@ -70,7 +70,7 @@ uno se mide por los pedidos que trae** (su enlace `src=meta-<pieza>`), no por lo
 | hoy a domingo 19 | revisas las vistas previas del Philly y la oficina | tú, 5 min |
 | martes 20 a jueves 22 | abres **sin Meta**: se comprueba que la operación aguanta; grabas los clips | tú |
 | jueves 22 | edito el video y te lo mando para aprobar | yo |
-| **viernes 23** (propuesta) | Meta arranca con 3 piezas (Philly, oficina, video): S/700 hasta el jueves 19-nov | tu sí |
+| **viernes 23** (aprobado: «Meta sí me sirve») | Meta arranca con las 4 piezas nuevas (`docs/marketing/anuncios/`): S/700 hasta el jueves 19-nov; el video entra después | tu sí a las piezas |
 | cada lunes | qué pieza trae pedidos; la peor se cambia por una nueva | yo te lo traigo, tú decides |
 | desde la semana 3 | volver a mostrárselo a quien entró y no pidió (las audiencias ya existen) | yo, con tu sí |
 | viernes 20-nov | el número: cuánto costó cada cliente → cuánto poner en diciembre | tú |

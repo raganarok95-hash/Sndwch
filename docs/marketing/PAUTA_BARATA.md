@@ -185,3 +185,21 @@ haciendo falta para **publicar** (lo orgánico) y para que el anuncio salga con 
   se puede pausar en cualquier momento). El video del día entra como 4.ª pieza cuando el Revisor lo
   apruebe.
 - El 17-nov: costo por cliente = gasto ÷ clientes nuevos con origen `meta-*` (correo del domingo).
+
+## Los anuncios v2 (2026-10-16, dueño: «Mejora los anuncios, ya lo vi y no me gusta» · «genera imágenes fieles» · «Meta sí me sirve»)
+
+- **Fechas**: campaña y conjunto del **viernes 23-oct 11:00 al jueves 19-nov 23:00** (S/700). En
+  pausa hasta el sí del dueño a las piezas nuevas.
+- **4 anuncios nuevos** (`docs/marketing/anuncios/`): la comida a sangre con fotos generadas fieles a
+  la receta, titular corto, precio de la carta. Cada uno lleva el 4:5 en el feed y el 9:16 en
+  Historias y Reels (por `asset_feed_spec` con reglas por ubicación: la «personalización por
+  ubicación» de `ads_create_creative` no está habilitada en esta cuenta por el MCP).
+  - `120252545878500076` Philly «Hambre en serio» → `?src=meta-philly`
+  - `120252545881310076` Meatball «Hoy no cocinas» → `?src=meta-meatball`
+  - `120252545882010076` Turkey «El almuerzo» → `?src=meta-turkey`
+  - `120252545882800076` Oficina «¿Pides para la oficina?» → `?grupo=1&src=meta-oficina`
+- Los v1 (Philly, oficina) y «La carta» quedan como «NO ACTIVAR…», en pausa.
+- **Identidad**: la página «Snd//wch». El Instagram ya está conectado a la página (captura del
+  dueño), pero todavía no está en el Business ni en la cuenta de anuncios (`ads_get_ig_accounts`
+  vacío; «Estado para abrir» sigue sin ver `instagram_business_account`). Cuando esté, se rehacen
+  las 4 con `instagram_user_id` para que salgan como @snd__wch.

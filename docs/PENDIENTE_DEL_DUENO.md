@@ -59,7 +59,7 @@ La bandeja: no por ahora. **Plan desde el 16-oct: `docs/PLAN_DESDE_HOY.md`.** Pu
 
 | # | Qué | Por qué |
 |---|---|---|
-| P40 | **Vincular Instagram a la página** (te dio «error inesperado»; tres caminos en `PULIR.md`) | Verificado: sin esto **no se publica nada** en Instagram; nunca se ha publicado nada |
+| P40 | **Instagram en el Business** (2026-10-16: ya está conectado a la página, falta esto): business.facebook.com/settings → Cuentas → **Cuentas de Instagram → + Agregar** → @snd__wch; con la cuenta elegida, conéctale la cuenta publicitaria `1488138326460689`; y en Usuarios del sistema → `sndwch-bot` → **Asignar activos** → Cuentas de Instagram → @snd__wch → Control total. En Instagram: Configuración → Tipo de cuenta → **Empresa** | Sin esto el sistema no publica y los anuncios salen como la página, no como @snd__wch |
 | ~~P41~~ | ~~Página en la cuenta de anuncios, permisos y método de pago~~ | **Hecho** (verificado 2026-10-16: hay método de pago y se pueden crear anuncios con la página; no hace falta el Instagram para anunciar en Instagram) |
 | P42 | **Las imágenes de Flow de la semana del 20** (la rutina del Estudio en tu laptop) | 6 de 7 historias de la apertura no tienen imágenes |
 | P43 | **El 17-nov**: el presupuesto de Meta con el costo por cliente de la prueba | Decide si la meta llega en el mes 6 o en el 10 |
@@ -67,8 +67,8 @@ La bandeja: no por ahora. **Plan desde el 16-oct: `docs/PLAN_DESDE_HOY.md`.** Pu
 | P45 | **TikTok**: abrir la cuenta | Los mismos Reels llegan a más gente nueva |
 | P46 | **Rappi primero** (dueño, 2026-10-16: «comenzar en el punto 4 primero en PedidosYa o en Rappi»): la vitrina de Rappi y su anuncio a S/10 al día desde el jueves 22, mientras no cobra comisión (`docs/PLAN_DESDE_HOY.md` §1). PedidosYa y Google, después | Cada pedido del anuncio ese mes deja el margen entero |
 | P49 | **Embajadores**: publicar el aviso (está en el panel → Marketing → Embajadores) en 3–4 grupos de Facebook de la UCV, la UPAO y la UNT; crear el enlace de quien te escriba | Con Meta, la meta en el mes 6; con todo, en el 5 |
-| P50 | **Meta: «aún no lo programes»** (2026-10-16). Propuesta: viernes 23, con el Philly, la oficina y un video de tus clips (`docs/PLAN_DESDE_HOY.md` §2) | Sin esto, el 20-nov no hay número |
-| P51 | **Fotos reales de los 6 Signatures** (una tarde) **o imágenes generadas fieles a la receta**: tú eliges | Las de stock no calzan: no sirven para un anuncio pagado y son lo que más vende en Rappi |
+| P50 | **Meta: el viernes 23** (dueño, 2026-10-16: «Meta sí me sirve»). Los 4 anuncios nuevos están en pausa (`docs/marketing/anuncios/`): falta tu sí a las piezas para dejarla programada | Sin esto, el 20-nov no hay número |
+| ~~P51~~ | ~~Fotos de los Signatures~~ | **Hecho** (dueño, 2026-10-16: «genera imágenes fieles»): Philly, Meatball y Turkey generadas fieles a la receta (`docs/marketing/anuncios/fotos/`). Sirven también para la tienda de Rappi |
 | ~~P47~~ | ~~Embajadores~~ | **Aprobado** (2026-10-16: «Sí, amé los embajadores») |
 | ~~P48~~ | ~~La prueba de Meta de S/700~~ | **Aprobado** (2026-10-16). Armada en pausa (`PAUTA_BARATA.md`); falta tu sí para que arranque sola el 20 a las 11:00 |
 
