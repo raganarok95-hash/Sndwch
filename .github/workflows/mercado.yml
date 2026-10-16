@@ -1,0 +1,29 @@
+name: Estudio de mercado
+
+# Lee las páginas públicas de Rappi de los sándwiches de Trujillo (la categoría y la carta de cada
+# local) para el estudio de mercado (docs/MERCADO.md). Solo a mano, una vez por estudio, despacio.
+# Deja el resultado como artefacto: no toca main.
+on:
+  workflow_dispatch:
+    inputs:
+      tope:
+        description: 'Máximo de locales a leer'
+        required: false
+        default: '70'
+
+jobs:
+  rappi:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Leer Rappi
+        run: node scripts/mercado/rappi.mjs ${{ inputs.tope }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mercado-rappi
+          path: mercado/
