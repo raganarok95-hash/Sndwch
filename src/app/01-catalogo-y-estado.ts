@@ -1138,6 +1138,7 @@ var storeHoursForm=null,storeHoursMsg='';
 var reportFrom='',reportTo='',reportData=null,reportErr='';
 var ratingsList=null,ratingsMinStars=0,ratingsOnlyComments=false,ratingsOnlyConsented=false;
 var prepListData=null,timeReportData=null,problemAddressesData=null,marketingContentData=null;
+var embData=null,embMsg='';
 var promoCodesData=null,pcCode='',pcType='percent',pcValue='',pcMaxUses='',pcMinOrder='',pcValidUntil='',pcCampaignTag='',pcMsg='';
 var campaignPerfData=null;
 var calendarData=null,calDate='',calChannel='instagram',calTitle='',calCaption='',calWhatsapp='',calPhoto='',calTag='',calMsg='';

@@ -312,3 +312,13 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
 - **«Ya me llegó»**: el cliente cierra su pedido en camino (`confirm-my-delivery`); nunca un
   contra entrega sin cobrar.
 - **Uso del panel medido**: `admin_action_log` con `action='abrir-pantalla'`.
+
+## Agregado 2026-10-16
+- **Embajadores pagados por resultado** (panel → Marketing → Embajadores; `actions/embajadores.ts`,
+  tablas `embajadores` y `embajador_pagos`). Cada uno con su enlace `?src=emb-<codigo>`. Se le paga
+  `REGLAS.embajadorPorPrimero` cuando un teléfono que nunca había pedido recibe su primer pedido
+  hecho con su enlace y `REGLAS.embajadorPorSegundo` cuando recibe el segundo; sus propios pedidos
+  no cuentan. El saldo se calcula de los pedidos; el pago registra lo que se debe en ese momento
+  (lo calcula el servidor, no el panel). Docs: `docs/META_Y_PRESENCIAL.md`.
+- **Meta: la prueba de apertura** (S/700, 20-oct a 16-nov) con tres anuncios, cada uno con su
+  origen (`meta-philly`, `meta-oficina`, `meta-carta`): `docs/marketing/PAUTA_BARATA.md`.

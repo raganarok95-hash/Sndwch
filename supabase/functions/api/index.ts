@@ -67,6 +67,7 @@ import {
 } from "./actions/group.ts";
 import { actAdminCalendarUploadImage, actAdminPublishSocial, actAdminMetaAds, actAdminUploadRawVideo, actAdminListRawUploads, actAutoPublishCalendar, actRegistrarVisita } from "./actions/social.ts";
 import { actAdminVideoScript } from "./actions/video.ts";
+import { actAdminEmbajadores, actAdminEmbajadorCrear, actAdminEmbajadorPagar } from "./actions/embajadores.ts";
 import { ApiError } from "./types.ts";
 import { debugLog } from "./logging.ts";
 import { rpc } from "./db.ts";
@@ -219,6 +220,9 @@ const ACTIONS: ConContrato & SinContrato = {
   "admin-promo-list": actAdminPromoList,
   "admin-promo-create": actAdminPromoCreate,
   "admin-promo-toggle": actAdminPromoToggle,
+  "admin-embajadores": actAdminEmbajadores,
+  "admin-embajador-crear": actAdminEmbajadorCrear,
+  "admin-embajador-pagar": actAdminEmbajadorPagar,
   "admin-calendar-list": actAdminCalendarList,
   "admin-calendar-create": actAdminCalendarCreate,
   "admin-calendar-update": actAdminCalendarUpdate,

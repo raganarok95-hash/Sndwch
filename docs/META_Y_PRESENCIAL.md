@@ -48,6 +48,17 @@ mes.
 
 ### Embajadores pagados por resultado (lo que recomiendo)
 
+> **Aprobado y construido (2026-10-16, dueño: «Sí, amé los embajadores»).** Panel → Marketing →
+> **Embajadores**: el aviso para reclutar listo para copiar, «Crear su enlace» (nombre y celular),
+> y por cada uno su enlace con sus reglas para mandárselas por WhatsApp, cuánto trajo y cuánto se
+> le debe, con el botón «Ya le pagué S/… por Yape». Lo que se debe lo calcula el servidor de los
+> pedidos (`comisionesDeEmbajadores`, `_shared/dinero.ts`; prueba en `tests-api/embajadores.test.ts`).
+>
+> **Para empezar**: (1) copia el aviso del panel y publícalo en 3–4 grupos de Facebook de la UCV,
+> la UPAO y la UNT y en una bolsa de trabajo gratis; (2) a quien te escriba, créale su enlace y
+> mándale la tarjeta «Su enlace y sus reglas»; (3) cada semana, paga lo que diga el panel y toca
+> «Ya le pagué».
+
 - **Qué es**: personas de Trujillo que comparten su enlace donde ya están: universitarios (la César
   Vallejo está a 1.2 km del punto de despacho, la UPAO a 1.5 km), alguien de una oficina, de un
   equipo de fútbol, de un gimnasio. **Lo presencial lo hacen ellos.**

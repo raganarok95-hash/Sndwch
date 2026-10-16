@@ -44,6 +44,10 @@ export const REGLAS = {
    *  contribución negativa): la ventana vacía la apaga sin ramas muertas. */
   valleHorasLima: [] as readonly (readonly [number, number])[],
   valleTope: 6,
+  /** Embajadores pagados por resultado (dueño, 2026-10-16): S/ cuando su invitado nuevo recibe el
+   *  primer pedido, y S/ cuando recibe el segundo (`comisionesDeEmbajadores`). */
+  embajadorPorPrimero: 5,
+  embajadorPorSegundo: 5,
 } as const;
 
 export type Tamano = '15' | '30';
@@ -289,4 +293,52 @@ export function ahorroDeUnaBebida(
 export function precioUnitario(it: LineaDelCarrito, p: Precios): number {
   const x = tasarLinea(it, p);
   return x ? soles(x.unitario) : 0;
+}
+
+// ── EMBAJADORES (2026-10-16) ─────────────────────────────────────────────────────────────────
+// Dueño: «Sí, amé los embajadores» (docs/META_Y_PRESENCIAL.md). Gente de Trujillo con su enlace
+// `?src=emb-<codigo>`; se les paga por resultado. Lo que se le debe a cada uno se CALCULA de los
+// pedidos (nunca se guarda un contador que pueda desfasarse): un teléfono es su invitado solo si
+// su PRIMER pedido pagado y no cancelado llegó con su enlace; se paga ese pedido cuando se entrega
+// y el segundo cuando se entrega; nada más. El teléfono del propio embajador nunca cuenta.
+export type PedidoDeComision = { telefono: string | null; origen: string | null; creado: string; pagado: boolean; entregado: boolean; cancelado: boolean };
+export type EmbajadorDeComision = { id: number; codigo: string; telefono: string };
+export type Comision = { embajadorId: number; invitados: number; primeros: number; segundos: number; ganado: number; pagado: number; debe: number };
+
+/** El origen que deja el enlace de un embajador. */
+export function origenDeEmbajador(codigo: string): string {
+  return 'emb-' + codigo;
+}
+const nueveDigitos = (t: string | null) => (t || '').replace(/\D/g, '').slice(-9);
+
+export function comisionesDeEmbajadores(
+  pedidos: readonly PedidoDeComision[],
+  embajadores: readonly EmbajadorDeComision[],
+  pagos: readonly { embajadorId: number; monto: number }[],
+): Comision[] {
+  const porTelefono = new Map<string, PedidoDeComision[]>();
+  for (const p of pedidos) {
+    const t = nueveDigitos(p.telefono);
+    if (!t || !p.pagado || p.cancelado) continue;
+    if (!porTelefono.has(t)) porTelefono.set(t, []);
+    porTelefono.get(t)!.push(p);
+  }
+  const cuenta = new Map(embajadores.map((e) => [e.id, { invitados: 0, primeros: 0, segundos: 0 }]));
+  const deOrigen = new Map(embajadores.map((e) => [origenDeEmbajador(e.codigo).toLowerCase(), e]));
+  for (const [t, lista] of porTelefono) {
+    lista.sort((a, b) => Date.parse(a.creado) - Date.parse(b.creado));
+    const [primero, segundo] = lista;
+    const e = primero && deOrigen.get((primero.origen || '').trim().toLowerCase());
+    if (!e || nueveDigitos(e.telefono) === t) continue;
+    const c = cuenta.get(e.id)!;
+    c.invitados++;
+    if (primero.entregado) c.primeros++;
+    if (segundo?.entregado) c.segundos++;
+  }
+  return embajadores.map((e) => {
+    const c = cuenta.get(e.id)!;
+    const ganado = soles(c.primeros * cent(REGLAS.embajadorPorPrimero) + c.segundos * cent(REGLAS.embajadorPorSegundo));
+    const pagado = soles(pagos.filter((x) => x.embajadorId === e.id).reduce((a, x) => a + cent(x.monto), 0));
+    return { embajadorId: e.id, ...c, ganado, pagado, debe: soles(cent(ganado) - cent(pagado)) };
+  });
 }

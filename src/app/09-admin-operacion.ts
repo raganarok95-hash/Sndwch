@@ -323,6 +323,7 @@ var PANEL_OPCIONES:OpcionPanel[]=[
   {k:'avisale',t:'Avísale a tu gente',s:'mensajes listos para tu red',i:'megaphone',c:'Marketing',m:[['Avísale a tu gente','loadMarketingContent()','admin_marketing']]},
   {k:'meta',t:'Anuncios de Meta',s:'apagar o prender las campañas',i:'megaphone',c:'Marketing',m:[['Anuncios de Meta','loadMetaAds()','admin_meta_ads']]},
   {k:'contenido',t:'Contenido',s:'calendario de publicaciones y guion de video',i:'calendar',c:'Marketing',m:[['Calendario','loadCalendar()','admin_calendar'],['Guion de video','loadVideoScript()','admin_video']]},
+  {k:'embajadores',t:'Embajadores',s:'sus enlaces y cuánto pagarle a cada uno',i:'clientes',c:'Marketing',m:[['Embajadores','loadEmbajadores()','admin_embajadores']]},
   {k:'promos',t:'Códigos promo',s:'crear, apagar',i:'precios',c:'Marketing',m:[['Códigos promo','loadPromoCodes()','admin_promo']]},
   {k:'rinde',t:'¿Rinde el marketing?',s:'campañas, palancas, freno de CAC',i:'estrella',c:'Marketing',m:[['Campañas','loadCampaignPerformance()','admin_campaign_perf'],['Las tres palancas','loadPalancas()','admin_palancas'],['Freno de CAC','loadCacBrake()','admin_cac']]},
   {k:'horario',t:'Horario y pausa',s:'a qué hora abres cada día',i:'horario',c:'Sistema',m:[['Horario y pausa','loadStoreHoursForm()','admin_hours']]},

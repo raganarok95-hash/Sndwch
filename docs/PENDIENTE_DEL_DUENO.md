@@ -66,6 +66,8 @@ La bandeja: no por ahora. Publicidad de otros tipos: `docs/OTRA_PUBLICIDAD.md` (
 | ~~P44~~ | ~~«¿cómo nos conociste?»~~ | **Descartado** (dueño, 2026-10-15: «No, eso ya es muy invasivo») |
 | P45 | **TikTok**: abrir la cuenta | Los mismos Reels llegan a más gente nueva |
 | P46 | Sí o no: **anuncios dentro de Rappi (S/300 al mes) y Google (S/300) desde el 3-nov, y PedidosYa (S/200) desde el 1-dic** (`docs/OTRA_PUBLICIDAD.md`); gasto real | Con Meta a ~S/36, la meta pasa del mes 10 al 6 |
+| P49 | **Embajadores**: publicar el aviso (está en el panel → Marketing → Embajadores) en 3–4 grupos de Facebook de la UCV, la UPAO y la UNT; crear el enlace de quien te escriba | Con Meta, la meta en el mes 6; con todo, en el 5 |
+| P50 | Sí o no: **dejar programada la prueba de Meta** (arranca sola el martes 20 a las 11:00, S/700 hasta el 16-nov; se puede pausar cuando quieras) | Sin esto, el 17-nov no hay número |
 | ~~P47~~ | ~~Embajadores~~ | **Aprobado** (2026-10-16: «Sí, amé los embajadores») |
 | ~~P48~~ | ~~La prueba de Meta de S/700~~ | **Aprobado** (2026-10-16). Armada en pausa (`PAUTA_BARATA.md`); falta tu sí para que arranque sola el 20 a las 11:00 |
 

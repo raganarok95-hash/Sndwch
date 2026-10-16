@@ -1413,6 +1413,69 @@ function sAdminPromo(){
   return h;
 }
 
+// ── EMBAJADORES PAGADOS POR RESULTADO (2026-10-16, docs/META_Y_PRESENCIAL.md) ──────────────
+// Cada embajador tiene su enlace; el servidor calcula lo que se le debe de los pedidos
+// (comisionesDeEmbajadores) y los montos por pedido vienen de él: aquí no se escribe ninguna cifra.
+async function loadEmbajadores(){
+  sndScreen='admin_embajadores';busy=true;busyMsg='Cargando embajadores...';render();
+  try{embData=await api('admin-embajadores',{token:token});}
+  catch(e){embData=null;}
+  busy=false;render();
+}
+async function crearEmbajador(){
+  var nombre=gv('emb-nombre').trim(),telefono=gv('emb-telefono').trim();
+  if(!nombre||!telefono){embMsg='Escribe el nombre y el celular.';render();return;}
+  embMsg='Creando...';render();
+  try{await api('admin-embajador-crear',{token:token,nombre:nombre,telefono:telefono});embMsg='';await loadEmbajadores();}
+  catch(e){embMsg=e.message||'No se pudo crear.';render();}
+}
+async function pagarEmbajador(id){
+  var e=(embData&&embData.embajadores||[]).find(function(x){return x.id===id;});
+  if(!e||!(e.debe>0))return;
+  if(!confirm('¿Ya le pagaste '+SOLES_TXT+pz(e.debe)+' a '+e.nombre+' por Yape? Queda registrado y su saldo vuelve a cero.'))return;
+  try{var r=await api('admin-embajador-pagar',{token:token,id:id});showToast('Registrado: '+SOLES_TXT+pz(r.monto)+'.');await loadEmbajadores();}
+  catch(err){showToast(err.message||'No se pudo registrar.');}
+}
+function textoParaReclutar(d){
+  return '¿Estudias o trabajas en Trujillo? Busco embajadores para SND//WCH, sándwiches a domicilio que se piden en sndwch.app.\n'
+    +'Te doy tu propio enlace: por cada persona NUEVA que pida con él te pago '+SOLES_TXT+pz(d.porPrimero)+' cuando recibe su pedido y '+SOLES_TXT+pz(d.porSegundo)+' más cuando vuelve a pedir. '
+    +'Sin horario y desde tu celular; te pago cada semana por Yape.\n¿Te interesa? Escríbeme.';
+}
+function textoDeBienvenida(d,e){
+  return '¡Hola, '+e.nombre+'! Ya tienes tu enlace de SND//WCH:\n'+e.enlace+'\n\n'
+    +'Así cuenta: te pago '+SOLES_TXT+pz(d.porPrimero)+' cuando alguien que nunca había pedido hace su primer pedido con tu enlace y lo recibe, y '+SOLES_TXT+pz(d.porSegundo)+' más cuando hace el segundo. Te pago cada semana por Yape.\n\n'
+    +'Reglas: si lo publicas en redes, pon #publicidad. Nada de spam ni de prometer precios o descuentos: solo comparte tu enlace. Tus propios pedidos no cuentan.';
+}
+function sAdminEmbajadores(){
+  var h=H('EMBAJADORES',"loadAdmin()")+'<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+  if(!embData)return h+'<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-danger,#ff8888);letter-spacing:.2em">No se pudo cargar //</div></div>'+BTN('Reintentar //','loadEmbajadores()')+'</div>';
+  var d=embData;
+  h+='<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:16px;line-height:1.5">Cada embajador comparte su enlace. Se le paga '+SOLES_TXT+pz(d.porPrimero)+' cuando su invitado NUEVO recibe el primer pedido y '+SOLES_TXT+pz(d.porSegundo)+' cuando recibe el segundo. Sus propios pedidos no cuentan.</div>';
+  h+='<div data-accion="total-embajadores" style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:600;color:var(--sw-text,#FFFFFF);margin-bottom:16px">'+(d.totalDebe>0?'Por pagar: '+SOLES_TXT+pz(d.totalDebe):'No se le debe nada a nadie')+'</div>';
+  h+=copyBlockHTML('Aviso para reclutar (grupos de Facebook de las universidades, bolsas de trabajo)','emb-reclutar',textoParaReclutar(d));
+  h+='<div style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:16px;margin:12px 0 20px">';
+  h+='<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:'+GOLD+';letter-spacing:.2em;margin-bottom:10px">Nuevo embajador //</div>';
+  h+='<div style="display:flex;flex-direction:column;gap:8px">'+INP('emb-nombre','Nombre // ej. Ana María','text','')+INP('emb-telefono','Celular // para pagarle por Yape','tel','')+'</div>';
+  h+=(embMsg?'<div style="font-family:EB Garamond,serif;font-size:11px;color:var(--sw-danger,#ff8888);margin-top:8px">'+esc(embMsg)+'</div>':'');
+  h+='<div style="margin-top:12px">'+BTN('Crear su enlace //','crearEmbajador()').replace('<button ','<button data-accion="crear-embajador" ')+'</div>';
+  h+='</div>';
+  if(!d.embajadores.length){
+    h+='<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">Todavía no hay embajadores. Publica el aviso de arriba y crea el enlace de cada uno aquí.</div>';
+  }else{
+    h+=d.embajadores.slice().sort(function(a,b){return b.debe-a.debe;}).map(function(e){
+      return'<div data-embajador="'+e.id+'" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px;margin-bottom:10px">'
+        +'<div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:15px;font-weight:600;color:var(--sw-text,#FFFFFF)">'+esc(e.nombre)+'</div>'
+        +'<div style="font-family:EB Garamond,serif;font-size:13px;color:'+(e.debe>0?GOLD:'var(--sw-text-muted,#9DA096)')+'">'+(e.debe>0?'Se le debe '+SOLES_TXT+pz(e.debe):'Al día')+'</div></div>'
+        +'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin:6px 0 10px;line-height:1.5">'+e.invitados+' invitado'+(e.invitados===1?'':'s')+' · '+e.primeros+' primer'+(e.primeros===1?'':'os')+' pedido'+(e.primeros===1?'':'s')+' entregado'+(e.primeros===1?'':'s')+' · '+e.segundos+' volvi'+(e.segundos===1?'ó':'eron')+' · ganó '+SOLES_TXT+pz(e.ganado)+', pagado '+SOLES_TXT+pz(e.pagado)+'</div>'
+        +copyBlockHTML('Su enlace y sus reglas (mándaselo por WhatsApp)','emb-bienvenida-'+e.id,textoDeBienvenida(d,e))
+        +(e.debe>0?BTN('Ya le pagué '+SOLES_TXT+pz(e.debe)+' por Yape //','pagarEmbajador('+e.id+')').replace('<button ','<button data-accion="pagar-embajador" '):'')
+        +'</div>';
+    }).join('');
+  }
+  h+='</div>';
+  return h;
+}
+
 async function loadCampaignPerformance(){
   sndScreen='admin_campaign_perf';busy=true;busyMsg='Calculando rendimiento...';render();
   try{campaignPerfData=await api('admin-campaign-performance',{token:token});}
@@ -2675,6 +2738,7 @@ Object.assign(ADMIN_SCREENS, {
   admin_problem_addresses: sAdminProblemAddresses,
   admin_marketing: sAdminMarketing,
   admin_promo: sAdminPromo,
+  admin_embajadores: sAdminEmbajadores,
   admin_campaign_perf: sAdminCampaignPerf,
   admin_calendar: sAdminCalendar,
   admin_waitlist: sAdminWaitlist,

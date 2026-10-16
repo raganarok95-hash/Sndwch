@@ -352,6 +352,17 @@ export const CONTRATO = {
     campaignTag: e.textoOpcional(60),
   })),
   'admin-promo-toggle': accion<Record<string, unknown>>()(e.objeto({ token, id: crudo, active: e.bandera() })),
+  // Embajadores pagados por resultado (2026-10-16, actions/embajadores.ts).
+  'admin-embajadores': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-embajador-crear': accion<Record<string, unknown>>()(e.objeto({
+    token,
+    nombre: e.texto({ min: 2, max: 60, mensaje: 'Escribe el nombre del embajador.' }),
+    telefono: e.texto({ min: 9, max: 20, mensaje: 'Escribe su celular de 9 dígitos.' }),
+  })),
+  'admin-embajador-pagar': accion<Record<string, unknown>>()(e.objeto({
+    token,
+    id: e.entero({ min: 1, mensaje: 'Falta el embajador.' }),
+  })),
   'admin-calendar-list': accion<Record<string, unknown>>()(e.objeto({ token })),
   'admin-calendar-create': accion<Record<string, unknown>>()(e.objeto({ token, scheduledDate: crudo, channel: crudo, title: crudo, status: crudo, captionText: crudo, whatsappText: crudo, photoIdea: crudo, videoIdea: crudo, campaignTag: crudo })),
   'admin-calendar-update': accion<Record<string, unknown>>()(e.objeto({ token, id: crudo, scheduledDate: crudo, channel: crudo, title: crudo, captionText: crudo, whatsappText: crudo, photoIdea: crudo, videoIdea: crudo, campaignTag: crudo, status: crudo })),
