@@ -81,8 +81,9 @@ que promete más relleno del que llega (caso Bon o Bon). Las fotos dentro de la 
 ## 7 · Cómo crecemos sin pagar pauta
 
 Puntos por cada sol de comida; referidos (el invitado gana una bebida, quien invita un 15 cm);
-pedido en grupo; pedido fijo; cumpleaños; volver a quien dejó de pedir; y un QR en la bolsa con
-una bebida gratis en el siguiente pedido. Las cifras exactas: `docs/hechos/REGLAS.md`.
+pedido en grupo; pedido fijo; cumpleaños; volver a quien dejó de pedir; y un QR en la bolsa que
+lleva a pedir por la web con la bebida más barata gratis (una vez por celular): así quien llegó por
+Rappi o PedidosYa pasa al canal propio. Las cifras exactas: `docs/hechos/REGLAS.md`.
 
 ## 8 · La meta y cómo se mide
 
