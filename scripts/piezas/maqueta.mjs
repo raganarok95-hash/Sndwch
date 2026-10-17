@@ -6,7 +6,7 @@
 // aprueba. El tamaño sale de <body> (o de los argumentos).
 //
 // Uso: FUENTES_CSS=$(bash scripts/piezas/fuentes-locales.sh) \
-//        node scripts/piezas/maqueta.mjs <entrada.html> <salida.png> [ancho] [alto]
+//        node scripts/piezas/maqueta.mjs <entrada.html> <salida.png|salida.pdf> [ancho] [alto]
 //      (en la nube: PLAYWRIGHT_CHROMIUM_PATH=/opt/pw-browsers/chromium)
 import { chromium } from '@playwright/test';
 import { readFileSync, writeFileSync, rmSync } from 'node:fs';
@@ -35,7 +35,10 @@ try {
     return usadas.filter((f) => css.includes(f.split('"')[1]) && !cargada(f.split('"')[1]));
   });
   if (faltan.length) throw new Error(`Faltan fuentes (${faltan.join(', ')}): corre scripts/piezas/fuentes-locales.sh y pasa FUENTES_CSS.`);
-  await page.screenshot({ path: salida, fullPage: false });
+  // Una salida .pdf imprime todas las páginas del HTML (una presentación: cada lámina con su
+  // salto de página); cualquier otra, la captura de la primera pantalla.
+  if (salida.endsWith('.pdf')) await page.pdf({ path: salida, width: `${ancho}px`, height: `${alto}px`, printBackground: true });
+  else await page.screenshot({ path: salida, fullPage: false });
   console.log(salida);
 } finally {
   await browser.close();
