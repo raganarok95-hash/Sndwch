@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8">
-<title>SND//WCH — Brief de marca y fotografía</title>
+<title>SND//WCH — Brief de marca</title>
 <style>
 @page{size:1920px 1080px;margin:0}
-:root{--tinta:#1E2B22;--papel:#EFE6D4;--papel2:#E6DBC4;--naranja:#D8823C;--tan:#C9A87C;--celeste:#8CC8EC;--oro:#CBA258;--oliva:#6C7860}
+:root{--tinta:#1E2B22;--papel:#EFE6D4;--papel2:#E6DBC4;--naranja:#D8823C;--tan:#C9A87C;--celeste:#8CC8EC;--oro:#CBA258;--lila:#C3A6D2}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:1920px;background:var(--papel)}
 body{-webkit-font-smoothing:antialiased;color:var(--tinta);font-family:Archivo,sans-serif;font-weight:400}
@@ -13,29 +13,31 @@ body{-webkit-font-smoothing:antialiased;color:var(--tinta);font-family:Archivo,s
 .disp{font-family:Anton,sans-serif;font-weight:400;text-transform:uppercase;line-height:.92;letter-spacing:-.005em;text-wrap:balance}
 .voz{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;line-height:1.12}
 .mono{font-family:'IBM Plex Mono',monospace;font-weight:600;letter-spacing:.12em;text-transform:uppercase;font-size:20px}
-.cuerpo{font-size:28px;line-height:1.45;max-width:30em}
+.cuerpo{font-size:30px;line-height:1.45;max-width:28em}
 .eti{color:var(--naranja)}
 .osc .eti{color:var(--tan)}
 .wm{font:800 44px/1 Archivo,sans-serif;display:inline-flex;align-items:center;letter-spacing:.01em;white-space:nowrap}
 .mk{display:inline-flex;gap:.16em;margin:0 .1em}
 .mk i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
 .mk i:first-child{background:var(--oro)}.mk i:last-child{background:var(--celeste)}
-.pie{position:absolute;left:120px;right:120px;bottom:56px;display:flex;justify-content:space-between;align-items:center}
-.pie .mono{font-size:16px;opacity:.7}
+.pie{position:absolute;left:120px;right:120px;bottom:52px;display:flex;justify-content:space-between}
+.pie .mono{font-size:16px;opacity:.6}
 .foto{position:absolute;background-size:cover;background-position:center}
-.regla{height:3px;background:currentColor;opacity:.18;margin:28px 0}
 .grid{display:grid;gap:28px}
-.card{border:3px solid var(--tinta);border-radius:12px;padding:30px 32px;background:var(--papel)}
-.osc .card{border-color:rgba(239,230,212,.35);background:transparent}
+.card{border:3px solid var(--tinta);border-radius:12px;padding:30px 32px}
+.osc .card{border-color:rgba(239,230,212,.3)}
 .n{font-family:Anton,sans-serif;font-size:44px;text-transform:uppercase;line-height:1}
 .t{font-size:24px;line-height:1.4;margin-top:12px}
+.ph{border-radius:12px;background-size:cover;background-position:center}
 </style></head>
 <body>
 
-<!-- 1 · PORTADA -->
+<!-- PORTADA -->
 <section class="s osc" style="padding:0">
-  <div style="position:absolute;left:120px;top:110px;width:1500px">
-    <div class="mono eti">Brief de marca y fotografía · Octubre 2026</div>
+  <div class="foto" style="right:0;top:0;width:900px;height:1080px;background-image:url('img/philly.jpg')"></div>
+  <div style="position:absolute;right:900px;top:0;width:240px;height:1080px;background:linear-gradient(90deg,var(--tinta),rgba(30,43,34,0))"></div>
+  <div style="position:absolute;left:120px;top:110px;width:920px">
+    <div class="mono eti">Brief de marca · Octubre 2026</div>
     <div class="disp" style="font-size:150px;margin-top:70px">Sándwiches de deli americano.</div>
     <div class="voz" style="font-size:64px;margin-top:34px;color:var(--tan)">Hechos al momento. Llevados a tu puerta.</div>
   </div>
@@ -43,90 +45,102 @@ body{-webkit-font-smoothing:antialiased;color:var(--tinta);font-family:Archivo,s
     <div class="mono" style="margin-top:22px;opacity:.75">Trujillo · Abre el martes 20 de octubre de 2026</div></div>
 </section>
 
-<!-- 2 · LA IDEA -->
+<!-- EL CONCEPTO -->
 <section class="s">
-  <div class="mono eti">La idea</div>
-  <div class="voz" style="font-size:72px;margin-top:40px;max-width:1500px">Los clásicos del deli americano —el Philly Cheesesteak, el Meatball, el Italian Hoagie— hechos al momento y llevados a la puerta.</div>
-  <div class="grid" style="grid-template-columns:repeat(4,1fr);position:absolute;left:120px;right:120px;bottom:130px">
-    <div class="card"><div class="n">Solo delivery</div><div class="t">Sin salón ni mostrador: la cocina trabaja entera para el pedido que sale.</div></div>
-    <div class="card"><div class="n">Pan largo</div><div class="t">Subs en dos tamaños, 15 cm y 30 cm, armados al momento.</div></div>
-    <div class="card"><div class="n">Martes a domingo</div><div class="t">De 11:00 a 22:00. Almuerzo, tarde y cena.</div></div>
-    <div class="card"><div class="n">Tres canales</div><div class="t">La app propia sndwch.app, Rappi y PedidosYa.</div></div>
+  <div class="mono eti">El concepto</div>
+  <div class="disp" style="font-size:118px;margin-top:30px;max-width:1500px">Un deli americano que no necesita mostrador.</div>
+  <div class="voz" style="font-size:46px;margin-top:30px;max-width:1450px">Los sándwiches que se comen en Filadelfia, en Nueva York, en cualquier deli de barrio de Estados Unidos, hechos al momento en Trujillo y llevados hasta tu mesa.</div>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr);position:absolute;left:120px;right:120px;bottom:120px;gap:34px">
+    <div class="card"><div class="n">Los clásicos</div><div class="t">El Philly Cheesesteak, el Meatball, el Italian Hoagie, el Tuna Melt. Recetas con nombre propio, hechas como se hacen allá.</div></div>
+    <div class="card"><div class="n">Dos hermanos</div><div class="t">Uno cura la carta, el otro la desarma. Una marca con personajes, voz y humor propios.</div></div>
+    <div class="card"><div class="n">Pensado para el delivery</div><div class="t">Sin salón: todo, desde la receta hasta el empaque, está hecho para llegar bien a tu puerta.</div></div>
   </div>
-  <div class="pie"><span class="mono">SND//WCH · Brief</span><span class="mono">02</span></div>
+  <div class="pie"><span class="mono">SND//WCH</span><span class="mono">02</span></div>
 </section>
 
-<!-- 3 · LA OPORTUNIDAD -->
+<!-- LA OPORTUNIDAD -->
 <section class="s osc">
   <div class="mono eti">La oportunidad</div>
   <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:110px;margin-top:50px">
     <div>
-      <div class="disp" style="font-size:120px">Trujillo come sánguche criollo.</div>
-      <div class="cuerpo" style="margin-top:44px;opacity:.92">Lechón, pollo deshilachado, asado: casi siempre en pan francés, entre S/15.90 y S/19.90 en las apps de delivery. El sub de deli americano casi no existe en la ciudad: no hay un Subway ni una carta como esta.</div>
+      <div class="disp" style="font-size:124px">Trujillo come sánguche criollo.</div>
+      <div class="cuerpo" style="margin-top:44px;opacity:.92">Lechón, pollo deshilachado, asado en pan francés: lo que hay en todas las apps de delivery de la ciudad. El sándwich de deli americano casi no existe. No hay un Subway ni una carta como esta.</div>
     </div>
     <div style="align-self:end">
-      <div class="mono" style="opacity:.75">El 15 cm de SND//WCH</div>
-      <div class="disp" style="font-size:230px;color:var(--naranja);margin-top:10px">S/19.90</div>
-      <div class="cuerpo" style="font-size:26px;margin-top:20px">El mismo precio que las sangucherías mejor calificadas, con otra carta: pan largo y ~85 g de proteína en cada 15 cm.</div>
+      <div class="voz" style="font-size:54px;color:var(--tan)">Lo que llega es otra cosa:</div>
+      <div class="cuerpo" style="font-size:30px;margin-top:22px">pan largo, la proteína a la vista, el queso fundido, y un precio a la par de las mejores sangucherías de la ciudad.</div>
+      <div class="disp" style="font-size:150px;color:var(--naranja);margin-top:30px">S/19.90</div>
+      <div class="mono" style="opacity:.7;margin-top:8px">El Signature de 15 cm</div>
     </div>
   </div>
-  <div class="pie"><span class="mono">SND//WCH · Brief</span><span class="mono">03</span></div>
+  <div class="pie"><span class="mono">SND//WCH</span><span class="mono">03</span></div>
 </section>
 
-<!-- 4 · LA CARTA -->
+<!-- LOS SIGNATURES -->
 <section class="s">
-  <div class="mono eti">La carta · 6 Signatures</div>
-  <div class="disp" style="font-size:84px;margin-top:22px">Recetas cerradas. Cada una, como tiene que ser.</div>
-  <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:44px">
-    <div class="card"><div><div class="mono eti" style="font-size:16px">La estrella</div><div class="n" style="font-size:40px;margin-top:6px">Philly Cheesesteak</div><div class="t" style="font-size:22px">Res laminada salteada al momento con cebolla y pimiento, y cheddar fundido encima.</div></div></div>
-    <div class="card"><div><div class="mono eti" style="font-size:16px">El almuerzo</div><div class="n" style="font-size:40px;margin-top:6px">Turkey</div><div class="t" style="font-size:22px">Pavo horneado en lonjas finas, lechuga, tomate, cebolla, pimiento y oil &amp; vinegar.</div></div></div>
-    <div class="card"><div class="mono eti" style="font-size:16px">La noche</div><div class="n" style="font-size:40px;margin-top:6px">Meatball Marinara</div><div class="t" style="font-size:22px">Albóndigas cocidas en su propia marinara, con queso americano derretido hasta el borde.</div></div>
-    <div class="card"><div class="n" style="font-size:40px">Tuna Melt</div><div class="t" style="font-size:22px">Atún en lascas gruesas con mayonesa y pimienta blanca, bajo cheddar fundido.</div></div>
-    <div class="card"><div class="n" style="font-size:40px">Italian Hoagie</div><div class="t" style="font-size:22px">Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil &amp; vinegar.</div></div>
-    <div class="card"><div class="n" style="font-size:40px">Classic Tuna</div><div class="t" style="font-size:22px">Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca.</div></div>
+  <div class="mono eti">La carta · Los Signatures</div>
+  <div class="disp" style="font-size:88px;margin-top:22px">Seis clásicos. Cada uno, como tiene que ser.</div>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:40px;gap:26px">
+    <div><div class="ph" style="height:300px;background-image:url('img/philly.jpg');background-position:center 60%"></div><div class="mono eti" style="font-size:16px;margin-top:18px">La estrella</div><div class="n" style="margin-top:6px">Philly Cheesesteak</div><div class="t">Res salteada al momento y cheddar fundido. El clásico de Filadelfia, sin atajos.</div></div>
+    <div><div class="ph" style="height:300px;background-image:url('img/meatball.jpg')"></div><div class="mono eti" style="font-size:16px;margin-top:18px">La de la noche</div><div class="n" style="margin-top:6px">Meatball Marinara</div><div class="t">Albóndigas en su propia marinara y queso derretido hasta el borde.</div></div>
+    <div><div class="ph" style="height:300px;background-image:url('img/turkey.jpg');background-position:center 55%"></div><div class="mono eti" style="font-size:16px;margin-top:18px">La del almuerzo</div><div class="n" style="margin-top:6px">Turkey</div><div class="t">Pavo horneado en lonjas finas y verduras frescas. Llena sin pesar.</div></div>
   </div>
-  <div class="pie"><span class="mono">SND//WCH · Brief</span><span class="mono">04</span></div>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:30px;gap:26px">
+    <div class="card" style="padding:22px 28px"><div class="n" style="font-size:36px">Tuna Melt</div><div class="t" style="font-size:22px;margin-top:8px">Atún en lascas gruesas bajo cheddar fundido.</div></div>
+    <div class="card" style="padding:22px 28px"><div class="n" style="font-size:36px">Italian Hoagie</div><div class="t" style="font-size:22px;margin-top:8px">Tres embutidos italianos, queso y verduras frescas.</div></div>
+    <div class="card" style="padding:22px 28px"><div class="n" style="font-size:36px">Classic Tuna</div><div class="t" style="font-size:22px;margin-top:8px">Atún en lascas, nunca hecho pasta. Simple y exacto.</div></div>
+  </div>
 </section>
 
-<!-- 5 · MÁS QUE UNA CARTA -->
+<!-- LAS BEBIDAS -->
 <section class="s osc">
+  <div class="mono eti">Las bebidas de la casa</div>
+  <div class="disp" style="font-size:96px;margin-top:22px">Heladas, de la casa, para acompañar.</div>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:56px;gap:44px">
+    <div><div class="ph" style="height:440px;background-image:url('img/bloom.jpg')"></div><div class="n" style="margin-top:26px;font-size:54px">The Bloom</div><div class="voz" style="font-size:40px;color:var(--lila);margin-top:6px">Hibiscus</div></div>
+    <div><div class="ph" style="height:440px;background-image:url('img/midnight.jpg')"></div><div class="n" style="margin-top:26px;font-size:54px">The Midnight</div><div class="voz" style="font-size:40px;color:var(--tan);margin-top:6px">Brew</div></div>
+    <div><div class="ph" style="height:440px;background-image:url('img/cool.jpg')"></div><div class="n" style="margin-top:26px;font-size:54px">The Cool</div><div class="voz" style="font-size:40px;color:var(--celeste);margin-top:6px">Mint</div></div>
+  </div>
+</section>
+
+<!-- MÁS QUE UNA CARTA -->
+<section class="s">
   <div class="mono eti">Más que una carta</div>
   <div class="disp" style="font-size:96px;margin-top:22px">Una app hecha para volver.</div>
-  <div class="grid" style="grid-template-columns:repeat(2,1fr);margin-top:56px;gap:34px">
-    <div class="card"><div class="n" style="color:var(--celeste)">Arma el tuyo</div><div class="t">Pan, proteína, vegetales, queso y hasta tres salsas. Cuesta lo mismo que el Signature de su proteína.</div></div>
-    <div class="card"><div class="n" style="color:var(--tan)">Menú secreto</div><div class="t">Se desbloquea desde el tercer pedido. Hacia afuera nunca se dice qué lleva.</div></div>
-    <div class="card"><div class="n" style="color:var(--tan)">Bebidas de la casa</div><div class="t">Tres infusiones heladas: jamaica con canela, té negro reposado en frío, hierba luisa con menta. Con un sándwich, el combo sale más barato.</div></div>
-    <div class="card"><div class="n" style="color:var(--celeste)">Pedido en grupo</div><div class="t">Para la oficina o la juntada: quien organiza el pedido come gratis desde 5 sándwiches. Además, puntos por cada sol, referidos y premio de cumpleaños.</div></div>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:60px;gap:34px">
+    <div class="card" style="min-height:420px;background:var(--celeste)"><div class="n" style="font-size:52px">Arma el tuyo</div><div class="voz" style="font-size:36px;margin-top:14px">Tu sándwich, tus reglas.</div><div class="t">Eliges el pan, la proteína, las verduras, el queso y las salsas. Es el terreno de Wicho.</div></div>
+    <div class="card" style="min-height:420px;background:var(--tinta);color:var(--papel)"><div class="n" style="font-size:52px">Menú secreto</div><div class="voz" style="font-size:36px;margin-top:14px;color:var(--tan)">Solo para los que vuelven.</div><div class="t">Un sándwich que no está en la carta y que nadie anuncia. Se gana pidiendo.</div></div>
+    <div class="card" style="min-height:420px"><div class="n" style="font-size:52px">Pedido en grupo</div><div class="voz" style="font-size:36px;margin-top:14px">La oficina entera, en un solo pedido.</div><div class="t">Cada uno elige el suyo desde su celular, y quien organiza sale ganando.</div></div>
   </div>
-  <div class="pie"><span class="mono" style="opacity:.6">SND//WCH · Brief</span><span class="mono" style="opacity:.6">05</span></div>
+  <div class="pie"><span class="mono">SND//WCH</span><span class="mono">06</span></div>
 </section>
 
-<!-- 6 · PARA QUIÉN -->
+<!-- PARA QUIÉN -->
 <section class="s">
   <div class="mono eti">Para quién</div>
   <div class="disp" style="font-size:96px;margin-top:22px">Momentos, no edades.</div>
   <div style="margin-top:50px;display:grid;grid-template-columns:repeat(5,1fr);gap:24px">
-    <div class="card" style="min-height:430px"><div class="mono eti" style="font-size:16px">Mar–Vie · 12:00–14:30</div><div class="n" style="font-size:38px;margin-top:16px">El almuerzo de oficina</div><div class="t" style="font-size:22px">Uno pide para todos. El pedido en grupo.</div></div>
-    <div class="card" style="min-height:430px"><div class="mono eti" style="font-size:16px">19:00–22:00</div><div class="n" style="font-size:38px;margin-top:16px">La noche sin ganas de cocinar</div><div class="t" style="font-size:22px">No pienses: ya está resuelto. Un Signature.</div></div>
-    <div class="card" style="min-height:430px"><div class="mono eti" style="font-size:16px">Vie–Dom · noche</div><div class="n" style="font-size:38px;margin-top:16px">La juntada o el partido</div><div class="t" style="font-size:22px">Varios sándwiches, uno por cabeza.</div></div>
-    <div class="card" style="min-height:430px"><div class="mono eti" style="font-size:16px">16:00–18:00</div><div class="n" style="font-size:38px;margin-top:16px">El antojo de la tarde</div><div class="t" style="font-size:22px">Armarlo a tu gusto.</div></div>
-    <div class="card" style="min-height:430px"><div class="mono eti" style="font-size:16px">Domingo</div><div class="n" style="font-size:38px;margin-top:16px">El domingo de flojera</div><div class="t" style="font-size:22px">Un clásico, sin salir de casa.</div></div>
+    <div class="card" style="min-height:440px"><div class="mono eti" style="font-size:16px">Mediodía</div><div class="n" style="font-size:40px;margin-top:16px">El almuerzo de oficina</div><div class="t" style="font-size:23px">Uno pide para todos y nadie sale a buscar comida.</div></div>
+    <div class="card" style="min-height:440px"><div class="mono eti" style="font-size:16px">Noche</div><div class="n" style="font-size:40px;margin-top:16px">La noche sin ganas de cocinar</div><div class="t" style="font-size:23px">No pienses: ya está resuelto.</div></div>
+    <div class="card" style="min-height:440px"><div class="mono eti" style="font-size:16px">Fin de semana</div><div class="n" style="font-size:40px;margin-top:16px">La juntada o el partido</div><div class="t" style="font-size:23px">Uno por cabeza, y todos contentos.</div></div>
+    <div class="card" style="min-height:440px"><div class="mono eti" style="font-size:16px">Tarde</div><div class="n" style="font-size:40px;margin-top:16px">El antojo</div><div class="t" style="font-size:23px">Armarlo exactamente como lo quieres.</div></div>
+    <div class="card" style="min-height:440px"><div class="mono eti" style="font-size:16px">Domingo</div><div class="n" style="font-size:40px;margin-top:16px">El domingo de flojera</div><div class="t" style="font-size:23px">Un clásico, sin salir de casa.</div></div>
   </div>
-  <div class="pie"><span class="mono">SND//WCH · Brief</span><span class="mono">06</span></div>
+  <div class="pie"><span class="mono">SND//WCH</span><span class="mono">07</span></div>
 </section>
 
-<!-- 7 · LA MARCA -->
+<!-- LOS HERMANOS -->
 <section class="s" style="padding:0">
   <div style="position:absolute;left:0;top:0;width:960px;height:1080px;background:var(--papel2)"></div>
   <div style="position:absolute;left:960px;top:0;width:960px;height:1080px;background:var(--celeste)"></div>
-  <div style="position:absolute;left:0;right:0;top:86px;text-align:center"><div class="mono" style="display:inline-block;background:var(--tinta);color:var(--papel);padding:10px 18px;border-radius:8px">La marca · Dos hermanos</div><div class="disp" style="font-size:118px;margin-top:22px">Uno cura. El otro arma.</div><div class="voz" style="font-size:34px;margin-top:16px">Cada pieza es una forma de su discusión, y termina en algo que se puede pedir hoy.</div></div>
+  <div style="position:absolute;left:0;right:0;top:86px;text-align:center"><div class="mono" style="display:inline-block;background:var(--tinta);color:var(--papel);padding:10px 18px;border-radius:8px">La marca · Dos hermanos</div><div class="disp" style="font-size:118px;margin-top:22px">Uno cura. El otro arma.</div><div class="voz" style="font-size:36px;margin-top:16px">Nunca se ponen de acuerdo en cómo se hace un sándwich. Esa discusión es la marca.</div></div>
   <img src="../../../img/sando2_frente.png" style="position:absolute;left:40px;bottom:0;height:520px">
-  <div style="position:absolute;left:560px;top:440px;width:370px"><div class="n" style="font-size:64px">SANDO</div><div class="voz" style="font-size:34px;margin-top:10px">El mayor. Cura los Signatures.</div><div class="t" style="font-size:22px">La receta está cerrada y no se discute. Sobrio, seguro, sin exclamaciones. Habla poco y en cursiva.</div></div>
+  <div style="position:absolute;left:560px;top:450px;width:370px"><div class="n" style="font-size:64px">SANDO</div><div class="voz" style="font-size:34px;margin-top:10px">El mayor. El curador.</div><div class="t" style="font-size:23px">Sus recetas están cerradas y no se discuten. Sobrio, seguro, sin exclamaciones. Habla poco y en cursiva.</div></div>
   <img src="../../../img/wicho2_celebra.png" style="position:absolute;right:80px;bottom:0;height:600px">
-  <div style="position:absolute;left:1060px;top:440px;width:400px"><div class="n" style="font-size:64px">WICHO</div><div class="voz" style="font-size:34px;margin-top:10px">El menor. Arma.</div><div class="t" style="font-size:22px">Todo está abierto y todo se puede. Exagera, se mueve, se ríe. Es la voz de «arma el tuyo» y del pedido en grupo.</div></div>
+  <div style="position:absolute;left:1060px;top:450px;width:400px"><div class="n" style="font-size:64px">WICHO</div><div class="voz" style="font-size:34px;margin-top:10px">El menor. El que arma.</div><div class="t" style="font-size:23px">Todo está abierto y todo se puede. Exagera, se mueve, se ríe. Es la voz de «arma el tuyo» y del pedido en grupo.</div></div>
 </section>
 
-<!-- 8 · ESTILO AMERICANO -->
+<!-- EL ESTILO -->
 <section class="s">
   <div class="mono eti">El estilo</div>
   <div class="disp" style="font-size:96px;margin-top:22px">Deli americano, sin disfraz.</div>
@@ -142,7 +156,7 @@ body{-webkit-font-smoothing:antialiased;color:var(--tinta);font-family:Archivo,s
         <div><div style="width:150px;height:150px;border-radius:12px;background:var(--celeste)"></div><div class="mono" style="font-size:14px;margin-top:10px">Celeste Wicho</div></div>
       </div>
       <div class="mono" style="font-size:16px;opacity:.7;margin-top:46px">La voz</div>
-      <div class="t" style="font-size:24px">Hablamos de tú. Frases cortas. Lo que el sándwich es, sin superlativos ni promesas de salud.</div>
+      <div class="t" style="font-size:26px">Hablamos de tú. Frases cortas y seguras. Decimos lo que el sándwich es, y eso alcanza.</div>
     </div>
     <div>
       <div class="mono" style="font-size:16px;opacity:.7">Letra</div>
@@ -152,57 +166,43 @@ body{-webkit-font-smoothing:antialiased;color:var(--tinta);font-family:Archivo,s
       <div class="mono" style="margin-top:20px">Datos · horarios · pide en sndwch.app</div>
     </div>
   </div>
-  <div class="pie"><span class="mono">SND//WCH · Brief</span><span class="mono">08</span></div>
+  <div class="pie"><span class="mono">SND//WCH</span><span class="mono">09</span></div>
 </section>
 
-<!-- 9 · FOTOGRAFÍA -->
+<!-- FOTOGRAFÍA -->
 <section class="s" style="padding:0">
-  <div style="position:absolute;left:120px;top:110px;right:120px">
+  <div class="foto" style="left:0;top:0;width:820px;height:1080px;background-image:url('img/turkey.jpg');background-position:50% 55%"></div>
+  <div style="position:absolute;left:900px;top:110px;right:120px">
     <div class="mono eti">Dirección de fotografía</div>
-    <div class="disp" style="font-size:104px;margin-top:20px">Lo que llega.</div>
-    <div class="voz" style="font-size:38px;margin-top:16px">No es un sándwich de estudio: es el tuyo, en tu mesa, a tu hora.</div>
-    <div style="margin-top:44px;display:grid;grid-template-columns:1fr 1fr;gap:26px 60px;font-size:28px;line-height:1.4">
-      <div><b>La receta y la porción reales.</b> Lo que se ve es lo que llega: ni un ingrediente de más, ni relleno desbordado.</div>
-      <div><b>El lugar y la hora en que se come.</b> La mesa del almuerzo con luz de mediodía; la lámpara cálida de la noche.</div>
-      <div><b>Listo para comer.</b> En tres cuartos, mirando a cámara, ocupando entre la mitad y dos tercios del cuadro.</div>
-      <div><b>Un solo foco.</b> Fondo desenfocado y una zona tranquila para el texto.</div>
-      <div><b>Las superficies del deli.</b> Kraft, papel manteca, madera.</div>
-      <div><b>Nada que no se venda.</b> Sin alcohol, sin platos ajenos, sin marcas de otros.</div>
+    <div class="disp" style="font-size:110px;margin-top:20px">Lo que llega.</div>
+    <div class="voz" style="font-size:40px;margin-top:16px">No es un sándwich de estudio: es el tuyo, en tu mesa, a tu hora.</div>
+    <div style="margin-top:44px;display:grid;gap:20px;font-size:25px;line-height:1.38">
+      <div><b>Real.</b> La receta y la porción tal como llegan.</div>
+      <div><b>Con hora.</b> La mesa del almuerzo con luz de mediodía; la lámpara cálida de la noche.</div>
+      <div><b>Listo para comer.</b> En tres cuartos, mirando a cámara, protagonista del cuadro.</div>
+      <div><b>Un solo foco.</b> Fondo desenfocado y aire para el texto.</div>
+      <div><b>Deli.</b> Kraft, papel manteca, madera.</div>
     </div>
   </div>
 </section>
 
-<!-- 10 · LO QUE NECESITAMOS -->
+<!-- LO QUE BUSCAMOS -->
 <section class="s osc">
   <div class="mono eti">Lo que buscamos</div>
   <div class="disp" style="font-size:96px;margin-top:22px">La lista de tomas.</div>
   <div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:50px;gap:26px">
     <div class="card"><div class="n" style="font-size:36px">Los 6 Signatures</div><div class="t" style="font-size:22px">Héroe en tres cuartos, con luz de mediodía y con luz de noche.</div></div>
-    <div class="card"><div class="n" style="font-size:36px">El corte</div><div class="t" style="font-size:22px">La sección de cada sándwich: el relleno real, capa por capa.</div></div>
-    <div class="card"><div class="n" style="font-size:36px">El armado</div><div class="t" style="font-size:22px">Manos de cocina, el queso que se funde, el vapor. Clips de 8 a 10 segundos para Reels.</div></div>
-    <div class="card"><div class="n" style="font-size:36px">Arma el tuyo</div><div class="t" style="font-size:22px">Los ingredientes en fila: panes, proteínas, vegetales, salsas.</div></div>
-    <div class="card"><div class="n" style="font-size:36px">El combo</div><div class="t" style="font-size:22px">Cada bebida de la casa junto a su sándwich.</div></div>
+    <div class="card"><div class="n" style="font-size:36px">El corte</div><div class="t" style="font-size:22px">La sección de cada sándwich, capa por capa.</div></div>
+    <div class="card"><div class="n" style="font-size:36px">El armado</div><div class="t" style="font-size:22px">Manos de cocina, el queso que se funde, el vapor. Clips cortos para Reels.</div></div>
+    <div class="card"><div class="n" style="font-size:36px">Las bebidas</div><div class="t" style="font-size:22px">The Bloom, The Midnight y The Cool, heladas, solas y junto a su sándwich.</div></div>
+    <div class="card"><div class="n" style="font-size:36px">Arma el tuyo</div><div class="t" style="font-size:22px">Los ingredientes en fila: panes, proteínas, verduras, salsas.</div></div>
     <div class="card"><div class="n" style="font-size:36px">El pedido que sale</div><div class="t" style="font-size:22px">La bolsa kraft, el papel, el pedido listo en la puerta.</div></div>
   </div>
   <div class="mono" style="margin-top:44px;color:var(--tan)">Formatos: 4:5 para el feed · 9:16 para historias y reels · 1:1 para la carta de las apps</div>
-  <div class="pie"><span class="mono" style="opacity:.6">SND//WCH · Brief</span><span class="mono" style="opacity:.6">10</span></div>
+  <div class="pie"><span class="mono">SND//WCH</span><span class="mono">11</span></div>
 </section>
 
-<!-- 12 · LAS REGLAS -->
-<section class="s">
-  <div class="mono eti">Lo que no se negocia</div>
-  <div class="disp" style="font-size:96px;margin-top:22px">Cinco reglas.</div>
-  <div style="margin-top:50px;display:grid;gap:30px;font-size:30px;line-height:1.38;max-width:1500px">
-    <div><b>La imagen cumple lo que promete.</b> Receta y porción reales en cada foto, real o generada: la ley sanciona la imagen que promete más de lo que llega.</div>
-    <div><b>Solo lo que se vende.</b> Nada de alcohol ni de productos fuera de la carta.</div>
-    <div><b>Los hermanos no se redibujan.</b> Sando y Wicho se usan como están.</div>
-    <div><b>La voz es de tú.</b> Sin superlativos, sin promesas de salud.</div>
-    <div><b>Todo se mide en pedidos.</b> Cada pieza lleva su propio enlace: cuenta lo que trae pedidos, no los «me gusta».</div>
-  </div>
-  <div class="pie"><span class="mono">SND//WCH · Brief</span><span class="mono">11</span></div>
-</section>
-
-<!-- 13 · CIERRE -->
+<!-- CIERRE -->
 <section class="s osc" style="display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center">
   <span class="wm" style="font-size:120px;color:var(--papel)">SND<span class="mk"><i></i><i></i></span>WCH</span>
   <div class="voz" style="font-size:56px;margin-top:40px;color:var(--tan)">Sándwiches de deli americano, a domicilio.</div>
