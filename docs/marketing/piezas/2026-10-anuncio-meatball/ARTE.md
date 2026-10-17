@@ -134,3 +134,9 @@ de la foto original.
 - En B, que la máscara no cambie el borde del pan.
 - No vi nada más de verdad o ley en las maquetas: sin precio, sin alcohol, sin gente, sin
   «Trujillo», y el vaso no se nombra.
+
+## 2026-10-17 · Puerta 2 (la pieza final) · A, 4:5 y 9:16 · revisión en la sesión (modo ahorro)
+veredicto: aprobar con lo aproximado anotado
+- `final/meatball-a-feed.png` y `final/meatball-a-vertical.png`, desde las maquetas aprobadas.
+- La tachada y el titular se leen; «— SANDO» firma. El vaso de The Bloom queda sin la rodaja de limón: se tapó con el color de la bebida (se ve un poco difuminado de cerca, no a tamaño de celular).
+- **Aproximado**: borrar el limón de la foto y extender el fondo del 9:16 necesitan IA; la final usa los parches de la maqueta.

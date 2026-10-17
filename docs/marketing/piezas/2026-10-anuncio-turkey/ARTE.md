@@ -90,3 +90,9 @@ En los dos casos es por la sombra de la foto.
 - Revisar el borrado del logo y de la botella.
 - Que la extensión del 9:16 no agregue nada.
 - El pan, que se ve más rústico que el Classic // White.
+
+## 2026-10-17 · Puerta 2 (la pieza final) · A, 4:5 y 9:16 · revisión en la sesión (modo ahorro)
+veredicto: aprobar
+- Foto nueva `docs/marketing/anuncios/fotos/foto-turkey-v4.jpg` (Figma, `gemini-3.1-flash-image`, prompt del README con «close-up… half to two thirds of the frame»): el sándwich ocupa la mitad del cuadro, en tres cuartos, sobre kraft y roble, con la ventana atrás. Sin laptop, sin botella, sin marcas: ya no hacen falta parches.
+- Como cambió la foto, los textos se movieron (`final/concepto-a-*.html`): 4:5, «EL ALMUERZO» y la itálica arriba sobre la pared y la mesa; «QUE NO TE TUMBA / LA TARDE.» abajo sobre el kraft. 9:16, la itálica pasó a la columna derecha bajo la marca (a la izquierda pisaba la corteza). Nada de texto sobre la comida.
+- **Aproximado**: el fondo del 9:16 debajo de y 1250 es la foto difuminada (zona de los botones). La extensión limpia necesita IA.

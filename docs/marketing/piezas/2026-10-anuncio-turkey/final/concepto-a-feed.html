@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<!--
+  Final · Puerta 2 (2026-10-17, foto v4: sin laptop ni botella, sin parches) · 2026-10-anuncio-turkey · Concepto A «La frase que dura la tarde» · 4:5 (1080x1350)
+  Director de arte, 2026-10-16. Foto aprobada por ruta relativa. Sin velo, sin franja, sin precio.
+  Textos: CONCEPTOS.md (titular aprobado, literal; la itálica de «Cómo se vende», CARTA.md).
+  Ajuste frente a CONCEPTOS.md: «EL ALMUERZO» arriba a la izquierda y la segunda mitad abajo a la
+  derecha (lectura en Z, cruzando el sándwich). Abajo a la izquierda está el canto de la mesa en
+  sombra: la tinta ahí no se lee. La itálica va bajo «EL ALMUERZO», sobre la tapa clara de la laptop.
+-->
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1350px;overflow:hidden;background:#1E2B22}
+body{-webkit-font-smoothing:antialiased}
+.p{position:relative;width:1080px;height:1350px;overflow:hidden}
+/* La foto aprobada en su proporción real (928x1152). Los parches van en % de la foto. */
+.foto{position:absolute;background:url('../../../anuncios/fotos/foto-turkey-v4.jpg') 0 0/100% 100% no-repeat}
+/* APROXIMADO: el logo de la laptop y la botella se tapan con el color de alrededor.
+   En el final se BORRAN de una copia de la foto (el sándwich no se toca). */
+.tapa-logo{position:absolute;left:0;top:25.6%;width:9.6%;height:4.6%;background:linear-gradient(90deg,rgb(149,162,168),rgb(160,173,179) 55%,rgb(166,179,185));-webkit-mask-image:radial-gradient(closest-side,#000 62%,transparent)}
+.tapa-botella{position:absolute;left:91.6%;top:0;width:8.4%;height:34.4%;background:linear-gradient(180deg,rgb(205,213,214) 0%,rgb(223,227,228) 7.5%,rgb(246,247,247) 22.5%,rgb(247,248,248) 31%,rgb(206,208,208) 37.5%,rgb(200,196,188) 45%,rgb(214,209,201) 57.5%,rgb(240,240,240) 62%,rgb(239,239,239) 85%,rgb(224,222,219) 92%,rgb(228,226,225) 100%);-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 38%)}
+/* APROXIMADO (solo 9:16): el fondo extendido es la misma foto difuminada, como el compositor.
+   En el final, el Productor extiende la mesa hacia abajo (y un poco de pared arriba): solo fondo. */
+.fondo{position:absolute;left:-90px;top:-90px;right:-90px;bottom:-90px;background:url('../../../anuncios/fotos/foto-turkey-v4.jpg') center/cover no-repeat;filter:blur(38px)}
+/* Las tres voces, en tinta, sin velo. */
+.disp{position:absolute;font-family:Anton,sans-serif;font-weight:400;text-transform:uppercase;line-height:.9;letter-spacing:-.005em;color:#1E2B22;white-space:nowrap}
+.voz{position:absolute;font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#1E2B22;white-space:nowrap}
+.mono{position:absolute;font-family:'IBM Plex Mono',monospace;font-weight:600;letter-spacing:.08em;color:#1E2B22;white-space:nowrap}
+/* La marca: .wm-mark de CLAUDE.md, el // dorado y celeste (el único lugar de esos colores). */
+.wm{position:absolute;font:800 44px/1 Archivo,sans-serif;display:inline-flex;align-items:center;letter-spacing:.01em;color:#1E2B22;white-space:nowrap}
+.mk{display:inline-flex;gap:.16em;margin:0 .1em}
+.mk i{width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px;display:block}
+.mk i:first-child{background:#CBA258}.mk i:last-child{background:#8CC8EC}
+/* C: la línea que señala un ingrediente (2 px, tinta). */
+.linea{position:absolute;width:2px;background:#1E2B22}
+</style></head>
+<body><div class="p">
+  <div class="foto" style="left:-3.75px;top:0;width:1087.5px;height:1350px"></div>
+
+  <!-- La marca, arriba a la derecha, en tinta sobre la luz de la ventana. -->
+  <div class="wm" style="right:56px;top:58px">SND<span class="mk"><i></i><i></i></span>WCH</div>
+
+  <!-- El momento, primera mitad: sobre la mesa clara, encima del pan. -->
+  <div class="disp" style="left:52px;top:96px;font-size:146px">El almuerzo</div>
+  <!-- La verdad de la carta. -->
+  <div class="voz" style="left:58px;top:244px;font-size:44px">Turkey. Llena sin pesar.</div>
+
+  <!-- El momento, segunda mitad: bajo el pan, sobre el kraft y la mesa con luz. -->
+  <div class="disp" style="right:56px;top:1046px;font-size:118px;line-height:.92;text-align:right">Que no te tumba<br>la tarde.</div>
+
+  <!-- El dato: cómo pedir (sin precio, brief). -->
+  <div class="mono" style="right:58px;top:1286px;font-size:24px">PIDE EN SNDWCH.APP</div>
+</div></body></html>

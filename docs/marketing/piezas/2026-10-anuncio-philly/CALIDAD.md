@@ -42,3 +42,9 @@ cambio exacto: ninguno ahora.
 
 ### Antes de publicar
 - Las tres fotos son generadas, no del sándwich armado. Con el primer Philly real (a partir del 20-oct) compara pan, relleno y cantidad con la foto antes de prender la pauta del 23. Si no calza, cambia la foto, no el producto.
+
+## 2026-10-17 · Puerta 3 (antes de pagar) · A, 4:5 y 9:16 · revisión en la sesión
+veredicto: pasa
+- La foto es la de la Puerta 1 (res, cebolla, pimiento, cheddar en pan suave): la receta. Textos sin cifras, sin voseo, sin «Trujillo».
+- Pendientes de armado (Media buyer): excluir los lunes del horario; destino `sndwch.app/?src=meta-philly`.
+- Lo aproximado (la extensión del 9:16) no agrega objetos: solo madera estirada.
