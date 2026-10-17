@@ -25,7 +25,7 @@ Agustín, Don Pacho, La Lucha, La Casera), con pan francés o ciabatta (`docs/ME
 | **6 Signatures** | recetas cerradas: Philly Cheesesteak (la estrella), Meatball Marinara, Turkey, Tuna Melt, Italian Hoagie y Classic Tuna | 15 cm S/19.90 · 30 cm S/30.90 |
 | **Arma el tuyo** | eliges pan, proteína, vegetales, queso y hasta 3 salsas | lo pone la proteína, igual que su Signature |
 | **Menú secreto** | se desbloquea desde el tercer pedido; hacia afuera no se dice qué lleva | aparte |
-| **Bebidas de la casa** | tres infusiones heladas: The Bloom (jamaica), The Midnight (té negro en frío), The Cool (hierba luisa y menta) | S/5–6; el combo sándwich + bebida descuenta S/1 |
+| **Bebidas de la casa** | tres infusiones heladas: The Bloom (jamaica), The Midnight (té negro en frío), The Cool (hierba luisa y menta), en botella pequeña rectangular (más adelante, botella PET con tapa de aluminio) | S/5–6; el combo sándwich + bebida descuenta S/1 |
 
 - **La porción**: ~85 g de proteína en el 15 cm (el doble en el 30 cm), una capa, sin desbordar.
 - **En Rappi y PedidosYa** todo cuesta 10% más, como hace toda la competencia.
