@@ -91,3 +91,9 @@ cambio exacto: null. Para el final: (1) en el 4:5, el titular va a 130 px como m
 
 ## Para el dueño
 - **Elige A o C.** A es la que recomiendo. B queda fuera con esta foto.
+
+## 2026-10-17 · Puerta 2 (la pieza final) · A, 4:5 y 9:16 · revisión en la sesión (modo ahorro)
+veredicto: aprobar
+- `final/philly-a-feed.png` y `final/philly-a-vertical.png`, montadas desde las maquetas aprobadas con `scripts/piezas/maqueta.mjs`, sin cambios de texto ni de foto.
+- Titular en crema sobre la madera oscura: se lee a tamaño de celular. La comida no lleva texto encima. Firma y `//` correctos.
+- **Aproximado**: la extensión del 9:16 sigue siendo la foto estirada (vetas verticales abajo); está en la zona de los botones de Instagram (debajo de y 1248). La extensión limpia necesita IA (Adobe `image_generative_expand`).

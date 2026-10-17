@@ -52,3 +52,11 @@ cambio exacto:
 
 ### Antes de publicar
 - Con el primer Turkey real (a partir del 20-oct) compara el pan, el relleno y la cantidad con la foto nueva antes de prender la pauta del 23.
+
+## 2026-10-17 · Puerta 3 (antes de pagar) · A, 4:5 y 9:16 · revisión en la sesión
+veredicto: pasa, con una condición antes de prender
+- Lo que se retuvo en la Puerta 1, resuelto con la foto v4: **pan blanco suave** (corteza fina y lisa, sin harina), sin logo, sin botella.
+- La receta en la foto: pavo en lonjas plegadas, lechuga, tomate, cebolla morada, pimiento verde. Sin queso, sin pepino, sin mayonesa. Pasa.
+- **Porción**: se ve más llena que una sola capa (varios pliegues de pavo). No desborda, pero es generosa: **antes de prender el 23, compararla con el primer Turkey real** (ya estaba como condición). Si el real llega más plano, se regenera con «single thin layer».
+- Una gota amarillenta junto al pavo, abajo a la derecha, es el aceite; a tamaño de celular no se lee como mostaza. Se vigila.
+- Pendiente de armado: excluir los lunes; destino `sndwch.app/?src=meta-turkey`.

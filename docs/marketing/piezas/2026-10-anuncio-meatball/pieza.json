@@ -5,14 +5,18 @@
  "formato": "anuncio de Meta: 4:5 feed (1080x1350) + 9:16 historias y reels (1080x1920)",
  "canal": "meta",
  "src": "meta-meatball",
- "estado": "produccion",
+ "estado": "lista-para-el-dueno",
  "foto_aprobada": "docs/marketing/anuncios/fotos/foto-meatball.jpg",
  "puertas": {
   "concepto": "arte: A · calidad: retener (borrar la rodaja de limón del vaso y cambiar la línea 1 de A1; ver CALIDAD.md) · dueño: A",
-  "arte": null,
-  "calidad": null
+  "arte": "2026-10-17: aprobada (revisión en la sesión, modo ahorro); lo aproximado está en ARTE.md",
+  "calidad": "2026-10-17: pasa"
  },
  "concepto_elegido": "A · Hoy sí cocino (con los cambios de Calidad: línea 1 de Meta «Hoy sí cocino. Hasta que toca cenar.» y sin el limón del vaso)",
  "anterior": "docs/marketing/anuncios/meatball-feed.jpg y meatball-vertical.jpg (v2, con la franja: no aprobada)",
- "eleccion_del_dueno": "2026-10-16: «Las tres A»"
+ "eleccion_del_dueno": "2026-10-16: «Las tres A»",
+ "finales": [
+  "docs/marketing/piezas/2026-10-anuncio-meatball/final/meatball-a-feed.png",
+  "docs/marketing/piezas/2026-10-anuncio-meatball/final/meatball-a-vertical.png"
+ ]
 }

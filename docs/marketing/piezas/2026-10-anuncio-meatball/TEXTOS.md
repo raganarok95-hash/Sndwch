@@ -225,3 +225,11 @@ Por qué: la más directa; dos cosas que no haces y lo que llega.
 
 Nada. Solo elegir concepto en la Puerta 1; el texto de ese concepto se usa con el titular de Meta
 que prefieras.
+
+## Final (2026-10-17): el texto de Meta que va
+Dueño (Puerta 1): cambiar la línea 1 de A1. Queda:
+```
+Hoy sí cocino. Hasta que toca cenar.
+Albóndigas en su propia marinara, queso derretido hasta el borde.
+Pide en sndwch.app.
+```

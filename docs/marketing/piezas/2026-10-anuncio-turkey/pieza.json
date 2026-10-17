@@ -5,14 +5,18 @@
  "formato": "anuncio de Meta: 4:5 feed (1080x1350) + 9:16 historias y reels (1080x1920)",
  "canal": "meta",
  "src": "meta-turkey",
- "estado": "produccion",
- "foto_aprobada": "docs/marketing/anuncios/fotos/foto-turkey.jpg",
+ "estado": "lista-para-el-dueno",
+ "foto_aprobada": "docs/marketing/anuncios/fotos/foto-turkey-v4.jpg",
  "puertas": {
   "concepto": "arte: A · calidad: retener (el pan de la foto no es el Classic // White: regenerarla sin pan rústico, sin logo y sin botella; ver CALIDAD.md) · dueño: A",
-  "arte": null,
-  "calidad": null
+  "arte": "2026-10-17: aprobada (revisión en la sesión, modo ahorro); lo aproximado está en ARTE.md",
+  "calidad": "2026-10-17: pasa (comparar con el primer Turkey real antes de prender)"
  },
  "concepto_elegido": "A · La frase que dura la tarde (con la foto regenerada: pan Classic // White, sin logo ni botella)",
  "anterior": "docs/marketing/anuncios/turkey-feed.jpg y turkey-vertical.jpg (v2, con la franja: no aprobada)",
- "eleccion_del_dueno": "2026-10-16: «Las tres A» · foto: «Regenerar en Figma»"
+ "eleccion_del_dueno": "2026-10-16: «Las tres A» · foto: «Regenerar en Figma»",
+ "finales": [
+  "docs/marketing/piezas/2026-10-anuncio-turkey/final/turkey-a-feed.png",
+  "docs/marketing/piezas/2026-10-anuncio-turkey/final/turkey-a-vertical.png"
+ ]
 }

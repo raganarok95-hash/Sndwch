@@ -67,3 +67,9 @@ día (vuelven a las 00:00 UTC). Se pide otra más cerca apenas vuelvan.
 `fotos/foto-turkey-v3-cerca.jpg` es la v3 recortada más cerca del sándwich (sin generar nada
 nuevo). La usa el lanzamiento de Instagram (la carta y la lámina del Turkey) en vez de
 `img/sig10.jpg`, que muestra pepino (dueño, 2026-10-16: «Sí, foto fiel»).
+
+## El Turkey v4, más cerca (2026-10-17)
+
+`fotos/foto-turkey-v4.jpg` (Figma, `gemini-3.1-flash-image`): el mismo prompt de la v3 con «CLOSE-UP:
+a single 15 cm submarine sandwich fills half to two thirds of the frame, three-quarter angle», sin
+laptop. Es la que usan las finales del anuncio (`piezas/2026-10-anuncio-turkey/final/`).

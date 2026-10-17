@@ -48,3 +48,9 @@ cambio exacto:
 
 ### Antes de publicar
 - La foto es generada. Con el primer Meatball real (a partir del 20-oct) compara el pan, las albóndigas y el queso con la foto antes de prender la pauta del 23.
+
+## 2026-10-17 · Puerta 3 (antes de pagar) · A, 4:5 y 9:16 · revisión en la sesión
+veredicto: pasa
+- Lo que se retuvo en la Puerta 1 está resuelto: el texto de Meta A1 abre con «Hoy sí cocino. Hasta que toca cenar.» (dueño) y en la imagen no se ve rodaja en el vaso.
+- La foto contra la receta: albóndigas en marinara, queso americano, tomate, cebolla morada, pan suave. Pasa.
+- Pendiente de armado: excluir los lunes; destino `sndwch.app/?src=meta-meatball`.
