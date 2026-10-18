@@ -35,9 +35,10 @@ user-invocable: false
 |---|---|
 | menos de 0.7% de clics después de 2,000 impresiones | cambiar la pieza |
 | 14 días sin un solo pedido con su `?src=` | cambiar la pieza |
-| costo por cliente hasta el techo del primer pedido (panel; hoy S/12.56) | verde: subir 20% por semana |
-| entre ese techo y el del cliente completo (panel; hoy S/22.70) | amarillo: no subir; a los 30 días, si vuelve menos de 4 de cada 10, pasa a rojo |
-| por encima del techo del cliente completo | rojo: dos rondas de corrección de 7 días; si sigue, solo reconectar visitantes con tope S/5/día (`docs/marketing/PLAN_COSTO_POR_CLIENTE.md`) |
+| costo por cliente hasta el techo del primer pedido (panel; hoy S/12.56) | se paga solo: subir 20% por semana |
+| hasta ~S/30 | se paga si vuelven como el promedio: seguir y medir la tanda a los 60 días |
+| más de ~S/30 | seguir solo si la tanda vuelve más que el promedio; corregir piezas, zona, horario y app. Si a los 60 días la tanda no devolvió su costo, bajar a reconectar visitantes (`docs/marketing/PLAN_COSTO_POR_CLIENTE.md` §3) |
+| una tanda ya devolvió lo que costó | subir el presupuesto 20% por semana (con el sí del dueño) |
 | Rappi: menos de S/20 por pedido | sigue |
 | Rappi: S/20–35 por pedido | bajar a S/5 al día |
 | Rappi: más de S/35 por pedido | apagar |
