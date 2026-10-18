@@ -1,4 +1,4 @@
-# Cuánto podemos pagar por un cliente, cómo bajarlo y qué hacer si sale caro (2026-10-18)
+# Cuánto podemos pagar por un cliente, cómo bajarlo y cómo hacer que Meta se pague (2026-10-18)
 
 Dueño: «Ajústalo actualmente e investiga cómo reducir el precio por obtención de cliente. Segundo,
 requiero una respuesta a si nos damos cuenta que el precio por cliente es más caro de lo que es
@@ -44,34 +44,53 @@ Cada palanca mueve una de las tres partes. En orden de lo que más mueve y menos
 - **Orgánico**: el video del día, Google Maps y el QR de la bolsa. Cuestan tiempo, no plata.
 - **Anuncios a WhatsApp**: en Perú una conversación desde un anuncio cuesta centavos (S/0.15–0.30, agencias). Vale una prueba chica si el cliente pide más fácil escribiendo que entrando a la app; se mide igual, por pedido.
 
-## 3 · El plan si el cliente sale más caro de lo que deja
+## 3 · Meta como motor desde cero (dueño, 2026-10-18: «Meta sí debería usarse para obtener más clientes. Piensa que empezaremos de cero literalmente»)
 
-**Regla de lectura**: nada se decide antes de **14 días o 30 pedidos** del anuncio (antes, el número
-de Meta es ruido). Se lee cada lunes, por pieza, con su `?src=`.
+**La idea**: un cliente de Meta no se paga con su primer pedido; se paga con los que vienen
+después. Meta es una **inversión que se recupera en unos 60 días**, no un gasto que tiene que
+pagarse el mismo día. Lo que decide si es rentable no es solo cuánto cuesta el cliente, sino
+**cuántos vuelven**.
 
-| semáforo | costo por cliente | qué se hace |
+**Cuántos tienen que volver para que Meta se pague** (cada pedido deja S/12.56; de los que vuelven
+una vez, 85% hace un tercero y 60% sigue, como el promedio del delivery):
+
+| un cliente cuesta | pedidos que necesita hacer | cuántos tienen que volver al menos una vez |
 |---|---|---|
-| **Verde** | hasta S/12.56 | se paga solo. Se sube el presupuesto 20% por semana mientras siga verde |
-| **Amarillo** | S/12.56 a S/22.70 | se mantiene el presupuesto, no se sube. A los 30 días se mira cuántos volvieron: si vuelve menos de 4 de cada 10, pasa a rojo |
-| **Rojo** | más de S/22.70 | dos rondas de corrección, de 7 días cada una, sin subir presupuesto (abajo). Si sigue rojo, se pausa |
+| S/20 | 1.6 | 2 de cada 10 |
+| S/25 | 2.0 | 3 de cada 10 |
+| S/30 | 2.4 | 4 de cada 10 (el promedio del delivery) |
+| **S/35** (lo que espera el modelo) | **2.8** | **6 de cada 10** |
+| S/45 | 3.6 | 8 de cada 10 |
 
-**Las dos rondas de corrección** (en este orden, una cosa a la vez para saber qué funcionó):
+**Las cuatro etapas, desde cero:**
 
-1. **Semana 1 · la pieza**: se cambian los anuncios por otros distintos (palancas 2, 3 y 4) y se
-   recorta a la zona y las horas que venden (palanca 5).
-2. **Semana 2 · el público y la app**: todo el presupuesto a reconectar visitantes (palanca 6) y se
-   arregla lo que la app pierda entre la visita y el pago (palanca 1).
+1. **Sembrar (semanas 1–4).** Meta con el tope de la prueba (S/700, ~S/25 al día), solo en la zona
+   de reparto, a la hora del almuerzo y de la cena, optimizando por compra, con 6–10 anuncios
+   distintos. Se acepta que el cliente cueste más que el primer pedido: se están comprando los
+   primeros clientes, las primeras reseñas y los datos que el píxel necesita para aprender.
+2. **Que cada cliente de Meta vuelva (desde el primer pedido).** Es la palanca que vuelve rentable
+   a Meta, y ya está en la app: el QR de la bolsa (bebida gratis en el siguiente pedido por la web),
+   puntos, el pedido fijo que se ofrece al segundo pedido, el aviso a quien dejó de pedir y el
+   cumpleaños. La meta es que **6 de cada 10 vuelvan**: con eso, un cliente de S/35 se paga.
+3. **Medir por tanda (cada lunes).** Los clientes que trajo Meta en cada semana se siguen 60 días:
+   cuánto costaron y cuánto han dejado con todos sus pedidos. **Si una tanda ya devolvió lo que
+   costó, Meta se paga y se sube el presupuesto 20% por semana.**
+4. **Escalar con lo aprendido (desde ~100 compradores).** Públicos parecidos a los que ya compraron
+   y anuncios a quienes visitaron la app: los dos bajan el costo por cliente.
 
-**Si después de las dos sigue rojo**:
+**El semáforo, con Meta como motor:**
 
-- Meta pasa a **solo reconectar visitantes**, con tope de S/5 al día. Nada de buscar gente nueva.
-- La plata que quedaba de la prueba se mueve a lo que cuesta menos: el premio de referidos y del
-  pedido en grupo, y el anuncio dentro de Rappi con su regla.
-- **Se reintenta Meta en 30 días**, cuando haya fotos reales, reseñas y la recompra medida: las tres
-  cosas que más bajan el costo y que el día 1 no existen.
+| costo por cliente | qué se hace |
+|---|---|
+| hasta S/12.56 | se paga con el primer pedido: subir 20% por semana |
+| S/12.56 a S/30 | se paga si vuelven como el promedio: seguir y medir la tanda a los 60 días |
+| más de S/30 | seguir solo si la tanda vuelve más que el promedio. Mientras tanto, corregir: piezas nuevas, zona y horario, la app (§2). Si a los 60 días la tanda no devolvió lo que costó, bajar a reconectar visitantes y reforzar referidos y grupo hasta corregir |
 
-**Lo que no cambia**: la prueba de Meta tiene un tope (S/700) y no se pasa sin tu sí; nada se prende
-ni se sube solo.
+**La caja**: lo que se invierte en Meta vuelve en unos dos meses. Por eso el presupuesto lo fija lo
+que puedes adelantar sin apretarte, no lo que rinde: S/700 el primer mes, y se sube solo cuando una
+tanda ya devolvió su costo.
+
+**Lo que no cambia**: nada se prende ni se sube sin tu sí.
 
 ## 4 · Fuentes
 
