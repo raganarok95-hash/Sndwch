@@ -35,10 +35,13 @@ user-invocable: false
 |---|---|
 | menos de 0.7% de clics después de 2,000 impresiones | cambiar la pieza |
 | 14 días sin un solo pedido con su `?src=` | cambiar la pieza |
-| costo por cliente hasta el techo del primer pedido (panel; hoy S/12.56) | se paga solo: subir 20% por semana |
-| hasta ~S/30 | se paga si vuelven como el promedio: seguir y medir la tanda a los 60 días |
-| más de ~S/30 | seguir solo si la tanda vuelve más que el promedio; corregir piezas, zona, horario y app. Si a los 60 días la tanda no devolvió su costo, bajar a reconectar visitantes (`docs/marketing/PLAN_COSTO_POR_CLIENTE.md` §3) |
-| una tanda ya devolvió lo que costó | subir el presupuesto 20% por semana (con el sí del dueño) |
+| costo por cliente hasta el techo del primer pedido (panel; hoy S/12.56) | se paga solo: proponer subir 20% por semana |
+| hasta ~S/30 | seguir; medir a los 60 días si esos clientes volvieron |
+| más de ~S/30 | corregir piezas, zona, horario y app. Si a los 60 días esos clientes no devolvieron su costo, bajar el presupuesto y pasar una parte a los canales más baratos, sin dejar de buscar clientes nuevos (`docs/marketing/PLAN_COSTO_POR_CLIENTE.md` §3) |
+
+Meta es **uno** de los canales de clientes nuevos, no el único ni el motor: la publicidad busca gente
+nueva (con 0 clientes no se limita a la recompra) y Rappi y PedidosYa no se cuentan como seguros
+(dueño, 2026-10-18).
 | Rappi: menos de S/20 por pedido | sigue |
 | Rappi: S/20–35 por pedido | bajar a S/5 al día |
 | Rappi: más de S/35 por pedido | apagar |
