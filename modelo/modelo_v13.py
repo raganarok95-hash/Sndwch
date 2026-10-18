@@ -63,7 +63,7 @@ ETIQ, DIAS, H = M.ETIQ, M.DIAS, M.HORIZONTE
 # Reescribir este archivo borraría el hallazgo que justifica el cambio: con el techo de un solo
 # pedido, el freno apaga la publicidad SIEMPRE y el negocio se queda clavado en −S/500. Ver
 # `modelo/modelo_v14.py` y `PREDICCION_V14.md` para la política vigente.
-TECHO_CAC = 13.63          # [DERIVADO] `cacTechoPrimerPedido()` en el servidor
+TECHO_CAC = 12.56          # [DERIVADO] (13.63 antes del precio del 2026-10-16) `cacTechoPrimerPedido()` en el servidor
 
 
 # ═══════════════════════════════════════════════════════════════════════════════════════

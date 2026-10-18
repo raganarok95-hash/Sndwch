@@ -161,13 +161,16 @@ cmpModelo('Supuesto del modelo: viralidad (VIRAL ↔ referralsPer100)', 'modelo/
 //
 // Es el mismo criterio que ya se aplica a MODELO_SUPUESTOS, llevado un paso más allá: aquel
 // compara dos literales, éste compara contra el resultado real del modelo. Importa porque
-// sobre `contribPedido` se calcula el TECHO: si el servidor cree que un pedido deja S/14.13
+// sobre `contribPedido` se calcula el TECHO: si el servidor cree que un pedido deja S/14.13 (pasó:
+// el precio bajó el 2026-10-16 y el modelo viejo seguía con la carta anterior)
 // y en realidad deja S/12, el freno deja pasar un CAC que ya está quemando plata.
 function modeloV11Numeros() {
   const py = [
     'import sys; sys.path.insert(0, "modelo")',
-    'import modelo_v11 as M',
-    'print("%.2f|%.2f|%.2f|%.2f" % (M.CONTRIB_PEDIDO, M.OVERHEAD_POR_PEDIDO, M.COSTO_REFERIDO, M.CONV_APRENDIZAJE_7D))',
+    // La contribución, el gasto por pedido y el referido salen del modelo vigente
+    // (proyeccion.py, con la carta y los precios de hoy); el aprendizaje de Meta, de modelo_v11.
+    'import modelo_v11 as M, proyeccion as P',
+    'print("%.2f|%.2f|%.2f|%.2f" % (P.pedido()["propio"] + P.GASTO_PEDIDO, P.GASTO_PEDIDO, P.COSTO_REFERIDO, M.CONV_APRENDIZAJE_7D))',
   ].join('; ');
   // ⚠ `-B` Y `PYTHONPYCACHEPREFIX` NO SON HIGIENE: sin ellos este chequeo compara contra un
   // modelo VIEJO y no se entera. Python valida su bytecode cacheado por (mtime, tamaño) del
@@ -210,11 +213,11 @@ function tsCacTecho(nombre) {
   const py = modeloV11Numeros();
   if (py) {
     const [contrib, overhead, referido, aprendizaje] = py;
-    cmpModelo('Techo de CAC: contribución por pedido (CONTRIB_PEDIDO ↔ contribPedido)', 'modelo/modelo_v11.py',
+    cmpModelo('Techo de CAC: contribución por pedido (pedido()[propio] + GASTO_PEDIDO ↔ contribPedido)', 'modelo/proyeccion.py',
         tsCacTecho('contribPedido'), contrib);
-    cmpModelo('Techo de CAC: overhead por pedido (OVERHEAD_POR_PEDIDO ↔ overheadPedido)', 'modelo/modelo_v11.py',
+    cmpModelo('Techo de CAC: gasto por pedido (GASTO_PEDIDO ↔ overheadPedido)', 'modelo/proyeccion.py',
         tsCacTecho('overheadPedido'), overhead);
-    cmpModelo('Techo de CAC: costo del referido (COSTO_REFERIDO ↔ costoReferido)', 'modelo/modelo_v11.py',
+    cmpModelo('Techo de CAC: costo del referido (COSTO_REFERIDO ↔ costoReferido)', 'modelo/proyeccion.py',
         tsCacTecho('costoReferido'), referido);
     cmpModelo('Techo de CAC: conversiones de aprendizaje (CONV_APRENDIZAJE_7D ↔ convAprendizaje7d)', 'modelo/modelo_v11.py',
         tsCacTecho('convAprendizaje7d'), aprendizaje);
