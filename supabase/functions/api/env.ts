@@ -533,21 +533,25 @@ export const MODELO_OBJETIVOS = {
 // apostar, no invertir.
 //
 // ⚠ EL DATO QUE OBLIGA A QUE ESTO EXISTA: con el CPM medio el CAC es **S/17.87** y la
-// contribución del primer pedido es **S/13.63**. O sea que al CPM medio un cliente comprado
+// contribución del primer pedido es **S/12.56** (con el 15CM a S/19.90 desde el 2026-10-16;
+// antes S/13.63). O sea que al CPM medio un cliente comprado
 // NO se paga a sí mismo con su primer pedido — se recupera recién si vuelve. Eso puede estar
 // bien (casi todo el delivery funciona así) pero solo si la repetición existe DE VERDAD, y
 // hoy no está medida. El freno no dice "no hagas publicidad": dice cuánto estás apostando a
 // una repetición que todavía no viste.
 //
-// Los cuatro números salen de `modelo/modelo_v11.py` y **`npm run parity` los verifica
-// corriendo el Python**, no comparando contra una copia. Es el segundo chequeo del script que
+// Los números salen del modelo vigente, `modelo/proyeccion.py` (la carta y los precios de hoy;
+// `modelo_v11.py` calculaba con la carta vieja de The Original y The Smoke y quedó atrás el
+// 2026-10-18), salvo `convAprendizaje7d`, que sigue en `modelo_v11.py`. **`npm run parity` los
+// verifica corriendo el Python**, no comparando contra una copia. Es el segundo chequeo del script que
 // cruza lenguajes, por el mismo motivo que el primero: la pantalla no puede medir contra una
 // meta que el modelo ya movió.
 export const CAC_TECHO = {
-  // [DERIVADO] `CONTRIB_PEDIDO` — contribución por pedido con la mezcla que el modelo asume
-  // (mitad ARMA EL TUYO). NO es el 16.42 de los Signatures solos.
-  contribPedido: 14.13,
-  // [MÉTODO] `OVERHEAD_POR_PEDIDO` — gas, frío y coordinación, aparte del insumo.
+  // [DERIVADO] `proyeccion.pedido()["propio"] + GASTO_PEDIDO` — lo que deja un pedido propio
+  // con la carta de hoy (ticket menos insumos, tarjeta y recompensas), antes del gasto fijo
+  // por pedido. Con el 15CM a S/19.90: 13.06 (antes del 2026-10-16, 14.13 con el modelo viejo).
+  contribPedido: 13.06,
+  // [MÉTODO] `GASTO_PEDIDO` de proyeccion.py — gas, frío y coordinación, aparte del insumo.
   overheadPedido: 0.5,
   // [MEDIDO] `COSTO_REFERIDO` — el insumo del 15CM de R06 + la bebida de R05. Es el canal
   // alternativo, y el número contra el que hay que comparar cualquier CAC pagado.
@@ -599,15 +603,15 @@ export function pedidosPorCliente(): number {
 
 /** ⚠ EL TECHO CON EL QUE DECIDE EL FRENO DESDE EL 2026-09-13 — corrección del dueño.
  *
- *  El techo del PRIMER pedido (S/13.63) era correcto mientras la publicidad se juzgara como
+ *  El techo del PRIMER pedido (S/13.63 entonces; S/12.56 con el precio del 2026-10-16) era correcto mientras la publicidad se juzgara como
  *  un gasto que tiene que pagarse solo de inmediato. Pero la decisión del dueño es tratarla
  *  como **reinversión**, y contra ese criterio el techo de un pedido apaga la publicidad
- *  SIEMPRE: el CAC de Meta arranca por encima de S/13.63 en todo el rango, así que el freno
+ *  SIEMPRE: el CAC de Meta arranca por encima del techo de un pedido en todo el rango, así que el freno
  *  cortaba el único canal de adquisición que existe y el negocio se quedaba clavado.
  *
  *  El techo correcto para reinvertir es lo que deja el cliente COMPLETO: 2.41 pedidos ×
- *  S/13.63 ≈ S/33, recortado por `confianzaValorVida` porque la repetición de este negocio
- *  todavía no está medida. A 0.75 da ~S/25.
+ *  lo que deja uno, recortado por `confianzaValorVida` porque la repetición de este negocio
+ *  todavía no está medida. Con el precio del 2026-10-16: 2.41 × S/12.56 × 0.75 ≈ S/22.70.
  *
  *  Los DOS se siguen calculando y la pantalla muestra los dos: el del primer pedido dice
  *  "este cliente ya se pagó hoy" y el del valor de vida dice "se paga si vuelve como vuelve

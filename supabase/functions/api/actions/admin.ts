@@ -3320,7 +3320,7 @@ export async function actAdminRetentionReport(b: Entrada<"admin-retention-report
 // dueño no tiene forma de saber en qué punto está mientras gasta.
 //
 // Y el número que lo vuelve urgente: al CPM medio el CAC es **S/17.87** contra una
-// contribución de primer pedido de **S/13.63**. O sea que al precio medio de la subasta, un
+// contribución de primer pedido de **S/12.56** (S/13.63 antes del precio del 2026-10-16). O sea que al precio medio de la subasta, un
 // cliente comprado NO se paga con su primer pedido. Eso puede estar bien —casi todo el
 // delivery funciona así— pero SOLO si la repetición existe, y la repetición hoy no está
 // medida. El freno no dice "no hagas publicidad": dice cuánto estás apostando a algo que
@@ -3426,7 +3426,7 @@ export function cacFreno(input: {
   const nuevosReferidos = Math.max(0, Math.round(Number(input.nuevosReferidos) || 0));
   // ⚠ EL FRENO DECIDE CONTRA EL TECHO DEL VALOR DE VIDA desde el 2026-09-13 (decisión del
   // dueño: la publicidad es reinversión y no debe limitar). Con el techo del primer pedido
-  // el freno cortaba SIEMPRE —el CAC de Meta arranca por encima de S/13.63 en todo el
+  // el freno cortaba SIEMPRE —el CAC de Meta arranca por encima del techo de un pedido en todo el
   // rango— y el negocio se quedaba sin su único canal de adquisición.
   // El del primer pedido se sigue calculando y viaja al cliente: contesta otra pregunta
   // ("¿este cliente ya se pagó hoy?") y colapsarlas escondería cuál se contestó.

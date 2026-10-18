@@ -35,7 +35,9 @@ user-invocable: false
 |---|---|
 | menos de 0.7% de clics después de 2,000 impresiones | cambiar la pieza |
 | 14 días sin un solo pedido con su `?src=` | cambiar la pieza |
-| más de S/45 por cliente nuevo al cierre | no escalar |
+| costo por cliente hasta el techo del primer pedido (panel; hoy S/12.56) | verde: subir 20% por semana |
+| entre ese techo y el del cliente completo (panel; hoy S/22.70) | amarillo: no subir; a los 30 días, si vuelve menos de 4 de cada 10, pasa a rojo |
+| por encima del techo del cliente completo | rojo: dos rondas de corrección de 7 días; si sigue, solo reconectar visitantes con tope S/5/día (`docs/marketing/PLAN_COSTO_POR_CLIENTE.md`) |
 | Rappi: menos de S/20 por pedido | sigue |
 | Rappi: S/20–35 por pedido | bajar a S/5 al día |
 | Rappi: más de S/35 por pedido | apagar |
