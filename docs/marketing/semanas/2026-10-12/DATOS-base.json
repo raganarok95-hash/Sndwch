@@ -10,7 +10,7 @@
  "porOrigen": [
   {
    "origen": "directo",
-   "visitas": 82,
+   "visitas": 144,
    "pedidos": 0,
    "nuevos": 0,
    "conversion": 0
@@ -55,5 +55,5 @@
  "porDia": {},
  "gastoDePauta": {},
  "costoPorClienteNuevoMeta": null,
- "generado": "2026-10-16T05:34:50.523Z"
+ "generado": "2026-10-19T09:52:00.693Z"
 }
