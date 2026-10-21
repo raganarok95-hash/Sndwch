@@ -5,9 +5,15 @@ import { precio } from './produccion.mjs';
 
 // La primera publicación pública. Antes de esta fecha nada sale: el video dice «Pídelo hoy».
 // (`business_launched` ya está prendido desde antes de abrir, así que no sirve para esto.)
-// El dueño la movió del 13 al 20 de octubre el 2026-10-08 («retrasamos la apertura una semana»).
+// El dueño la movió del 13 al 20 de octubre el 2026-10-08 («retrasamos la apertura una semana») y
+// del 20 a noviembre el 2026-10-21 («Abriremos en noviembre»: no llegaron los sellos ni la kraft),
+// todavía sin día. Mientras APERTURA_CONFIRMADA sea false, APERTURA es solo el tope (el último
+// día de noviembre) para que nada salga antes, y lo que NOMBRA el día se niega a correr
+// (lanzamiento.mjs, subir.mjs, la historia con {dia_abre}, subir-historias.mjs). Al fijar el día:
+// se escribe acá y se pone en true.
 // Todo texto que nombra el día de apertura la lee de aquí (lanzamiento.mjs, historias.mjs).
-export const APERTURA = '2026-10-20';
+export const APERTURA = '2026-11-30';
+export const APERTURA_CONFIRMADA = false;
 
 /**
  * @param {object} c
@@ -21,7 +27,7 @@ export const APERTURA = '2026-10-20';
  */
 export function decidir({ piezas, hoy, abreHoy, cat, conVideo, recientes }) {
   if (hoy < APERTURA || !abreHoy) {
-    const motivo = hoy < APERTURA ? `antes de abrir (${APERTURA})` : 'hoy no se atiende';
+    const motivo = hoy < APERTURA ? `antes de abrir (${APERTURA_CONFIRMADA ? APERTURA : 'noviembre, día por confirmar'})` : 'hoy no se atiende';
     return piezas.map((p) => ({ id: p.id, src: p.src, veredicto: 'espera', motivo }));
   }
   const items = cat?.sigItems || {};

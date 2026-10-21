@@ -11,7 +11,7 @@
 import { chromium } from '@playwright/test';
 import { readFileSync, mkdirSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { APERTURA } from '../video-auto/reglas-del-revisor.mjs';
+import { APERTURA, APERTURA_CONFIRMADA } from '../video-auto/reglas-del-revisor.mjs';
 
 const [datosPath, horarioPath, OUT = 'docs/marketing/lanzamiento'] = process.argv.slice(2);
 const D = JSON.parse(readFileSync(datosPath, 'utf8'));
@@ -28,6 +28,7 @@ const ultimaFrase = (t) => t.split('.').map((x) => x.trim()).filter(Boolean).pop
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 // El día de apertura sale de APERTURA, nunca escrito: el 2026-10-08 pasó del 13 al 20.
+if (!APERTURA_CONFIRMADA) throw new Error('La apertura todavía no tiene día (noviembre, por confirmar): fíjalo en scripts/video-auto/reglas-del-revisor.mjs antes de montar el lanzamiento.');
 const AB = { dia: DIAS[new Date(`${APERTURA}T12:00:00Z`).getUTCDay()], num: Number(APERTURA.slice(8, 10)), mes: MESES[Number(APERTURA.slice(5, 7)) - 1] };
 const abiertos = H.filter((d) => !d.closed).map((d) => d.weekday);
 const cerrados = H.filter((d) => d.closed).map((d) => DIAS[d.weekday]);
