@@ -497,8 +497,14 @@ async function hojaListo(){
   hoja30=null;render();
 }
 // PAGAR: lo que falta se resuelve donde vive (la 34 o la hoja de RECIBE); después la 31.
-var FALTA_SANDWICH='Las bebidas van con un sándwich: agrega uno para pedir.';
-function faltaSandwich():boolean{return cart.length>0&&!cart.some(function(it:any){return it.type!=='side';});}
+// Sin sándwich, las bebidas se piden desde BEBIDAS_SIN_SANDWICH_DESDE (dueño, 2026-10-21). Se cuentan
+// unidades, no líneas: «2 × la misma» alcanza. El servidor lo exige igual (assertSandwichOBebidas).
+var BEBIDAS_SIN_SANDWICH_DESDE:number=REGLAS_N.BEBIDAS_SIN_SANDWICH_DESDE;
+var FALTA_SANDWICH='Sin sándwich, las bebidas se piden desde '+BEBIDAS_SIN_SANDWICH_DESDE+'. Agrega otra o un sándwich.';
+function faltaSandwich():boolean{
+  if(!cart.length||cart.some(function(it:any){return it.type!=='side';}))return false;
+  return cart.reduce(function(n:number,it:any){return n+(Number(it.qty)||0);},0)<BEBIDAS_SIN_SANDWICH_DESDE;
+}
 // Con el local cerrado (o la hora llena) el pedido se PROGRAMA solo para la primera hora libre
 // (dueño, 2026-10-02, a las 5 a.m.: «me pide programar pero no hay dónde o no me deriva»). Antes
 // el carrito mostraba «Llega 5:24 a.m.» y «Pagar» solo repetía un aviso en rojo. Si no queda
@@ -648,8 +654,8 @@ var _pendingOrder=null;
 function problemaDelPedido():string|null{
   elegirGuardadaSola();
   if(!cart.length)return'Tu pedido está vacío.';
-  // Las bebidas se ven y se entra a ellas directo, pero van con un sándwich (dueño, 2026-09-30).
-  // El servidor lo exige igual (assertTraeSandwich en orders.ts): esto solo lo avisa antes.
+  // Sin sándwich, las bebidas van desde BEBIDAS_SIN_SANDWICH_DESDE (dueño, 2026-10-21). El servidor
+  // lo exige igual (assertSandwichOBebidas en orders.ts): esto solo lo avisa antes.
   if(faltaSandwich())return FALTA_SANDWICH;
   if(!confNom.trim())return'Falta a nombre de quién va el pedido.';
   if(!addrText.trim())return'Falta dónde te lo dejamos.';

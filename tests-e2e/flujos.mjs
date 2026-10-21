@@ -12,6 +12,7 @@
 //
 // Correr con: npm run check:e2e
 import { resolverCarrito } from '../supabase/functions/_shared/dinero.ts';
+import { BEBIDAS_SIN_SANDWICH_DESDE as MIN_BEBIDAS } from '../supabase/functions/_shared/reglas.ts';
 
 const TIENDA = { lat: -8.139599, lon: -79.039458 };
 const ENVIO_MINIMO = 5;
@@ -112,16 +113,30 @@ export const FLUJOS = {
     afirmar(valor(s, `select stock_qty from inventory where product_code = '${carta.bebida(1)}'`) === '5', 'cancelar no devolvió el stock');
   },
 
-  async 'un pedido de solo bebidas se rechaza y no deja nada en la base'(s, precios, carta) {
+  // Sin sándwich, las bebidas van desde MIN_BEBIDAS (dueño, 2026-10-21). Por debajo se rechaza sin
+  // dejar nada en la base; con el mínimo, el pedido entra como cualquier otro.
+  async 'sin sándwich, menos bebidas que el mínimo se rechaza y no deja nada en la base'(s, precios, carta) {
     const { token, phone } = await registrarYEntrar(s);
-    const items = [{ type: 'side', code: carta.bebida(1), qty: 2 }];
+    const items = [{ type: 'side', code: carta.bebida(1), qty: MIN_BEBIDAS - 1 }];
     const total = resolverCarrito(items, {}, precios).total + ENVIO_MINIMO;
     const r = await s.llamar('place-order', {
       token, ref: 'E2E-SOLOBEB', name: 'Cliente', phone, address: 'Av. España 123, Trujillo', ...TIENDA,
-      items, total, paymentMethod: 'yape', summary: '2x bebida', deliveryZone: 'trujillo',
+      items, total, paymentMethod: 'yape', summary: 'bebida sola', deliveryZone: 'trujillo',
     });
-    afirmar(r.status === 400, `un pedido de solo bebidas debió rechazarse y respondió ${r.status}`);
-    afirmar(valor(s, `select count(*) from orders where ref = 'E2E-SOLOBEB'`) === '0', 'quedó un pedido de solo bebidas en la base');
+    afirmar(r.status === 400, `una bebida sola debió rechazarse y respondió ${r.status}`);
+    afirmar(valor(s, `select count(*) from orders where ref = 'E2E-SOLOBEB'`) === '0', 'quedó en la base un pedido de una bebida sola');
+  },
+
+  async 'sin sándwich, con el mínimo de bebidas el pedido entra'(s, precios, carta) {
+    const { token, phone } = await registrarYEntrar(s);
+    const items = [{ type: 'side', code: carta.bebida(1), qty: MIN_BEBIDAS }];
+    const total = resolverCarrito(items, {}, precios).total + ENVIO_MINIMO;
+    const r = await s.llamar('place-order', {
+      token, ref: 'E2E-BEBIDAS', name: 'Cliente', phone, address: 'Av. España 123, Trujillo', ...TIENDA,
+      items, total, paymentMethod: 'yape', summary: `${MIN_BEBIDAS}x bebida`, deliveryZone: 'trujillo',
+    });
+    afirmar(r.status === 200, `un pedido de ${MIN_BEBIDAS} bebidas debió entrar y respondió ${r.status} ${r.error || ''}`);
+    afirmar(valor(s, `select count(*) from orders where ref = 'E2E-BEBIDAS'`) === '1', 'el pedido de bebidas no quedó en la base');
   },
 
   async 'el dueño confirma el Yape: recién ahí se ganan los puntos, y el historial cuadra'(s, precios, carta) {
