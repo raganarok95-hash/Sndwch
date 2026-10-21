@@ -31,7 +31,11 @@ Para la app sirven así. **Para una tienda, no**: duran una semana y dos llevar�
    útil será más corta que con conservante y la fija el laboratorio. **La lata PET no aguanta el
    llenado en caliente**: el PET empieza a deformarse alrededor de los 70 °C. Por eso se
    pasteuriza el líquido ANTES, se enfría y se llena frío. Es una bebida de refrigeradora, como
-   los jugos prensados, no de anaquel. Solo las ácidas van a tiendas.
+   los jugos prensados, no de anaquel. **No todas tienen que ser ácidas** (dueño, 2026-10-21):
+   las ácidas (jamaica, limón) aguantan semanas; las no ácidas (Midnight, chai) también van a
+   tiendas, pero con **10 días refrigeradas como máximo**, salvo que el laboratorio valide más. La
+   guía de la FDA para refrigerados de más de 10 días pide pH 5.0 o menos o un calentamiento de
+   90 °C por 10 minutos: en una lata sellada, una bebida poco ácida es el ambiente del botulismo.
 2. **Cero azúcar: 0.5 g o menos por 100 ml**, endulzada con sucralosa pura (la de sobres trae
    dextrosa). Sin octógono, «sin azúcar» en la etiqueta y, en el impuesto selectivo (punto 5), 12%
    en vez de 17% o 25%. La sucralosa tiene un tope: 0.30 g por litro (Codex, GSFA 14.1.4).
@@ -108,13 +112,13 @@ latas PET» (Lima y Trujillo).
 ## 6 · Cuánto deja una lata en una tienda (estimado)
 
 Supuestos: la bodega gana 30% del precio final; ISC 12% (cero azúcar); IGV 18%. Costo de la lata
-llena entre S/1.95 y S/3.23: insumos S/0.85–1.53 (las tres ácidas de §9), lata y tapa S/0.90–1.50
-(por confirmar) y etiqueta ~S/0.20 (estimada). No cuenta mano de obra, frío ni reparto.
+llena entre S/1.76 y S/3.25: insumos S/0.66–1.55 (§9), lata y tapa S/0.90–1.50 (por confirmar) y
+etiqueta ~S/0.20 (estimada). Sin brillo (§10). No cuenta mano de obra, frío ni reparto.
 
 | precio en la tienda | te pagan (sin IGV ni ISC) | te queda por lata |
 |---|---|---|
-| S/6 | S/3.18 (S/3.04 con 17% de ISC) | −S/0.05 a S/1.23 |
-| S/8 | S/4.24 (S/4.06 con 17%) | S/1.01 a S/2.29 |
+| S/6 | S/3.18 (S/3.04 con 17% de ISC) | −S/0.07 a S/1.42 |
+| S/8 | S/4.24 (S/4.06 con 17%) | S/0.99 a S/2.48 |
 
 **A S/6 en una bodega, la lata casi no deja.** Como producto de tienda funciona si es premium
 (S/7–8, artesanal, cero azúcar). En la app, donde no hay bodega
@@ -155,34 +159,55 @@ Lemonade para la app. **Se corrige o se deja**:
   de 0.10 a 0.20 g, medida con una solución madre (0.15 g no se pesan en una balanza de cocina).
   Y tiene que ser **pura**: la de sobres es casi toda relleno, con dextrosa, y puede romper el
   «cero azúcar».
-- **La goma xantana** se decide con una prueba a ciegas (0, 0.3 y 0.5 g por litro). En el matcha
-  va siempre, porque mantiene el polvo suspendido.
+- **La goma xantana sale** (dueño: «entonces quitamos la xantana»). Lo que no se disuelve (el
+  matcha, el brillo) se asienta: la lata dice «agítala».
 - **Las esencias de naranja y menta**: las reemplazan la cáscara de naranja y la menta fresca,
   la mitad infusionada en frío 2 h para el aroma.
-- **Los filtrantes de chai comerciales**: cuestan más del doble que una mezcla propia y la receta
-  no sería nuestra. Además, las especias crudas en frío no tienen ningún paso que mate los
-  microbios: van 10 min en agua hirviendo.
+- **El chai va con filtrantes** (dueño: caja de 20 a S/11.50, S/0.58 cada uno). Con 5 por litro
+  cuesta 37% de S/6 (32% a S/7), contra 26% con mezcla propia. Si la caja dice «saborizante» o
+  «aroma», trae esencia. Los filtrantes van 5 minutos en agua caliente antes del reposo en frío,
+  porque las especias crudas no tienen ningún paso que mate los microbios.
 - **El «Hibiscus Mojito»**: sería otra bebida roja de jamaica igual a The Bloom, y «mojito»
   nombra un cóctel (no se muestra alcohol). Su menta pasa a The Cool.
 - **El nombre «Arnold Palmer»**: es marca registrada (Arnold Palmer Enterprises, con licencia a
   AriZona). Va como «medio y medio».
 - **Los «concentrados» sin definir**: el de té queda definido (26 g por litro, 12 h en frío).
 
-Costo por botella de 500 ml con envase (S/0.69). Sucralosa, xantana, limón, naranja, filtrantes y
-matcha, a precios estimados:
+Costo por botella de 500 ml con envase (S/0.69). Los filtrantes van al precio del dueño; la
+sucralosa, el limón, la naranja y el matcha, a precios estimados:
 
 | bebida | hoy | cero azúcar | dónde se vende |
 |---|---|---|---|
-| The Bloom (jamaica, naranja, canela) | S/1.89 (31%) | S/1.90 (32%) | app y tiendas |
-| The Midnight (té negro en frío) | S/1.41 (28% de S/5) | S/1.35 (27% de S/5) | app |
-| Medio y medio (té negro y limón) | — | S/2.22 (37%) | app y tiendas |
-| The Cool (hierba luisa, menta, limón) | S/1.17 (19%) | S/1.54 (26%) | app y tiendas |
-| Chai helado propio, sin leche | — | S/1.56 (26%) | app |
-| Matcha Lemonade | — | S/4.25 (71%); con matcha a S/40 los 100 g, S/2.75 (34% de S/8) | app, si el matcha sale barato |
-| *de ellos: chai con filtrantes* | — | S/2.55 (43%) | — |
+| The Bloom (jamaica, naranja, canela) | S/1.89 (31%) | S/1.86 (31%) | app y tiendas |
+| The Midnight (té negro en frío) | S/1.41 (28% de S/5) | S/1.35 (27% de S/5) | app y tiendas, 10 días |
+| Medio y medio (té negro y limón) | — | S/2.18 (36%) | app y tiendas |
+| The Cool (hierba luisa, menta, limón) | S/1.17 (19%) | S/1.51 (25%) | app y tiendas |
+| Chai con filtrantes, sin leche (5 por litro) | — | S/2.24 (37%; 32% a S/7) | app y tiendas, 10 días |
+| Matcha Lemonade | — | S/4.21 (70%); con matcha a S/40 los 100 g, S/2.71 (34% de S/8) | app, si el matcha sale barato |
+| *chai con mezcla propia (no elegido)* | — | S/1.56 (26%) | — |
 
-Las cantidades están en el archivo que se le mandó al dueño (v4), no acá. Qué bebidas quedan en
+Las cantidades están en el archivo que se le mandó al dueño (v5), no acá. Qué bebidas quedan en
 la app (hoy son 3) y a qué precio lo decide el dueño después de probarlas.
+
+## 10 · El brillo comestible (glitter)
+
+- **Cuándo**: al llenar, nunca en la olla. En la olla se va al fondo y se queda pegado, y
+  pasteurizarlo no sirve de nada. Se echa en cada lata vacía justo antes de llenarla en frío, y
+  el chorro lo reparte. Como entra después del calor, va con cuchara seca y limpia, guantes, y el
+  frasco cerrado entre lata y lata.
+- **Cuánto**: el tope es 0.07%, o sea 0.7 g por litro (0.35 g por lata de 500 ml). Se empieza con
+  0.1 g por lata y se mira. Se pesa una vez para 10 latas con la balanza de 0.01 g y se calibra
+  una cucharita.
+- **Cuál**: que diga **comestible** y traiga ficha técnica o registro sanitario. «No tóxico» es
+  brillo de manualidades y no se come. El de bebidas es mica perlada con dióxido de titanio (en
+  Europa el dióxido de titanio está prohibido desde 2022; en Perú se permite), y va en la
+  etiqueta como colorante. En Lima lo vende Librería Gastro Perú (Brew Glitter, de S/26 a S/100
+  según el tamaño).
+- **Lo que cuesta**: si el frasco chico es de 4 g (como el de la marca), sale ~S/6.50 el gramo, y
+  0.1 g por lata suman ~S/0.65. **Hay que cotizarlo por kilo** antes de ponerlo en todas.
+- **Sin xantana se asienta**: agitar la lata hace el remolino, y ese es el efecto. Luce en las
+  claras (The Bloom, The Cool, Medio y medio); en el chai y el Midnight, que son oscuros, casi no
+  se ve.
 
 ## Fuentes
 
@@ -197,6 +222,8 @@ la app (hoy son 3) y a qué precio lo decide el dueño después de probarlas.
 - Sucralosa, dulzor por concentración: https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/5380541 · https://dspace5.ufes.br/items/2689f747-6eca-47f9-ba46-70e879da222c
 - Sucralosa: 300 mg/kg en bebidas a base de agua (Codex GSFA 14.1.4): https://www.fao.org/gsfaonline/foods/details.html?id=248 · https://www.fao.org/gsfaonline/additives/details.html?id=137
 - ISC de 12% para bebidas sin azúcar (DS 181-2019-EF): https://www.mef.gob.pe/es/notas-de-prensa-y-comunicados/6055-ejecutivo-publica-decreto-supremo-con-ajustes-al-isc-y-al-ir
+- Brillo comestible (tope 0.07%, ingredientes): https://brewglitter.com/products/glitter-drinks-fuchsia · https://bakell.com/products/blue-brew-glitter-edible-glitter-for-sports-drinks-energy-drinks · en Lima: https://www.libreriagastroperu.com/collections/brew-glitter-purpurina-comestible
+- Bebidas poco ácidas y botulismo (la guía de la FDA de 10 días, citada en patentes): https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/11744265 · https://ohsonline.com/articles/2017/09/22/death-wish-nitro-cold-brew-recalled.aspx
 - Registro sanitario: https://www.digesa.minsa.gob.pe/orientacion/COMUNICADO%20TUPA%20PRODUCTOS.pdf · https://www.industriaalimentaria.org/blog/contenido/digesa-garantiza-continuidad-de-tramites-sanitarios-para-alimentos · https://www.vuce.gob.pe/manual_vuce/manuales/usuarios/DGS006_Inscripcion_Registro_Sanitario_Alimentos_Bebidas_Consumo_Humano_(Nacional).pdf
 
 Casi todos los precios son publicados por vendedores y sin la cantidad exacta: sirven para saber
