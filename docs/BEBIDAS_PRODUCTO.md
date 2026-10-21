@@ -24,11 +24,14 @@ Para la app sirven así. **Para una tienda, no**: duran una semana y dos llevar�
 
 ## 2 · Lo que cambia para venderlas en tiendas
 
-1. **Que duren 30 a 45 días refrigeradas, no 4 a 7.** Eso pide cuatro cosas juntas: acidez
-   (pH 4.0 o menos), pasteurizar el líquido, llenar en frío y un conservante permitido (sorbato de
-   potasio, dentro del límite del Codex). **La lata PET no aguanta el llenado en caliente**: el PET
-   empieza a deformarse alrededor de los 70 °C. Por eso se pasteuriza el líquido ANTES, se enfría y
-   se llena frío. Es una bebida de refrigeradora, como los jugos prensados, no de anaquel.
+1. **Que duren semanas refrigeradas, no 4 a 7 días, y sin químicos** (dueño, 2026-10-21: «esas
+   fórmulas tienen componentes químicos que no usaremos»; nada de conservante, sucralosa, goma
+   xantana ni esencias). Sin conservante, lo que la protege es la acidez natural de la jamaica o
+   el limón (pH 3.8 o menos), pasteurizar el líquido, llenar en frío y la cadena de frío. La vida
+   útil será más corta que con conservante y la fija el laboratorio. **La lata PET no aguanta el
+   llenado en caliente**: el PET empieza a deformarse alrededor de los 70 °C. Por eso se
+   pasteuriza el líquido ANTES, se enfría y se llena frío. Es una bebida de refrigeradora, como
+   los jugos prensados, no de anaquel. Solo las ácidas van a tiendas.
 2. **Menos de 5 g de azúcar por 100 ml.** Sin octógono, y en el impuesto selectivo (punto 5)
    paga 17% en vez de 25%.
 3. **Registro sanitario de DIGESA, uno por sabor**, por la VUCE. Pide análisis microbiológico y
@@ -47,6 +50,8 @@ Cuando el volumen lo justifique, otra vía es la **maquila**: que la produzca un
 tiene registro y habilitación, con tu receta y tu marca.
 
 ## 3 · La receta mejorada: hacia dónde va
+
+> Primera dirección (v2, 2026-10-21). La reemplaza la línea unida de §9, sin químicos.
 
 - **The Bloom**: la jamaica ya es ácida (pH ~3), así que se conserva bien. Baja el azúcar a la
   mitad y recupera el cuerpo con un poco más de flor y la cáscara de naranja, cuyo aroma hace que
@@ -132,6 +137,49 @@ ni ISC por venta a tiendas, deja mucho más.
 > a Trujillo, garantía y repuestos? ¿Venden también las latas y las tapas compatibles? Precio por
 > ciento y por millar, y si tienen de 500 ml. Gracias.
 
+## 9 · Las fórmulas de 0 azúcar que trajo el dueño, contra las nuestras (2026-10-21)
+
+El dueño trajo 5 fórmulas de 0 azúcar en dos versiones (con y sin goma xantana): Chai Spiced Cold
+Brew con filtrantes comerciales, «Arnold Palmer» Zero, Hibiscus Naranja & Especias, «Hibiscus
+Mojito» y Matcha Lemonade. Pidió compararlas, mejorar las dos, unirlas o elegir, y aclaró que no
+usará químicos y que las esencias se reemplazan.
+
+**Se unen en una sola línea, con nuestra base**: azúcar de verdad bajo 5 g por 100 ml, nuestros
+nombres y el reposo en frío. **De lo suyo se toma**: la naranja y las especias para The Bloom, el
+limón para un Midnight «medio y medio» que puede ir a tiendas y para The Cool, y el chai sin leche
+para la app. **Se deja**:
+
+- **La sucralosa y la goma xantana**: son químicos. Además, la dosis de sucralosa no cuadraba: si
+  era pura, 0.4–0.6 g por litro es 3 a 4 veces lo que se usa para endulzar como un té helado
+  (~0.12–0.15 g); si era sucralosa de mesa, no endulza casi nada.
+- **Las esencias de naranja y menta**: las reemplazan la cáscara de naranja y la menta fresca
+  (la menta se infusiona en frío, 2 h, en la versión de la app).
+- **Los filtrantes de chai comerciales**: cuestan más del doble que una mezcla propia y la receta
+  no sería nuestra. Además, especias crudas en frío no tienen ningún paso que mate los microbios.
+- **El «Hibiscus Mojito»**: sería otra bebida roja de jamaica igual a The Bloom, y «mojito»
+  nombra un cóctel (no se muestra alcohol). Su menta pasa a The Cool.
+- **El Matcha Lemonade, por ahora**: costaría ~69% de S/6, y el verde se pone pardo y se asienta
+  en una lata transparente.
+- **El nombre «Arnold Palmer»**: es marca registrada (Arnold Palmer Enterprises, con licencia a
+  AriZona). Va como «medio y medio».
+- Los «concentrados» de té y de jamaica sin definir, y las tandas de 1 L con 0.15 ml de esencia:
+  no se pueden repetir igual en una cocina.
+
+Costo por botella de 500 ml con envase (S/0.69). Los precios del limón, la naranja, los filtrantes
+y el matcha son estimados:
+
+| bebida | hoy | unida | dónde se vende |
+|---|---|---|---|
+| The Bloom (jamaica, naranja, canela) | S/1.89 (31%) | S/2.09 (35%; 33% sin limón) | app y tiendas |
+| The Midnight (té negro en frío) | S/1.41 (28% de S/5) | igual | app |
+| Medio y medio (té negro y limón) | — | S/1.84 (31% de S/6) | tiendas, y app si gusta |
+| The Cool (hierba luisa, menta, limón) | S/1.17 (19%) | S/1.47 (25%) | app y tiendas |
+| Chai helado propio, sin leche | — | S/1.61 (27%) | app |
+| *de ellos: chai con filtrantes* | — | S/2.55 (43%) | — |
+| *de ellos: matcha lemonade* | — | S/4.15 (69%) | — |
+
+Las cantidades están en el archivo que se le mandó al dueño, no acá.
+
 ## Fuentes
 
 - Latas PET y selladoras, The Homebrewer Perú: https://thehomebrewerperu.com/producto/latas-pet-de-350-ml-con-tapa/ · https://thehomebrewerperu.com/producto/selladora-automatica-de-latas-pet/ · https://thehomebrewerperu.com/producto/selladora-manual-de-latas-pet/
@@ -141,6 +189,9 @@ ni ISC por venta a tiendas, deja mucho más.
 - PET y calor (Tg 67–71 °C): https://packagingeurope.com/molding-options-for-heat-setting-pet/5239.article
 - Octógonos, segunda fase (5 g por 100 ml en bebidas desde el 17-09-2021): https://blog.prcp.com.pe/wp-content/uploads/2021/09/Client-Memo-El-17-de-setiembre-de-2021-entran-en-vigencia-los-parametros-tecnicos-de-la-segunda-fase-de-la-aplicacion-de-octogonos.pdf
 - ISC de bebidas (DS 266-2021-EF): https://gestion.pe/economia/isc-bebidas-azucaradas-y-cerveza-sin-alcohol-con-nuevas-reglas-para-pagar-hasta-25-en-isc-noticia/ · https://www.infobae.com/america/peru/2021/09/30/mef-bebidas-que-pasen-los-5-gramos-de-azucar-pagaran-25-de-impuesto-selectivo-al-consumo/
+- Arnold Palmer, marca registrada: https://en.wikipedia.org/wiki/Arnold_Palmer_(drink) · https://trademark.justia.com/owners/arnold-palmer-enterprises-inc-487144
+- Sucralosa, dulzor por concentración: https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/5380541 · https://dspace5.ufes.br/items/2689f747-6eca-47f9-ba46-70e879da222c
+- ISC de 12% para bebidas sin azúcar (DS 181-2019-EF): https://www.mef.gob.pe/es/notas-de-prensa-y-comunicados/6055-ejecutivo-publica-decreto-supremo-con-ajustes-al-isc-y-al-ir
 - Registro sanitario: https://www.digesa.minsa.gob.pe/orientacion/COMUNICADO%20TUPA%20PRODUCTOS.pdf · https://www.industriaalimentaria.org/blog/contenido/digesa-garantiza-continuidad-de-tramites-sanitarios-para-alimentos · https://www.vuce.gob.pe/manual_vuce/manuales/usuarios/DGS006_Inscripcion_Registro_Sanitario_Alimentos_Bebidas_Consumo_Humano_(Nacional).pdf
 
 Casi todos los precios son publicados por vendedores y sin la cantidad exacta: sirven para saber
