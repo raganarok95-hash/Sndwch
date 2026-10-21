@@ -24,16 +24,17 @@ Para la app sirven así. **Para una tienda, no**: duran una semana y dos llevar�
 
 ## 2 · Lo que cambia para venderlas en tiendas
 
-1. **Que duren semanas refrigeradas, no 4 a 7 días, y sin químicos** (dueño, 2026-10-21: «esas
-   fórmulas tienen componentes químicos que no usaremos»; nada de conservante, sucralosa, goma
-   xantana ni esencias). Sin conservante, lo que la protege es la acidez natural de la jamaica o
-   el limón (pH 3.8 o menos), pasteurizar el líquido, llenar en frío y la cadena de frío. La vida
+1. **Que duren semanas refrigeradas, no 4 a 7 días, sin esencias, sorbato ni ácido cítrico**
+   (dueño, 2026-10-21: «sí usaremos sucralosa o edulcorante, la idea es que sean cero azúcar; me
+   refería solo a las esencias, sorbato y ácido cítrico»). Sin conservante, lo que la protege es
+   la acidez natural de la jamaica o el limón (pH 3.8 o menos), pasteurizar el líquido, llenar en frío y la cadena de frío. La vida
    útil será más corta que con conservante y la fija el laboratorio. **La lata PET no aguanta el
    llenado en caliente**: el PET empieza a deformarse alrededor de los 70 °C. Por eso se
    pasteuriza el líquido ANTES, se enfría y se llena frío. Es una bebida de refrigeradora, como
    los jugos prensados, no de anaquel. Solo las ácidas van a tiendas.
-2. **Menos de 5 g de azúcar por 100 ml.** Sin octógono, y en el impuesto selectivo (punto 5)
-   paga 17% en vez de 25%.
+2. **Cero azúcar: 0.5 g o menos por 100 ml**, endulzada con sucralosa pura (la de sobres trae
+   dextrosa). Sin octógono, «sin azúcar» en la etiqueta y, en el impuesto selectivo (punto 5), 12%
+   en vez de 17% o 25%. La sucralosa tiene un tope: 0.30 g por litro (Codex, GSFA 14.1.4).
 3. **Registro sanitario de DIGESA, uno por sabor**, por la VUCE. Pide análisis microbiológico y
    fisicoquímico de un laboratorio acreditado, la ficha técnica y el rotulado. En el TUPA anterior
    costaba S/365 por producto; un comunicado de 2026 sugiere que podría no tener costo, así que se
@@ -42,8 +43,8 @@ Para la app sirven así. **Para una tienda, no**: duran una semana y dos llevar�
    refrigerado», RUC y dirección del fabricante, número de registro sanitario y el octógono si
    corresponde.
 5. **Impuestos: al venderla envasada a una tienda, el negocio pasa a ser productor de bebidas.**
-   Paga el ISC (Decreto Supremo 266-2021-EF): 17% si tiene entre 0.5 y 5 g de azúcar por 100 ml y
-   25% desde 5 g. Además, quien hace operaciones con ISC no puede estar en el Nuevo RUS. **Se
+   Paga el ISC: 12% si tiene 0.5 g de azúcar o menos por 100 ml (DS 181-2019-EF), 17% entre 0.5 y
+   5 g, y 25% desde 5 g (DS 266-2021-EF). Además, quien hace operaciones con ISC no puede estar en el Nuevo RUS. **Se
    confirma con el contador ANTES de vender la primera lata a una tienda.**
 
 Cuando el volumen lo justifique, otra vía es la **maquila**: que la produzca una planta que ya
@@ -51,7 +52,7 @@ tiene registro y habilitación, con tu receta y tu marca.
 
 ## 3 · La receta mejorada: hacia dónde va
 
-> Primera dirección (v2, 2026-10-21). La reemplaza la línea unida de §9, sin químicos.
+> Primera dirección (v2, 2026-10-21). La reemplaza la línea unida de cero azúcar de §9.
 
 - **The Bloom**: la jamaica ya es ácida (pH ~3), así que se conserva bien. Baja el azúcar a la
   mitad y recupera el cuerpo con un poco más de flor y la cáscara de naranja, cuyo aroma hace que
@@ -106,17 +107,17 @@ latas PET» (Lima y Trujillo).
 
 ## 6 · Cuánto deja una lata en una tienda (estimado)
 
-Supuestos: la bodega gana 30% del precio final; ISC 17% (azúcar bajo 5 g); IGV 18%. Costo de la
-lata llena entre S/1.70 y S/2.90: insumos S/0.50–1.20, lata y tapa S/0.90–1.50 (por confirmar) y
-etiqueta ~S/0.20 (estimada). No cuenta mano de obra, frío ni reparto.
+Supuestos: la bodega gana 30% del precio final; ISC 12% (cero azúcar); IGV 18%. Costo de la lata
+llena entre S/1.95 y S/3.23: insumos S/0.85–1.53 (las tres ácidas de §9), lata y tapa S/0.90–1.50
+(por confirmar) y etiqueta ~S/0.20 (estimada). No cuenta mano de obra, frío ni reparto.
 
 | precio en la tienda | te pagan (sin IGV ni ISC) | te queda por lata |
 |---|---|---|
-| S/6 | S/3.04 (S/2.85 si paga 25% de ISC) | S/0.14 a S/1.34 |
-| S/8 | S/4.06 (S/3.80 con 25%) | S/1.16 a S/2.36 |
+| S/6 | S/3.18 (S/3.04 con 17% de ISC) | −S/0.05 a S/1.23 |
+| S/8 | S/4.24 (S/4.06 con 17%) | S/1.01 a S/2.29 |
 
 **A S/6 en una bodega, la lata casi no deja.** Como producto de tienda funciona si es premium
-(S/7–8, artesanal, con pocas calorías) y con menos de 5 g de azúcar. En la app, donde no hay bodega
+(S/7–8, artesanal, cero azúcar). En la app, donde no hay bodega
 ni ISC por venta a tiendas, deja mucho más.
 
 ## 7 · El orden
@@ -141,44 +142,47 @@ ni ISC por venta a tiendas, deja mucho más.
 
 El dueño trajo 5 fórmulas de 0 azúcar en dos versiones (con y sin goma xantana): Chai Spiced Cold
 Brew con filtrantes comerciales, «Arnold Palmer» Zero, Hibiscus Naranja & Especias, «Hibiscus
-Mojito» y Matcha Lemonade. Pidió compararlas, mejorar las dos, unirlas o elegir, y aclaró que no
-usará químicos y que las esencias se reemplazan.
+Mojito» y Matcha Lemonade. Pidió compararlas con las nuestras, mejorar las dos, unirlas o elegir.
+Aclaró después: **cero azúcar con sucralosa sí; esencias, sorbato y ácido cítrico no**.
 
-**Se unen en una sola línea, con nuestra base**: azúcar de verdad bajo 5 g por 100 ml, nuestros
-nombres y el reposo en frío. **De lo suyo se toma**: la naranja y las especias para The Bloom, el
-limón para un Midnight «medio y medio» que puede ir a tiendas y para The Cool, y el chai sin leche
-para la app. **Se deja**:
+**Se unen en una línea de cero azúcar**, con nuestros nombres y el reposo en frío. **De lo suyo se
+toma**: la sucralosa, la naranja y las especias para The Bloom, el «medio y medio» de té y limón,
+la menta con limón para The Cool, el chai sin leche y, si el matcha sale barato, el Matcha
+Lemonade para la app. **Se corrige o se deja**:
 
-- **La sucralosa y la goma xantana**: son químicos. Además, la dosis de sucralosa no cuadraba: si
-  era pura, 0.4–0.6 g por litro es 3 a 4 veces lo que se usa para endulzar como un té helado
-  (~0.12–0.15 g); si era sucralosa de mesa, no endulza casi nada.
-- **Las esencias de naranja y menta**: las reemplazan la cáscara de naranja y la menta fresca
-  (la menta se infusiona en frío, 2 h, en la versión de la app).
+- **La dosis de sucralosa**: 0.4–0.6 g por litro de sucralosa pura es 3 a 4 veces lo que endulza
+  un té helado (~0.15 g endulzan como ~8% de azúcar) y **pasa el tope de 0.30 g del Codex**. Va
+  de 0.10 a 0.20 g, medida con una solución madre (0.15 g no se pesan en una balanza de cocina).
+  Y tiene que ser **pura**: la de sobres es casi toda relleno, con dextrosa, y puede romper el
+  «cero azúcar».
+- **La goma xantana** se decide con una prueba a ciegas (0, 0.3 y 0.5 g por litro). En el matcha
+  va siempre, porque mantiene el polvo suspendido.
+- **Las esencias de naranja y menta**: las reemplazan la cáscara de naranja y la menta fresca,
+  la mitad infusionada en frío 2 h para el aroma.
 - **Los filtrantes de chai comerciales**: cuestan más del doble que una mezcla propia y la receta
-  no sería nuestra. Además, especias crudas en frío no tienen ningún paso que mate los microbios.
+  no sería nuestra. Además, las especias crudas en frío no tienen ningún paso que mate los
+  microbios: van 10 min en agua hirviendo.
 - **El «Hibiscus Mojito»**: sería otra bebida roja de jamaica igual a The Bloom, y «mojito»
   nombra un cóctel (no se muestra alcohol). Su menta pasa a The Cool.
-- **El Matcha Lemonade, por ahora**: costaría ~69% de S/6, y el verde se pone pardo y se asienta
-  en una lata transparente.
 - **El nombre «Arnold Palmer»**: es marca registrada (Arnold Palmer Enterprises, con licencia a
   AriZona). Va como «medio y medio».
-- Los «concentrados» de té y de jamaica sin definir, y las tandas de 1 L con 0.15 ml de esencia:
-  no se pueden repetir igual en una cocina.
+- **Los «concentrados» sin definir**: el de té queda definido (26 g por litro, 12 h en frío).
 
-Costo por botella de 500 ml con envase (S/0.69). Los precios del limón, la naranja, los filtrantes
-y el matcha son estimados:
+Costo por botella de 500 ml con envase (S/0.69). Sucralosa, xantana, limón, naranja, filtrantes y
+matcha, a precios estimados:
 
-| bebida | hoy | unida | dónde se vende |
+| bebida | hoy | cero azúcar | dónde se vende |
 |---|---|---|---|
-| The Bloom (jamaica, naranja, canela) | S/1.89 (31%) | S/2.09 (35%; 33% sin limón) | app y tiendas |
-| The Midnight (té negro en frío) | S/1.41 (28% de S/5) | igual | app |
-| Medio y medio (té negro y limón) | — | S/1.84 (31% de S/6) | tiendas, y app si gusta |
-| The Cool (hierba luisa, menta, limón) | S/1.17 (19%) | S/1.47 (25%) | app y tiendas |
-| Chai helado propio, sin leche | — | S/1.61 (27%) | app |
+| The Bloom (jamaica, naranja, canela) | S/1.89 (31%) | S/1.90 (32%) | app y tiendas |
+| The Midnight (té negro en frío) | S/1.41 (28% de S/5) | S/1.35 (27% de S/5) | app |
+| Medio y medio (té negro y limón) | — | S/2.22 (37%) | app y tiendas |
+| The Cool (hierba luisa, menta, limón) | S/1.17 (19%) | S/1.54 (26%) | app y tiendas |
+| Chai helado propio, sin leche | — | S/1.56 (26%) | app |
+| Matcha Lemonade | — | S/4.25 (71%); con matcha a S/40 los 100 g, S/2.75 (34% de S/8) | app, si el matcha sale barato |
 | *de ellos: chai con filtrantes* | — | S/2.55 (43%) | — |
-| *de ellos: matcha lemonade* | — | S/4.15 (69%) | — |
 
-Las cantidades están en el archivo que se le mandó al dueño, no acá.
+Las cantidades están en el archivo que se le mandó al dueño (v4), no acá. Qué bebidas quedan en
+la app (hoy son 3) y a qué precio lo decide el dueño después de probarlas.
 
 ## Fuentes
 
@@ -191,6 +195,7 @@ Las cantidades están en el archivo que se le mandó al dueño, no acá.
 - ISC de bebidas (DS 266-2021-EF): https://gestion.pe/economia/isc-bebidas-azucaradas-y-cerveza-sin-alcohol-con-nuevas-reglas-para-pagar-hasta-25-en-isc-noticia/ · https://www.infobae.com/america/peru/2021/09/30/mef-bebidas-que-pasen-los-5-gramos-de-azucar-pagaran-25-de-impuesto-selectivo-al-consumo/
 - Arnold Palmer, marca registrada: https://en.wikipedia.org/wiki/Arnold_Palmer_(drink) · https://trademark.justia.com/owners/arnold-palmer-enterprises-inc-487144
 - Sucralosa, dulzor por concentración: https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/5380541 · https://dspace5.ufes.br/items/2689f747-6eca-47f9-ba46-70e879da222c
+- Sucralosa: 300 mg/kg en bebidas a base de agua (Codex GSFA 14.1.4): https://www.fao.org/gsfaonline/foods/details.html?id=248 · https://www.fao.org/gsfaonline/additives/details.html?id=137
 - ISC de 12% para bebidas sin azúcar (DS 181-2019-EF): https://www.mef.gob.pe/es/notas-de-prensa-y-comunicados/6055-ejecutivo-publica-decreto-supremo-con-ajustes-al-isc-y-al-ir
 - Registro sanitario: https://www.digesa.minsa.gob.pe/orientacion/COMUNICADO%20TUPA%20PRODUCTOS.pdf · https://www.industriaalimentaria.org/blog/contenido/digesa-garantiza-continuidad-de-tramites-sanitarios-para-alimentos · https://www.vuce.gob.pe/manual_vuce/manuales/usuarios/DGS006_Inscripcion_Registro_Sanitario_Alimentos_Bebidas_Consumo_Humano_(Nacional).pdf
 
