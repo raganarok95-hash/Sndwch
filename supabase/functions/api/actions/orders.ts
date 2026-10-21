@@ -23,7 +23,7 @@ import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../email.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 import { cargasPorHora, horaLlena, fijoPropio } from "../capacidad.ts";
 import { ID_SECRETO } from "../../_shared/carta.ts";
-import { YAPE_AUTO_TOPE, YAPE_NUMERO_COBRO } from "../../_shared/reglas.ts";
+import { BEBIDAS_SIN_SANDWICH_DESDE, YAPE_AUTO_TOPE, YAPE_NUMERO_COBRO } from "../../_shared/reglas.ts";
 
 // Avisa al dueño solo en el momento en que un producto CRUZA su umbral de stock bajo (o
 // llega a 0) — no en cada pedido siguiente mientras ya viene bajo, para no saturarlo de
@@ -627,13 +627,16 @@ export async function finalizeAndInsertOrder(p: FinalizeOrderParams): Promise<{ 
 // por motorizados que el dueño coordina a mano, así que una dirección en una zona que no
 // cubre no debe llegar a cobrarse/reservarse nunca. Comparación por substring, sin
 // acentos/mayúsculas, contra DELIVERY_EXCLUDED_ZONES (env.ts).
-// SOLO BEBIDAS, NO (dueño, 2026-09-30): «pueden accederse y verse pero no pedir solo bebida,
-// aunque sí ingresar directamente». Se valida al CREAR el pedido (place-order y prepare-order) y
-// no en deriveCart, que también tasa la parte de cada quien en un pedido en grupo: ahí alguien
-// sí puede haber pedido solo su bebida, y el pedido del grupo lleva sándwiches.
-export function assertTraeSandwich(items: Record<string, unknown>[]): void {
-  if (!items.some((it) => it.type !== "side")) {
-    throw new ApiError("Las bebidas van con un sándwich: agrega uno para pedir.", 400);
+// SIN SÁNDWICH, BEBIDAS DESDE BEBIDAS_SIN_SANDWICH_DESDE (dueño, 2026-10-21: «si es sin sándwich, se
+// venden a partir de dos latas»). Del 2026-09-30 a esa fecha no se vendían solas. Se cuentan
+// UNIDADES (qty), no líneas. Se valida al CREAR el pedido (place-order y prepare-order) y no en
+// deriveCart, que también tasa la parte de cada quien en un pedido en grupo: ahí alguien sí puede
+// haber pedido solo su bebida, y el pedido del grupo lleva sándwiches.
+export function assertSandwichOBebidas(items: Record<string, unknown>[]): void {
+  if (items.some((it) => it.type !== "side")) return;
+  const bebidas = items.reduce((n, it) => n + (Number(it.qty) || 0), 0);
+  if (bebidas < BEBIDAS_SIN_SANDWICH_DESDE) {
+    throw new ApiError(`Sin sándwich, las bebidas se piden desde ${BEBIDAS_SIN_SANDWICH_DESDE}. Agrega otra o un sándwich.`, 400);
   }
 }
 
@@ -918,7 +921,7 @@ export async function actPrepareOrder(b: Entrada<"prepare-order"> & { _ip?: stri
 
   await loadCatalogPrices();
   const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems, ahorroBebida } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b) /* contrato-campos: b pasa entero a organizerWaiverFor, readCoords y readMetaAttribution, que lee groupCode, token, lat, lon, fbp, fbc, ua */);
-  assertTraeSandwich(sanitizedItems);
+  assertSandwichOBebidas(sanitizedItems);
   // Un carrito hecho SOLO de productos que no cobran envío (catalog_items.sin_envio) va sin envío.
   const deliveryFee = carritoSinEnvio(sanitizedItems) ? 0 : envioCalculado;
 
@@ -1308,7 +1311,7 @@ export async function actPlaceOrder(b: Entrada<"place-order"> & { _ip?: string }
   // ver loadCatalogPrices/catalog_prices.
   await loadCatalogPrices();
   const { ingredients, expectedTotal: foodExpectedTotal, sanitizedItems, ahorroBebida } = deriveCart(b.items, rewardId, scheduledFor, await organizerWaiverFor(b) /* contrato-campos: b pasa entero a organizerWaiverFor, readCoords y readMetaAttribution, que lee groupCode, token, lat, lon, fbp, fbc, ua */);
-  assertTraeSandwich(sanitizedItems);
+  assertSandwichOBebidas(sanitizedItems);
   // Un carrito hecho SOLO de productos que no cobran envío (catalog_items.sin_envio) va sin envío.
   const deliveryFee = carritoSinEnvio(sanitizedItems) ? 0 : envioCalculado;
 

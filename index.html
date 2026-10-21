@@ -2211,6 +2211,7 @@ body.kb-open #app{padding-bottom:0}
   // supabase/functions/_shared/reglas.ts
   var reglas_exports = {};
   __export(reglas_exports, {
+    BEBIDAS_SIN_SANDWICH_DESDE: () => BEBIDAS_SIN_SANDWICH_DESDE,
     CHALLENGE_BONUS_POINTS: () => CHALLENGE_BONUS_POINTS,
     CHALLENGE_TARGET_ORDERS: () => CHALLENGE_TARGET_ORDERS,
     CULQI_FEE_RATE: () => CULQI_FEE_RATE,
@@ -2292,6 +2293,7 @@ body.kb-open #app{padding-bottom:0}
   var QUEUE_MINUTES_PER_ORDER = 5;
   var ESTIMATED_DELIVERY_RANGE = [25, 40];
   var RECARGO_APPS = 0.1;
+  var BEBIDAS_SIN_SANDWICH_DESDE = 2;
   var NOTE_ALERT_WORDS = ["alergi", "alérgi", "intoleran", "celiac", "celíac", "gluten", "lactosa", "diabet"];
   var DELIVERY_KM_RATE = 2;
   var DELIVERY_ROAD_FACTOR = 1.3;
@@ -4341,7 +4343,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'f460f15705';
+var APP_BUILD = 'a86df6f52f';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -8863,8 +8865,15 @@ async function hojaListo() {
     render();
 }
 // PAGAR: lo que falta se resuelve donde vive (la 34 o la hoja de RECIBE); después la 31.
-var FALTA_SANDWICH = 'Las bebidas van con un sándwich: agrega uno para pedir.';
-function faltaSandwich() { return cart.length > 0 && !cart.some(function (it) { return it.type !== 'side'; }); }
+// Sin sándwich, las bebidas se piden desde BEBIDAS_SIN_SANDWICH_DESDE (dueño, 2026-10-21). Se cuentan
+// unidades, no líneas: «2 × la misma» alcanza. El servidor lo exige igual (assertSandwichOBebidas).
+var BEBIDAS_SIN_SANDWICH_DESDE = REGLAS_N.BEBIDAS_SIN_SANDWICH_DESDE;
+var FALTA_SANDWICH = 'Sin sándwich, las bebidas se piden desde ' + BEBIDAS_SIN_SANDWICH_DESDE + '. Agrega otra o un sándwich.';
+function faltaSandwich() {
+    if (!cart.length || cart.some(function (it) { return it.type !== 'side'; }))
+        return false;
+    return cart.reduce(function (n, it) { return n + (Number(it.qty) || 0); }, 0) < BEBIDAS_SIN_SANDWICH_DESDE;
+}
 // Con el local cerrado (o la hora llena) el pedido se PROGRAMA solo para la primera hora libre
 // (dueño, 2026-10-02, a las 5 a.m.: «me pide programar pero no hay dónde o no me deriva»). Antes
 // el carrito mostraba «Llega 5:24 a.m.» y «Pagar» solo repetía un aviso en rojo. Si no queda
@@ -9051,8 +9060,8 @@ function problemaDelPedido() {
     elegirGuardadaSola();
     if (!cart.length)
         return 'Tu pedido está vacío.';
-    // Las bebidas se ven y se entra a ellas directo, pero van con un sándwich (dueño, 2026-09-30).
-    // El servidor lo exige igual (assertTraeSandwich en orders.ts): esto solo lo avisa antes.
+    // Sin sándwich, las bebidas van desde BEBIDAS_SIN_SANDWICH_DESDE (dueño, 2026-10-21). El servidor
+    // lo exige igual (assertSandwichOBebidas en orders.ts): esto solo lo avisa antes.
     if (faltaSandwich())
         return FALTA_SANDWICH;
     if (!confNom.trim())

@@ -1319,3 +1319,14 @@ que cancelar un pedido viejo devuelve lo mismo que reservó. Prueba: `tests-api/
   costo sube más.
 - **El tamaño a la vista**: la vitrina de las apps abre con «15 cm · 85 g de …»
   (`PORCION_PROTEINA_G` en `_shared/carta.ts`, generado en `docs/hechos/CARTA.md`).
+
+## Sin sándwich, las bebidas se venden desde 2 (2026-10-21)
+
+Dueño: «si es sin sándwich, se venden a partir de dos latas». Reemplaza la del 2026-09-30 («no, solo
+con sándwich»). El motivo es que las bebidas pasan a ser un producto propio que también se vende
+solo por la app (`docs/BEBIDAS_PRODUCTO.md` §12), y que con una sola lata el envío cuesta casi lo
+mismo que la bebida. El mínimo es `BEBIDAS_SIN_SANDWICH_DESDE` (`_shared/reglas.ts`); lo exigen el
+servidor (`assertSandwichOBebidas`, orders.ts, al crear el pedido) y el aviso del carrito
+(`faltaSandwich`, antes de pedir la dirección). Se cuentan **unidades**, no líneas: «2 × la misma
+bebida» alcanza. Las dos pruebas (`tests-api/solo-bebidas.test.ts` y `tests/bebida-sola.spec.ts`)
+se vieron fallar con la regla vieja y con el conteo por líneas.

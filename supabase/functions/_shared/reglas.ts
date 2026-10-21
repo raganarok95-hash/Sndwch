@@ -68,6 +68,10 @@ export const ESTIMATED_DELIVERY_RANGE: [number, number] = [25, 40];
  *  2026-10-16: «todos cobran más en Rappi y PedidosYa que en sus locales»). Las apps no tienen API:
  *  el dueño pega en su portal lo que calcula `npm run hechos` (docs/hechos/CARTA.md). */
 export const RECARGO_APPS = 0.10;
+/** Sin sándwich, un pedido lleva al menos estas bebidas (dueño, 2026-10-21: «si es sin sándwich,
+ *  se venden a partir de dos latas»). Con un sándwich, cualquier cantidad. Lo exigen el servidor
+ *  (`assertSandwichOBebidas`, orders.ts) y el aviso del carrito (`faltaSandwich`). */
+export const BEBIDAS_SIN_SANDWICH_DESDE = 2;
 export const NOTE_ALERT_WORDS = ["alergi", "alérgi", "intoleran", "celiac", "celíac", "gluten", "lactosa", "diabet"];
 
 // ── Envío ──────────────────────────────────────────────────────────────────────────
