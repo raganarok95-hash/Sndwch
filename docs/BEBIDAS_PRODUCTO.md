@@ -209,6 +209,53 @@ la app (hoy son 3) y a qué precio lo decide el dueño después de probarlas.
   claras (The Bloom, The Cool, Medio y medio); en el chai y el Midnight, que son oscuros, casi no
   se ve.
 
+## 11 · ¿Cuánto deja y vale la pena la selladora de S/3,500? (2026-10-21)
+
+Dueño: «No quiero evitar todo lo que sea químico. Pero bueno, ¿cuán rentable sería? La máquina de
+latas que mandaste no sirve, pero la otra cuesta 3500 soles: ¿vale la pena?». Lo que no se usa
+sigue siendo solo esencias, sorbato y ácido cítrico (y la xantana, que el dueño sacó); lo demás se
+juzga por lo que aporta.
+
+**La lata llena cuesta ~S/2.54** (insumo promedio de las 5 de §9: S/1.14; lata y tapa: ~S/1.20, por
+confirmar; etiqueta: ~S/0.20). **La botella de hoy, llena, ~S/1.83.**
+
+- **En la app, la lata deja S/0.71 menos por bebida que la botella.** No vende más sándwiches. Se
+  justifica solo si la bebida en lata se cobra S/1 más.
+- **En tiendas** (la bodega gana 30%, ISC 12%, IGV 18%, se pierde 10% por vencimiento):
+
+| precio en la tienda | deja por lata | 10 tiendas × 15 latas/sem | 20 × 15 | 40 × 15 |
+|---|---|---|---|---|
+| S/6 | S/0.39 | S/251/mes | S/502 | S/1,003 |
+| S/7 | S/0.92 | S/595/mes | S/1,190 | S/2,379 |
+| S/8 | S/1.45 | S/939/mes | S/1,878 | S/3,755 |
+
+Sin contar tu tiempo, el reparto a las tiendas ni el crédito del IGV de las compras.
+
+**La máquina sola (S/3,500) se paga**:
+
+| precio en la tienda | 10 tiendas | 20 tiendas |
+|---|---|---|
+| S/7 | 6 meses | 3 meses |
+| S/6 | 14 meses | 7 meses |
+
+**Con el registro sanitario y los análisis** (S/390 por sabor más el laboratorio, ~S/2,000–4,000
+según cuántos sabores), a S/7 y con 10 tiendas se paga todo en ~11 meses.
+
+**Veredicto: hoy no; cuando haya tiendas que la pidan, sí.** Primero se prueba en la app, en la
+botella de hoy: no necesita registro ni máquina. Ahí se aprende qué sabores se piden. Después se
+consigue el sí de 10 tiendas o cafés a S/7 o más (con muestras para probar, no ventas). Ahí se
+decide el envase y se compra la máquina. **El registro sanitario se saca con el envase
+definitivo**, porque cambiarlo después obliga a modificar el registro. A S/6 en bodega la lata
+casi no deja: el lugar de esta bebida es la tienda que la cobra a S/7–8.
+
+**Antes de pagar los S/3,500, que el vendedor confirme por escrito:**
+- que selle sola (no de palanca);
+- 220 V;
+- el tamaño de tapa y de lata que acepta (500 ml);
+- la garantía;
+- quién la repara en Perú y cuánto cuestan los repuestos (rodillos y mandril);
+- y que te venda las latas y tapas compatibles.
+
 ## Fuentes
 
 - Latas PET y selladoras, The Homebrewer Perú: https://thehomebrewerperu.com/producto/latas-pet-de-350-ml-con-tapa/ · https://thehomebrewerperu.com/producto/selladora-automatica-de-latas-pet/ · https://thehomebrewerperu.com/producto/selladora-manual-de-latas-pet/
