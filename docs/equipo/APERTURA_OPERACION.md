@@ -1,5 +1,8 @@
 # El plan de cocina de la apertura (martes 20 a domingo 25 de octubre)
 
+> **Fechas viejas** (2026-10-21): la apertura pasó a noviembre, día por confirmar (P57). Las
+> cantidades siguen valiendo; las fechas se rehacen con el día nuevo.
+
 Lo armó **Operación** (`.claude/agents/operacion.md`) el 2026-10-16 desde `modelo/proyeccion.py` y
 `modelo/meta_6000.py` (1,500 corridas). **Todo es supuesto del modelo**: todavía no hay una venta
 real (en `orders` hay 4 pruebas canceladas; `inventory` está vacío). Las cifras en soles se le

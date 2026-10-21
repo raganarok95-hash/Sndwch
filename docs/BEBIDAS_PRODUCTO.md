@@ -362,6 +362,11 @@ La sucralosa casi no pesa: aunque cueste el doble, son ~S/0.05 por lata.
 y el freno de costo por cliente (`parity`), así que se corrige con el precio real al que compra el
 dueño, no con uno de internet.
 
+> **Corrección del 2026-10-21 (régimen)**: el negocio está en el **Nuevo RUS** (RUC 10,
+> `docs/META_6000.md`), que **no cobra IGV**. Mientras siga ahí, cada lata deja ~S/1.22 más que en
+> §12 y §13: entre ~S/5.10 y S/6.30 a S/8. Pero quien hace operaciones con ISC no puede estar en el
+> Nuevo RUS: si la lata con marca paga ISC, cambia de régimen. Se confirma con el contador (P62).
+
 ## Fuentes
 
 - Latas PET y selladoras, The Homebrewer Perú: https://thehomebrewerperu.com/producto/latas-pet-de-350-ml-con-tapa/ · https://thehomebrewerperu.com/producto/selladora-automatica-de-latas-pet/ · https://thehomebrewerperu.com/producto/selladora-manual-de-latas-pet/
