@@ -301,6 +301,67 @@ publicado, la lata con tapa saldría entre ~S/0.80 y S/1.50 en compras chicas (e
 S/1.20). **El precio real sale de la cotización al vendedor de la máquina**, que además asegura
 que la tapa calce con la máquina: 202 (52 mm) o 209, según la máquina.
 
+## 13 · Por qué la lata deja lo que deja, y los precios revisados (2026-10-21)
+
+Dueño: «Asimismo, cotiza y mira bien los precios: ¿por qué se gana tan poco por lata?».
+
+**De S/8, lo que se va** (The Bloom, con los precios revisados):
+
+| | S/ |
+|---|---|
+| precio en la app | 8.00 |
+| IGV (18%, nunca fue tuyo) | −1.22 |
+| comisión de pago (~2%, Yape por defecto) | −0.16 |
+| insumos | −0.67 |
+| lata PET con tapa | −0.90 |
+| etiqueta | −0.12 |
+| merma (5%) | −0.08 |
+| **te queda** | **4.85** (y 4.12 si paga ISC: −0.73) |
+
+No es poco: es ~60% de lo que queda después del IGV. **Se veía poco por tres cosas:**
+
+1. **El IGV se lleva S/1.22 antes que nada.**
+2. **El envase (lata, tapa y etiqueta) cuesta más que la bebida que lleva adentro.**
+3. **El modelo tenía la jamaica a S/97 el kilo** (Campo Grande, de tienda). En el mercado está a
+   S/25–40: Agrosur S/25, Mercado Libre desde S/25, Mercampo S/36.50, Comfrutti S/39. Solo eso le
+   suma S/0.50 por lata a The Bloom. El té negro también estaba a S/97: no hay precio publicado a
+   granel, pero si se exporta a ~US$9.5 el kilo, al por mayor debería estar bastante más abajo.
+
+**Cada lata, con el precio del modelo y con el revisado.** El revisado usa jamaica a S/30, té a
+S/60 (estimado), lata a S/0.90 comprando por millar y etiqueta a S/0.12: las dos últimas, por
+cotizar.
+
+| bebida | deja hoy en el modelo | deja con precios revisados | si el limón sube a S/20/kg |
+|---|---|---|---|
+| The Bloom | S/3.92 | **S/4.85** | S/4.56 |
+| The Midnight | S/4.46 | **S/5.11** | S/5.11 |
+| Medio y medio | S/3.58 | **S/4.24** | **S/2.29** |
+| The Cool | S/4.29 | **S/4.69** | S/3.72 |
+| Chai con filtrantes | S/3.52 | **S/3.92** | S/3.92 |
+
+Sin ISC. Si lo paga, se resta ~S/0.73 a cada una.
+
+**Dos riesgos y una palanca:**
+
+- **El limón**: hoy está a S/3–5.30 el kilo en supermercado (Tottus, Metro), pero se pronostica
+  hasta **S/20 el kilo en el verano de 2027** por El Niño costero. Con ese precio, el Medio y medio
+  deja menos de la mitad. Las que no dependen del limón (The Bloom, Midnight y chai) aguantan.
+- **El chai**: con filtrantes a S/0.58, solo el té cuesta S/1.44 por lata, y es lo más caro de la
+  línea. Con 4 filtrantes por litro en vez de 5 se ahorran S/0.29 por lata. Una caja más grande, o
+  el mismo chai a granel, lo bajaría más.
+- **La palanca**: comprar las latas por millar y las etiquetas en imprenta (no sueltas).
+
+**Lo que falta cotizar** (nadie lo publica en Perú; se pide por WhatsApp):
+- las latas PET de 500 ml con tapa, por millar, al vendedor de la máquina;
+- 1,000 etiquetas adhesivas a color, en una imprenta de Trujillo;
+- el té negro a granel, por kilo, en el mercado mayorista o a Campo Grande.
+
+La sucralosa casi no pesa: aunque cueste el doble, son ~S/0.05 por lata.
+
+`modelo/costo_bebidas.py` todavía usa la jamaica y el té a S/97. Ese número alimenta la proyección
+y el freno de costo por cliente (`parity`), así que se corrige con el precio real al que compra el
+dueño, no con uno de internet.
+
 ## Fuentes
 
 - Latas PET y selladoras, The Homebrewer Perú: https://thehomebrewerperu.com/producto/latas-pet-de-350-ml-con-tapa/ · https://thehomebrewerperu.com/producto/selladora-automatica-de-latas-pet/ · https://thehomebrewerperu.com/producto/selladora-manual-de-latas-pet/
@@ -318,6 +379,9 @@ que la tapa calce con la máquina: 202 (52 mm) o 209, según la máquina.
 - Bebidas poco ácidas y botulismo (la guía de la FDA de 10 días, citada en patentes): https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/11744265 · https://ohsonline.com/articles/2017/09/22/death-wish-nitro-cold-brew-recalled.aspx
 - Latas PET (referencias): https://spanish.alibaba.com/product-detail/PET-plastic-can-with-aluminium-easy-60564268743.html · https://smpetcan.en.made-in-china.com/product/gxBRhHLwbrpO/China-Transparent-Pet-Plastic-250ml-330ml-350ml-Easy-Open-Beverage-Cans-with-Aluminium-Lid.html · https://m.indiamart.com/impcat/pet-cans.html · https://www.puntoqpack.com/es/375-latas-pet
 - Bubble tea en lata a S/8.90 en Lima: https://panamericana.pe/prendete/locales/436120-bubble-tea-centro-lima-sabores-presentaciones-debes-dejar-probar
+- Jamaica por kilo: https://www.agrosurperu.com/product-page/flor-de-jamaica · https://listado.mercadolibre.com.pe/flor-de-jamaica-x-kg · https://mercampo.pe/producto/flor-de-jamaica/ · https://comfruttiperu.com/producto/flor-de-jamaica-deshidratado-importado/
+- Limón: https://www.tottus.com.pe/tottus-pe/articulo/115830731/limon-sutil-tottus/115830732 · https://www.metro.pe/limon-sutil-x-kg-140-2/p · pronóstico por El Niño: https://www.infobae.com/peru/2026/10/15/fenomeno-el-nino-dispararia-el-precio-del-limon-hasta-s-20-el-kilo-en-el-verano-de-2027/
+- Té negro exportado (~US$9.5/kg FOB): https://agraria.pe/noticias/notable-incremento-en-las-exportaciones-de-te-negro-peruano-28733
 - Registro sanitario: https://www.digesa.minsa.gob.pe/orientacion/COMUNICADO%20TUPA%20PRODUCTOS.pdf · https://www.industriaalimentaria.org/blog/contenido/digesa-garantiza-continuidad-de-tramites-sanitarios-para-alimentos · https://www.vuce.gob.pe/manual_vuce/manuales/usuarios/DGS006_Inscripcion_Registro_Sanitario_Alimentos_Bebidas_Consumo_Humano_(Nacional).pdf
 
 Casi todos los precios son publicados por vendedores y sin la cantidad exacta: sirven para saber
