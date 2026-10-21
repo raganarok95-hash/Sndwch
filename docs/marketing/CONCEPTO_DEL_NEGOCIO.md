@@ -9,7 +9,7 @@
 **Una sandwichería solo de delivery en Trujillo.** Sándwiches de pan largo (sub) al estilo de los
 clásicos americanos, en dos tamaños, **15 cm y 30 cm**, armados al momento. No hay local ni
 mostrador: se pide por **sndwch.app** (el canal propio), por **Rappi** y, más adelante, por
-**PedidosYa**. **Abre el martes 20 de octubre de 2026.** Atiende de martes a domingo, de 11:00 a
+**PedidosYa**. **Abre en noviembre de 2026** (el día se confirma). Atiende de martes a domingo, de 11:00 a
 22:00; los lunes cierra.
 
 El dueño cocina y arma cada pedido. **No reparte**: lo lleva un tercero (una red de motorizados).

@@ -16,7 +16,7 @@
 import { chromium } from '@playwright/test';
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { APERTURA } from '../video-auto/reglas-del-revisor.mjs';
+import { APERTURA, APERTURA_CONFIRMADA } from '../video-auto/reglas-del-revisor.mjs';
 
 const [semana, datosPath] = process.argv.slice(2);
 const FINAL = process.argv.includes('--final');
@@ -35,7 +35,8 @@ const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const pasosLista = D.pasos.map((p) => cap(p.toLowerCase())).join('. ') + '.';
 const VAR = {
   abre: hh(abreH), cierra: hh(cierraH), organizadorDesde: String(D.organizadorDesde), pasos_lista: pasosLista,
-  dia_abre: cap(DIAS[new Date(`${APERTURA}T12:00:00`).getDay()]),
+  // Sin día confirmado no hay {dia_abre}: la historia que lo nombra falla en vez de anunciar un día falso.
+  ...(APERTURA_CONFIRMADA ? { dia_abre: cap(DIAS[new Date(`${APERTURA}T12:00:00`).getDay()]) } : {}),
 };
 const interpola = (t) => t.replace(/\{(\w+)\}/g, (_, k) => { if (!(k in VAR)) throw new Error(`Sin dato para {${k}}`); return VAR[k]; });
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');

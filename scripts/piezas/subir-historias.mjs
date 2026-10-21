@@ -10,6 +10,11 @@
 import { readFileSync, readdirSync, existsSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { SB, BUCKET, conectar, hoyEnLima } from '../video-auto/produccion.mjs';
+import { APERTURA_CONFIRMADA } from '../video-auto/reglas-del-revisor.mjs';
+
+// Sin día de apertura no se programa nada (dueño, 2026-10-21: «Abriremos en noviembre»): una historia
+// que invita a pedir mientras la app dice «Aún no abrimos» confunde. Sale en verde para no ensuciar los vigías.
+if (!APERTURA_CONFIRMADA) { console.log('· Apertura sin día confirmado: no se programa ninguna historia.'); process.exit(0); }
 
 const { pedir, accion } = await conectar();
 const hoy = hoyEnLima();

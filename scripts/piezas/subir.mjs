@@ -6,7 +6,9 @@
 // `src`) no se duplica: el borrador se actualiza; lo aprobado no se toca. Las imágenes se reemplazan.
 import { readFileSync } from 'node:fs';
 import { SB, BUCKET, conectar } from '../video-auto/produccion.mjs';
-import { APERTURA } from '../video-auto/reglas-del-revisor.mjs';
+import { APERTURA, APERTURA_CONFIRMADA } from '../video-auto/reglas-del-revisor.mjs';
+
+if (!APERTURA_CONFIRMADA) throw new Error('La apertura todavía no tiene día (noviembre, por confirmar): fíjalo en scripts/video-auto/reglas-del-revisor.mjs antes de subir el lanzamiento.');
 
 const DIR = 'docs/marketing/lanzamiento';
 const { pedir } = await conectar();

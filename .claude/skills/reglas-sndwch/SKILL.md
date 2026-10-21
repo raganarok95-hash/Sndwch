@@ -7,7 +7,7 @@ user-invocable: false
 # Las reglas de la casa (todos los equipos)
 
 SND//WCH es una sandwichería solo de delivery en Trujillo, Perú: pedidos en `sndwch.app`, Rappi
-(desde el 20-oct) y PedidosYa (después). Abre el **martes 20 de octubre de 2026**. Lo que hay hoy
+(desde el 20-oct) y PedidosYa (después). Abre en **noviembre de 2026, día por confirmar** (movida del 20-oct el 2026-10-21). Lo que hay hoy
 en pedidos y clientes es data de prueba. El dueño arma los pedidos él mismo; **no reparte** (lo hace
 un tercero). Martes a domingo, 11:00–22:00; lunes cerrado. El horario real está en la base: nunca
 lo escribas de memoria.
