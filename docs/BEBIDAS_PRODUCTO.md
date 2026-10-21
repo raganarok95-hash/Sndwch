@@ -256,6 +256,51 @@ casi no deja: el lugar de esta bebida es la tienda que la cobra a S/7–8.
 - quién la repara en Perú y cuánto cuestan los repuestos (rodillos y mandril);
 - y que te venda las latas y tapas compatibles.
 
+## 12 · Producto propio en la app, a S/8 la lata (2026-10-21)
+
+Dueño: «El precio sería de 8 soles en realidad. Te enfocaste en tienda, pero la idea es hacer otro
+producto de las bebidas. Pueden venderse igual solo por el app. Cotízame las PET con latas de
+aluminio easy to open».
+
+**Lo que deja cada lata a S/8 en la app.** Supuestos: lata llena S/2.54, IGV, ~2% de comisión de
+pago (Yape por defecto) y 5% de merma:
+
+- **S/3.95 por lata** si no paga ISC.
+- **S/3.23 por lata** si el contador dice que paga el 12% de ISC. Una bebida envasada con marca,
+  vendida como producto, puede pagarlo aunque se venda solo en la app.
+- **La botella de hoy a S/6 deja ~S/3.04.** O sea, la lata a S/8 deja más.
+- **Con brillo**, ~S/0.65 menos.
+
+| latas por día | al mes (26 días) | la máquina de S/3,500 se paga en |
+|---|---|---|
+| 5 | S/419–514 | 7–8 meses |
+| 10 | S/839–1,028 | 3.4–4.2 meses |
+| 20 | S/1,678–2,055 | ~2 meses |
+
+**Validación del precio**: en el Centro de Lima venden bubble tea en lata a S/8.90.
+
+**Dos cosas que cambian si la bebida es un producto aparte:**
+
+1. **Hoy la app rechaza todo pedido sin sándwich** (dueño, 2026-09-30, `tests-api/solo-bebidas.test.ts`).
+   Para venderla sola hay que abrir eso, y conviene un mínimo (un pack de 3–4 latas): el envío
+   cuesta casi lo que una lata. Es decisión del dueño, y concepto antes que código.
+2. **El registro sanitario**: una lata con marca, lote y vencimiento puede contar como bebida
+   industrializada aunque se venda solo en la app. Se consulta con DIGESA antes de lanzar.
+
+**Las latas PET con tapa de aluminio abre fácil: lo que se encontró (2026-10-21)**
+
+| dónde | qué | precio |
+|---|---|---|
+| The Homebrewer Perú (Lurín) | lata PET 350 ml con tapa; importadas, solo a pedido | S/555 a S/6,280 según la presentación (no dice cuántas trae) |
+| Impacto Gastronómico Perú | «lata soda PET» 330 ml × 100 | S/89 (S/0.89 c/u; no dice si trae la tapa) |
+| Fábricas en China (referencia, no se importa) | lata PET 500 ml con tapa de aluminio | US$0.11–0.15 c/u (mínimo 1,000); US$0.26 (mínimo 5,000) |
+| India (referencia) | lata PET con tapa abre fácil | ₹10–12 c/u (~S/0.45–0.55) |
+
+**Nadie en Perú publica precio por unidad de 500 ml**: los que venden importan a pedido. Con lo
+publicado, la lata con tapa saldría entre ~S/0.80 y S/1.50 en compras chicas (el modelo usa
+S/1.20). **El precio real sale de la cotización al vendedor de la máquina**, que además asegura
+que la tapa calce con la máquina: 202 (52 mm) o 209, según la máquina.
+
 ## Fuentes
 
 - Latas PET y selladoras, The Homebrewer Perú: https://thehomebrewerperu.com/producto/latas-pet-de-350-ml-con-tapa/ · https://thehomebrewerperu.com/producto/selladora-automatica-de-latas-pet/ · https://thehomebrewerperu.com/producto/selladora-manual-de-latas-pet/
@@ -271,6 +316,8 @@ casi no deja: el lugar de esta bebida es la tienda que la cobra a S/7–8.
 - ISC de 12% para bebidas sin azúcar (DS 181-2019-EF): https://www.mef.gob.pe/es/notas-de-prensa-y-comunicados/6055-ejecutivo-publica-decreto-supremo-con-ajustes-al-isc-y-al-ir
 - Brillo comestible (tope 0.07%, ingredientes): https://brewglitter.com/products/glitter-drinks-fuchsia · https://bakell.com/products/blue-brew-glitter-edible-glitter-for-sports-drinks-energy-drinks · en Lima: https://www.libreriagastroperu.com/collections/brew-glitter-purpurina-comestible
 - Bebidas poco ácidas y botulismo (la guía de la FDA de 10 días, citada en patentes): https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/11744265 · https://ohsonline.com/articles/2017/09/22/death-wish-nitro-cold-brew-recalled.aspx
+- Latas PET (referencias): https://spanish.alibaba.com/product-detail/PET-plastic-can-with-aluminium-easy-60564268743.html · https://smpetcan.en.made-in-china.com/product/gxBRhHLwbrpO/China-Transparent-Pet-Plastic-250ml-330ml-350ml-Easy-Open-Beverage-Cans-with-Aluminium-Lid.html · https://m.indiamart.com/impcat/pet-cans.html · https://www.puntoqpack.com/es/375-latas-pet
+- Bubble tea en lata a S/8.90 en Lima: https://panamericana.pe/prendete/locales/436120-bubble-tea-centro-lima-sabores-presentaciones-debes-dejar-probar
 - Registro sanitario: https://www.digesa.minsa.gob.pe/orientacion/COMUNICADO%20TUPA%20PRODUCTOS.pdf · https://www.industriaalimentaria.org/blog/contenido/digesa-garantiza-continuidad-de-tramites-sanitarios-para-alimentos · https://www.vuce.gob.pe/manual_vuce/manuales/usuarios/DGS006_Inscripcion_Registro_Sanitario_Alimentos_Bebidas_Consumo_Humano_(Nacional).pdf
 
 Casi todos los precios son publicados por vendedores y sin la cantidad exacta: sirven para saber
