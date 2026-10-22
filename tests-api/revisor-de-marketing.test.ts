@@ -90,3 +90,24 @@ Deno.test("las dos primeras semanas alternan 12:00 y 18:00, parejas y cruzadas p
   }
   assertEquals([horaDelVideo(dia(14)), horaDelVideo(dia(30))], ["18:00", "18:00"], "la prueba no terminó a las dos semanas");
 });
+
+// PREAPERTURA (dueño, 2026-10-22: sí al modo de preapertura). Mientras no se abre, el sistema
+// publica solo lo que NO invita a pedir (la carta, la cocina, «abrimos en noviembre»); lo que dice
+// «pide» espera. Modo de fallo: SILENCIO y lo legal — una historia que dice «pídelo» con la app
+// en «Aún no abrimos» es una invitación que no se puede cumplir, y nadie la revisa antes de salir.
+import { invitaAPedir, enPreapertura } from "../scripts/video-auto/reglas-del-revisor.mjs";
+Deno.test("lo que invita a pedir se reconoce, con o sin tildes ni mayúsculas", () => {
+  for (const t of ["Pide en sndwch.app", "PÍDELO HOY", "Pídela ya", "Haz tu pedido", "Organiza el pedido de la oficina", "Ordena desde el celular", "Para pedir, entra al enlace"]) {
+    assertEquals(invitaAPedir(t), true, `debió invitar: «${t}»`);
+  }
+});
+Deno.test("la carta, la cocina y «abrimos» no invitan a pedir", () => {
+  for (const t of ["Abrimos en noviembre", "La carta: 6 Signatures", "sndwch.app · enlace en el perfil", "Hoy no cocinas.", "Así se lamina la res", "¿Cuál pruebas primero?", "Rápido y despedida"]) {
+    assertEquals(invitaAPedir(t), false, `no debió invitar: «${t}»`);
+  }
+});
+Deno.test("sin día confirmado todo es preapertura; con día, solo antes de él", () => {
+  assertEquals(enPreapertura("2027-01-01", { confirmada: false, apertura: "2026-11-10" }), true);
+  assertEquals(enPreapertura("2026-11-09", { confirmada: true, apertura: "2026-11-10" }), true);
+  assertEquals(enPreapertura("2026-11-10", { confirmada: true, apertura: "2026-11-10" }), false);
+});

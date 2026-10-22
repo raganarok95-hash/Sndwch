@@ -78,15 +78,23 @@ Textos, fieles a la carta y sin precios:
 - **El mismo video, también en TikTok** (P45) y en Facebook.
 - **Tu red** (P0a) y **embajadores** (P49), con sus enlaces.
 
-## 6 · Lo que falta en la app para que Instagram rinda antes de abrir (tu sí)
+## 6 · ~~«Avísame cuando abran» en la app~~ — no (dueño, 2026-10-22: «No, porque nadie llega desde Instagram»)
 
 Hoy, quien llega desde Instagram ve «Aún no abrimos» y **no tiene dónde dejar su contacto**: la
 lista de espera se retiró de la app y solo tiene 1 inscrito, del 13-sep. **Propuesta**: un botón
 «Avísame cuando abran» en esa pantalla (WhatsApp o celular) y, el día 1, un aviso a todos. Es lo
 que convierte seguidores en primeros pedidos.
 
-## 7 · Lo que hago yo cuando el token funcione (tu sí)
+## 7 · El modo de preapertura — aprobado (dueño, 2026-10-22: «eso sí») y hecho
 
 Hoy todo lo automático está frenado hasta que haya día de apertura. **Propuesta**: un modo de
 preapertura en el que el sistema publica solo lo que no invita a pedir (la carta, detrás del pan,
 «abrimos en noviembre») con el calendario de la agencia, y deja en espera lo que dice «pide hoy».
+
+**Cómo quedó**:
+- `enPreapertura()` e `invitaAPedir()` (`scripts/video-auto/reglas-del-revisor.mjs`, con pruebas).
+- `historias.mjs --final` programa las historias que no invitan a pedir, y deja fuera las que sí
+  invitan o nombran un día que todavía no existe.
+- El video del día sigue esperando, porque dice «Pídelo hoy».
+- La agencia (`agencia-semana` §2, `brief-sndwch`) arma la semana para preapertura.
+- Empieza a publicar cuando el token tenga permisos (§1).

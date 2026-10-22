@@ -1330,3 +1330,18 @@ servidor (`assertSandwichOBebidas`, orders.ts, al crear el pedido) y el aviso de
 (`faltaSandwich`, antes de pedir la dirección). Se cuentan **unidades**, no líneas: «2 × la misma
 bebida» alcanza. Las dos pruebas (`tests-api/solo-bebidas.test.ts` y `tests/bebida-sola.spec.ts`)
 se vieron fallar con la regla vieja y con el conteo por líneas.
+
+## Preapertura: se publica lo que no invita a pedir (2026-10-22)
+
+El 2026-10-21, al moverse la apertura a noviembre sin día, se frenó toda publicación automática.
+El 22 el dueño puso Instagram como prioridad y aprobó un modo de preapertura («eso sí»): sale lo
+que no invita a pedir (la carta, la cocina, «abrimos en noviembre») y espera lo que dice «pide».
+
+`invitaAPedir()` busca palabras enteras, sin tildes ni mayúsculas («despedida» no es «pide»), y
+ante la duda dice que sí: esperar a abrir cuesta poco, y publicar «pídelo» con la app cerrada es
+una invitación que no se puede cumplir. El filtro está en `historias.mjs --final`, que es donde se
+conocen los textos; `subir-historias.mjs` programa lo que llega al manifiesto. Las pruebas se
+vieron fallar con «nada invita» y con «ignora el día sin confirmar».
+
+El mismo día el dueño dijo **que no** a «Avísame cuando abran» en la app: «nadie llega desde
+Instagram».
