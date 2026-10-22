@@ -789,3 +789,12 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
 - **Desde la nube no se lee `orders` en soles hacia el repo**: el repo es público. Los números del
   equipo salen por `datos-semana.yml` (solo conteos y porcentajes) y las cifras en soles se dan en
   la sesión.
+
+## El MCP de Supabase no borra (2026-10-22)
+- `execute_sql` y `apply_migration` se cuelgan hasta su tope de 60 s con **cualquier `DELETE`**,
+  incluso uno que no borra nada o uno sobre una tabla temporal recién creada, y no aplican nada.
+  `SELECT` y `UPDATE` funcionan. No se reintenta: un borrado de datos lo hace el dueño desde el panel
+  de Supabase (Table Editor), o se busca otra vía con su sí.
+- La cuenta publicitaria 1488138326460689 no ve ningún Instagram (`ads_get_ig_accounts` devuelve
+  vacío): hay que asignar @snd__wch a la cuenta publicitaria en la configuración del Business
+  (`docs/marketing/INSTAGRAM_AHORA.md` §1).
