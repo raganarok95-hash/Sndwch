@@ -16,7 +16,7 @@
 import { chromium } from '@playwright/test';
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { APERTURA, APERTURA_CONFIRMADA } from '../video-auto/reglas-del-revisor.mjs';
+import { APERTURA, APERTURA_CONFIRMADA, enPreapertura, invitaAPedir } from '../video-auto/reglas-del-revisor.mjs';
 
 const [semana, datosPath] = process.argv.slice(2);
 const FINAL = process.argv.includes('--final');
@@ -38,7 +38,13 @@ const VAR = {
   // Sin día confirmado no hay {dia_abre}: la historia que lo nombra falla en vez de anunciar un día falso.
   ...(APERTURA_CONFIRMADA ? { dia_abre: cap(DIAS[new Date(`${APERTURA}T12:00:00`).getDay()]) } : {}),
 };
-const interpola = (t) => t.replace(/\{(\w+)\}/g, (_, k) => { if (!(k in VAR)) throw new Error(`Sin dato para {${k}}`); return VAR[k]; });
+// En el tablero (para aprobar) un día que todavía no existe se marca; en --final esa historia no llega
+// hasta acá (ver el bucle).
+const interpola = (t) => t.replace(/\{(\w+)\}/g, (_, k) => {
+  if (k in VAR) return VAR[k];
+  if (!FINAL && k === 'dia_abre') return '[día por confirmar]';
+  throw new Error(`Sin dato para {${k}}`);
+});
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
 // La Dirección de arte (scripts/estudio/DIRECCION_DE_ARTE.md, dueño 2026-10-15) deja
@@ -116,6 +122,11 @@ for (const h of H) {
   const fondos = h.cuadros.map((c) => fondo(c, h));
   const completa = fondos.every((f) => !f.boceto);
   if (FINAL && !completa) { console.log(`· ${h.dia} ${h.id}: faltan imágenes de Flow, no sale`); continue; }
+  // PREAPERTURA (dueño, 2026-10-22): antes de abrir sale lo que no invita a pedir; lo que dice
+  // «pide» espera. Y lo que nombra el día de apertura espera a que ese día exista.
+  const textos = h.cuadros.map((c) => c.texto || '');
+  if (FINAL && !APERTURA_CONFIRMADA && textos.some((t) => t.includes('{dia_abre}'))) { console.log(`· ${h.dia} ${h.id}: nombra el día de apertura y todavía no hay día, no sale`); continue; }
+  if (FINAL && enPreapertura(h.dia) && textos.some(invitaAPedir)) { console.log(`· ${h.dia} ${h.id}: invita a pedir antes de abrir, espera`); continue; }
   const miniaturas = [];
   for (const [i, c] of h.cuadros.entries()) {
     const f = fondos[i];

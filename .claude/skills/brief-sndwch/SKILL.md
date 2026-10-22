@@ -24,6 +24,9 @@ Un brief que dice dos cosas no dice ninguna. El Estratega convierte los datos y 
 La plantilla de `docs/marketing/AGENCIA.md` §4, completa, en una página. El objetivo es siempre un
 número de pedidos reales de gente fuera de la red del dueño. **La idea cambia cada semana** y sale
 de `DATOS.md` (lo que funcionó y lo que no) y de `INSUMOS.md`.
+**Antes de abrir (preapertura, dueño 2026-10-22)** el objetivo no son pedidos, que todavía no se
+pueden hacer: son seguidores y gente que conozca la carta. Nada invita a pedir (ver `agencia-semana`
+§2).
 
 ## Mini-brief de una pieza (`docs/marketing/piezas/<id>/BRIEF.md`)
 ```

@@ -9,11 +9,26 @@ import { precio } from './produccion.mjs';
 // del 20 a noviembre el 2026-10-21 («Abriremos en noviembre»: no llegaron los sellos ni la kraft),
 // todavía sin día. Mientras APERTURA_CONFIRMADA sea false, APERTURA es solo el tope (el último
 // día de noviembre) para que nada salga antes, y lo que NOMBRA el día se niega a correr
-// (lanzamiento.mjs, subir.mjs, la historia con {dia_abre}, subir-historias.mjs). Al fijar el día:
+// (lanzamiento.mjs, subir.mjs, la historia con {dia_abre}). Al fijar el día:
 // se escribe acá y se pone en true.
 // Todo texto que nombra el día de apertura la lee de aquí (lanzamiento.mjs, historias.mjs).
 export const APERTURA = '2026-11-30';
 export const APERTURA_CONFIRMADA = false;
+
+// PREAPERTURA (dueño, 2026-10-22: «eso sí»). Mientras no se abre, el sistema publica solo lo que NO
+// invita a pedir (la carta, la cocina, «abrimos en noviembre»); lo que dice «pide» espera a abrir.
+// Sin día confirmado, todo es preapertura. El video del día siempre espera: dice «Pídelo hoy».
+export function enPreapertura(hoy, { confirmada = APERTURA_CONFIRMADA, apertura = APERTURA } = {}) {
+  return !confirmada || hoy < apertura;
+}
+// Las palabras con las que un texto le pide al cliente que compre. Se compara sin tildes ni
+// mayúsculas y por palabra entera («despedida» no es «pide»). Ante la duda, invita: esperar a
+// abrir cuesta poco; publicar «pídelo» con la app cerrada, no.
+const INVITA = /\b(pid[ea]n?|pidel[oa]s?|pidelos|pedir|pedido|pedidos|ordena|ordenalo|compra|compralo)\b/;
+export function invitaAPedir(texto) {
+  const t = String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return INVITA.test(t);
+}
 
 /**
  * @param {object} c

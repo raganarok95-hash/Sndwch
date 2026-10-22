@@ -30,6 +30,11 @@ La que empieza el **próximo lunes** (o la del argumento): `docs/marketing/seman
 ## 2 · El brief
 - `estratega` → `BRIEF.md` (plantilla de `docs/marketing/AGENCIA.md` §4), con `DATOS.md`,
   `INSUMOS.md`, la carpeta de la semana anterior y `docs/marketing/equipo/aprendizajes/`.
+- **PREAPERTURA** (dueño, 2026-10-22): mientras no se abre (`enPreapertura()` en
+  `scripts/video-auto/reglas-del-revisor.mjs`), la semana NO invita a pedir: nada de «pide»,
+  «pídelo», «pedido», «ordena», ni `{dia_abre}` sin día confirmado. Los temas son la carta, la
+  cocina (detrás del pan) y «abrimos en noviembre». Lo que invite a pedir no se programa:
+  `historias.mjs --final` lo deja fuera, y el trabajo se pierde.
 
 ## 3 · Ideas
 - `creativo` → `IDEAS.md`: 30 ideas y las 7 que pasan la rúbrica, cada una con lo que se ve.
