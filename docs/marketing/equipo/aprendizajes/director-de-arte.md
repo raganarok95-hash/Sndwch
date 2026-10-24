@@ -23,3 +23,7 @@
   y del Meatball con otro queso, el dueño: «Tuna Melt consérvalo, está bien; Meatball igual». No
   se retienen por eso. El Turkey sí: «Quita pepino» (un ingrediente que la receta no lleva). En
   el lanzamiento va la foto fiel generada; en la app, la de Stock recortada sin el pepino.
+- **2026-10-24 · Las latas: «me encantaron», pero más lata y más estilo.** Dueño: «Los diseños me
+  encantaron, pero sí siento que les falta aprovechar algo más la lata y algo más estilizado». La
+  lata transparente es un soporte de 360°, con tapa y con una espalda que se ve a través de la
+  bebida: un diseño que solo usa el frente la desperdicia.
