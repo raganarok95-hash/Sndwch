@@ -55,3 +55,7 @@
     con el té dominando.
   - **Un ingrediente que cambia el sabor** se le propone aparte, como cambio de sabor, y lo decide
     él.
+- **2026-10-24 · The Midnight cambia de nombre.** El dueño pidió cambiárselo: venía del concepto de
+  las horas que descartó. Entre las opciones eligió **Cold Brew Tea** («Cold Brew // Tea» en la
+  app). Es la misma línea que Chai y Lemon Tea: un nombre conocido, que dice lo que es, gana a uno
+  inventado.

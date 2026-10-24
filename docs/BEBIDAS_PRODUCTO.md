@@ -585,3 +585,39 @@ Los nuevos no me gustan para nada, más que Arnold Palmer. No quiero cambiar el 
 
 **The Midnight:** el dueño pidió cambiarle el nombre (venía del concepto de las horas que él
 descartó) y ver si se queda en la línea. La decisión está en §19.
+
+## 19 · The Midnight pasa a llamarse Cold Brew Tea, y se queda a prueba (2026-10-24)
+
+El nombre venía del concepto de las horas que el dueño descartó. Pidió cambiarlo y ver si la bebida
+se queda.
+
+**Lo que pesó:**
+- **Para que se quede:**
+  - Es la que más deja por lata (S/5.11 con precios revisados, §11).
+  - No depende del limón.
+  - Ya está en la app.
+- **Para que salga:**
+  - Con Lemon Tea y The Chai serían tres latas de té negro de cinco.
+  - Los tés fríos que se lanzan en el Perú llevan sabor (Lipton: limón y durazno).
+  - Es poco ácida: dura 5 días.
+- **Lo que no se usó como argumento:** «menos opciones venden más». Entre 5 y 4 no hay evidencia
+  (metaanálisis de Scheibehenne y otros, 2010).
+
+**Decisión del dueño:** se queda y se mide, con el nombre **Cold Brew Tea**. En la app se lee
+«Cold Brew // Tea» y en la lata, «COLD BREW TEA» con «Té negro» debajo.
+
+**Por qué ese nombre:**
+- Dice lo que es: 12 horas en frío.
+- «Cold brew» ya se conoce en el Perú por el café:
+  - Midagri lo promovió en el verano de 2025;
+  - gana interés entre los jóvenes en las cafeterías de Lima (America Retail, 2025).
+- Contar el esfuerzo sube la calidad que se percibe (Kruger, 2004).
+
+**Cómo se mide** (ingeniería de carta, Kasavana y Smith):
+- **Cuándo:** a las 4 semanas de la apertura.
+- **La regla:** con 5 bebidas, una es popular si se lleva al menos el **14%** de las bebidas
+  vendidas (el 70% de 1/5).
+- **Si no llega, sale.**
+- **Mientras tanto:**
+  - se hace en tandas chicas (1–2 L);
+  - no va a tiendas hasta pasar la prueba.
