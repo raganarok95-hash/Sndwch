@@ -33,3 +33,14 @@
   - Más fino no es letra más chica.
   - Se diseña sobre la lata real y con lo que se puede producir: stickers, no impresión sobre la
     lata ni láminas de dos caras.
+- **2026-10-24 · Las latas, v3 → v4.** Dueño: «Esos colores ni diseño no me gustaron, no se
+  parecen a los que inicialmente me gustaron. Repiénsalo de cero». Y: «La lata de tus imágenes debes
+  usarla con base en la foto que te mandé de la lata sleek». Lo que esto deja:
+  - Los mockups se hacen sobre la foto real del envase, no sobre una lata dibujada.
+  - Cuando una versión le gusta, la siguiente no se aleja de ella: la v1 tenía el nombre enorme y
+    los colores vivos.
+- **2026-10-24 · Las horas no.** Dueño: «¿Por qué "el sol del mediodía" parece una buena idea?
+  Todo eso con mediodía y medianoche no tiene sentido. Son bebidas heladas». Fuera los nombres y
+  símbolos de hora (sol, luna, ocaso).
+- **2026-10-24 · Nada en zip.** Dueño: «¿Por qué mandaste el archivo en zip?». Los archivos van
+  sueltos, solo los que hacen falta.

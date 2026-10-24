@@ -447,33 +447,35 @@ mm**. Y sobre la etiqueta: «No imprimiré sobre la lata. Directamente como stic
   **S/1,905**, no los S/8,420 de la cotización entera.
 - **Si paga ISC**, cambia de régimen: va con el contador (P62).
 
-## 15 · Cómo se venden: las frases (2026-10-24)
+## 15 · Las latas desde cero, validadas (2026-10-24)
 
-Dueño: «No es que no necesites mencionar los ingredientes, solo frases atractivas que vendan.
-Primero investiga, luego haces».
+El dueño rechazó la v3. Dijo: «Todo eso con mediodía y medianoche no tiene sentido, son bebidas
+heladas», «¿por qué mencionas queso fundido?», «no menciones cosas negativas», «cero azúcar no es
+un dato peor», «investiga en el Perú» y «repiénsalo de cero». La base es la foto de la lata sleek
+que mandó. Cada elección pasa por `por-que-vende`:
 
-**Lo que dice la investigación:**
-- **El sabor vende más que la salud.** En comedores universitarios, las etiquetas centradas en el
-  sabor subieron la elección 29% frente a las de salud y 14% frente a las neutras (Turnwald et al.,
-  *Psychological Science*, 2019, 137,842 decisiones). Lo que lo explica es el sabor que la persona
-  espera. **Solo funciona si la comida es rica de verdad**: primero se aprueban las fórmulas (P59).
-- **Que se sienta al leer.** Las palabras de sabor, textura, temperatura y momento hacen que uno
-  «se lo imagine comiendo», y eso lo vuelve más atractivo (Papies, 2013 y 2020).
-- **El esfuerzo se nota.** Contar el trabajo detrás sube la calidad que se percibe (Kruger et al.,
-  2004): «doce horas en frío».
-- **«0 azúcar» primero baja el sabor que se espera**, aunque suba lo sano (Prada et al., *Food
-  Quality and Preference*, 2021). Va al final o como dato chico.
+| qué | cómo impacta en ventas | en qué se basa | ¿Perú? |
+|---|---|---|---|
+| **«0 AZÚCAR» grande, en un círculo al frente** | ataca la preocupación número uno al comprar | Ipsos Perú, feb 2025: el 70% dice que «Alto en azúcar» es el octógono que más le preocupa; el 28% dejó de comprar lo que lleva octógonos | sí |
+| **Lata transparente: el color de la bebida es el diseño** | el color se ve de lejos y en la grilla; sube el apetito | envase transparente (Deng y Srinivasan, 2013); color y sabor esperado (Spence, 2019) | en Lima y Trujillo el bubble tea en envase transparente es tendencia; en lata de 350 ml se vende a S/8.90 |
+| **El nombre enorme, en vertical (como la v1)** | se reconoce sin leer; una fuerte presencia de marca en la góndola y en el feed | tendencia 2026: un color dominante y tipografía enorme (Lien Design, 2026) | — |
+| **Nombres evocadores con el sabor claro al lado** (The Bloom · Jamaica; The Cool · Hierba luisa y menta; The Zest · Té negro y limón; The Spice · Chai especiado; The Velvet · Té negro) | el nombre da curiosidad; el sabor evita la duda | nombres evocadores se prefieren a los comunes (Miller y Kahn, 2005); el sabor pesa al elegir té listo (Tetra Pak Perú) | sí, por el sabor en español |
+| **«Agítala y activa la magia»** | el ritual sube el sabor percibido y lo que se paga, y es el video que la gente graba | rituales antes de consumir (Vohs et al., 2013) | — |
+| **Frases en positivo y sensoriales** («Floral, vibrante y bien helada», «Suave como terciopelo») | se evalúan mejor que las negativas y hacen imaginar el sabor | Levin y Gaeth, 1988, y metaanálisis de 2021; Papies, 2013 y 2020 | — |
+| **Colores vivos (los de la v1)** | más apetito, más sabor esperado | Spence, 2019; al dueño le gustaron | — |
 
-**La fórmula:** sensación, el ingrediente que provoca (con su adjetivo) y el momento o el proceso.
-Nunca la lista seca.
+**Lo que falta probar:**
+- **No hay en el Perú una marca de bebida sin alcohol en lata transparente con precio publicado**.
+  Las latas y las selladoras sí se venden acá (The Homebrewer; Casandina sin precio). Eso es
+  diferencial, pero sin prueba local.
+- **La forma barata de probarlo:**
+  - una caja de 300 latas (S/415);
+  - la selladora de S/1,490 (si se confirma que cierra la sleek);
+  - cuatro semanas en la app, midiendo las latas por pedido, si repiten y los videos de «Agítala».
 
-| lata | en la lata | en las piezas y la app |
-|---|---|---|
-| The Bloom | Jamaica que despierta la boca. | Flor de jamaica reposada en frío, con naranja y un toque de canela: ácida, floral y helada. Corta el queso fundido y deja la boca lista para el siguiente bocado. |
-| The Cool | Un golpe de menta helada. | Hierba luisa y menta fresca con limón de verdad, bien heladas: el respiro del día de calor, sin empalagar. |
-| The Noon | Mitad té, mitad limón. | Té negro reposado en frío y limón de verdad, mitad y mitad: cítrico, brillante y helado. El del almuerzo. |
-| The Dusk | Especias cálidas, servidas heladas. | Chai de especias reposado en frío y sin leche: el sabor abriga, la lata llega helada. |
-| The Midnight | Doce horas en frío, sin amargor. | Té negro reposado doce horas en frío: suave, redondo y sin amargor, con el punto justo de cafeína. |
+**Stickers:**
+- **frente:** vinilo transparente de 66 × 110 mm impreso en crema;
+- **atrás:** legal de 42 × 62 mm;
+- **tapa:** sello de 36 mm con lote y vencimiento.
 
-«Limón de verdad» es cierto porque la fórmula no lleva esencias. Las especias del chai no se nombran
-una por una: dependen de la caja de filtrantes.
+No se imprime sobre la lata.
