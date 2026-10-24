@@ -628,3 +628,66 @@ se queda.
 - **Mientras tanto:**
   - se hace en tandas chicas (1–2 L);
   - no va a tiendas hasta pasar la prueba.
+
+## 20 · ¿La lata PET sleek aguanta gas? (2026-10-24)
+
+Dueño: «Averigua si esas latas soportan burbujas».
+
+**Respuesta: no lo sabemos, y aun si la lata aguanta, el gas choca con dos cosas de la marca.**
+
+- **La lata:**
+  - Una bebida con gas empuja a 2.7–4.7 bar en la lata cerrada (ChemEd X, latas y botellas de
+    355 ml), y más con calor: una cola a 38 °C llega a ~4.5 kg/cm².
+  - Una botella PET de gaseosa resiste unos 5–7 bar porque tiene la pared más gruesa y la base de
+    pétalos (fabricantes de envases).
+  - Hay latas PET «para soda» con su tapa de aluminio especial, vendidas para gaseosa y cerveza
+    artesanal. Las de bubble tea son otra cosa.
+  - **La ficha de la sleek de 355 ml de The Homebrewer no dice si es para gas**, y su fondo plano es
+    el punto débil: es lo que se abomba.
+- **El reparto:** una lata en la mochila del motorizado, al sol de Trujillo, sube de presión. Una
+  tapa que salta en la bolsa es un reclamo y un sándwich mojado.
+- **«Agítala» y el brillo:** una bebida con gas no se agita antes de abrirla, porque revienta. Y las
+  partículas del brillo hacen que la espuma brote al abrir. **El ritual de la marca no funciona con
+  gas.**
+- **El equipo:** hace falta gasificar en un barril con CO₂ y llenar a contrapresión (el llenador
+  más barato encontrado cuesta ~US$260, más el barril, el CO₂ y su regulador).
+- **Si algún día se quiere:**
+  1. pedir al fabricante la presión de prueba de la lata y de la tapa;
+  2. probar 24 horas a 40 °C con una bebida gasificada de verdad;
+  3. hacerla como **otra línea**, sin brillo y sin «Agítala».
+
+## 21 · La ejecución al milímetro (2026-10-24)
+
+Dueño: «Las fórmulas las refines al milímetro, me des ideas inocuas y baratas de ejecutar». **Las
+cantidades van aparte (privadas).** Lo que se adoptó:
+- **Todo por peso:** el agua, las hojas, el jugo y el llenado (355 g ± 3 g por lata).
+- **Se completa al peso final después de colar:** las hojas absorben agua y así cada tanda sale con
+  la misma concentración.
+- **La sucralosa y la sal en solución madre** (al 2% y al 10%), con jeringa o balanza de 0.01 g.
+- **Siempre la misma agua de bidón.**
+- **Enfriado rápido:** con botellas de hielo, y la regla de la FDA (de 57 a 21 °C en 2 h; a 5 °C
+  en 4 h más).
+- **Desinfección:**
+  - Star San, sin enjuague, para latas y utensilios;
+  - lejía a ~100 ppm para lo que entra crudo.
+- **Control de cada tanda:**
+  - pHmetro: las ácidas por debajo de 4.0;
+  - refractómetro (°Brix);
+  - termómetro en la refrigeradora;
+  - planilla de lote y muestra testigo.
+- **La fecha y el lote en el sello de la tapa**, con etiquetadora: hecha · vence · lote.
+- **El dulzor exacto** se elige con la cata «justo como me gusta» (escala JAR, ASTM MNL 63).
+- **Equipo nuevo:** ~S/250–400, estimado.
+
+## 22 · Tres mejoras al diseño aprobado (propuesta, 2026-10-24)
+
+Dueño: «Quiero que mejores el diseño del producto». Es un **arreglo**, no un rediseño: se queda
+todo lo aprobado (los nombres, la banda de «Cero azúcar», la letra, los colores).
+
+| mejora | por qué vende | en qué me baso |
+|---|---|---|
+| **El dibujo del ingrediente** junto a la línea de sabor (flor de jamaica, hojas, rodaja de limón, canela, hoja de té), en línea, del color de la letra | Las tres de té (Lemon Tea, The Chai, Cold Brew Tea) se parecen por el color. Un dibujo las distingue | Ehrenberg-Bass (2023, EE. UU., 1,853 compradores): con imágenes, 23% más personas reconocen la variedad que con color. Cada dibujo es de un ingrediente que la lata sí lleva (INDECOPI) |
+| **El sello de la tapa: «AGÍTALA» al centro**, con flechas, y la fecha y el lote impresos con etiquetadora | El ritual se lee justo cuando la mano está por abrir. La fecha de hecha se lee como frescura | Vohs y otros, 2013 (los rituales); una tesis de Taiwán (la fecha de fabricación sube la frescura percibida al inicio de la vida del producto; evidencia débil); la Ley 26842 art. 92 exige la fecha de vencimiento |
+| **Atrás: «¿Otra? Pídela con tu sándwich.»** junto al QR | Quien compre la lata en una tienda llega a la app y conoce los sándwiches | El QR es costumbre en el Perú: los pagos con QR crecieron 74% en 2025 (América TV) |
+
+**Pendiente:** que el dueño elija cuáles entran.
