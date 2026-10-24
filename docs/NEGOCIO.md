@@ -366,7 +366,7 @@ el insumo de las tandas del `RECETARIO.md` con el origen de cada precio por kilo
 | bebida | precio | insumo | envase | costo | costo % |
 |---|---|---|---|---|---|
 | The Cool // Mint | S/6 | S/0.48 | S/0.69 | S/1.17 | 19.4% |
-| The Midnight // Brew | S/5 | S/0.72 | S/0.69 | S/1.41 | 28.2% |
+| Cold Brew // Tea (antes The Midnight) | S/5 | S/0.72 | S/0.69 | S/1.41 | 28.2% |
 | The Bloom // Hibiscus | S/6 | S/1.20 | S/0.69 | S/1.89 | 31.5% |
 
 **El envase no escala con el volumen y el insumo sí**, así que pasar de 350 ml a medio litro

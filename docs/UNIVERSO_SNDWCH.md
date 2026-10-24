@@ -118,7 +118,7 @@ recurrente y el empujón de attach de bebida escrito como personaje.
 
 ## 3 · MAFE — la hermana del medio
 
-**Rol:** las tres bebidas de la casa. `The Cool // Mint`, `The Midnight // Brew`,
+**Rol:** las tres bebidas de la casa. `The Cool // Mint`, `Cold Brew // Tea`,
 `The Bloom // Hibiscus`.
 
 **Aprobada el 2026-09-11**: el nombre, el rosa hibisco como tercer color de la marca, y que es
@@ -147,7 +147,7 @@ propone meterle una tercera barra, la respuesta ya está escrita acá y en `CLAU
 **Mafe es la única que ya terminó su trabajo.**
 
 Ese es el chiste, y es verdad del producto: sus tres bebidas son infusiones, y una infusión se
-deja hecha. El té negro de `The Midnight` reposa en frío **toda la noche**; la flor de jamaica
+deja hecha. El té negro de `Cold Brew` reposa en frío **doce horas**; la flor de jamaica
 de `The Bloom` suelta el color sola. Cuando entra la hora pico y sus dos hermanos están
 transpirando, **ella ya no tiene nada que hacer** — solo sacar botellas de la nevera.
 
