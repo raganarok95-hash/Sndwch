@@ -456,10 +456,10 @@ que mandó. Cada elección pasa por `por-que-vende`:
 
 | qué | cómo impacta en ventas | en qué se basa | ¿Perú? |
 |---|---|---|---|
-| **«0 AZÚCAR» grande, en un círculo al frente** | ataca la preocupación número uno al comprar | Ipsos Perú, feb 2025: el 70% dice que «Alto en azúcar» es el octógono que más le preocupa; el 28% dejó de comprar lo que lleva octógonos | sí |
+| **«Cero azúcar» grande al frente** (el círculo no le gustó: se le mostraron tres formas, en la misma letra de la lata, más grande y de un solo color [Bialkova y van Trijp, 2010]) | ataca la preocupación número uno al comprar | Ipsos Perú, feb 2025: el 70% dice que «Alto en azúcar» es el octógono que más le preocupa; el 28% dejó de comprar lo que lleva octógonos | sí |
 | **Lata transparente: el color de la bebida es el diseño** | el color se ve de lejos y en la grilla; sube el apetito | envase transparente (Deng y Srinivasan, 2013); color y sabor esperado (Spence, 2019) | en Lima y Trujillo el bubble tea en envase transparente es tendencia; en lata de 350 ml se vende a S/8.90 |
 | **El nombre enorme, en vertical (como la v1)** | se reconoce sin leer; una fuerte presencia de marca en la góndola y en el feed | tendencia 2026: un color dominante y tipografía enorme (Lien Design, 2026) | — |
-| **Nombres evocadores con el sabor claro al lado** (The Bloom · Jamaica; The Cool · Hierba luisa y menta; The Zest · Té negro y limón; The Spice · Chai especiado; The Velvet · Té negro) | el nombre da curiosidad; el sabor evita la duda | nombres evocadores se prefieren a los comunes (Miller y Kahn, 2005); el sabor pesa al elegir té listo (Tetra Pak Perú) | sí, por el sabor en español |
+| **Nombres evocadores con el sabor claro al lado** (los decide el dueño: The Zest, The Spice y The Velvet se pusieron sin consultarle y NO están aprobados) | el nombre da curiosidad; el sabor evita la duda | nombres evocadores se prefieren a los comunes (Miller y Kahn, 2005); el sabor pesa al elegir té listo (Tetra Pak Perú) | sí, por el sabor en español |
 | **«Agítala y activa la magia»** | el ritual sube el sabor percibido y lo que se paga, y es el video que la gente graba | rituales antes de consumir (Vohs et al., 2013) | — |
 | **Frases en positivo y sensoriales** («Floral, vibrante y bien helada», «Suave como terciopelo») | se evalúan mejor que las negativas y hacen imaginar el sabor | Levin y Gaeth, 1988, y metaanálisis de 2021; Papies, 2013 y 2020 | — |
 | **Colores vivos (los de la v1)** | más apetito, más sabor esperado | Spence, 2019; al dueño le gustaron | — |
