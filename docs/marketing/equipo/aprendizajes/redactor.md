@@ -35,3 +35,6 @@
   validar y analizar el porqué pongo esto en el sentido de ventas. ¿Cómo impactará, por qué? ¿En qué
   estudios me baso para decirlo?… Investiga en el Perú y las tendencias actuales». Es la skill
   `por-que-vende`.
+- **2026-10-24 · Los nombres se consultan.** Dueño: «También estás poniéndoles nombres sin
+  consultar». Un nombre de producto no se pone en un diseño sin su sí: se le pregunta antes, con las
+  opciones y su porqué. Mientras tanto, se usan los nombres que ya existen en la app.

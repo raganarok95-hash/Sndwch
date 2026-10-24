@@ -44,3 +44,6 @@
   símbolos de hora (sol, luna, ocaso).
 - **2026-10-24 · Nada en zip.** Dueño: «¿Por qué mandaste el archivo en zip?». Los archivos van
   sueltos, solo los que hacen falta.
+- **2026-10-24 · El círculo de «0 azúcar».** Dueño: «No me gusta el sticker que dice cero azúcar;
+  me gusta que lo diga, pero no el diseño». El mensaje se queda; el círculo, que parecía otro
+  sticker pegado, sale. Se le mostraron tres formas de decirlo con la misma letra de la lata.
