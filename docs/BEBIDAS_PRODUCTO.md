@@ -804,3 +804,33 @@ evaluación: no cambia nada sin su sí.**
 2. **Cuando lleguen las tiendas**, probar sorbato solo en las ácidas, con prueba de levaduras.
 3. **Para The Chai y Cold Brew Tea**, la palanca es el calor de 90 °C por 10 minutos, o dejarlas
    solo en la app.
+
+## 25 · La primera prueba del dueño (2026-10-24)
+
+Dueño: «Al prepararla, no con esa fórmula, sino una jamaica que tenía días en cold brew, al echarle
+un edulcorante que tengo supo rica, pero muy ácida y algo astringente».
+
+**Por qué pasa:**
+- **Días de reposo extraen de más:** los ácidos de la flor y los taninos, que son los que secan la
+  boca. La fórmula evita justo eso: 7 minutos a 75 °C y 2 horas en frío.
+- **Lo dulce tapa lo ácido** (Keast y Breslin, 2003). Un edulcorante endulza, pero no da el cuerpo
+  del azúcar, y lo seco se nota más.
+- **Si el edulcorante es stevia**, suma su propio final amargo y seco.
+
+**Cómo se corrige sin cambiar el sabor:**
+- la proporción de la fórmula (16 g de flor por litro) y el tiempo corto;
+- completar al peso final;
+- la pizca de sal;
+- la canela y la cáscara de naranja, cuyo aroma dulce baja lo ácido que se percibe (Stevenson,
+  1999);
+- la dosis de sucralosa elegida con la cata «justo como me gusta».
+
+**Para probar hoy, con lo que tiene:** tres vasos.
+- A: como está.
+- B: 3 partes de esa jamaica y 1 de agua fría.
+- C: como B, con un poco más de edulcorante y una pizca mínima de sal.
+
+Gana el que esté justo. Esa dilución dice cuánto se pasó la extracción.
+
+**Inocuidad:** una jamaica con días de reposo, sin el paso de calor, no se vende. Sirve solo para
+probar.
