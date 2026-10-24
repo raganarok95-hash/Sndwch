@@ -446,3 +446,34 @@ mm**. Y sobre la etiqueta: «No imprimiré sobre la lata. Directamente como stic
 - **Recomendación:** la manual (si se confirma lo de arriba) y una caja de sleek de 355 =
   **S/1,905**, no los S/8,420 de la cotización entera.
 - **Si paga ISC**, cambia de régimen: va con el contador (P62).
+
+## 15 · Cómo se venden: las frases (2026-10-24)
+
+Dueño: «No es que no necesites mencionar los ingredientes, solo frases atractivas que vendan.
+Primero investiga, luego haces».
+
+**Lo que dice la investigación:**
+- **El sabor vende más que la salud.** En comedores universitarios, las etiquetas centradas en el
+  sabor subieron la elección 29% frente a las de salud y 14% frente a las neutras (Turnwald et al.,
+  *Psychological Science*, 2019, 137,842 decisiones). Lo que lo explica es el sabor que la persona
+  espera. **Solo funciona si la comida es rica de verdad**: primero se aprueban las fórmulas (P59).
+- **Que se sienta al leer.** Las palabras de sabor, textura, temperatura y momento hacen que uno
+  «se lo imagine comiendo», y eso lo vuelve más atractivo (Papies, 2013 y 2020).
+- **El esfuerzo se nota.** Contar el trabajo detrás sube la calidad que se percibe (Kruger et al.,
+  2004): «doce horas en frío».
+- **«0 azúcar» primero baja el sabor que se espera**, aunque suba lo sano (Prada et al., *Food
+  Quality and Preference*, 2021). Va al final o como dato chico.
+
+**La fórmula:** sensación, el ingrediente que provoca (con su adjetivo) y el momento o el proceso.
+Nunca la lista seca.
+
+| lata | en la lata | en las piezas y la app |
+|---|---|---|
+| The Bloom | Jamaica que despierta la boca. | Flor de jamaica reposada en frío, con naranja y un toque de canela: ácida, floral y helada. Corta el queso fundido y deja la boca lista para el siguiente bocado. |
+| The Cool | Un golpe de menta helada. | Hierba luisa y menta fresca con limón de verdad, bien heladas: el respiro del día de calor, sin empalagar. |
+| The Noon | Mitad té, mitad limón. | Té negro reposado en frío y limón de verdad, mitad y mitad: cítrico, brillante y helado. El del almuerzo. |
+| The Dusk | Especias cálidas, servidas heladas. | Chai de especias reposado en frío y sin leche: el sabor abriga, la lata llega helada. |
+| The Midnight | Doce horas en frío, sin amargor. | Té negro reposado doce horas en frío: suave, redondo y sin amargor, con el punto justo de cafeína. |
+
+«Limón de verdad» es cierto porque la fórmula no lleva esencias. Las especias del chai no se nombran
+una por una: dependen de la caja de filtrantes.
