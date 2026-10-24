@@ -562,41 +562,26 @@ naturales».
 - **Si la caja de los filtrantes del chai dice «saborizante» o «aroma»,** The Chai no puede llevar
   «Sabor 100% natural».
 
-## 18 · Las recetas v7: cambian en sabor, no solo en proceso (2026-10-24)
+## 18 · Las recetas v7: se revierten, salvo el Arnold Palmer (2026-10-24)
 
-Dueño: «No mejoramos en nada las recetas. Mejóralas, investiga, mira chef, mira bebidas populares
-en USA y traemos a Perú. Mira cómo lo hace también la marca Arizona». La v6 había cambiado el
-proceso (temperaturas, tiempos, sal), pero cada bebida seguía sabiendo a lo mismo. En la v7 cada lata
-suma un ingrediente que la vuelve otra bebida.
+El dueño había dicho: «No mejoramos en nada las recetas. Mejóralas, investiga, mira chef, mira
+bebidas populares en USA y traemos a Perú. Mira cómo lo hace también la marca Arizona». La v7
+sumó un ingrediente nuevo a cada lata:
+- kion y maracuyá en The Bloom;
+- pepino y hierbabuena en The Cool;
+- especias enteras en The Chai;
+- cacao en The Midnight.
 
-**Las fórmulas van aparte** (privadas, no en el repo). Aquí queda solo la dirección:
+**El dueño la rechazó:** «Revierte. Te pedí mejoras; yo apruebo los cambios completos de sabores.
+Los nuevos no me gustan para nada, más que Arnold Palmer. No quiero cambiar el chai aún».
 
-| lata | ingrediente nuevo | de dónde sale |
-|---|---|---|
-| The Bloom | kion, clavo y una pizca de maracuyá (o cáscara de piña, «la de la chicha») | hibisco con kion: sorrel (Jamaica), zobo (Nigeria) y sobolo (Ghana); hibisco con fruta de la pasión: Passion Tango de Starbucks; canela, clavo y piña de la chicha morada |
-| The Cool | pepino clarificado y hierbabuena | pepino con menta; la menta creció 25% en las cartas de EE. UU. (Datassential) |
-| Lemon Tea | menos limón, para que domine el té (2 a 1), y la opción de un toque de pera | Arnold Palmer: «Iced tea has the dominant side»; el Arnold Palmer de Arizona lleva jugo de pera |
-| The Chai | especias enteras tostadas (cardamomo, canela, clavo, pimienta, kion), sin filtrantes | masala chai; así «Sabor 100% natural» queda cierto sin depender de la caja |
-| The Midnight | cascarilla de cacao | el cacao peruano; un aroma que huele dulce sube el dulzor percibido (Stevenson, Prescott y Boakes, *Chemical Senses*, 1999) |
+**Lo que queda** (las fórmulas, aparte y privadas):
+- **The Bloom, The Cool, The Chai y The Midnight vuelven a la v6.**
+- **Lemon Tea queda al estilo Arnold Palmer:**
+  - el té domina: 60 ml de limón por litro en vez de 90. Arnold Palmer: «Iced tea has the
+    dominant side, and if it doesn't, it isn't really right»;
+  - la ralladura fresca va al final, para el aroma al abrir;
+  - un toque de pera (lo lleva el Arnold Palmer de Arizona), solo como opción en la cata.
 
-**Lo que se aprendió de Arizona:**
-- **Su lata más vendida** es té con dos ingredientes con nombre (Green Tea with Ginseng and
-  Honey).
-- **Sus sabores de fruta** se apoyan en esencias. En cero azúcar, la fruta solo entra en pizcas: el
-  tope es 0.5 g de azúcar por 100 ml y el maracuyá trae ~14 g por 100 g. Por eso el sabor sale de
-  flores, especias, cáscaras y hierbas.
-
-**En el Perú:**
-- Lipton lanzó su té frío con limón y durazno (CBC Perú).
-- Coca-Cola lanzó Frugos chicha morada sin octógonos.
-- La infusión de cascarilla de cacao ya se vende.
-- **No hay encuesta peruana** de sabores de bebidas: lo nuevo es una apuesta y se decide en una cata
-  a ciegas de la v6 contra la v7.
-
-**Antes de imprimir:**
-- **«Cero azúcar»:** ahora que entra fruta, se respalda con un análisis de laboratorio de la fórmula
-  ganadora, no con un cálculo.
-- **La cascarilla:** se compra con registro sanitario y con su análisis de cadmio.
-- **Si gana una v7 con un ingrediente nuevo:**
-  - la lista de ingredientes del sticker de atrás cambia sin más;
-  - la línea de sabor del frente la elige el dueño entre opciones.
+**The Midnight:** el dueño pidió cambiarle el nombre (venía del concepto de las horas que él
+descartó) y ver si se queda en la línea. La decisión está en §19.
