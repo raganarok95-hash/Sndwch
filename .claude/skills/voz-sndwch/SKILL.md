@@ -10,7 +10,7 @@ user-invocable: false
 | voz | qué dice | reglas |
 |---|---|---|
 | **El titular** (Anton) | **el momento** | 5 palabras o menos. Sin signos de exclamación. Se entiende sin la foto. |
-| **La frase** (Instrument Serif itálica) | **la verdad del producto** | sale de «Cómo se vende» de `docs/hechos/CARTA.md`; una frase |
+| **La frase** (Instrument Serif itálica) | **la verdad del producto** | sale de «Cómo se vende» de `docs/hechos/CARTA.md`; una frase. **No enumera ingredientes** (dueño, 2026-10-24: «describir siempre nombrando ingredientes… hay que mejorar eso»): dice cómo se siente, qué hace o cuándo se toma, y tiene que ser cierto. El sabor va una vez, como dato |
 | **El dato** (IBM Plex Mono) | precio, cómo pedir | siempre interpolado desde la carta, nunca escrito |
 
 ## Los hermanos
