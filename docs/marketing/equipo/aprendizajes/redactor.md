@@ -24,3 +24,14 @@
   - **«0 azúcar» nunca va primero**: baja el sabor que se espera (Prada et al., 2021).
   - **La fórmula:** sensación + el ingrediente que provoca + momento o proceso, y «0 azúcar» al
     final o como dato.
+- **2026-10-24 · Las frases de las latas, otra vez.** Dueño: «En las descripciones, ¿por qué
+  mencionas queso fundido? Tampoco ponerle "el del almuerzo"». Y: «No menciones cosas negativas:
+  parece básico, pero le pones "sin amargor"». La lata es un producto aparte, que se vende sola y en
+  tiendas: no se describe por el sándwich ni por una hora.
+- **2026-10-24 · «Cero azúcar no es un dato peor».** Corrige la nota de arriba que decía que «0
+  azúcar» nunca va primero: esa nota venía de un estudio de Portugal. En el Perú, «Alto en azúcar»
+  es el octógono que más preocupa (70%, Ipsos, febrero de 2025). Cero azúcar se dice en grande.
+- **2026-10-24 · Cómo se trabaja.** Dueño: «No apuntes como reglas. La nueva regla será: debo
+  validar y analizar el porqué pongo esto en el sentido de ventas. ¿Cómo impactará, por qué? ¿En qué
+  estudios me baso para decirlo?… Investiga en el Perú y las tendencias actuales». Es la skill
+  `por-que-vende`.

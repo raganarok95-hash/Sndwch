@@ -203,3 +203,7 @@ como `row_to_json(t)::text`; la lista de tablas se descubre en cada corrida. Det
     identidad trujillana ni regional.** Detalle e historia en el manual. **En el contenido
     (videos, posts) el `//` NO es obligatorio ni es la base del concepto creativo** (dueño,
     2026-10-07): se usa donde sume, no como muletilla.
+11. **Toda propuesta de venta se valida antes de mostrarla** (texto, nombre, color, diseño, envase):
+    cómo impacta en ventas, por qué y en qué estudio o dato se basa, primero del Perú y de las
+    tendencias actuales; si no hay evidencia, se dice. Skill `por-que-vende` (dueño, 2026-10-24:
+    «primero investiga, luego haces»). Los archivos al dueño van sueltos, nunca en zip.
