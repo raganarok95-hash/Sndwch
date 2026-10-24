@@ -515,3 +515,49 @@ azúcar: «Ya es cero azúcar con nuestra fórmula».
 
 **Cero azúcar:** la fórmula no lleva azúcar. Se guarda el cálculo de la fórmula como respaldo del
 «cero azúcar», por si lo piden DIGESA o INDECOPI.
+
+**Actualización del 24-oct.** Dueño: «Es la misma máquina automática que vende Homebrewer, pero
+del fabricante». Entonces se compara con la semiautomática de **S/5,490**, no con la manual:
+- **Importarla ahorra S/300–2,100.**
+- **Pero se pierde:** la garantía y el servicio en el Perú, la seguridad de que viene para 60 Hz, y
+  el riesgo del Nuevo RUS.
+- **Antes de decidir,** pregúntale a Homebrewer si su unidad viene para 60 Hz y con cuánta garantía.
+  Si la diferencia queda en unos cientos de soles, conviene la local.
+
+## 17 · Las fórmulas v6 y lo que dice la lata (2026-10-24)
+
+Dueño: «Veamos las fórmulas de las bebidas, llevémoslo a su máxima expresión, repiénsalas 10 veces
+como mínimo» y «colocar en la lata las cosas positivas, como 100% hecho con ingredientes
+naturales».
+
+**Las fórmulas v6** van aparte, fuera del repo, que es público. Salieron de doce vueltas
+(dulzor, color, aroma, cuerpo, ingrediente exacto, brillo, vida útil, costo y cata). Lo principal:
+- **Dos tiempos de extracción:** un golpe corto de calor para el color y el cuerpo, y frío largo
+  para el aroma.
+  - En caliente, la jamaica suelta 47% más antocianinas (2021).
+  - En frío sale más floral y menos amargo (*Foods*, 2022).
+- **Una pizca de sal**, que suaviza lo amargo más que lo dulce (Breslin y Beauchamp, *Nature*,
+  1997).
+- **Cáscaras de cítricos en frío** en lugar de esencias.
+- **Hierba luisa de tallo** (*Cymbopogon*), fresca y golpeada.
+- **Limón sutil:** la ralladura va en frío y el jugo al final.
+
+**Decisiones del dueño:**
+- **Sigue la sucralosa:** se le explicó que para decir «ingredientes naturales» tenía que ser
+  stevia, y eligió sucralosa.
+- **Sigue el brillo.**
+
+**Lo que dice la lata**, todo en positivo y verdadero:
+
+| frase | por qué es cierta | por qué vende |
+|---|---|---|
+| **Cero azúcar** | la fórmula no lleva azúcar | Ipsos 2025: el 70% se preocupa por «Alto en azúcar» |
+| **Sabor 100% natural** | el sabor sale de flores, hojas, frutas y especias, sin esencias ni saborizantes | una frase concreta y comprobable es más creíble que una vaga (Darley y Smith, 1993); en el Perú el 42% desconfía de lo que se vende como «saludable» (Kantar 2025) |
+| **Reposada en frío** | es el proceso | contar el esfuerzo sube la calidad percibida (Kruger, 2004) |
+
+- **No se dice «100% ingredientes naturales»:** la sucralosa es sintética y el brillo lleva dióxido
+  de titanio. INDECOPI ya sancionó un «100% jugo» sin respaldo (Resolución 0076-2020/SDC,
+  L'Onda).
+- **Si cambian el endulzante o el brillo,** se revisa.
+- **Si la caja de los filtrantes del chai dice «saborizante» o «aroma»,** The Chai no puede llevar
+  «Sabor 100% natural».

@@ -42,3 +42,7 @@
   que no tienen nombre». Y: «The Zest y The Spice no me gustan. El chai debe llamarse Chai (pero
   mejorado), porque vende, es conocida». Lo conocido que ya vende no se cambia por un nombre
   inventado. Eligió, entre opciones, **Lemon Tea** y **The Chai**.
+- **2026-10-24 · «100% natural».** Dueño: «colocar en la lata las cosas positivas, como 100% hecho
+  con ingredientes naturales». Se le preguntó y eligió seguir con sucralosa y con brillo. Por eso
+  la lata dice «Sabor 100% natural», que es cierto. «100% ingredientes naturales» no se pone
+  mientras haya sucralosa o dióxido de titanio.
