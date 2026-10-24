@@ -581,7 +581,14 @@ Los nuevos no me gustan para nada, más que Arnold Palmer. No quiero cambiar el 
   - el té domina: 60 ml de limón por litro en vez de 90. Arnold Palmer: «Iced tea has the
     dominant side, and if it doesn't, it isn't really right»;
   - la ralladura fresca va al final, para el aroma al abrir;
-  - un toque de pera (lo lleva el Arnold Palmer de Arizona), solo como opción en la cata.
+  - **sin pera.** Dueño: «Sin fruta para mantener el cero azúcar. Si es pera sería esencia, pero
+    no deseamos esencias». Lo que se revisó:
+    - **La cáscara de pera:** es donde más aroma suelta (Rapparini y otros, 2005, en una sola
+      variedad), pero también trae azúcar.
+    - **Destilarla:** saca el aroma sin el azúcar, pero para la ley eso es un «aroma natural» (Codex
+      CXG 66-2008), o sea una esencia hecha en casa. Además, un hidrolato sin conservante se
+      contamina aun a 5 °C (INRAE).
+    - **Quedó fuera:** el Arnold Palmer original es solo té y limonada.
 
 **The Midnight:** el dueño pidió cambiarle el nombre (venía del concepto de las horas que él
 descartó) y ver si se queda en la línea. La decisión está en §19.
