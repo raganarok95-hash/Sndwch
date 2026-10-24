@@ -838,17 +838,33 @@ probar.
 **Resultado (dueño, 2026-10-24):**
 - **Ganó el vaso C:** diluida 3 a 1, con un poco más de edulcorante y una pizca de sal. Confirma
   que el sabor está bien y que el problema fue la extracción.
-- **La licuó y le supo más rica y más suave.**
+- **La batió en la batidora (no la licuó) y le supo más rica y más suave.**
   - **Puede ser real:** el aire en burbujas finas da una textura más suave (en coctelería, lo agitado
     se siente más suave que lo removido: Difford's Guide), suelta aroma y termina de mezclar el
     edulcorante.
   - **Puede ser engaño del orden:** el primer sorbo ácido acostumbra la boca, y el siguiente se
     siente más suave.
-  - **El efecto del aire dura poco:** las burbujas se van en minutos (Dave Arnold), así que licuar
+  - **El efecto del aire dura poco:** las burbujas se van en minutos (Dave Arnold), así que batirla
     antes de llenar no llega al cliente.
   - **Lo que sí llega es «Agítala»:** agitar la lata antes de abrirla mete aire justo antes de
     tomarla.
 - **Cómo saberlo:** una prueba triangular (ISO 4120).
   - Tres vasos sin marca: dos de lo mismo y uno distinto, en orden distinto para cada persona.
   - Hay diferencia real si 5 de 6 personas encuentran el distinto.
-  - Después se repite con la licuada reposada 15 minutos: si la diferencia desaparece, era el aire.
+  - Después se repite con la batida reposada 15 minutos: si la diferencia desaparece, era el aire.
+
+## 26 · Lo que falta para que las latas salgan (2026-10-24)
+
+Dueño: «¿Qué nos falta mejorar o pulir?». En orden; cada uno tiene su fila en
+`docs/PENDIENTE_DEL_DUENO.md`.
+
+| # | qué | quién | pendiente |
+|---|---|---|---|
+| 1 | **Decidir si las latas entran desde la apertura**: la carta de la app pasa a 5 latas a S/8, con fotos reales | dueño, y después yo | P68 |
+| 2 | **La cata de las fórmulas**: la dosis de sucralosa, la pasteurizada contra la cruda y, si quiere, la prueba de la batidora | dueño | P64 |
+| 3 | **Los datos del sticker de atrás**: razón social, RUC, dirección y la caja de filtrantes del chai | dueño | P65 |
+| 4 | **Cotizar los stickers** con los diseños finales, y la etiquetadora | dueño | P67 |
+| 5 | **El laboratorio**: microbiología, azúcares y tabla nutricional | dueño | P66 |
+| 6 | **DIGESA** (¿registro sanitario?) y **el contador** (ISC, boleta, importar en el Nuevo RUS) | dueño | P60, P62, P58 |
+| 7 | **El costo real**: `modelo/costo_bebidas.py` todavía usa la botella de S/0.69 y la jamaica a S/97/kg. Hay que pasarlo a la lata (S/1.38), los stickers, el brillo y los precios reales | yo, con los precios del dueño | P61 |
+| 8 | **El equipo de control**: balanzas, termómetro, pHmetro, refractómetro y Star San (~S/250–400) | dueño | — |
