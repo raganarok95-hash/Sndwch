@@ -392,3 +392,57 @@ dueño, no con uno de internet.
 Casi todos los precios son publicados por vendedores y sin la cantidad exacta: sirven para saber
 a quién pedir cotización, no para comprar. Lo legal y lo tributario se confirma con DIGESA (VUCE)
 y con el contador.
+
+## 14 · La cotización de The Homebrewer y la lata sleek de 355 ml (2026-10-24)
+
+Dueño: «Te paso los precios y veamos si conviene. En todo caso 335 ml con la lata sleek.
+Investiguemos y verifiquemos en el mercado». Mandó la cotización y la foto de la lata: **55 × 155
+mm**. Y sobre la etiqueta: «No imprimiré sobre la lata. Directamente como sticker sería lo ideal».
+
+**La cotización** (pedido en espera, precios de caja):
+
+| producto | precio | por unidad |
+|---|---|---|
+| selladora «manual» de latas PET y aluminio | S/1,490 | — |
+| selladora semiautomática con pantalla táctil | S/5,490 | — |
+| lata PET 250 ml con tapa, caja de 300 | S/340 | S/1.13 |
+| lata PET 330 ml con tapa, caja de 300 | S/390 | S/1.30 |
+| **lata PET 355 ml sleek con tapa, caja de 300** | **S/415** | **S/1.38** |
+| lata PET 500 ml con tapa, caja de 200 | S/295 | S/1.48 |
+
+**Verificado en el mercado:**
+- **Precio de la lata.** The Homebrewer es el único vendedor en Perú con precio publicado. Casandina
+  lista latas transparentes de 250, 355 y 500 ml, pero sin precio: hay que pedirle cotización. En
+  México, 200 latas PET de 355 ml con tapa cuestan MXN 1,950, así que S/1.38 está en línea.
+- **La «manual» de S/1,490.** Su ficha se contradice: el título dice manual, la ficha dice
+  «automático, 220V», y lista latas de 250/300/350/500 ml. **No confirma la sleek de 355.**
+- **La semiautomática** pide tapa 202 y trae el mandril B64. Cierra una lata cada ~3 segundos.
+- **Antes de pagar, al vendedor:**
+  - si la de S/1,490 es manual de verdad;
+  - si cierra la sleek de 355 con su tapa (¿202 B64 o CDL?) y con qué mandril;
+  - cuántas latas por minuto.
+- **Stickers en Lima** (Imprenta Peruana, 2026):
+  - vinilo troquelado de 5×5 cm: S/180 el millar; de 10×10 cm: S/320;
+  - forma propia en vinilo transparente: S/0.33 c/u;
+  - matriz de S/35–80 por forma (el corte digital no la cobra).
+
+**Cuánto deja cada lata a S/8** (Nuevo RUS, sin IGV):
+- **Supuestos:** insumos del §13 llevados a 355 ml; stickers ~S/0.55 (frente, espalda y sello);
+  brillo ~S/0.46; 2% de comisión; 5% de merma.
+- **Resultado:**
+
+| | The Bloom | The Cool | The Noon | The Dusk | The Midnight |
+|---|---|---|---|---|---|
+| 355 ml sleek | S/4.83 | S/4.71 | S/4.37 | S/4.13 | S/5.02 |
+| 500 ml | S/4.28 | S/4.11 | S/3.63 | S/3.30 | S/4.55 |
+
+- **La sleek de 355 deja S/0.47–0.83 más por lata.** Además es el tamaño que ya se vende a S/8.90:
+  el bubble tea en lata de 350 ml.
+- **La selladora:**
+  - **la de S/1,490 se paga con ~320 latas** (un mes a 12 por día);
+  - **la de S/5,490 necesita ~1,190** (4.6 meses a 10 por día);
+  - una manual hace ~6 latas por minuto (dato de un vendedor argentino), suficiente hasta decenas
+    al día.
+- **Recomendación:** la manual (si se confirma lo de arriba) y una caja de sleek de 355 =
+  **S/1,905**, no los S/8,420 de la cotización entera.
+- **Si paga ISC**, cambia de régimen: va con el contador (P62).

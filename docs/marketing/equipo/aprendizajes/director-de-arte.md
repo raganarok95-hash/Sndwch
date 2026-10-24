@@ -27,3 +27,9 @@
   encantaron, pero sí siento que les falta aprovechar algo más la lata y algo más estilizado». La
   lata transparente es un soporte de 360°, con tapa y con una espalda que se ve a través de la
   bebida: un diseño que solo usa el frente la desperdicia.
+- **2026-10-24 · Las latas, v2 → v3.** Dueño: «No imprimiré sobre la lata. Directamente como sticker
+  sería lo ideal. Como que solo le achicaste la letra. Inténtalo nuevamente», y la lata real es la
+  sleek de 55 × 155 mm. Lo que no se repite:
+  - Más fino no es letra más chica.
+  - Se diseña sobre la lata real y con lo que se puede producir: stickers, no impresión sobre la
+    lata ni láminas de dos caras.
