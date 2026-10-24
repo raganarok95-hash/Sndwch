@@ -307,7 +307,7 @@ export type Carta = {
   topsDelArmador: string[];
   salsasDelArmador: string[];
   /** Precio de carta de cada Signature (15CM y 30CM) y de cada bebida, y el nombre de la bebida
-   *  como lo escribe el carrito («The Midnight // Brew»). */
+   *  como lo escribe el carrito («Cold Brew // Tea»). */
   p15: Record<string, number>;
   p30: Record<string, number>;
   precioBebida: Record<string, number>;

@@ -703,7 +703,7 @@ tapa a presión se sale.
 | bebida | precio | insumo (500 ml) | envase | costo | deja | costo % |
 |---|---|---|---|---|---|---|
 | D06 The Bloom | S/6 | S/1.20 | S/0.69 | S/1.89 | **S/4.11** | 31.5% |
-| D07 The Midnight | S/5 | S/0.72 | S/0.69 | S/1.41 | **S/3.59** | 28.2% |
+| D07 Cold Brew // Tea | S/5 | S/0.72 | S/0.69 | S/1.41 | **S/3.59** | 28.2% |
 | D08 The Cool | S/6 | S/0.48 | S/0.69 | S/1.17 | **S/4.83** | 19.4% |
 
 > **El envase es la mitad del costo de una infusión, y no escala con el volumen.** Por eso pasar de
@@ -723,9 +723,9 @@ Hierve el agua, apaga, echa la flor y la canela, **infusiona tapada 15 min y cue
 **No la hiervas con la flor dentro más de 5 min** — se pone astringente y áspera.
 Azúcar en caliente, enfría rápido. **5 días refrigerada.**
 
-## D07 · THE MIDNIGHT // Brew — S/5 — la de mejor margen
+## D07 · COLD BREW // Tea (antes The Midnight) — S/5 — la de mejor margen
 **Tanda 3 L (6 botellas de medio litro):** té negro a granel 40 g · agua fría 3 L. **En frío, refrigerado, 8-12 h. Cuela.**
-**El "sin amargor" del pitch viene exactamente de esto:** en frío no se extraen los taninos que
+**Lo «suave y redondo» del texto viene exactamente de esto:** en frío no se extraen los taninos que
 amargan. **Si lo haces en caliente y lo enfrías, el pitch deja de ser cierto.** No hay atajo — hay
 que preverlo con 12 h de anticipación.
 Azúcar aparte, al gusto (es la que mejor funciona sin azúcar). **7 días refrigerada.**

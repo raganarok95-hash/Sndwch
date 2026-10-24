@@ -554,6 +554,7 @@ var ICONS={
   coin:'<circle cx="12" cy="12" r="8.5"/><path d="M9.5 9.3c0-1 1-1.8 2.5-1.8s2.5.8 2.5 1.6c0 2.4-5 1.4-5 3.8 0 .9 1.1 1.6 2.5 1.6s2.5-.7 2.5-1.7"/><path d="M12 6v1.2M12 16.8V18"/>',
   refresh:'<path d="M4 12a8 8 0 0 1 13.6-5.7L20 8"/><path d="M20 4v4h-4"/><path d="M20 12a8 8 0 0 1-13.6 5.7L4 16"/><path d="M4 20v-4h4"/>',
   moon:'<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  hielo:'<rect x="5" y="5" width="14" height="14" rx="3.5" transform="rotate(12 12 12)"/><path d="M9 9.6c.6-1 1.6-1.5 2.8-1.6"/>',
   sun:'<circle cx="12" cy="12" r="4.5"/><path d="M12 3v2.2M12 18.8V21M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M3 12h2.2M18.8 12H21M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/>',
   printer:'<path d="M7 9V4h10v5"/><rect x="4" y="9" width="16" height="8" rx="1.5"/><rect x="7" y="14" width="10" height="6"/>',
   close:'<path d="M6 6l12 12M18 6 6 18"/>',

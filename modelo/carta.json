@@ -263,11 +263,11 @@
     },
     {
       "id": "D07",
-      "nombre": "The Midnight",
-      "sabor": "Brew",
+      "nombre": "Cold Brew",
+      "sabor": "Tea",
       "precio": 5,
-      "desc": "Té negro reposado en frío toda la noche: suave, sin nada de amargor y con el punch justo de cafeína. Para el almuerzo que no puede terminar en siesta.",
-      "icono": "moon",
+      "desc": "Té negro de hoja entera, reposado doce horas en frío. Sale suave y redondo, bien helado y con el punto justo de cafeína para seguir con el día.",
+      "icono": "hielo",
       "foto": "img/drink_d07.jpg"
     },
     {
