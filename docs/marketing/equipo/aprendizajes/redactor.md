@@ -59,3 +59,6 @@
   las horas que descartó. Entre las opciones eligió **Cold Brew Tea** («Cold Brew // Tea» en la
   app). Es la misma línea que Chai y Lemon Tea: un nombre conocido, que dice lo que es, gana a uno
   inventado.
+- **2026-10-24 · Sin fruta, sin esencias.** Dueño: «Sin fruta para mantener el cero azúcar. Si es
+  pera sería esencia, pero no deseamos esencias». En las latas, el sabor sale de flores, hojas,
+  especias, té y cáscaras de cítrico. Un aroma destilado también cuenta como esencia.
