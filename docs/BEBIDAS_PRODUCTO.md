@@ -752,3 +752,55 @@ Dueño: «Cómo esterilizar por completo, quiero cero riesgos».
 - **Precio:** por cotizar.
 - **Lo crudo igual se desinfecta** (lejía a ~100 ppm, 2 minutos). Cuantos menos microbios
   entran, más margen deja el calor.
+
+## 24 · ¿Y si se le agrega conservante? (evaluación, 2026-10-24)
+
+Dueño: «¿Podemos evaluar el agregarle preservantes? Cuánto mejoraría, cuánto costaría, cuánto
+duraría». El 2026-10-21 había decidido: sin esencias, sorbato ni ácido cítrico. **Esto es solo una
+evaluación: no cambia nada sin su sí.**
+
+**Cuál sería:**
+- **Sorbato de potasio (E202), a 300 mg/L:** es lo usual en bebidas (0.025–0.10%), y frena hongos
+  y levaduras.
+- **El benzoato (E211) no:** con la vitamina C del limón, el calor y la luz puede formar benceno.
+  Por eso los fabricantes de gaseosas reformularon en 2006.
+
+**Lo que hace y lo que no:**
+- **Solo funciona en lo ácido:** actúa la parte no disociada del ácido (pKa 4.76).
+  - A pH 3–3.5 (The Bloom, The Cool, Lemon Tea) trabaja casi entero.
+  - A pH 5 (The Chai, Cold Brew Tea) apenas un tercio.
+- **No reemplaza el calor ni el frío:** no mata *E. coli* ni *Listeria*, y no detiene el
+  botulismo. La seguridad la siguen dando la pasteurización, el llenado limpio y los 4 °C (§23).
+- **Alarga la vida «de calidad»** (que no se fermente ni salga moho), no la de seguridad.
+- **No es infalible en el té:** en una patente de té listo, el sorbato solo no frenó levaduras
+  inoculadas ni una semana; necesitó otro conservante al lado.
+
+**Cuánto duraría** (estimados; los fija un estudio de laboratorio):
+
+| | hoy | sin conservante, validado por laboratorio | con sorbato |
+|---|---|---|---|
+| The Bloom, The Cool, Lemon Tea (pasteurizadas, a 4 °C) | 7 días | **~2 semanas** (un té listo refrigerado a 4 °C duró 15 días en un estudio tailandés de 2024) | **~4–8 semanas**, si pasa la prueba con levaduras |
+| The Chai, Cold Brew Tea | 5 días | **hasta 10 días** (regla de la FSA) | **no cambia**: lo que la alarga es calentar a 90 °C por 10 minutos (la industria británica llega a ~42 días), no el sorbato |
+
+**Cuánto costaría:**
+- **El sorbato:** ~0.11 g por lata, **menos de S/0.01**. El precio por kilo en el Perú está por
+  cotizar.
+- **El estudio de vida útil:** cinco análisis por sabor (días 0, 15, 30, 45 y 60) en un
+  laboratorio de INACAL. **Es el costo de verdad**, y hay que cotizarlo.
+- **En la etiqueta:**
+  - aparece «conservante: sorbato de potasio»;
+  - se pierde «sin preservantes», que es un argumento de venta en el Perú: el 65% de los peruanos
+    dice que evita alimentos con preservantes (Nielsen, 2016), y Frugos lanzó su chicha morada
+    «libre de octógonos y preservantes».
+
+**Cuánto mejora el negocio:**
+- **En la app, poco.** Las latas se venden en días, y la merma del modelo es 5%: unos S/0.15 por
+  lata.
+- **Para tiendas, mucho:** una tienda necesita semanas, no días.
+
+**Recomendación:**
+1. **Ahora, sin conservante.** Validar con laboratorio las 2 semanas de las ácidas pasteurizadas
+   puede duplicar la vida sin tocar la etiqueta.
+2. **Cuando lleguen las tiendas**, probar sorbato solo en las ácidas, con prueba de levaduras.
+3. **Para The Chai y Cold Brew Tea**, la palanca es el calor de 90 °C por 10 minutos, o dejarlas
+   solo en la app.
