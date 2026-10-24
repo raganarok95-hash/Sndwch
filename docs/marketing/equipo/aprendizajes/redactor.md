@@ -46,3 +46,8 @@
   con ingredientes naturales». Se le preguntó y eligió seguir con sucralosa y con brillo. Por eso
   la lata dice «Sabor 100% natural», que es cierto. «100% ingredientes naturales» no se pone
   mientras haya sucralosa o dióxido de titanio.
+- **2026-10-24 · Mejorar es cambiar el sabor.** Dueño: «No mejoramos en nada las recetas.
+  Mejóralas, investiga, mira chef, mira bebidas populares en USA y traemos a Perú. Mira cómo lo hace
+  también la marca Arizona». Ajustar tiempos y temperaturas no es mejorar una receta. Mejorar es que
+  sepa a algo mejor, con una fuente que lo respalde: una bebida que ya vende, la técnica de un chef o
+  un estudio, y llevado a lo que el peruano conoce.
