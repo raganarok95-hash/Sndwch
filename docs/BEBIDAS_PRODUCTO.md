@@ -858,9 +858,13 @@ probar.
 Dueño: «¿Qué nos falta mejorar o pulir?». En orden; cada uno tiene su fila en
 `docs/PENDIENTE_DEL_DUENO.md`.
 
+- **Para abrir** (con la botella) solo hacen falta la 2 y la 8: la cata y el equipo de control.
+  La inocuidad del §23 se aplica igual a la botella.
+- **El resto es el camino de las latas**, sin apuro.
+
 | # | qué | quién | pendiente |
 |---|---|---|---|
-| 1 | **Decidir si las latas entran desde la apertura**: la carta de la app pasa a 5 latas a S/8, con fotos reales | dueño, y después yo | P68 |
+| 1 | ~~Decidir si las latas entran desde la apertura~~ **Decidido** (dueño, 2026-10-24): **botella al abrir, latas después.** Se abre con The Bloom, Cold Brew Tea y The Cool, con la receta nueva, en las botellas ya compradas y a sus precios de hoy. Las latas (5, a S/8, con fotos reales) entran cuando estén listos la selladora, los stickers, el laboratorio y DIGESA | dueño | P68 |
 | 2 | **La cata de las fórmulas**: la dosis de sucralosa, la pasteurizada contra la cruda y, si quiere, la prueba de la batidora | dueño | P64 |
 | 3 | **Los datos del sticker de atrás**: razón social, RUC, dirección y la caja de filtrantes del chai | dueño | P65 |
 | 4 | **Cotizar los stickers** con los diseños finales, y la etiquetadora | dueño | P67 |
