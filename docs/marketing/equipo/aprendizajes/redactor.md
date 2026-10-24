@@ -12,3 +12,15 @@
 - **2026-10-24 · La frase de las latas.** Dueño: «colocarle una frase, no solo "agita"; añadirle
   algo como "agítala y activa la magia"». «Agítala» sola se queda corta: la orden va con lo que
   pasa después.
+- **2026-10-24 · Corrección de la anterior: los ingredientes SÍ pueden ir.** Dueño: «Por cierto, no
+  es que no necesites mencionar los ingredientes, solo frases atractivas que vendan. Primero
+  investiga, luego haces». El problema era la lista seca, no el ingrediente. Lo que dice la
+  investigación:
+  - **El sabor primero.** Las etiquetas que hablan de sabor venden 29% más que las de salud y 14%
+    más que las neutras (Turnwald et al., *Psychological Science*, 2019). Solo funciona si la
+    comida es rica de verdad.
+  - **Que se sienta al leer:** sabor, textura, temperatura y momento (Papies, 2013 y 2020).
+  - **El esfuerzo vende:** «doce horas en frío» (Kruger et al., 2004).
+  - **«0 azúcar» nunca va primero**: baja el sabor que se espera (Prada et al., 2021).
+  - **La fórmula:** sensación + el ingrediente que provoca + momento o proceso, y «0 azúcar» al
+    final o como dato.
