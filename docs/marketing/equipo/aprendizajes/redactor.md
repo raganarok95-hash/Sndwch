@@ -38,3 +38,7 @@
 - **2026-10-24 · Los nombres se consultan.** Dueño: «También estás poniéndoles nombres sin
   consultar». Un nombre de producto no se pone en un diseño sin su sí: se le pregunta antes, con las
   opciones y su porqué. Mientras tanto, se usan los nombres que ya existen en la app.
+- **2026-10-24 · Los nombres de las latas.** Dueño: «Los de la app se mantienen; cambian solo los
+  que no tienen nombre». Y: «The Zest y The Spice no me gustan. El chai debe llamarse Chai (pero
+  mejorado), porque vende, es conocida». Lo conocido que ya vende no se cambia por un nombre
+  inventado. Eligió, entre opciones, **Lemon Tea** y **The Chai**.
