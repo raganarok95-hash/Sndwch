@@ -691,3 +691,57 @@ todo lo aprobado (los nombres, la banda de «Cero azúcar», la letra, los color
 | **Atrás: «¿Otra? Pídela con tu sándwich.»** junto al QR | Quien compre la lata en una tienda llega a la app y conoce los sándwiches | El QR es costumbre en el Perú: los pagos con QR crecieron 74% en 2025 (América TV) |
 
 **Pendiente:** que el dueño elija cuáles entran.
+
+## 23 · Inocuidad: lo más cerca de cero riesgo que permite la lata PET (2026-10-24)
+
+Dueño: «Cómo esterilizar por completo, quiero cero riesgos».
+
+**Lo honesto primero:**
+- **Esterilizar de verdad** (como una conserva: 121 °C a presión) **no se puede en esta lata.** El PET
+  común se empieza a deformar desde ~60 °C, y se ablanda a ~76 °C, su transición vítrea (patentes y
+  fabricantes de envases).
+- **Por la misma razón no se llena en caliente.** Eso pide PET termofijado (para unos 85 °C), y
+  nada dice que la sleek lo sea.
+- **Lo que sí se puede** es que ningún microbio peligroso tenga cómo entrar, sobrevivir ni crecer, y
+  **comprobarlo con laboratorio**. Es el sistema de barreras.
+
+### Barrera 1 · Matar: pasteurizar la bebida terminada, en la olla, antes de llenar
+
+| bebidas | tratamiento | por qué ese número |
+|---|---|---|
+| **The Bloom, The Cool, Lemon Tea** (ácidas, pH menor a 4.0) | **75 °C sostenidos 1 minuto**, medidos en el centro de la olla | La FDA da 71.1 °C por 3–6 segundos para bajar 100,000 veces (5 log) E. coli O157:H7, Salmonella y Listeria en jugos de pH 3.9–4.0. Con 75 °C y 1 minuto hay margen de sobra |
+| **The Chai y Cold Brew Tea** (poco ácidas, pH ~5) | **Opción máxima: 90 °C por 10 minutos.** Si cambia demasiado el sabor: 75 °C por 1 minuto y la vida corta de abajo | 90 °C por 10 minutos es el tratamiento de referencia de la agencia británica (FSA) contra *C. botulinum* no proteolítico, el único que crece en frío. Sin ese calor, la regla es que no pasen 10 días entre 3 y 8 °C: nosotros damos 5 días a 4 °C o menos |
+| **Opción por probar en las dos poco ácidas** | gotas de jugo de limón hasta que el pH baje de **5.0** | pH 5.0 o menos es otra de las barreras de la FSA contra el botulismo. Se prueba a ciegas que no se note el limón; si se nota, no va |
+
+- **El calor va al final**, con todo ya mezclado: el limón, la menta y la ralladura también se
+  pasteurizan.
+- **El aroma fresco se resiente un poco:** se cata la pasteurizada contra la cruda antes de
+  adoptarla.
+- **«Reposada en frío» sigue siendo cierto:** el reposo en frío no cambia.
+
+### Barrera 2 · Que no entre nada después del calor
+- **Se cuela antes de pasteurizar, nunca después.**
+- **Se enfría con la olla tapada**, en baño de agua con hielo **por fuera**. Después del calor no se
+  mete nada que no esté desinfectado.
+- **Latas, tapas, embudo y jarra:** Star San por 1 minuto, escurridos boca abajo sobre una rejilla
+  limpia. No se enjuagan con agua de caño.
+- **Se llena y se sella al momento:** ninguna lata se queda abierta.
+- **Quien llena** lleva gorro, mascarilla y guantes rociados con alcohol al 70%. Nadie enfermo toca
+  la producción.
+- **El brillo,** solo con ficha técnica y análisis microbiológico del proveedor. Se guarda cerrado y
+  se saca con una cucharita seca y desinfectada.
+
+### Barrera 3 · Que no crezca
+- **4 °C o menos, siempre:** termómetro dentro de la refrigeradora, anotado mañana y tarde.
+- **En el reparto,** bolsa térmica con gel refrigerante.
+- **Vida corta:** 7 días las ácidas y 5 las poco ácidas. Primero que entra, primero que sale.
+
+### Barrera 4 · Comprobarlo (lo que convierte «creo» en «sé»)
+- **Laboratorio acreditado por INACAL**, con las cinco fórmulas finales:
+  - **cuándo:** el día 0, el último día de vida y el día 10, para tener margen;
+  - **qué mide:** aerobios mesófilos, mohos y levaduras, coliformes y *E. coli*. Son los parámetros
+    que usa la norma peruana de criterios microbiológicos (RM 591-2008/MINSA, NTS 071).
+- **Se repite** cada mes y cada vez que cambie algo (proveedor, receta, proceso).
+- **Precio:** por cotizar.
+- **Lo crudo igual se desinfecta** (lejía a ~100 ppm, 2 minutos). Cuantos menos microbios
+  entran, más margen deja el calor.
