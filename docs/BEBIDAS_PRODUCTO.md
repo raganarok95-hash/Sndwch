@@ -479,3 +479,39 @@ que mandó. Cada elección pasa por `por-que-vende`:
 - **tapa:** sello de 36 mm con lote y vencimiento.
 
 No se imprime sobre la lata.
+
+## 16 · La selladora: la local de S/1,490 o una automática de Alibaba (2026-10-24)
+
+Dueño: «Sí la cierra [la de S/1,490 cierra la sleek de 355], pero estoy cotizando en Alibaba, ya
+que me la ofrecen hasta por menos dinero: menos de 400 dólares la máquina automática». Y sobre el
+azúcar: «Ya es cero azúcar con nuestra fórmula».
+
+**Lo que cuesta de verdad la de menos de US$400, puesta en Trujillo** (estimado, al cambio de
+~S/3.75):
+- **Supuestos:** pesa 30–60 kg en su caja, va por flete aéreo (~US$11 por kilo, agente en China,
+  junio de 2026) y entra por courier simplificado (4% de arancel + 18% de IGV, hasta US$2,000).
+- **Resultado:** **US$900–1,400 (S/3,400–5,200)**. Por mar consolidado sale ~US$950 (S/3,500),
+  pero tarda de 5 a 8 semanas y suma los gastos de agente y de puerto.
+
+**Contra la local de S/1,490, que ya se confirmó que cierra la sleek:**
+- **Cuesta 2.3 a 3.5 veces más**, y no trae garantía ni repuestos en el Perú.
+- **La corriente:** el Perú es 220 V a **60 Hz**, y muchas máquinas chinas vienen para 50 Hz. Un
+  motor de 50 Hz gira ~20% más rápido a 60 Hz y la electrónica puede fallar. Hay que pedirla para
+  60 Hz.
+- **⚠ El Nuevo RUS no permite importar.** El TUO del Nuevo RUS (art. 3.2) excluye las operaciones
+  de comercio exterior. La única excepción es la zona de frontera, hasta US$500 al mes, y Trujillo
+  no lo es. Importarla a su nombre podría sacarlo del régimen. **Se confirma con el contador antes
+  de comprar** (P62). La salida sería comprarla a un importador local.
+
+**Recomendación:**
+- **Ahora, la local de S/1,490.** Una manual hace ~6 latas por minuto: alcanza hasta decenas de
+  latas al día y se paga con ~320 latas (§14).
+- **La automática, cuando se vendan más de 40–50 latas al día.** Si es de Alibaba, se pide:
+  - la versión de 60 Hz;
+  - el mandril de la tapa 202 de la sleek;
+  - un video cerrando una lata igual;
+  - Trade Assurance;
+  - y comprarla por un importador si sigue en el Nuevo RUS.
+
+**Cero azúcar:** la fórmula no lleva azúcar. Se guarda el cálculo de la fórmula como respaldo del
+«cero azúcar», por si lo piden DIGESA o INDECOPI.
