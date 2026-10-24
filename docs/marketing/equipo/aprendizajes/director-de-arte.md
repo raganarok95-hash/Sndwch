@@ -47,3 +47,10 @@
 - **2026-10-24 · El círculo de «0 azúcar».** Dueño: «No me gusta el sticker que dice cero azúcar;
   me gusta que lo diga, pero no el diseño». El mensaje se queda; el círculo, que parecía otro
   sticker pegado, sale. Se le mostraron tres formas de decirlo con la misma letra de la lata.
+- **2026-10-24 · Las mejoras a la lata.**
+  - Entre tres mejoras al diseño aprobado, el dueño eligió el sello «AGÍTALA» con la fecha y
+    «¿Otra? Pídela con tu sándwich» junto al QR.
+  - **Dejó fuera** el dibujo del ingrediente, aunque tenía estudio a favor (Ehrenberg-Bass, 2023).
+    No se vuelve a proponer sin un dato nuevo.
+  - Dueño: «Jamaica debe ponerse como hibiscus, mejor». El sabor en la lata dice lo mismo que en la
+    app.

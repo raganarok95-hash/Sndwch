@@ -690,7 +690,14 @@ todo lo aprobado (los nombres, la banda de «Cero azúcar», la letra, los color
 | **El sello de la tapa: «AGÍTALA» al centro**, con flechas, y la fecha y el lote impresos con etiquetadora | El ritual se lee justo cuando la mano está por abrir. La fecha de hecha se lee como frescura | Vohs y otros, 2013 (los rituales); una tesis de Taiwán (la fecha de fabricación sube la frescura percibida al inicio de la vida del producto; evidencia débil); la Ley 26842 art. 92 exige la fecha de vencimiento |
 | **Atrás: «¿Otra? Pídela con tu sándwich.»** junto al QR | Quien compre la lata en una tienda llega a la app y conoce los sándwiches | El QR es costumbre en el Perú: los pagos con QR crecieron 74% en 2025 (América TV) |
 
-**Pendiente:** que el dueño elija cuáles entran.
+**Decisión del dueño:**
+- **Entran el sello** («AGÍTALA» con la fecha y el lote) **y lo de atrás** («¿Otra? Pídela con
+  tu sándwich» junto al QR).
+- **El dibujo del ingrediente no entra.**
+- **«Jamaica debe ponerse como hibiscus, mejor»:** el frente de The Bloom dice «Hibiscus», igual que
+  en la app («The Bloom // Hibiscus»). La lista de ingredientes dice «flor de jamaica (hibiscus)»,
+  que es el nombre común en el Perú.
+- **Atrás**, si el lema ya nombra el sabor (The Chai), va solo el lema.
 
 ## 23 · Inocuidad: lo más cerca de cero riesgo que permite la lata PET (2026-10-24)
 
