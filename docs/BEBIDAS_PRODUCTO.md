@@ -834,3 +834,21 @@ Gana el que esté justo. Esa dilución dice cuánto se pasó la extracción.
 
 **Inocuidad:** una jamaica con días de reposo, sin el paso de calor, no se vende. Sirve solo para
 probar.
+
+**Resultado (dueño, 2026-10-24):**
+- **Ganó el vaso C:** diluida 3 a 1, con un poco más de edulcorante y una pizca de sal. Confirma
+  que el sabor está bien y que el problema fue la extracción.
+- **La licuó y le supo más rica y más suave.**
+  - **Puede ser real:** el aire en burbujas finas da una textura más suave (en coctelería, lo agitado
+    se siente más suave que lo removido: Difford's Guide), suelta aroma y termina de mezclar el
+    edulcorante.
+  - **Puede ser engaño del orden:** el primer sorbo ácido acostumbra la boca, y el siguiente se
+    siente más suave.
+  - **El efecto del aire dura poco:** las burbujas se van en minutos (Dave Arnold), así que licuar
+    antes de llenar no llega al cliente.
+  - **Lo que sí llega es «Agítala»:** agitar la lata antes de abrirla mete aire justo antes de
+    tomarla.
+- **Cómo saberlo:** una prueba triangular (ISO 4120).
+  - Tres vasos sin marca: dos de lo mismo y uno distinto, en orden distinto para cada persona.
+  - Hay diferencia real si 5 de 6 personas encuentran el distinto.
+  - Después se repite con la licuada reposada 15 minutos: si la diferencia desaparece, era el aire.
