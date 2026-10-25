@@ -85,3 +85,7 @@
   fuentes, el lila, las píldoras, las filas y el pie con botón de la app actual. Dueño: «Sigues
   usando la misma base, lo ya creado, y repintas. No es lo que quiero». Desde cero también quiere
   decir sin el sistema visual de la app, salvo que el dueño diga qué se queda.
+- **2026-10-25 · El mundo de WICHO, en streetwear.**
+  - Para ese mundo descartó todo el sistema visual actual, incluido el `//` («Todo, aun el //»).
+  - De tres lenguajes nuevos (juego, streetwear y juguete 3D) eligió el **streetwear**: negro, foto
+    a sangre, letra condensada cursiva enorme y rojo.
