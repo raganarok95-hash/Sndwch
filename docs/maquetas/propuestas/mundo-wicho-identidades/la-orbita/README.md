@@ -25,4 +25,4 @@ seis pantallas, con acabado de boceto. Este parte de cero, y **la espiral es la 
 - `construir.py` le mete las fuentes y las fotos, y deja un solo archivo que funciona en el celular.
 - `recorrer.cjs` lo recorre, saca las capturas y graba el video.
 
-**Pendiente:** que el dueño lo apruebe antes de tocar la app.
+**Rechazada** (dueño, 2026-10-25): «La cosa del sándwich se ve asquerosa. Estás usando la misma maqueta base».
