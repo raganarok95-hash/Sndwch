@@ -81,3 +81,7 @@
   sándwich a rayas ni el planteamiento de siempre, y que la comida va **solo en fotos reales**.
   Entre tres planteamientos eligió **«Empieza con todo, quita lo que no quieras»**: el sándwich
   cargado en foto real, y tú quitas.
+- **2026-10-25 · «Sigues usando la misma base y repintas».** El ejemplo «desde cero» usó las mismas
+  fuentes, el lila, las píldoras, las filas y el pie con botón de la app actual. Dueño: «Sigues
+  usando la misma base, lo ya creado, y repintas. No es lo que quiero». Desde cero también quiere
+  decir sin el sistema visual de la app, salvo que el dueño diga qué se queda.
