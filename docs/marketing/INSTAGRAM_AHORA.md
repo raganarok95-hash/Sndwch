@@ -8,6 +8,16 @@ seguidores y, cuando exista (punto 6), en cuántos dejan su WhatsApp para que le
 
 ## 1 · Arreglar el token para que el sistema publique solo (~10 minutos, lo haces tú)
 
+> **Verificado de nuevo el 2026-10-25** («Estado para abrir» en GitHub). El dueño tiene razón: la
+> página SÍ tiene el Instagram vinculado. Lo que falla es el token de `sndwch-bot` (SYSTEM_USER):
+> trae `threads_business_basic`, `pages_show_list`, `business_management`,
+> `whatsapp_business_*`, `pages_read_engagement` y `pages_manage_ads`, pero **ni
+> `instagram_basic` ni `instagram_content_publish` ni `pages_manage_posts`**. Sin
+> `instagram_basic`, Meta esconde el Instagram de la página y el servidor decía «no tiene un
+> Instagram vinculado», un mensaje engañoso. Que salgan WhatsApp y Threads y no Instagram indica
+> que a la app `SNDWCH` le falta el **caso de uso de Instagram**: por eso esos permisos no
+> aparecen al generar el token (paso 4).
+
 Verificado el 2026-10-21 contra Meta: el token de `sndwch-bot` en Supabase **no trae los permisos
 de Instagram** (`instagram_basic`, `instagram_content_publish`) ni el de publicar en la página
 (`pages_manage_posts`). Además, **la cuenta publicitaria no ve ningún Instagram vinculado**, y sin

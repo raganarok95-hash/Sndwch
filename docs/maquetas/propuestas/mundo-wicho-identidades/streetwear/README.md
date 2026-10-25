@@ -42,3 +42,15 @@ reducido a sus colores, muestreados de `img/wicho.png`: pelaje celeste `#90CCF0`
 `calle-wicho.template.html` trae arriba una barra de prueba para cambiar de combinación en el
 celular; esa barra no va a la app. Comparación: `los-tres-colorways.jpg`. **Falta que el dueño
 elija una antes de tocar la app.**
+
+## Elegido: Noche, mejorado (2026-10-25)
+
+Dueño: «Me gusta el noche, pero sí deberías tocar para agregar». `calle-noche.template.html`:
+
+- «Agrégale» dice **«tócalo para agregarlo»**; la cuenta de salsas baja a una nota.
+- **Lo agregado entra a «Lo que lleva»** en celeste: una sola lista es el sándwich entero; se
+  quita tocándolo ahí mismo.
+- **La raya de tachar se dibuja** al tocar, y cada ingrediente mide 40 px de alto.
+- La nota resume: «Sin cheddar. Le sumaste jalapeño».
+- Tamaños de letra en la escala del sistema (22 y 28), salvo «CON TODO.» a 112.
+- **Sin Embutido**: en la carta es `soloEnSignature`, no se arma (error de las versiones anteriores).
