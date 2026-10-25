@@ -38,6 +38,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-a
 .agr .it::before{content:"+ ";color:var(--r)}
 .agr .it.lleno{opacity:.35}
 .nota{margin-top:10px;color:var(--g2)}
+.panes{display:flex;gap:10px}
+.pan{flex:1;height:56px;border:2px solid var(--g);display:flex;align-items:center;justify-content:center;gap:8px;font-size:24px;color:var(--g2)}
+.pan.on{border-color:var(--b);background:var(--b);color:var(--n)}
+.pan small{font-family:'Bar';font-weight:700;font-style:normal;font-size:9px;letter-spacing:.14em;color:var(--r)}
 .fila{display:flex;align-items:center;justify-content:space-between;width:100%;padding:16px 0;border-top:1px solid var(--l);font-size:24px}
 .fila .s{display:block;font-family:'Bar';font-style:normal;font-weight:700;font-size:9px;letter-spacing:.16em;color:var(--g2);margin-top:4px}
 .sw{width:54px;height:30px;border:2px solid var(--g);position:relative;flex:none}
@@ -60,6 +64,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-a
   </div>
   <div class="tabs c" id="tabs"></div>
   <div class="precioP k" id="pp"></div>
+
+  <div class="sec"><h2><span class="c">El pan</span><span class="k" style="color:var(--g2)">siempre lleva uno</span></h2>
+    <div class="panes" id="panes"></div></div>
 
   <div class="sec"><h2><span class="c">Lo que lleva</span><span class="k" style="color:var(--g2)">tócalo para quitarlo</span></h2>
     <div class="lista" id="lleva"></div><div class="nota k" id="nota"></div></div>
@@ -84,23 +91,25 @@ const PROT=[{id:'P09',n:'Res',p:{15:19.9,30:30.9},d:{15:7,30:13.9},f:'HERO'},{id
  {id:'P06',n:'Albóndiga',p:{15:19.9,30:30.9},d:{15:6.9,30:13.9},f:'P06'},{id:'P08',n:'Pavo',p:{15:19.9,30:30.9},d:{15:9,30:17},f:'P08'},
  {id:'P05',n:'Embutido',p:{15:16.9,30:32.9},d:{15:9.9,30:19.9},f:'P05'}];
 // «Con todo» (propuesta: la confirma el dueño). Lo picante nunca viene puesto.
-const TODO=[{id:'B01',n:'Pan Classic',g:'pan'},{id:'C02',n:'Cheddar',g:'queso'},{id:'T01',n:'Tomate',g:'veg'},{id:'T09',n:'Lechuga',g:'veg'},{id:'T03',n:'Cebolla morada',g:'veg'},
+const TODO=[{id:'C02',n:'Cheddar',g:'queso'},{id:'T01',n:'Tomate',g:'veg'},{id:'T09',n:'Lechuga',g:'veg'},{id:'T03',n:'Cebolla morada',g:'veg'},
  {id:'T11',n:'Pepinillo',g:'veg'},{id:'T02',n:'Pickles',g:'veg'},{id:'T06',n:'Pimiento',g:'veg'},{id:'S13',n:'Mayonesa',g:'salsa'},{id:'S04',n:'Honey mustard',g:'salsa'}];
-const EXTRA=[{id:'B03',n:'Focaccia',g:'pan',x:'+S/0.50',rec:{15:.5,30:1}},{id:'C01',n:'Americano',g:'queso'},{id:'T10',n:'Cebolla salteada',g:'veg'},{id:'T04',n:'Jalapeño',g:'veg',pica:1},
+const PANES=[{id:'B01',n:'Classic',x:'',rec:{15:0,30:0}},{id:'B03',n:'Focaccia',x:'+S/0.50',rec:{15:.5,30:1}}];
+const EXTRA=[{id:'C01',n:'Americano',g:'queso'},{id:'T10',n:'Cebolla salteada',g:'veg'},{id:'T04',n:'Jalapeño',g:'veg',pica:1},
  {id:'S15',n:'Ketchup',g:'salsa'},{id:'S14',n:'Mayonesa light',g:'salsa'},{id:'S06',n:'Oil & vinegar',g:'salsa'},{id:'S09',n:'Chimichurri',g:'salsa',pica:1}];
-const st={p:'P09',t:15,doble:false,quit:new Set(),agr:new Set()};
+const st={p:'P09',t:15,pan:'B01',doble:false,quit:new Set(),agr:new Set()};
 const $=(i)=>document.getElementById(i);
 const fmt=(n)=>'S/'+n.toFixed(2);
 function salsas(){return TODO.filter(x=>x.g==='salsa'&&!st.quit.has(x.id)).length+EXTRA.filter(x=>x.g==='salsa'&&st.agr.has(x.id)).length;}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('ver');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('ver'),1600);}
 function total(){const pr=PROT.find(x=>x.id===st.p);let v=pr.p[st.t];if(st.doble)v+=pr.d[st.t];
   // Un solo pan y un solo queso: elegir el de «agrégale» reemplaza al que viene.
-  if(st.agr.has('B03'))v+=EXTRA[0].rec[st.t];return v;}
+  v+=PANES.find(x=>x.id===st.pan).rec[st.t];return v;}
 function pinta(){
   const pr=PROT.find(x=>x.id===st.p);
   $('ph').style.backgroundImage=`url(${FOTOS[pr.f]})`;
   $('tabs').innerHTML=PROT.map(x=>`<button class="tab${x.id===st.p?' on':''}" data-id="${x.id}" data-accion="armador-proteina">${x.n}</button>`).join('');
   $('pp').textContent=`${pr.n} · ${st.t} cm · desde ${fmt(pr.p[st.t])}`;
+  $('panes').innerHTML=PANES.map(x=>`<button class="pan c${x.id===st.pan?' on':''}" data-id="${x.id}" data-accion="armador-pan">${x.n}${x.x?`<small>${x.x}</small>`:''}</button>`).join('');
   $('lleva').innerHTML=TODO.map(x=>`<button class="it c${st.quit.has(x.id)?' off':''}" data-id="${x.id}" data-accion="armador-quitar">${x.n}</button>`).join('');
   $('agrega').innerHTML=EXTRA.map(x=>{const on=st.agr.has(x.id);const lleno=x.g==='salsa'&&!on&&salsas()>=3;return `<button class="it c${lleno?' lleno':''}" style="${on?'color:var(--b)':''}" data-id="${x.id}" data-accion="armador-agregar-ing">${on?'✓ ':''}${x.n}${x.x?`<small>${x.x}</small>`:''}${x.pica?'<small>pica</small>':''}</button>`;}).join('');
   const q=TODO.filter(x=>st.quit.has(x.id)).map(x=>x.n.toLowerCase());
@@ -117,9 +126,10 @@ document.addEventListener('click',(e)=>{
   else if(a==='armador-agregar-ing'){const x=EXTRA.find(y=>y.id===id);
     if(st.agr.has(id)) st.agr.delete(id);
     else{ if(x.g==='salsa'&&salsas()>=3){toast('Hasta 3 salsas incluidas');return;}
-      if(x.g==='pan'||x.g==='queso'){ // reemplaza al que viene
+      if(x.g==='queso'){ // reemplaza al que viene
         const base=TODO.find(y=>y.g===x.g); st.quit.add(base.id); EXTRA.filter(y=>y.g===x.g).forEach(y=>st.agr.delete(y.id)); }
       st.agr.add(id); }}
+  else if(a==='armador-pan'){st.pan=id;}
   else if(a==='armador-doble'){st.doble=!st.doble;}
   else if(a==='tamano-15'){st.t=15;} else if(a==='tamano-30'){st.t=30;}
   else if(a==='armador-agregar'){toast('Listo: '+PROT.find(x=>x.id===st.p).n+' '+st.t+' cm al carrito');return;}
