@@ -1,0 +1,172 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Arma el tuyo</title>
+<style>
+@font-face{font-family:'Cond';font-style:italic;font-weight:900;src:url(data:font/woff2;base64,__F_COND9__) format('woff2')}
+@font-face{font-family:'Cond';font-style:italic;font-weight:800;src:url(data:font/woff2;base64,__F_COND8__) format('woff2')}
+@font-face{font-family:'Bar';font-weight:500;src:url(data:font/woff2;base64,__F_BAR5__) format('woff2')}
+@font-face{font-family:'Bar';font-weight:700;src:url(data:font/woff2;base64,__F_BAR7__) format('woff2')}
+/* WICHO reducido a sus colores (muestreados de img/wicho.png):
+   pelaje celeste · máscara durazno · polo gris-azul · tinta · ojos lila */
+:root{--cel:#90CCF0;--dur:#F0D8CC;--polo:#4F5568;--tin:#1E2F3A;--lil:#C3A6D2;--lio:#4A3D62}
+/* Colorway NOCHE: su tinta de fondo, el celeste es la acción, el lila es el ojo */
+.app[data-cw=noche]{--bg:#15212B;--fg:#F4E8E1;--dim:#3C5060;--mute:#8FA3B3;--ac:var(--cel);--acfg:#15212B;--line:#263846;--tab:#5D7385;
+  --sel:var(--dur);--selfg:var(--tin);--pica:var(--lil);--dot:var(--lil);--kick:var(--cel);--kickfg:#15212B;--head:#F4E8E1}
+/* Colorway PELAJE: todo su pelo; tinta para leer, lila oscuro para actuar */
+.app[data-cw=pelaje]{--bg:var(--cel);--fg:var(--tin);--dim:#5F93B4;--mute:#2F5A75;--ac:var(--lio);--acfg:var(--dur);--line:#77B3D8;--tab:#3A6E90;
+  --sel:var(--tin);--selfg:var(--cel);--pica:var(--lio);--dot:var(--lio);--kick:var(--dur);--kickfg:var(--tin);--head:var(--tin)}
+/* Colorway BLOQUES: de arriba abajo se recorre a WICHO: pelo, máscara, ojos, polo */
+.app[data-cw=bloques]{--bg:var(--cel);--fg:var(--tin);--dim:#5F93B4;--mute:#2F5A75;--ac:var(--lio);--acfg:var(--dur);--line:#77B3D8;--tab:#3A6E90;
+  --sel:var(--tin);--selfg:var(--cel);--pica:var(--lio);--dot:var(--lio);--kick:var(--dur);--kickfg:var(--tin);--head:var(--tin)}
+.app[data-cw=bloques] .b2{--bg:var(--dur);--fg:var(--tin);--dim:#B9A094;--mute:#7A5E52;--ac:var(--lio);--pica:var(--lio)}
+.app[data-cw=bloques] .b3{--bg:var(--lio);--fg:var(--dur);--dim:#7E6F98;--mute:#C9BBD9;--ac:var(--cel);--pica:var(--cel)}
+.app[data-cw=bloques] .b4{--bg:var(--polo);--fg:var(--dur);--mute:#C3C8D6;--line:#656C82;--ac:var(--cel)}
+.app[data-cw=bloques] .bar{--bg:var(--tin);--fg:var(--dur);--dim:#4B6273;--ac:var(--cel);--acfg:var(--tin)}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:#0E161C}
+body{display:flex;justify-content:center;font-family:'Bar';font-weight:500}
+.app{position:relative;width:100%;max-width:430px;min-height:100vh;background:var(--bg);color:var(--fg);padding-bottom:84px}
+.c{font-family:'Cond';font-style:italic;font-weight:900;text-transform:uppercase;letter-spacing:-.01em}
+.k{font-family:'Bar';font-weight:700;font-size:11px;letter-spacing:.18em;text-transform:uppercase}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:left;text-transform:inherit;letter-spacing:inherit}
+button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.proto{display:flex;gap:6px;align-items:center;justify-content:center;height:34px;background:#0E161C;color:#8FA3B3;font-size:9px}
+.proto button{padding:4px 8px;border:1px solid #3C5060}.proto button.on{background:#F4E8E1;color:#0E161C;border-color:#F4E8E1}
+.hero{position:relative;height:584px;overflow:hidden;background:var(--bg)}
+.hero .ph{position:absolute;left:0;right:0;top:0;height:352px;background-size:cover;background-position:center 30%;filter:contrast(1.1) saturate(1.05)}
+/* La foto termina en seco: ningún color de WICHO pasa por encima de la comida */
+.hero .fade{position:absolute;left:0;right:0;top:0;height:352px;background:linear-gradient(180deg,rgba(14,22,28,.55) 0%,rgba(14,22,28,0) 30%)}
+.top{position:absolute;left:18px;right:18px;top:16px;display:flex;justify-content:space-between;z-index:2;color:#F4E8E1}
+.kick{position:absolute;left:18px;top:314px;background:var(--kick);color:var(--kickfg);padding:5px 9px;z-index:2}
+.ej{position:absolute;right:18px;top:318px;font-size:9px;color:#F4E8E1;opacity:.8;z-index:2}
+.big{position:absolute;left:14px;top:372px;font-size:112px;line-height:.82;z-index:2;color:var(--head)}
+.big span{color:var(--dot)}
+.blk{background:var(--bg);color:var(--fg);padding-bottom:26px}
+.tabs{display:flex;gap:18px;font-size:28px;white-space:nowrap;overflow-x:auto;padding:4px 18px 2px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{color:var(--tab);padding-bottom:2px;border-bottom:5px solid transparent}
+.tab.on{color:var(--fg);border-color:var(--ac)}
+.precioP{padding:6px 18px 0;color:var(--mute)}
+.sec{padding:26px 18px 0}
+.sec h2{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.sec h2 .c{font-size:15px;letter-spacing:.02em}
+.sec h2 .k{color:var(--mute)}
+.lista{columns:2;column-gap:14px}
+.it{display:block;width:100%;font-size:24px;line-height:1.12;break-inside:avoid;padding:1px 0}
+.it.off{color:var(--dim);text-decoration:line-through;text-decoration-thickness:4px;text-decoration-color:var(--ac)}
+.it small{font-family:'Bar';font-weight:700;font-style:normal;font-size:9px;letter-spacing:.14em;color:var(--pica);vertical-align:middle;margin-left:4px}
+.agr .it{color:var(--mute);font-size:22px}
+.agr .it::before{content:"+ ";color:var(--ac)}
+.agr .it.si{color:var(--fg)}.agr .it.si::before{content:"✓ "}
+.agr .it.lleno{opacity:.35}
+.nota{margin-top:10px;color:var(--mute)}
+.panes{display:flex;gap:10px}
+.pan{flex:1;height:56px;border:2px solid var(--dim);display:flex;align-items:center;justify-content:center;gap:8px;font-size:24px;color:var(--mute)}
+.pan.on{border-color:var(--sel);background:var(--sel);color:var(--selfg)}
+.pan small{font-family:'Bar';font-weight:700;font-style:normal;font-size:9px;letter-spacing:.14em;color:inherit;opacity:.8}
+.fila{display:flex;align-items:center;justify-content:space-between;width:100%;padding:16px 0;border-top:1px solid var(--line);font-size:24px}
+.fila:first-child{border-top:0}
+.fila .s{display:block;font-family:'Bar';font-style:normal;font-weight:700;font-size:9px;letter-spacing:.16em;color:var(--mute);margin-top:4px}
+.sw{width:54px;height:30px;border:2px solid var(--mute);position:relative;flex:none}
+.sw::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;background:var(--mute);transition:left .2s,background .2s}
+.sw.on{border-color:var(--ac)}.sw.on::after{left:27px;background:var(--ac)}
+.bar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:430px;height:84px;display:flex;flex-wrap:wrap;z-index:9;background:var(--bg);color:var(--fg)}
+/* La tira: WICHO en la proporción en que ocupa cada color de su dibujo */
+.tira{display:flex;width:100%;height:6px}
+.tira i{display:block;height:100%}
+.sz{width:150px;height:78px;display:flex;align-items:center;justify-content:center;gap:12px}
+.sz button{font-size:40px;color:transparent;-webkit-text-stroke:1.5px var(--dim)}
+.sz button.on{color:var(--fg);-webkit-text-stroke:0}
+.go{flex:1;height:78px;background:var(--ac);color:var(--acfg);display:flex;align-items:center;justify-content:space-between;padding:0 18px;font-size:26px;white-space:nowrap}
+.go:active{filter:brightness(.92)}
+.toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--fg);color:var(--bg);padding:10px 14px;z-index:10;transition:.25s;white-space:nowrap}
+.toast.ver{opacity:1;transform:translateX(-50%)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body>
+<div class="app" id="app" data-cw="noche">
+  <div class="proto k">Prueba de color: <button data-accion="proto-colorway" data-cw="noche">Noche</button><button data-accion="proto-colorway" data-cw="pelaje">Pelaje</button><button data-accion="proto-colorway" data-cw="bloques">Bloques</button></div>
+  <div class="hero"><div class="ph" id="ph"></div><div class="fade"></div>
+    <div class="top k"><button data-accion="armador-atras">← Volver</button><span>Arma el tuyo</span><button data-accion="y-ademas">Y además</button></div>
+    <div class="kick k">Edición: la tuya</div><div class="ej k">foto de ejemplo</div>
+    <div class="big c">Con<br>todo<span>.</span></div>
+  </div>
+  <div class="blk b1">
+    <div class="tabs c" id="tabs"></div>
+    <div class="precioP k" id="pp"></div>
+    <div class="sec"><h2><span class="c">El pan</span><span class="k">siempre lleva uno</span></h2>
+      <div class="panes" id="panes"></div></div>
+  </div>
+  <div class="blk b2"><div class="sec"><h2><span class="c">Lo que lleva</span><span class="k">tócalo para quitarlo</span></h2>
+    <div class="lista" id="lleva"></div><div class="nota k" id="nota"></div></div></div>
+  <div class="blk b3"><div class="sec agr"><h2><span class="c">Agrégale</span><span class="k" id="cuentaS"></span></h2>
+    <div class="lista" id="agrega"></div></div></div>
+  <div class="blk b4"><div class="sec">
+    <button class="fila c" id="doble" data-accion="armador-doble"><span><span id="dobleT">Doble res</span><span class="s" id="dobleS"></span></span><span class="sw" id="dobleSw"></span></button>
+    <button class="fila c" data-accion="pedido-grupal"><span>¿Son varios?<span class="s">cada uno arma el suyo · el que organiza, gratis desde 5</span></span><span>→</span></button>
+    <button class="fila c" data-accion="ir-a-sando"><span>¿Ya resuelto?<span class="s">Philly Cheesesteak · la estrella de SANDO</span></span><span>→</span></button>
+    <button class="fila c" data-accion="secreto"><span>El secreto<span class="s">ya se te abrió · no preguntes qué lleva</span></span><span>→</span></button>
+  </div></div>
+
+  <div class="bar c"><div class="tira" id="tira"></div><div class="sz"><button id="s15" class="on" data-accion="tamano-15">15</button><button id="s30" data-accion="tamano-30">30</button></div>
+    <button class="go" id="go" data-accion="armador-agregar"><span>Lo quiero</span><span id="total"></span></button></div>
+  <div class="toast k" id="toast"></div>
+</div>
+<script>
+const FOTOS=__FOTOS__;
+// Proporción de cada color en su dibujo (img/wicho.png): pelaje, máscara, polo, tinta, ojos.
+const TIRA=[['--cel',27],['--dur',30],['--polo',18],['--tin',17],['--lil',8]];
+const PROT=[{id:'P09',n:'Res',p:{15:19.9,30:30.9},d:{15:7,30:13.9},f:'HERO'},{id:'P04',n:'Atún',p:{15:19.9,30:30.9},d:{15:10.9,30:21.9},f:'P04'},
+ {id:'P06',n:'Albóndiga',p:{15:19.9,30:30.9},d:{15:6.9,30:13.9},f:'P06'},{id:'P08',n:'Pavo',p:{15:19.9,30:30.9},d:{15:9,30:17},f:'P08'},
+ {id:'P05',n:'Embutido',p:{15:16.9,30:32.9},d:{15:9.9,30:19.9},f:'P05'}];
+// «Con todo» (propuesta: la confirma el dueño). Lo picante nunca viene puesto.
+const TODO=[{id:'C02',n:'Cheddar',g:'queso'},{id:'T01',n:'Tomate',g:'veg'},{id:'T09',n:'Lechuga',g:'veg'},{id:'T03',n:'Cebolla morada',g:'veg'},
+ {id:'T11',n:'Pepinillo',g:'veg'},{id:'T02',n:'Pickles',g:'veg'},{id:'T06',n:'Pimiento',g:'veg'},{id:'S13',n:'Mayonesa',g:'salsa'},{id:'S04',n:'Honey mustard',g:'salsa'}];
+const PANES=[{id:'B01',n:'Classic',x:'',rec:{15:0,30:0}},{id:'B03',n:'Focaccia',x:'+S/0.50',rec:{15:.5,30:1}}];
+const EXTRA=[{id:'C01',n:'Americano',g:'queso'},{id:'T10',n:'Cebolla salteada',g:'veg'},{id:'T04',n:'Jalapeño',g:'veg',pica:1},
+ {id:'S15',n:'Ketchup',g:'salsa'},{id:'S14',n:'Mayonesa light',g:'salsa'},{id:'S06',n:'Oil & vinegar',g:'salsa'},{id:'S09',n:'Chimichurri',g:'salsa',pica:1}];
+const st={p:'P09',t:15,pan:'B01',doble:false,quit:new Set(),agr:new Set()};
+const $=(i)=>document.getElementById(i);
+const fmt=(n)=>'S/'+n.toFixed(2);
+function salsas(){return TODO.filter(x=>x.g==='salsa'&&!st.quit.has(x.id)).length+EXTRA.filter(x=>x.g==='salsa'&&st.agr.has(x.id)).length;}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('ver');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('ver'),1600);}
+function total(){const pr=PROT.find(x=>x.id===st.p);let v=pr.p[st.t];if(st.doble)v+=pr.d[st.t];
+  v+=PANES.find(x=>x.id===st.pan).rec[st.t];return v;}
+function colorway(cw){$('app').dataset.cw=cw;document.querySelectorAll('.proto button').forEach(b=>b.classList.toggle('on',b.dataset.cw===cw));}
+function pinta(){
+  const pr=PROT.find(x=>x.id===st.p);
+  $('ph').style.backgroundImage=`url(${FOTOS[pr.f]})`;
+  $('tabs').innerHTML=PROT.map(x=>`<button class="tab${x.id===st.p?' on':''}" data-id="${x.id}" data-accion="armador-proteina">${x.n}</button>`).join('');
+  $('pp').textContent=`${pr.n} · ${st.t} cm · desde ${fmt(pr.p[st.t])}`;
+  $('panes').innerHTML=PANES.map(x=>`<button class="pan c${x.id===st.pan?' on':''}" data-id="${x.id}" data-accion="armador-pan">${x.n}${x.x?`<small>${x.x}</small>`:''}</button>`).join('');
+  $('lleva').innerHTML=TODO.map(x=>`<button class="it c${st.quit.has(x.id)?' off':''}" data-id="${x.id}" data-accion="armador-quitar">${x.n}</button>`).join('');
+  $('agrega').innerHTML=EXTRA.map(x=>{const on=st.agr.has(x.id);const lleno=x.g==='salsa'&&!on&&salsas()>=3;return `<button class="it c${on?' si':''}${lleno?' lleno':''}" data-id="${x.id}" data-accion="armador-agregar-ing">${x.n}${x.pica?'<small>pica</small>':''}</button>`;}).join('');
+  const q=TODO.filter(x=>st.quit.has(x.id)).map(x=>x.n.toLowerCase());
+  $('nota').textContent=q.length?`Sin ${q.join(', ')}.`:'Así viene. Tacha lo que no quieras.';
+  $('cuentaS').textContent=`salsas ${salsas()}/3 incluidas`;
+  $('dobleT').textContent='Doble '+pr.n.toLowerCase(); $('dobleS').textContent='+'+fmt(pr.d[st.t]); $('dobleSw').classList.toggle('on',st.doble);
+  $('s15').classList.toggle('on',st.t===15); $('s30').classList.toggle('on',st.t===30);
+  $('total').textContent=fmt(total())+' →';
+}
+document.addEventListener('click',(e)=>{
+  const b=e.target.closest('button'); if(!b) return; const a=b.dataset.accion, id=b.dataset.id;
+  if(a==='proto-colorway'){colorway(b.dataset.cw);return;}
+  if(a==='armador-proteina'){st.p=id;st.doble=false;}
+  else if(a==='armador-quitar'){st.quit.has(id)?st.quit.delete(id):st.quit.add(id); if(!st.quit.has(id)){const x=TODO.find(y=>y.id===id); if(x.g==='salsa'&&salsas()>3){st.quit.add(id);toast('Ya llevas 3 salsas');}}}
+  else if(a==='armador-agregar-ing'){const x=EXTRA.find(y=>y.id===id);
+    if(st.agr.has(id)) st.agr.delete(id);
+    else{ if(x.g==='salsa'&&salsas()>=3){toast('Hasta 3 salsas incluidas');return;}
+      if(x.g==='queso'){ // un solo queso: el de «agrégale» reemplaza al que viene
+        const base=TODO.find(y=>y.g===x.g); st.quit.add(base.id); EXTRA.filter(y=>y.g===x.g).forEach(y=>st.agr.delete(y.id)); }
+      st.agr.add(id); }}
+  else if(a==='armador-pan'){st.pan=id;}
+  else if(a==='armador-doble'){st.doble=!st.doble;}
+  else if(a==='tamano-15'){st.t=15;} else if(a==='tamano-30'){st.t=30;}
+  else if(a==='armador-agregar'){toast('Listo: '+PROT.find(x=>x.id===st.p).n+' '+st.t+' cm al carrito');return;}
+  else return;
+  pinta();
+});
+$('tira').innerHTML=TIRA.map(([v,p])=>`<i style="width:${p}%;background:var(${v})"></i>`).join('');
+colorway((location.hash.slice(1))||'noche');
+pinta();
+</script></body></html>
