@@ -77,3 +77,7 @@
     sub. La comida no se dibuja: se muestra real (`estilo-sndwch`, «Lo que llega»).
   - **Se siguió sobre la misma base:** las rayas del corte viejo y los mismos seis pasos con las
     mismas preguntas. Antes del próximo intento se le pregunta qué base es la que no quiere.
+- **2026-10-25 · El armador, de raíz.** Ante «la misma maqueta base» precisó que no quiere el
+  sándwich a rayas ni el planteamiento de siempre, y que la comida va **solo en fotos reales**.
+  Entre tres planteamientos eligió **«Empieza con todo, quita lo que no quieras»**: el sándwich
+  cargado en foto real, y tú quitas.
