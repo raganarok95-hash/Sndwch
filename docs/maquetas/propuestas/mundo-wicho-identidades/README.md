@@ -40,4 +40,4 @@ Son ocho pantallas: tamaño, pan, proteína (arriba y abajo), queso, vegetales, 
   - «Doble de la última»;
   - el precio y el botón de seguir en el pie.
 
-**Falta la aprobación del dueño antes de tocar la app.**
+**Rechazada** (dueño, 2026-10-25): era la identidad encima del esqueleto viejo y con acabado básico. Se rehace con el concepto mandando la estructura.

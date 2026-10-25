@@ -61,3 +61,13 @@
   - De cuatro identidades (la libreta, los stickers, la espiral, la cinta métrica) eligió
     **«La espiral»**: oscura, el avance es la espiral de sus ojos y las opciones son fichas
     redondas.
+- **2026-10-25 · «La espiral» encima del esqueleto viejo: rechazada.**
+  - Dueño: «No me gusta. Tomaste la identidad y la pusiste encima de lo ya construido por ser el
+    camino fácil. Erróneo. Se ve muy hecho a mano, feo, como programación muy básica. Necesito que
+    implementes bien el concepto. No generar sobre lo que está mal con respecto a diseño».
+  - **El error:** se mantuvo la estructura de seis pantallas (cabecera, pregunta, opciones, pie)
+    y solo se cambió la piel. Es el «vecino» de `docs/COMO_DISENAR_ACA.md`.
+  - **La regla:** cuando el dueño elige un concepto, el concepto decide la estructura (cómo se
+    elige, cómo se avanza, qué es la pantalla), no solo los colores.
+  - **Y el acabado tiene que ser de producto terminado:** fotos reales, profundidad, movimiento y
+    tipografía cuidada. Nada de figuras planas que parezcan un boceto.

@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Arma el tuyo · la espiral</title>
+<style>
+@font-face{font-family:'Anton';src:url(data:font/woff2;base64,__F_ANTON__) format('woff2')}
+@font-face{font-family:'Archivo';font-weight:400 800;src:url(data:font/woff2;base64,__F_ARCHIVO__) format('woff2')}
+@font-face{font-family:'Plex';font-weight:500;src:url(data:font/woff2;base64,__F_PLEX5__) format('woff2')}
+@font-face{font-family:'Plex';font-weight:600;src:url(data:font/woff2;base64,__F_PLEX6__) format('woff2')}
+@font-face{font-family:'Serif';font-style:italic;src:url(data:font/woff2;base64,__F_SERIF__) format('woff2')}
+:root{--tinta:#1E2F3A;--fondo:#0F1820;--lila:#C3A6D2;--lilaOsc:#4A3D62;--pelo:#90CCF0;--blanco:#F3F6F8;--apagado:#8597A5}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:#0B1218}
+body{display:flex;justify-content:center;align-items:center;font-family:'Archivo',system-ui,sans-serif;color:var(--blanco)}
+.app{position:relative;width:390px;height:844px;overflow:hidden;border-radius:0;
+  background:radial-gradient(120% 70% at 50% 50%,#1D3242 0%,#152430 45%,#0D161D 100%)}
+.app::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.06;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>")}
+.serif{font-family:'Serif';font-style:italic;font-weight:400}
+.mono{font-family:'Plex';font-weight:600;text-transform:uppercase;letter-spacing:.14em}
+.anton{font-family:'Anton';letter-spacing:.01em}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+.top{position:absolute;left:0;right:0;top:0;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;z-index:5}
+.back{width:44px;height:44px;border-radius:999px;display:grid;place-items:center}
+.back svg{opacity:.9}
+.paso{font-size:11px;color:var(--lila)}
+.extra{font-size:11px;color:var(--apagado);padding:10px}
+
+.preg{position:absolute;left:24px;right:120px;top:64px;z-index:4;transition:opacity .35s,transform .35s}
+.preg h1{font-family:'Serif';font-style:italic;font-weight:400;font-size:44px;line-height:1.02;letter-spacing:-.005em}
+.preg p{margin-top:8px;font-family:'Serif';font-style:italic;font-size:18px;color:var(--apagado);line-height:1.2}
+.preg.fuera{opacity:0;transform:translateY(-8px)}
+
+.wicho{position:absolute;right:-20px;top:58px;width:132px;z-index:3;transition:opacity .4s,transform .4s;filter:drop-shadow(0 10px 18px rgba(0,0,0,.4))}
+.wicho.fuera{opacity:0;transform:translateX(30px)}
+
+.escena{position:absolute;left:0;top:0;width:390px;height:844px}
+svg.esp{position:absolute;left:0;top:0;pointer-events:none}
+.centro{position:absolute;width:120px;height:120px;border-radius:999px;left:135px;top:380px;z-index:2;
+  background:radial-gradient(circle at 50% 40%,#2A4152 0%,#1A2A36 70%);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 18px 40px rgba(0,0,0,.45);display:grid;place-items:center;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+.centro .vacio{font-size:9px;color:var(--apagado);text-align:center;line-height:1.5}
+.sand{display:flex;flex-direction:column;align-items:center;transition:width .5s}
+.capa{width:100%;border-radius:4px;margin-top:-1px;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 1px 0 rgba(0,0,0,.15);animation:cae .45s cubic-bezier(.2,.9,.25,1.2) both}
+.pan-a{height:18px;border-radius:16px 16px 5px 5px;background:linear-gradient(180deg,#F4D59A,#D9A458 70%,#C28B42);box-shadow:inset 0 2px 0 rgba(255,255,255,.35),0 2px 4px rgba(0,0,0,.25)}
+.pan-b{height:12px;border-radius:4px 4px 12px 12px;background:linear-gradient(180deg,#E9C383,#C9924A);margin-top:-1px}
+.pan-guia{height:40px;width:100%;border:1.5px dashed rgba(195,166,210,.6);border-radius:16px}
+@keyframes cae{from{transform:translateY(-26px) scaleY(.6);opacity:0}to{transform:none;opacity:1}}
+
+.orbe{position:absolute;z-index:3;transition:opacity .3s}
+.orbe .lab{position:absolute;left:50%;transform:translateX(-50%);top:calc(100% + 8px);display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none}
+.orbe.arriba .lab{top:auto;bottom:calc(100% + 8px)}
+.bola{width:100%;height:100%;border-radius:999px;position:relative;box-shadow:0 14px 28px rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.14);transition:box-shadow .25s,transform .25s;background-size:cover;background-position:center}
+.bola::after{content:"";position:absolute;inset:0;border-radius:999px;background:radial-gradient(circle at 32% 26%,rgba(255,255,255,.55),rgba(255,255,255,0) 38%),radial-gradient(circle at 70% 85%,rgba(0,0,0,.28),rgba(0,0,0,0) 55%)}
+.bola.tex::before{content:"";position:absolute;inset:0;border-radius:999px;opacity:.35;mix-blend-mode:soft-light;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='3' stitchTiles='stitch'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>")}
+.foto::after{background:radial-gradient(circle at 30% 22%,rgba(255,255,255,.22),rgba(255,255,255,0) 40%),linear-gradient(180deg,rgba(0,0,0,0) 55%,rgba(0,0,0,.25))}
+.bola .num{position:absolute;inset:0;display:grid;place-items:center;font-family:'Anton';color:#2B1E3B;z-index:1}
+.bola .chk{position:absolute;right:-2px;top:-2px;width:24px;height:24px;border-radius:999px;background:var(--lila);color:var(--tinta);display:grid;place-items:center;font-size:13px;font-weight:800;transform:scale(0);transition:transform .25s cubic-bezier(.2,.9,.3,1.4);z-index:2}
+.orbe.sel .bola{box-shadow:0 0 0 3px #142029,0 0 0 6px var(--lila),0 0 34px rgba(195,166,210,.55),0 14px 28px rgba(0,0,0,.5)}
+.orbe.sel .chk{transform:scale(1)}
+.orbe .nom{font-weight:800;font-size:13px;text-align:center;line-height:1.1;text-shadow:0 2px 8px rgba(0,0,0,.7);white-space:nowrap}
+.orbe .sub{font-family:'Plex';font-weight:600;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--lila);white-space:nowrap;text-shadow:0 2px 8px rgba(0,0,0,.7)}
+.orbe:active .bola{transform:scale(.94)}
+.orbe.entra{animation:sale .55s cubic-bezier(.2,.8,.2,1) both}
+@keyframes sale{from{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.3)}to{opacity:1;transform:none}}
+.vuela{position:absolute;z-index:6;border-radius:999px;pointer-events:none;box-shadow:0 10px 30px rgba(195,166,210,.45)}
+
+.puente{position:absolute;left:24px;right:24px;top:680px;display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid rgba(255,255,255,.08);z-index:4;transition:opacity .3s}
+.puente img{width:36px;height:36px;border-radius:999px}
+.puente .t{font-family:'Serif';font-style:italic;font-size:18px;line-height:1.1}
+.puente .s{font-family:'Plex';font-weight:600;font-size:9px;letter-spacing:.12em;color:var(--apagado);text-transform:uppercase;margin-top:3px}
+.oculto{opacity:0;pointer-events:none}
+
+.pie{position:absolute;left:0;right:0;bottom:0;height:104px;padding:0 20px 18px;display:flex;align-items:center;justify-content:space-between;z-index:5;
+  background:linear-gradient(180deg,rgba(13,22,29,0),rgba(13,22,29,.92) 35%)}
+.precio{font-family:'Anton';font-size:28px;line-height:1}
+.resumen{font-family:'Plex';font-weight:600;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--apagado);margin-top:6px;max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cta{height:52px;padding:0 24px;border-radius:999px;background:var(--lila);color:var(--tinta);font-weight:800;font-size:15px;box-shadow:0 10px 26px rgba(195,166,210,.35);transition:opacity .3s,transform .3s}
+.cta.oculto{transform:translateY(8px)}
+.mejoras{position:absolute;left:24px;right:24px;top:640px;display:flex;flex-wrap:wrap;gap:10px;z-index:4;transition:opacity .4s}
+.mej{display:flex;align-items:center;gap:8px;height:44px;padding:0 16px;border-radius:999px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(195,166,210,.45);font-weight:800;font-size:13px}
+.mej .mas{font-family:'Plex';font-weight:600;font-size:9px;letter-spacing:.12em;color:var(--lila)}
+.mej.on{background:var(--lila);color:var(--tinta)}.mej.on .mas{color:var(--tinta)}
+.final .centro{transform:scale(1.35)}
+.giro{animation:gira 40s linear infinite;transform-origin:195px 440px}
+@keyframes gira{from{transform:rotate(0deg) scale(1.3)}to{transform:rotate(360deg) scale(1.3)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head>
+<body>
+<div class="app" id="app">
+  <div class="top">
+    <button class="back" id="atras" aria-label="Atrás" data-accion="armador-atras"><svg width="20" height="16" viewBox="0 0 20 16"><path d="M19 8H2M8 1L1 8l7 7" fill="none" stroke="#F3F6F8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="paso mono" id="paso">1 · Tamaño</div>
+    <button class="extra mono" data-accion="y-ademas">Y además ↓</button>
+  </div>
+  <div class="preg" id="preg"><h1 id="q"></h1><p id="qs"></p></div>
+  <img class="wicho" id="wicho" src="__I_ASOMA__" alt="">
+  <div class="escena" id="escena">
+    <svg class="esp" width="390" height="844" viewBox="0 0 390 844">
+      <defs>
+        <linearGradient id="gEsp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C3A6D2"/><stop offset="1" stop-color="#90CCF0"/></linearGradient>
+        <filter id="brillo" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        <radialGradient id="halo"><stop offset="0" stop-color="#C3A6D2" stop-opacity=".22"/><stop offset="1" stop-color="#C3A6D2" stop-opacity="0"/></radialGradient>
+      </defs>
+      <circle cx="195" cy="440" r="210" fill="url(#halo)"/>
+      <g id="gGiro">
+        <path id="espBase" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="2.5" stroke-linecap="round"/>
+        <path id="espHecha" fill="none" stroke="url(#gEsp)" stroke-width="3.6" stroke-linecap="round" filter="url(#brillo)"/>
+      </g>
+    </svg>
+    <div class="centro" id="centro"><div class="vacio mono" id="vacio">tu<br>sándwich</div><div class="sand" id="sand"></div></div>
+  </div>
+  <div class="puente oculto" id="puente"><img src="__I_LOGO__" alt=""><div style="flex:1"><div class="t">¿Prefieres que ya esté resuelto?</div><div class="s">Philly Cheesesteak · la estrella de SANDO</div></div><span>→</span></div>
+  <div class="puente oculto" id="varios"><div style="flex:1"><div class="t">¿Son varios?</div><div class="s">Cada uno arma el suyo · el que organiza, gratis desde 5</div></div><span>→</span></div>
+  <div class="mejoras oculto" id="mejoras"></div>
+  <div class="pie"><div><div class="precio" id="precio">desde s/19.90</div><div class="resumen" id="resumen">elige un tamaño</div></div>
+    <button class="cta oculto" id="cta" data-accion="armador-seguir">Sigue</button></div>
+</div>
+<script>
+const FOTOS = __FOTOS__;
+const WICHO_CELEBRA = "__I_CELEBRA__";
+const CX = 195, CY = 440;
+const PASOS = [
+  { k:'tamano', titulo:'Tamaño', q:'¿De qué tamaño?', s:'Va primero: cambia el precio de todo lo demás.', tipo:'uno', R:150, ang:[212,328],
+    items:[{id:'15',nom:'15 cm',sub:'el de siempre',d:88,num:'15',col:['#E9DDF2','#C3A6D2','#7E6496']},
+           {id:'30',nom:'30 cm',sub:'el doble de todo',d:108,num:'30',col:['#E9DDF2','#C3A6D2','#7E6496']}]},
+  { k:'pan', titulo:'Pan', q:'¿Sobre qué pan?', s:'Los dos se hornean acá.', tipo:'uno', R:150, ang:[212,328],
+    items:[{id:'B01',nom:'Classic',sub:'sin recargo',d:92,col:['#FCEBC6','#E6BE7C','#A9783A']},
+           {id:'B03',nom:'Focaccia',sub:'+s/0.50',d:92,col:['#F4D9A0','#C99B55','#7C5A27'],rec:{'15':0.5,'30':1}}]},
+  { k:'proteina', titulo:'Proteína', q:'¿Qué va adentro?', s:'Lo que elijas acá es el sándwich.', tipo:'uno', R:156, desde:-90,
+    items:[{id:'P09',nom:'Res',sub:'laminada',d:76,foto:'P09',p:{'15':19.9,'30':30.9},dbl:{'15':7,'30':13.9},capa:'#6E4026'},
+           {id:'P04',nom:'Atún',sub:'house',d:76,foto:'P04',p:{'15':19.9,'30':30.9},dbl:{'15':10.9,'30':21.9},capa:'#C9B48C'},
+           {id:'P06',nom:'Albóndiga',sub:'marinara',d:76,foto:'P06',p:{'15':19.9,'30':30.9},dbl:{'15':6.9,'30':13.9},capa:'#8E3324'},
+           {id:'P08',nom:'Pavo',sub:'horneado',d:76,foto:'P08',p:{'15':19.9,'30':30.9},dbl:{'15':9,'30':17},capa:'#EBD9C4'},
+           {id:'P05',nom:'Embutido',sub:'italiano',d:76,foto:'P05',p:{'15':16.9,'30':32.9},dbl:{'15':9.9,'30':19.9},capa:'#B24A4F'},
+           {id:'SEC',nom:'El secreto',sub:'ya se te abrió',d:76,secreto:true,p:{'15':19.9,'30':30.9},dbl:{'15':6,'30':11},capa:'#4A3D62'}]},
+  { k:'queso', titulo:'Queso', q:'¿Con queso?', s:'Va incluido, no cuesta nada.', tipo:'uno', R:150, ang:[205,270,335],
+    items:[{id:'C01',nom:'Americano',sub:'se funde parejo',d:84,col:['#FFF1B8','#F2D36B','#B98F1E'],capa:'#F2D36B'},
+           {id:'C02',nom:'Cheddar',sub:'curado y salado',d:84,col:['#FFD9A0','#E8962E','#9C5A0E'],capa:'#E8962E'},
+           {id:'C00',nom:'Sin queso',sub:'',d:84,vacia:true}]},
+  { k:'vegetales', titulo:'Vegetales', q:'¿Qué le pones encima?', s:'Los que quieras. Ninguno cuesta.', tipo:'varios', R:152, desde:-90,
+    items:[{id:'T01',nom:'Tomate',sub:'fresco',d:58,col:['#FFB3A8','#D9473A','#8E1E15'],capa:'#D9473A'},
+           {id:'T03',nom:'Cebolla',sub:'morada',d:58,col:['#E9B8E6','#8E4E8C','#4F2450'],capa:'#A35FA0'},
+           {id:'T04',nom:'Jalapeño',sub:'encurtido',d:58,col:['#B7E0A2','#3E8E3A','#1D4D1B'],capa:'#3E8E3A'},
+           {id:'T02',nom:'Pickles',sub:'encurtidos',d:58,col:['#DCE8A4','#8BA33A','#4C5C16'],capa:'#8BA33A'},
+           {id:'T11',nom:'Pepinillo',sub:'fresco',d:58,col:['#E6F5C9','#A9C97A','#5E7D35'],capa:'#B9D68A'},
+           {id:'T06',nom:'Pimiento',sub:'verde',d:58,col:['#B9E5A9','#4C9A42','#21521B'],capa:'#4C9A42'},
+           {id:'T09',nom:'Lechuga',sub:'fresca',d:58,col:['#E1F4C2','#9CCB5E','#4E7A22'],capa:'#9CCB5E'},
+           {id:'T10',nom:'Cebolla',sub:'salteada',d:58,col:['#FCE5C2','#D7B07A','#8C6532'],capa:'#D7B07A'}]},
+  { k:'salsas', titulo:'Salsas', q:'¿Y de salsa?', s:'Hasta 3 incluidas.', tipo:'varios', max:3, R:150, desde:-90,
+    items:[{id:'S13',nom:'Mayonesa',sub:'americana',d:64,col:['#FFFDF2','#F1E6C2','#B7A673'],capa:'#F1E6C2'},
+           {id:'S14',nom:'Mayonesa',sub:'light',d:64,col:['#FFFFFF','#F6F0DE','#C9BC93'],capa:'#F6F0DE'},
+           {id:'S15',nom:'Ketchup',sub:'americano',d:64,col:['#FF9C8C','#B8231E','#5F0C09'],capa:'#B8231E'},
+           {id:'S04',nom:'Honey',sub:'mustard',d:64,col:['#FFE9A3','#D9A92B','#7E5C09'],capa:'#D9A92B'},
+           {id:'S06',nom:'Oil & Vinegar',sub:'classic',d:64,col:['#F1EBB0','#A69A3E','#5A5214'],capa:'#A69A3E'},
+           {id:'S09',nom:'Chimichurri',sub:'piña y ají',d:64,col:['#FFC3A1','#D0622F','#7A2A0C'],capa:'#D0622F'}]},
+];
+const st = { i:0, sel:{} };
+const $ = (id) => document.getElementById(id);
+
+// La espiral: 6 vueltas de afuera hacia adentro; lo hecho se dibuja desde afuera.
+(function dibujaEspiral(){
+  const v=6, rOut=118, rIn=70, N=v*120; let d='';
+  for(let i=0;i<=N;i++){const t=i/N*v*Math.PI*2, r=rOut-(rOut-rIn)*i/N; const x=CX+r*Math.cos(t-Math.PI/2), y=CY+r*Math.sin(t-Math.PI/2); d+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);}
+  $('espBase').setAttribute('d',d); $('espHecha').setAttribute('d',d);
+  const L=$('espHecha').getTotalLength(); $('espHecha').style.strokeDasharray=`0 ${L}`; $('espHecha').dataset.L=L;
+})();
+function avanzaEspiral(f){const L=+$('espHecha').dataset.L; $('espHecha').animate([{strokeDasharray:getComputedStyle($('espHecha')).strokeDasharray},{strokeDasharray:`${L*f} ${L}`}],{duration:700,easing:'cubic-bezier(.2,.8,.2,1)',fill:'forwards'});}
+
+const fmt=(n)=>'s/'+n.toFixed(2);
+function precio(){
+  const t=st.sel.tamano?.[0]; const p=st.sel.proteina?.[0];
+  if(!t) return {txt:'desde s/19.90'};
+  const prot=PASOS[2].items.find(x=>x.id===p);
+  let base = prot ? prot.p[t] : (t==='15'?19.9:30.9);
+  const pan=PASOS[1].items.find(x=>x.id===st.sel.pan?.[0]); if(pan?.rec) base+=pan.rec[t];
+  if(st.dobleProt&&prot) base+=prot.dbl[t]; if(st.dobleSalsa) base+=2;
+  return {txt:(prot?'':'desde ')+fmt(base)};
+}
+function resumen(){
+  const n=[]; const t=st.sel.tamano?.[0]; if(t) n.push(t+' cm');
+  for(const k of ['pan','proteina','queso']){const id=st.sel[k]?.[0]; const it=PASOS.find(p=>p.k===k).items.find(x=>x.id===id); if(it&&id!=='C00') n.push(it.nom);}
+  if(st.sel.vegetales?.length) n.push(st.sel.vegetales.length+' vegetales');
+  if(st.sel.salsas?.length) n.push(st.sel.salsas.length+(st.sel.salsas.length>1?' salsas':' salsa'));
+  return n.join(' · ')||'elige un tamaño';
+}
+function pintaPie(){ $('precio').textContent=precio().txt; $('resumen').textContent=resumen(); }
+
+function bola(it){
+  const b=document.createElement('div'); b.className='bola'+(it.foto?' foto':(it.col?' tex':''));
+  if(it.foto) b.style.backgroundImage=`url(${FOTOS[it.foto]})`;
+  else if(it.secreto){ b.style.background='radial-gradient(circle at 50% 50%,#5B4C78,#2A2140 70%)'; b.innerHTML=`<svg viewBox="0 0 76 76" width="${it.d}" height="${it.d}" style="position:absolute;inset:0">${espiralMini(38,38,3,4,24)}</svg>`; }
+  else if(it.vacia){ b.style.background='rgba(255,255,255,.03)'; b.style.boxShadow='inset 0 0 0 1.5px rgba(255,255,255,.35)'; }
+  else b.style.background=`radial-gradient(circle at 35% 30%,${it.col[0]} 0%,${it.col[1]} 48%,${it.col[2]} 100%)`;
+  if(it.num) b.insertAdjacentHTML('beforeend',`<div class="num" style="font-size:${it.d*.42}px">${it.num}</div>`);
+  b.insertAdjacentHTML('beforeend','<div class="chk">✓</div>');
+  return b;
+}
+function espiralMini(cx,cy,v,r0,r1){let d='';const N=v*60;for(let i=0;i<=N;i++){const t=i/N*v*Math.PI*2,r=r0+(r1-r0)*i/N;d+=(i?'L':'M')+(cx+r*Math.cos(t)).toFixed(1)+' '+(cy+r*Math.sin(t)).toFixed(1);}return `<path d="${d}" fill="none" stroke="#C3A6D2" stroke-width="2.4" stroke-linecap="round"/>`;}
+
+function angulos(p){ if(p.ang) return p.ang; const n=p.items.length; return p.items.map((_,i)=>p.desde+360/n*i); }
+function pintaPaso(){
+  const p=PASOS[st.i];
+  document.querySelectorAll('.orbe').forEach(o=>o.remove());
+  $('paso').textContent=`${st.i+1} · ${p.titulo}`;
+  const pr=$('preg'); pr.classList.add('fuera');
+  setTimeout(()=>{ $('q').textContent=p.q; $('qs').textContent=p.s; pr.classList.remove('fuera'); },180);
+  $('wicho').classList.toggle('fuera', st.i!==0);
+  $('puente').classList.toggle('oculto', p.k!=='proteina');
+  $('varios').classList.toggle('oculto', p.k!=='tamano');
+  const angs=angulos(p);
+  p.items.forEach((it,j)=>{
+    const a=angs[j]*Math.PI/180, x=CX+p.R*Math.cos(a), y=CY+p.R*Math.sin(a);
+    const o=document.createElement('button'); o.className='orbe entra'+(y<CY-20?' arriba':''); o.dataset.accion='armador-opcion'; o.dataset.id=it.id;
+    o.setAttribute('aria-label',it.nom+(it.sub?' '+it.sub:''));
+    o.style.width=o.style.height=it.d+'px'; o.style.left=(x-it.d/2)+'px'; o.style.top=(y-it.d/2)+'px';
+    o.style.setProperty('--dx',(CX-x)+'px'); o.style.setProperty('--dy',(CY-y)+'px');
+    o.style.animationDelay=(j*45)+'ms';
+    o.appendChild(bola(it));
+    o.insertAdjacentHTML('beforeend',`<div class="lab"><div class="nom">${it.nom}</div>${it.sub?`<div class="sub">${it.sub}</div>`:''}</div>`);
+    if((st.sel[p.k]||[]).includes(it.id)) o.classList.add('sel');
+    o.addEventListener('click',()=>elige(p,it,o));
+    $('escena').appendChild(o);
+  });
+  const cta=$('cta');
+  if(p.tipo==='varios'){ cta.classList.remove('oculto'); cta.textContent = st.i<PASOS.length-1 ? 'Sigue: '+PASOS[st.i+1].titulo.toLowerCase() : 'Listo'; }
+  else cta.classList.add('oculto');
+  pintaPie();
+}
+function elige(p,it,o){
+  const lista=st.sel[p.k]||[];
+  if(p.tipo==='uno'){
+    st.sel[p.k]=[it.id]; document.querySelectorAll('.orbe').forEach(x=>x.classList.toggle('sel',x===o)); pintaPie();
+    setTimeout(()=>vuela(o,it,()=>{ agregaCapa(p,it); siguiente(); }),260);
+  } else {
+    const ya=lista.includes(it.id);
+    if(!ya && p.max && lista.length>=p.max) { o.animate([{transform:'translateX(0)'},{transform:'translateX(-6px)'},{transform:'translateX(6px)'},{transform:'none'}],{duration:260}); return; }
+    st.sel[p.k]= ya ? lista.filter(x=>x!==it.id) : [...lista,it.id];
+    o.classList.toggle('sel',!ya); pintaPie();
+    if(!ya) vuela(o,it,()=>agregaCapa(p,it),true); else quitaCapa(it.id);
+  }
+}
+function vuela(o,it,fin,copia){
+  const b=o.querySelector('.bola'); const r=b.getBoundingClientRect(), app=$('app').getBoundingClientRect();
+  const v=b.cloneNode(true); v.classList.add('vuela'); v.style.left=(r.left-app.left)+'px'; v.style.top=(r.top-app.top)+'px'; $('app').appendChild(v);
+  const x0=r.left-app.left+it.d/2, y0=r.top-app.top+it.d/2; const a0=Math.atan2(y0-CY,x0-CX); const r0=Math.hypot(x0-CX,y0-CY);
+  const k=[]; for(let s=0;s<=10;s++){const f=s/10; const a=a0+f*Math.PI*1.1; const rr=r0*(1-f); const x=CX+rr*Math.cos(a)-x0, y=CY+rr*Math.sin(a)-y0; k.push({transform:`translate(${x}px,${y}px) scale(${1-.7*f}) rotate(${f*200}deg)`,opacity:f<.85?1:0});}
+  if(!copia) o.style.opacity='0';
+  v.animate(k,{duration:620,easing:'cubic-bezier(.45,.05,.3,1)',fill:'forwards'}).onfinish=()=>{v.remove(); fin();};
+}
+function agregaCapa(p,it){
+  $('vacio').style.display='none';
+  const s=$('sand');
+  if(p.k==='tamano'){ s.style.width=(it.id==='15'?70:100)+'px'; s.innerHTML='<div class="pan-guia"></div>'; return; }
+  if(p.k==='pan'){ s.innerHTML=`<div class="capa pan-a" style="${it.id==='B03'?'background:linear-gradient(180deg,#EBC98A,#C08A3E 70%,#9A6A2A)':''}"></div><div class="capa pan-b" id="panB"></div>`; return; }
+  if(!it.capa) return;
+  const c=document.createElement('div'); c.className='capa'; c.dataset.id=it.id;
+  const h={proteina:12,queso:6,vegetales:5,salsas:4}[p.k]||5; c.style.height=h+'px';
+  c.style.background=`linear-gradient(180deg,${it.capa},${it.capa}CC)`;
+  s.insertBefore(c,$('panB'));
+}
+function quitaCapa(id){ const c=document.querySelector(`.capa[data-id="${id}"]`); if(c) c.remove(); }
+function siguiente(){
+  st.i++;
+  avanzaEspiral(st.i/6);
+  if(st.i>=PASOS.length) return final();
+  pintaPaso();
+}
+function final(){
+  document.querySelectorAll('.orbe').forEach(o=>o.remove());
+  $('app').classList.add('final'); $('gGiro').classList.add('giro');
+  $('paso').textContent='Listo';
+  $('q').textContent='¡Ese es tuyo!'; $('qs').textContent='Nadie más lo tiene igual. Toca una capa para cambiarla.';
+  $('puente').classList.add('oculto');
+  const w=$('wicho'); w.src=WICHO_CELEBRA; w.style.top='470px'; w.style.width='128px'; w.classList.remove('fuera');
+  const prot=PASOS[2].items.find(x=>x.id===st.sel.proteina?.[0]); const t0=st.sel.tamano?.[0]; const ult=PASOS[5].items.find(x=>x.id===(st.sel.salsas||[]).slice(-1)[0]);
+  const m=$('mejoras'); m.innerHTML='';
+  if(prot) m.insertAdjacentHTML('beforeend',`<button class="mej" id="mProt" data-accion="armador-doble">Doble de ${prot.nom.toLowerCase()} <span class="mas">+s/${prot.dbl[t0].toFixed(2)}</span></button>`);
+  if(ult) m.insertAdjacentHTML('beforeend',`<button class="mej" id="mSal" data-accion="armador-doble-salsa">Doble de ${ult.nom.toLowerCase()} <span class="mas">+s/2.00</span></button>`);
+  m.classList.remove('oculto');
+  $('mProt')?.addEventListener('click',(e)=>{st.dobleProt=!st.dobleProt; e.currentTarget.classList.toggle('on',st.dobleProt); pintaPie();});
+  $('mSal')?.addEventListener('click',(e)=>{st.dobleSalsa=!st.dobleSalsa; e.currentTarget.classList.toggle('on',st.dobleSalsa); pintaPie();});
+  const cta=$('cta'); cta.classList.remove('oculto'); cta.textContent='Lo quiero'; pintaPie();
+}
+$('cta').addEventListener('click',()=>{ const p=PASOS[st.i]; if(!p) return; siguiente(); });
+$('atras').addEventListener('click',()=>{
+  if(st.i===0) return;
+  if(st.i>=PASOS.length){ $('mejoras').classList.add('oculto'); st.dobleProt=st.dobleSalsa=false; $('app').classList.remove('final'); $('gGiro').classList.remove('giro'); const w=$('wicho'); w.src="__I_ASOMA__"; w.style.top=''; w.style.width=''; }
+  st.i--; const p=PASOS[st.i]; delete st.sel[p.k];
+  if(p.k==='pan'){ $('sand').innerHTML='<div class="pan-guia"></div>'; }
+  else if(p.k==='tamano'){ $('sand').innerHTML=''; $('vacio').style.display=''; }
+  else p.items.forEach(it=>quitaCapa(it.id));
+  avanzaEspiral(st.i/6); pintaPaso();
+});
+window.__elegir=(id)=>{const o=document.querySelector(`.orbe[data-id="${id}"]`); o&&o.click();};
+pintaPaso();
+</script>
+</body></html>
