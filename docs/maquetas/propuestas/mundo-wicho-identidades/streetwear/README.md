@@ -21,3 +21,24 @@ De tres lenguajes nuevos (juego, streetwear y juguete 3D) eligió el **2 · Stre
 `calle.template.html` es el prototipo: las fuentes y las fotos se le meten adentro para que
 funcione solo en el celular. **Las fotos son de ejemplo**: van las «con todo» de cada proteína
 (`../empieza-con-todo/FOTOS.md`). **Falta su aprobación antes de tocar la app.**
+
+## Con los colores de WICHO (2026-10-25)
+
+Dueño: «Conserva la idea. Ahora mezcla esa idea con una abstracción de los colores de wicho».
+La estructura, la letra y el concepto quedan iguales; el rojo y el negro se van y entra WICHO
+reducido a sus colores, muestreados de `img/wicho.png`: pelaje celeste `#90CCF0`, máscara durazno
+`#F0D8CC`, polo gris-azul, tinta `#1E2F3A` y ojos lila `#C3A6D2` sobre `#4A3D62`.
+
+- **Noche:** su tinta de fondo, el celeste es la acción y el punto de «CON TODO.» es lila, como su ojo.
+- **Pelaje:** todo celeste, tinta para leer y lila oscuro para actuar.
+- **Bloques:** de arriba abajo se recorre a WICHO: pelo (proteína y pan), máscara (lo que lleva),
+  ojos (agrégale), polo (lo demás).
+- **En los tres:**
+  - **La tira** sobre el botón es WICHO en la proporción en que ocupa cada color de su dibujo
+    (27 % celeste, 30 % durazno, 18 % polo, 17 % tinta y 8 % lila).
+  - **La foto termina en seco:** ningún color pasa por encima de la comida (regla de
+    `docs/LOS_DOS_HERMANOS.md`).
+
+`calle-wicho.template.html` trae arriba una barra de prueba para cambiar de combinación en el
+celular; esa barra no va a la app. Comparación: `los-tres-colorways.jpg`. **Falta que el dueño
+elija una antes de tocar la app.**

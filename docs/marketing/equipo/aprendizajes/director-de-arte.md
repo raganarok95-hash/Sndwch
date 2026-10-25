@@ -92,3 +92,6 @@
 - **2026-10-25 · El pan no se quita.** «No se debería pedir sin pan y permite quitar el pan
   clasico». En «Arma el tuyo» el pan no va en la lista que se tacha: se elige entre Classic y
   Focaccia y siempre lleva uno. Lo que es base del producto no se ofrece como quitable.
+- **2026-10-25 · Streetwear con los colores de WICHO.** «Conserva la idea. Ahora mezcla esa idea con
+  una abstracción de los colores de wicho». Se conservan la estructura y la letra; el color sale de
+  su dibujo, en sus proporciones, y nunca pasa por encima de la foto de comida.
