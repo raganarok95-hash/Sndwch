@@ -9,6 +9,8 @@ De tres lenguajes nuevos (juego, streetwear y juguete 3D) eligió el **2 · Stre
 - **Concepto:** «empieza con todo». La foto real a sangre y «CON TODO.» enorme.
 - **Cómo funciona:**
   - las proteínas son pestañas, y cada una cambia la foto y el precio;
+  - **el pan va siempre** (dueño, 2026-10-25: «No se debería pedir sin pan»): se elige Classic o
+    Focaccia (+S/0.50), nunca se quita;
   - «Lo que lleva» se tacha con una raya roja al tocarlo;
   - «Agrégale» lo suma; lo picante viene aparte y avisa «pica»;
   - las salsas, hasta 3 incluidas;

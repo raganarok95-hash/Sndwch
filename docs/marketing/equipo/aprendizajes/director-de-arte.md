@@ -89,3 +89,6 @@
   - Para ese mundo descartó todo el sistema visual actual, incluido el `//` («Todo, aun el //»).
   - De tres lenguajes nuevos (juego, streetwear y juguete 3D) eligió el **streetwear**: negro, foto
     a sangre, letra condensada cursiva enorme y rojo.
+- **2026-10-25 · El pan no se quita.** «No se debería pedir sin pan y permite quitar el pan
+  clasico». En «Arma el tuyo» el pan no va en la lista que se tacha: se elige entre Classic y
+  Focaccia y siempre lleva uno. Lo que es base del producto no se ofrece como quitable.
