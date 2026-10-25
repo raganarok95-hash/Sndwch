@@ -95,3 +95,5 @@
 - **2026-10-25 · Streetwear con los colores de WICHO.** «Conserva la idea. Ahora mezcla esa idea con
   una abstracción de los colores de wicho». Se conservan la estructura y la letra; el color sale de
   su dibujo, en sus proporciones, y nunca pasa por encima de la foto de comida.
+- **2026-10-25 · Eligió Noche.** «Me gusta el noche, pero sí deberías tocar para agregar». Lo que
+  se suma tiene que verse tan tocable como lo que se quita, y el sándwich entero se lee en una lista.
