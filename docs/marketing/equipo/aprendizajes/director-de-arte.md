@@ -54,3 +54,10 @@
     No se vuelve a proponer sin un dato nuevo.
   - Dueño: «Jamaica debe ponerse como hibiscus, mejor». El sabor en la lata dice lo mismo que en la
     app.
+- **2026-10-25 · El mundo de WICHO en la app.**
+  - Dueño: «No termina de convencerme la parte de WICHO. Lo veo y no me gusta. Quisiera que se
+    rehaga la primera parte; dame opciones o tipos de identidad».
+  - Se aclaró que era su mundo en la app (el armador), no el personaje.
+  - De cuatro identidades (la libreta, los stickers, la espiral, la cinta métrica) eligió
+    **«La espiral»**: oscura, el avance es la espiral de sus ojos y las opciones son fichas
+    redondas.
