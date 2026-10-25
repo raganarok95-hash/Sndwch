@@ -71,3 +71,9 @@
     elige, cómo se avanza, qué es la pantalla), no solo los colores.
   - **Y el acabado tiene que ser de producto terminado:** fotos reales, profundidad, movimiento y
     tipografía cuidada. Nada de figuras planas que parezcan un boceto.
+- **2026-10-25 · La órbita: también rechazada.**
+  - Dueño: «No, mal. La cosa del sándwich se ve asquerosa. Estás usando la misma maqueta base».
+  - **El sándwich dibujado** (rayas de colores, con forma de hamburguesa) da asco y ni siquiera es un
+    sub. La comida no se dibuja: se muestra real (`estilo-sndwch`, «Lo que llega»).
+  - **Se siguió sobre la misma base:** las rayas del corte viejo y los mismos seis pasos con las
+    mismas preguntas. Antes del próximo intento se le pregunta qué base es la que no quiere.
