@@ -1,0 +1,24 @@
+{
+ "semana": "2026-10-19",
+ "prueba": true,
+ "pedidos": 0,
+ "clientesNuevos": 0,
+ "clientesQueVuelven": 0,
+ "ticketPromedio": null,
+ "enGrupo": 0,
+ "conPedidoFijo": 0,
+ "porOrigen": [
+  {
+   "origen": "directo",
+   "visitas": 105,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  }
+ ],
+ "porHora": {},
+ "porDia": {},
+ "gastoDePauta": {},
+ "costoPorClienteNuevoMeta": null,
+ "generado": "2026-10-26T10:04:28.571Z"
+}
