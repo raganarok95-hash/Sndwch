@@ -1,0 +1,169 @@
+{
+ "semana": "2026-11-02",
+ "historias": [
+  {
+   "id": "ensayo",
+   "titulo": "Ensayo",
+   "dia": "2026-11-03",
+   "hora": "12:00",
+   "momento": "almuerzo de oficina",
+   "nivel": "no nos conoce",
+   "por_que": "Abre la semana con LA idea: todavía no abrimos, y la cocina ya está ensayando.",
+   "cuadros": [
+    {
+     "encargo": "2026-11-03-ensayo-1",
+     "personaje": "SANDO",
+     "texto": "Todavía no abrimos.",
+     "voz": "sando",
+     "escena": "SANDO standing completely still behind an empty, spotless wooden cutting board, a single knife laid parallel to its edge, chairs still upside down on the tables behind him. Slow camera push-in. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black. No food anywhere in the scene."
+    },
+    {
+     "encargo": "2026-11-03-ensayo-2",
+     "personaje": "WICHO",
+     "texto": "Estamos ensayando.",
+     "voz": "wicho",
+     "escena": "WICHO bouncing on his toes at the stove, tasting from a wooden spoon with wide excited eyes, a small pot of red marinara sauce steaming in front of him. He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black. No sandwich in the scene, no alcohol."
+    },
+    {
+     "encargo": "2026-11-03-ensayo-3",
+     "personaje": null,
+     "texto": "Abrimos este mes.",
+     "voz": "neutra",
+     "escena": "A row of soft white sub rolls with thin soft crust (no flour dusting, not baguettes) cooling on a wire rack under one warm hanging bulb, the rest of the kitchen falling to black. Bread only: no filling, no other food. No characters."
+    }
+   ]
+  },
+  {
+   "id": "res",
+   "titulo": "La res",
+   "dia": "2026-11-04",
+   "hora": "19:30",
+   "momento": "noche sin cocinar",
+   "nivel": "no nos conoce",
+   "por_que": "La estrella de la carta por dentro: el proceso real del Philly, sin decir pide.",
+   "cuadros": [
+    {
+     "encargo": "2026-11-04-res-1",
+     "personaje": "SANDO",
+     "texto": "Laminada fina. Salteada al momento.",
+     "voz": "sando",
+     "escena": "SANDO standing still beside a hot flat griddle where thin slices of beef sear together with sautéed onion and thin green pepper strips, steam rising into the warm light. Slow camera push-in. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black. No sandwich yet, no alcohol."
+    },
+    {
+     "encargo": "2026-11-04-res-2",
+     "personaje": null,
+     "texto": "El cheddar lo amarra todo.",
+     "voz": "neutra",
+     "escena": "Three-quarter close view of ONE Philly Cheesesteak sub on white paper on a dark counter: soft white sub roll with thin soft crust (not a baguette), thin seared beef, sautéed onion, green pepper strips, melted cheddar on top. No sauce, no lettuce, no tomato, no other cheese. Real portion. One warm hanging bulb. No characters, no alcohol."
+    }
+   ]
+  },
+  {
+   "id": "aplasto",
+   "titulo": "¿Lo aplasto?",
+   "dia": "2026-11-05",
+   "hora": "12:30",
+   "momento": "almuerzo de oficina",
+   "nivel": "no nos conoce",
+   "por_que": "La idea de marca en tres cuadros: WICHO quiere atajos, SANDO no, y la carta da la razón.",
+   "cuadros": [
+    {
+     "encargo": "2026-11-05-aplasto-1",
+     "personaje": "WICHO",
+     "texto": "¿Lo aplasto?",
+     "voz": "wicho",
+     "escena": "WICHO leaning over a steel bowl of tuna with a fork raised high, a mischievous grin, about to mash it. He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black. No sandwich in the scene."
+    },
+    {
+     "encargo": "2026-11-05-aplasto-2",
+     "personaje": "SANDO",
+     "texto": "En lascas. Siempre.",
+     "voz": "sando",
+     "escena": "SANDO standing still, calmly holding a steel bowl of tuna in thick separate flakes, never a paste, looking slightly off-frame. Slow camera push-in. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black. No sandwich in the scene."
+    },
+    {
+     "encargo": "2026-11-05-aplasto-3",
+     "personaje": null,
+     "texto": "Classic Tuna. Se come con una mano.",
+     "voz": "neutra",
+     "escena": "ONE Classic Tuna sub held in a single hand above an office desk at midday: soft white sub roll with thin soft crust (not a baguette), thick tuna flakes with a light coat of mayonnaise and white pepper. No vegetables, no cheese, no lettuce, no tomato. Real portion. Bright window light. Only the hand is visible, no faces, no logos."
+    }
+   ]
+  },
+  {
+   "id": "capas",
+   "titulo": "Capas",
+   "dia": "2026-11-06",
+   "hora": "16:30",
+   "momento": "el antojo de la tarde",
+   "nivel": "no nos conoce",
+   "por_que": "El mundo de WICHO sin repetir la espiral del 23: el armador, contado en futuro.",
+   "cuadros": [
+    {
+     "encargo": "2026-11-06-capas-1",
+     "personaje": "WICHO",
+     "texto": "Hoy probé de todo.",
+     "voz": "wicho",
+     "escena": "WICHO at a counter crowded with small open bowls of separate ingredients (sliced turkey, thick tomato slices, thin red onion, pickle slices, jalapeño slices, cheddar slices), happily trying a pickle slice, a white sub roll open in front of him. He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
+    },
+    {
+     "encargo": "2026-11-06-capas-2",
+     "personaje": "WICHO",
+     "texto": "Cada capa la vas a elegir tú.",
+     "voz": "wicho",
+     "escena": "WICHO dropping layers from above onto an open soft white sub roll (not a baguette) on the counter: folded sliced turkey, thick tomato slices, thin red onion, pickle slices, one cheddar slice, falling straight down in order. Real portion, never overfilled. He moves, the camera does not. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black."
+    }
+   ]
+  },
+  {
+   "id": "albondigas",
+   "titulo": "Hechas acá",
+   "dia": "2026-11-07",
+   "hora": "20:00",
+   "momento": "la juntada o el partido",
+   "nivel": "nos vio una vez",
+   "por_que": "La noche del sábado con el sándwich más contundente, contado por cómo se hace.",
+   "cuadros": [
+    {
+     "encargo": "2026-11-07-albondigas-1",
+     "personaje": "SANDO",
+     "texto": "Hechas acá.",
+     "voz": "sando",
+     "escena": "SANDO standing still beside a wide pot where small round meatballs simmer inside their own red marinara sauce, a ladle resting on the rim. Slow camera push-in. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black. No sandwich yet, no alcohol, no drinks."
+    },
+    {
+     "encargo": "2026-11-07-albondigas-2",
+     "personaje": null,
+     "texto": "Cocidas en su propia marinara.",
+     "voz": "neutra",
+     "escena": "Three-quarter close view of ONE Meatball Marinara sub on white paper on a dark counter: soft white sub roll with thin soft crust (not a baguette), small meatballs in marinara sauce, melted American cheese to the edge, fresh tomato slices, thin red onion, a touch of oil and vinegar. No lettuce, no peppers, no other cheese. Real portion. One warm hanging bulb. No characters, no alcohol."
+    }
+   ]
+  },
+  {
+   "id": "todavia",
+   "titulo": "Todavía no",
+   "dia": "2026-11-08",
+   "hora": "19:00",
+   "momento": "el domingo de flojera",
+   "nivel": "nos sigue",
+   "por_que": "El cierre de domingo que se repite: sin día, y la promesa de decirlo acá primero.",
+   "cuadros": [
+    {
+     "encargo": "2026-11-08-todavia-1",
+     "personaje": "SANDO",
+     "texto": "Todavía no.",
+     "voz": "sando",
+     "escena": "SANDO calmly wiping his empty wooden board clean at the end of a rehearsal day, half of the kitchen lights already off. Slow camera push-in. Night kitchen: deep green tiles, one warm hanging bulb, everything else falls to black. No food anywhere in the scene."
+    },
+    {
+     "encargo": "2026-11-08-todavia-2",
+     "personaje": "WICHO",
+     "texto": "El día lo decimos acá.",
+     "voz": "wicho",
+     "escena": "WICHO pressing his face and both hands against the inside of the glass of the closed front door, impatient, looking out at the dark street. He moves, the camera does not. Warm light behind him from one hanging bulb, the street outside in blue night. No food anywhere in the scene."
+    }
+   ]
+  }
+ ]
+}
