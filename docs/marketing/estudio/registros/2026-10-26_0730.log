@@ -1,0 +1,11 @@
+﻿07:30:02  inicio. powershell=5.1.26100.9444
+07:30:09  repo en 8fedad8
+07:30:09  lunes: ciclo de la agencia
+07:30:11  Ignoring 22 permissions.allow entries from .claude/settings.json: this workspace has not been trusted. Run Claude Code interactively here once and accept the trust dialog, or set projects["C:/Users/ragan/sndwch-estudio"].hasTrustDialogAccepted: true in ~\.claude.json.
+07:30:47  La semana 2026-11-02 ya estaba hecha.
+07:30:47  
+07:30:47  No cambi├® nada. La carpeta `docs/marketing/semanas/2026-11-02/` ya existe, con su brief, sus ideas, sus textos, los informes de arte, calidad y pauta, el resumen y su `historias.json`. Por eso no corr├¡ el ciclo de la agencia.
+07:30:47  
+07:30:47  La carpeta de la semana de hoy (2026-10-26) no existe. Este ciclo solo escribe la del pr├│ximo lunes, as├¡ que esa semana queda sin carpeta.
+07:30:48  encargos con resultado: 21
+07:30:48  fin. hecho: agencia
