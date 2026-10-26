@@ -1,0 +1,9 @@
+﻿07:05:48  inicio. powershell=5.1.26100.9444
+07:09:28  repo en 2968655
+07:09:30  lunes: ciclo de la agencia
+07:09:55  Ignoring 22 permissions.allow entries from .claude/settings.json: this workspace has not been trusted. Run Claude Code interactively here once and accept the trust dialog, or set projects["C:/Users/ragan/sndwch-estudio"].hasTrustDialogAccepted: true in ~\.claude.json.
+07:24:12  La idea de la semana del 2026-11-02 es ┬½Antes de abrir, se ensaya┬╗: cada d├¡a se muestra por dentro un s├índwich de la carta. Ninguna historia invita a pedir ni nombra un d├¡a. El due├▒o tiene que confirmar ┬½Abrimos este mes┬╗, que es cierto solo si abre en noviembre (lo explica `RESUMEN.md`).
+07:24:12  Son 6 historias, del martes 3 al domingo 8 (`docs/marketing/semanas/2026-11-02/historias.json`).
+07:24:12  Son 14 encargos a Flow (`docs/marketing/estudio/encargos/2026-11-0*`), todos de imagen y sin gastar cr├®ditos. No prob├® que `historias.json` se lea bien porque no se aprob├│ correr node; revis├® los textos a mano contra la regla que bloquea las historias que invitan a pedir.
+07:24:13  encargos con resultado: 21
+07:24:13  fin. hecho: agencia
