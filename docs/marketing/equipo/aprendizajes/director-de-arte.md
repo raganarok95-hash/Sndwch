@@ -97,3 +97,6 @@
   su dibujo, en sus proporciones, y nunca pasa por encima de la foto de comida.
 - **2026-10-25 · Eligió Noche.** «Me gusta el noche, pero sí deberías tocar para agregar». Lo que
   se suma tiene que verse tan tocable como lo que se quita, y el sándwich entero se lee en una lista.
+- **2026-10-29 · Las bebidas, siempre en su envase.** «Debe ser en los envases, nunca en jarra. En
+  el [envase] PET sleek». Las simulaciones de bebida se hacen sobre la lata PET sleek real (la foto
+  del dueño, `fotolata`), con su sticker; nunca en jarra, vaso ni botella genérica de IA.
