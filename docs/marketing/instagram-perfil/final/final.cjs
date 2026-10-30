@@ -159,6 +159,12 @@ const DEST = [
   ['carta', 'Carta', portada(S.oliva, `<div class="full rib"></div>${svg(sandwich(540, 960, 820))}`)],
   ['arma', 'Arma el tuyo', portada(W.tinta, `<div class="full cruz"></div>${curvas(1080, 1920, 540, 960, 'rgba(144,204,240,.22)', 16, 70, 5)}${svg(sandwich(540, 960, 800, { abre: 34 }))}`)],
   ['envios', 'Envíos', portada(S.verde, `<div class="abs" style="left:0;top:0;bottom:0;width:40px;background:${S.forro}"></div>${anillos(540, 960, 'rgba(201,168,124,.40)')}${svg(bolsa(540, 975, 470))}`)],
+  // Horario: un reloj en las 11 con el arco hasta las 22, sobre papel (dueño: «Horario como destacado propio»).
+  ['horario', 'Horario', portada(papel, svg(`<circle cx="540" cy="960" r="330" fill="none" stroke="${S.tinta}" stroke-width="34"/>
+    <path d="M${540 + 270 * Math.cos(-Math.PI / 2 - Math.PI / 6)},${960 + 270 * Math.sin(-Math.PI / 2 - Math.PI / 6)} A270,270 0 1,1 ${540 + 270 * Math.cos(-Math.PI / 2 - Math.PI / 3)},${960 + 270 * Math.sin(-Math.PI / 2 - Math.PI / 3)}" fill="none" stroke="${S.forro}" stroke-width="40" stroke-linecap="round"/>
+    ${Array.from({ length: 12 }, (_, k) => `<circle cx="${540 + 300 * Math.cos(k * Math.PI / 6)}" cy="${960 + 300 * Math.sin(k * Math.PI / 6)}" r="9" fill="${S.tinta}"/>`).join('')}
+    <path d="M540,960 L${540 + 150 * Math.cos(-Math.PI / 2 - Math.PI / 6)},${960 + 150 * Math.sin(-Math.PI / 2 - Math.PI / 6)}" stroke="${S.tinta}" stroke-width="30" stroke-linecap="round"/>
+    <path d="M540,960 L540,720" stroke="${S.tinta}" stroke-width="22" stroke-linecap="round"/><circle cx="540" cy="960" r="26" fill="${S.forro}"/>`))],
   ['bebidas', 'Bebidas', portada(W.lilaO, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(195,166,210,.35)', 22)}<img src="${img(`${REPO}/docs/marketing/instagram-perfil/final/latas/lata-bloom.png`)}" class="abs" style="left:50%;top:50%;height:860px;transform:translate(-50%,-50%) rotate(-8deg);filter:drop-shadow(0 30px 40px rgba(0,0,0,.35))">`)],
 ];
 

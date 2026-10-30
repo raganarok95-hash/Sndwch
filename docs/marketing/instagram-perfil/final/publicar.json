@@ -244,13 +244,13 @@
   "cuando": "ya"
  },
  {
-  "src": "perfil-historia-envios-3",
-  "pieza": "historia-envios-3",
+  "src": "perfil-historia-horario-1",
+  "pieza": "historia-horario-1",
   "laminas": [
-   "historias/historia-envios-3.jpg"
+   "historias/historia-horario-1.jpg"
   ],
   "formato": "historia",
-  "destacado": "Envíos",
+  "destacado": "Horario",
   "cuando": "ya"
  },
  {

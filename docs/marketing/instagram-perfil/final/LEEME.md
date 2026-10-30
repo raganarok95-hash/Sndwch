@@ -25,17 +25,18 @@ Quien entra entiende en segundos que puede elegir uno de la casa o armar el suyo
 | Botones | Mensaje y WhatsApp | El peruano compra más por WhatsApp que por otras redes (Ipsos Perú) |
 
 **Destacados, en el orden en que un cliente nuevo duda** (actualizado el 2026-10-30; dueño: «la de zonas no me convence,
-además como que falta destacado»). Instagram muestra unos cinco sin deslizar:
+además como que falta destacado»). Instagram muestra unos cinco sin deslizar; el sexto se ve al deslizar:
 1. **Cómo pedir** (WICHO): los 4 pasos.
 2. **Carta** (SANDO): los seis Signatures.
 3. **Arma el tuyo** (WICHO, en su tinta): el pan, la proteína y lo de encima. Es la otra mitad del concepto y faltaba.
-4. **Envíos** (SANDO, sin su cara, para no repetir la portada de Carta): todo Trujillo, el envío según la distancia
-   con una boleta sin cifras, y el horario, que sale de `STORE_HOURS`: martes a domingo, 11:00 a 22:00.
-5. **Bebidas** (WICHO): las de la casa, con «Próximamente».
+4. **Envíos** (la bolsa kraft con el //): todo Trujillo, y el envío según la distancia con una boleta sin cifras.
+5. **Horario** (un reloj en las 11 con el arco hasta las 22), separado de Envíos por pedido del dueño («Horario como
+   destacado propio»): la semana, con el lunes de descanso. Sale de `STORE_HOURS`.
+6. **Bebidas** (la lata): las de la casa, con «Próximamente».
 
 **Las portadas y las historias, sin personajes: «un sándwich es capas»** (2026-10-30, dueño: «No necesitas usar a SANDO
 y WICHO para todo, solo estás usando lo que ya tienes, sé creativo»). Se dibujan con objetos planos del mundo del
-sándwich (`dibujos.cjs`), siempre de pan largo y nunca como hamburguesa:
+sándwich (las funciones de dibujo van al inicio de `final.cjs` e `historias.cjs`), siempre de pan largo y nunca como hamburguesa:
 - Cómo pedir: el celular con un toque.
 - Carta: el sándwich cerrado.
 - Arma el tuyo: las capas sueltas.
@@ -116,7 +117,8 @@ Un destacado se arma con historias publicadas. Cada uno vive en el mundo de su h
 
 | destacado | historias | sale |
 |---|---|---|
-| Envíos | 3: todo Trujillo, el envío por distancia y el horario | ya |
+| Envíos | 2: todo Trujillo y el envío por distancia | ya |
+| Horario | 1: la semana, con el lunes de descanso | ya |
 | Arma el tuyo | 3: el pan, la proteína y lo de encima | ya |
 | Carta | 6: un Signature por historia | ya |
 | Cómo pedir | 4: los pasos | ya (dueño: «Quítale el próximamente, solo las bebidas deben tener el próximamente») |
