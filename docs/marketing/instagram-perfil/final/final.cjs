@@ -4,11 +4,11 @@
 // perfil»). Cada versión: foto de perfil, 4 destacados, 9 publicaciones y la maqueta del perfil.
 // Reglas que no cambian en ninguna: la comida no se tapa ni se tiñe; las cifras y nombres salen de la
 // carta; los elementos de cada hermano salen de docs/LOS_DOS_HERMANOS.md.
-const { chromium } = require('/home/user/Sndwch/node_modules/playwright');
+const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
-const REPO = '/home/user/Sndwch', D = __dirname;
-const OUT = path.join(D, process.env.SALIDA || 'final'); fs.mkdirSync(OUT, { recursive: true });
-const FUENTES = fs.readFileSync(process.env.FUENTES_CSS, 'utf8');
+const D = __dirname, REPO = path.resolve(D, '../../../..');
+const OUT = process.env.SALIDA ? path.resolve(process.env.SALIDA) : D; fs.mkdirSync(OUT, { recursive: true });
+const FUENTES = fs.readFileSync(process.env.FUENTES_CSS, 'utf8'); // FUENTES_CSS=$(bash scripts/piezas/fuentes-locales.sh)
 const FOTOS = `${REPO}/docs/marketing/anuncios/fotos`;
 const img = (p) => 'file://' + path.resolve(p);
 const PJ = (n) => img(`${REPO}/img/${n}.png`);
@@ -61,7 +61,7 @@ const conCara = (fondo, pose, alto, dy = 0, clase = '') => portada(fondo, `<div 
 const foto = (n, pos = 'center 62%') => `background:url('${img(`${FOTOS}/${n}`)}') ${pos}/cover`;
 
 const FOOD = [
-  { n: '1-abrimos', f: 'foto-philly.jpg', tit: 'Hambre en serio.', voz: 'Philly Cheesesteak. Tan jugoso que no lleva salsa.', cita: 'Tan jugoso que no lleva salsa.', nombre: 'Philly Cheesesteak' },
+  { n: '1-philly', f: 'foto-philly.jpg', tit: 'Hambre en serio.', voz: 'Philly Cheesesteak. Tan jugoso que no lleva salsa.', cita: 'Tan jugoso que no lleva salsa.', nombre: 'Philly Cheesesteak' },
   { n: '4-meatball', f: 'foto-meatball-lata.jpg', tit: 'Hoy no cocinas.', voz: 'Meatball Marinara. Albóndigas en su propia marinara.', cita: 'Albóndigas en su propia marinara.', nombre: 'Meatball Marinara' },
   { n: '5-turkey', f: 'foto-turkey-v4.jpg', tit: 'El almuerzo que no te tumba la tarde.', voz: 'Turkey. Llena sin pesar.', cita: 'Llena sin pesar.', nombre: 'Turkey' },
   { n: '6-tuna-melt', f: 'foto-tuna-melt.jpg', tit: 'Antojo de algo caliente.', voz: 'Tuna Melt. El cheddar se estira al primer mordisco.', cita: 'El cheddar se estira al primer mordisco.', nombre: 'Tuna Melt' },
@@ -71,7 +71,7 @@ const FOOD = [
 const SIGS = FOOD.map((x) => x.nombre);
 const tam = (t, base = 112) => (t.length <= 16 ? base : t.length <= 24 ? Math.round(base * 0.88) : Math.round(base * 0.76));
 const PASOS = ['Entras a sndwch.app', 'Eliges uno o armas el tuyo', 'Pagas con Yape o tarjeta', 'Te llega a la puerta'];
-const MONO = 'ABRIMOS EN NOVIEMBRE';
+const MONO = 'SNDWCH.APP';
 
 // Un panel de texto de Signature (debajo de la foto): fondo, color del titular, de la voz y del resto.
 const panelSig = (d, { fondo, clase = '', extra = '', tit, voz, resto, alto = 430, titular = d.tit }) => caja(1080, 1350, `background:${fondo}`, `
@@ -130,11 +130,8 @@ const arma = caja(1080, 1350, `background:${W.pelaje};color:${W.tinta}`, `${curv
     <div style="margin-top:46px;display:flex;flex-direction:column;gap:22px">${[['Pan', 'Classic o Focaccia'], ['Proteína', PROT.join(' · ')], ['Encima', 'verduras y hasta 3 salsas incluidas']].map(([a, b]) => `<div style="display:flex;gap:22px;align-items:center">
       <svg width="58" height="58"><circle cx="29" cy="29" r="29" fill="${W.lilaO}"/>${espiral(29, 29, 22, W.lila, 3.5)}</svg><span class="mono" style="font-size:24px;width:170px">${a.toUpperCase()}</span><span class="voz" style="font-size:40px;max-width:330px">${b}</span></div>`).join('')}</div></div>
   <div class="abs" style="left:96px;right:96px;bottom:56px;display:flex;justify-content:space-between;align-items:center"><div class="mono" style="font-size:26px">${MONO}</div>${marca(W.tinta, 40)}</div>`);
-// El Reel que graba el dueño, al centro de la cuadrícula: su portada en la tinta de WICHO.
-const reel = caja(1080, 1350, `background:${W.tinta};color:${papel};${centrado};flex-direction:column;gap:26px;text-align:center;padding:110px`, `<div class="full cruz"></div>
-  <svg width="140" height="140" viewBox="0 0 24 24" fill="none" stroke="${W.pelaje}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" style="position:relative"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M3 8h18M9 3l2.5 5M15 3l2.5 5"/><path d="M10.5 11.5v6l5-3z"/></svg>
-  <div class="disp" style="font-size:120px;position:relative">Así se arma<br>un Philly.</div>
-  <div class="voz" style="font-size:44px;color:${W.durazno};position:relative">Tu video, de 10 a 15 segundos: el pan, la plancha y el armado. La comida en el primer segundo.</div>`);
+// El Reel «Los seis de la casa» (reel.cjs), al centro de la cuadrícula: su portada es su primer cuadro.
+const reel = caja(1080, 1350, `background:url('${img(path.join(OUT, 'reel-portada.jpg'))}') center/cover`, '');
 
 const F = Object.fromEntries(FOOD.map((d) => [d.n, d]));
 const laminaArma = (n, titulo, frase, pose, alto) => caja(1080, 1350, `background:${W.pelaje};color:${W.tinta}`, `${curvas(1080, 1350, 880, 1120, W.curvas, 18, 66, n + 3)}
@@ -152,17 +149,17 @@ const CARRUSELES = {
 };
 // La cuadrícula, de izquierda a derecha y de arriba abajo. Las 3 primeras van fijadas.
 const POSTS = [
-  { n: '1-abrimos', html: sig(F['1-abrimos']), fijada: true, por: 'Fijada 1: anuncia la apertura con el Signature estrella.' },
+  { n: '1-philly', html: sig(F['1-philly']), fijada: true, por: 'Fijada 1: el Signature estrella, lo primero que se ve.' },
   { n: '2-carta', html: carta, fijada: true, por: 'Fijada 2: el lado de SANDO, los seis de la casa (carrusel: una lámina por Signature).' },
   { n: '3-arma-el-tuyo', html: arma, fijada: true, por: 'Fijada 3: el lado de WICHO, armar el tuyo.' },
   { n: '4-meatball', html: sig(F['4-meatball']), por: 'La cena.' },
-  { n: '5-reel', html: reel, reel: true, por: 'El Reel al centro: lo que más alcance trae entre gente que no te sigue.' },
+  { n: '5-reel', html: reel, reel: true, por: 'El Reel «Los seis de la casa», al centro: lo que más alcance trae entre gente que no te sigue.' },
   { n: '6-turkey', html: sig(F['5-turkey']), por: 'El almuerzo.' },
   { n: '7-tuna-melt', html: sig(F['6-tuna-melt']), por: 'El antojo de la noche.' },
   { n: '8-italian-hoagie', html: sig(F['7-italian-hoagie']), por: 'El de todo.' },
   { n: '9-classic-tuna', html: sig(F['8-classic-tuna']), por: 'El del escritorio.' },
 ];
-const BIO = ['Sándwiches de pan largo, al estilo americano.', 'Elige uno de la casa o arma el tuyo.', 'A domicilio en todo Trujillo · Abrimos en noviembre.'];
+const BIO = ['Sándwiches de pan largo, al estilo americano.', 'Elige uno de la casa o arma el tuyo.', 'A domicilio en todo Trujillo.'];
 
 const ui = `body{background:#fff;font-family:Archivo,sans-serif;color:#0B0B0B}
   .t{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px;font:800 19px Archivo}

@@ -20,7 +20,7 @@ Quien entra entiende en segundos que puede elegir uno de la casa o armar el suyo
 | Foto | El logo oficial, con el fondo partido igual que su cara | Las caras captan la atención aun en chiquito (Theeuwes y Van der Stigchel, 2006). Es el mismo logo de la app |
 | Nombre | SND//WCH · Sándwiches a domicilio | El buscador de Instagram lee el nombre del perfil |
 | Categoría | Restaurante de sándwiches | |
-| Biografía | Sándwiches de pan largo, al estilo americano. / Elige uno de la casa o arma el tuyo. / A domicilio en todo Trujillo · Abrimos en noviembre. | Qué es, las dos formas, hasta dónde llega y cuándo. Dos opciones claras ayudan a decidir (Iyengar y Lepper, 2000) |
+| Biografía | Sándwiches de pan largo, al estilo americano. / Elige uno de la casa o arma el tuyo. / A domicilio en todo Trujillo. | Qué es, las dos formas y hasta dónde llega. Dos opciones claras ayudan a decidir (Iyengar y Lepper, 2000). La fecha se agrega cuando haya día |
 | Enlace | `https://sndwch.app/?src=ig-bio` | Mide cuántos llegan desde el perfil |
 | Botones | Mensaje y WhatsApp | El peruano compra más por WhatsApp que por otras redes (Ipsos Perú) |
 
@@ -38,7 +38,7 @@ Quien entra entiende en segundos que puede elegir uno de la casa o armar el suyo
 | decisión | qué logra | en qué me baso | cómo lo mido |
 |---|---|---|---|
 | **Fijar dos carruseles:** la carta (una lámina por Signature) y arma el tuyo (pan, proteína, lo de encima) | El carrusel es el formato con más interacción por publicación | Socialinsider, informe 2025 (datos de 2023-2024): carrusel 0.55%, Reels 0.50%, foto sola 0.45% | Guardados y envíos de cada carrusel |
-| **Un Reel al centro y uno por semana** («Así se arma un Philly», grabado por ti) | Es lo que más llega a gente que todavía no te sigue | Mosseri, «Instagram Ranking Explained» (2023) y declaraciones de 2025: tiempo visto, «me gusta» y envíos por alcance | Alcance en no seguidores |
+| **Un Reel al centro** («Los seis de la casa», hecho con las fotos) **y uno por semana grabado por ti** | Es lo que más llega a gente que todavía no te sigue | Mosseri, «Instagram Ranking Explained» (2023) y declaraciones de 2025: tiempo visto, «me gusta» y envíos por alcance | Alcance en no seguidores |
 | **Caras: los hermanos en sus piezas y tus manos o tu cara en los Reels** | Las fotos con caras reciben más «me gusta» y comentarios | Bakhshi, Shamma y Gilbert, CHI 2014 (1.1 millones de fotos de Instagram): 38% más «me gusta» y 32% más comentarios. Eran caras humanas; para dibujos es una extrapolación | Comentarios por publicación |
 | **3 a 5 publicaciones por semana**, sin saltarse ninguna | Los seguidores crecen el doble que con 1 o 2. Saltarse una semana frena el crecimiento | Buffer, 2.1 millones de publicaciones de 102 mil cuentas. Es correlación, no prueba | Seguidores nuevos por semana |
 | **Cada Signature en su lugar y a su hora**, listo para comer | Abre el hambre y hace que la mente «lo pruebe» | Elder y Krishna, 2012; Spence y otros, 2016; Orlando Wood, 2019 | Guardados y compartidos |
@@ -47,7 +47,7 @@ Quien entra entiende en segundos que puede elegir uno de la casa o armar el suyo
 | **Piezas para mandar:** la carta y arma el tuyo sirven para decidir con alguien | Instagram reparte más lo que la gente se manda por mensaje | Mosseri, 2025 | Envíos por alcance |
 | **Diseño para el recorte 3:4** | Nada importante se corta en la cuadrícula | Instagram cambió la cuadrícula a 3:4 en enero de 2025 (Kapwing, Planoly) | — |
 | **Lo mismo en Facebook** | Llega a más gente | Perú urbano: el 84% de quienes usan redes está en Facebook y el 46% en Instagram (Ipsos Perú, 2022) | Alcance de cada red |
-| **«Abrimos en noviembre», sin precios** | Crea espera sin prometer lo que todavía no se puede pedir | La app dice «Aún no abrimos» (modo de preapertura) | — |
+| **Sin fecha y sin precios en las imágenes** | Una imagen publicada no se corrige; el día de apertura todavía no está confirmado. Abajo de cada pieza va `SNDWCH.APP` | Dueño, 2026-10-30: «no pongas que abrimos en noviembre en las imágenes» | — |
 
 **Lo que no tiene estudio** y se mide en la práctica:
 - el orden de los destacados;
@@ -58,8 +58,8 @@ Quien entra entiende en segundos que puede elegir uno de la casa o armar el suyo
 
 | | 1 | 2 | 3 |
 |---|---|---|---|
-| fijadas | Abrimos (Philly) | La carta, carrusel de 7: portada y `carrusel-carta-2…7` | Arma el tuyo, carrusel de 4: portada y `carrusel-arma-2/3/4` |
-| | Meatball | Reel «Así se arma un Philly» | Turkey |
+| fijadas | Philly | La carta, carrusel de 7: portada y `carrusel-carta-2…7` | Arma el tuyo, carrusel de 4: portada y `carrusel-arma-2/3/4` |
+| | Meatball | Reel «Los seis de la casa» | Turkey |
 | | Tuna Melt | Italian Hoagie | Classic Tuna |
 
 ## El ritmo después: 3 a 5 por semana
@@ -69,9 +69,49 @@ Quien entra entiende en segundos que puede elegir uno de la casa o armar el suyo
 - **Viernes:** un Signature en su momento: la cena del viernes.
 - **Historias todos los días:** encuestas («¿cuál pruebas primero?») y la cuenta regresiva cuando haya fecha.
 
-## Cómo subirlo
+## El Reel «Los seis de la casa» (`reel-los-seis-de-la-casa.mp4`)
 
-Instagram pone lo más nuevo arriba, así que se publica de abajo hacia arriba:
+15,6 segundos, 1080 × 1920, sin música: Instagram no deja agregarla a un Reel publicado por sistema, así que sale
+en silencio. Si quieres música, súbelo tú desde la app con el audio que elijas.
+- **0 s:** la portada, con los seis en mosaico. Es el primer cuadro, y la API lo toma como portada, así que
+  la comida está en el primer segundo.
+- **0,8 s:** cada Signature, 1,6 s. La foto va entera abajo y el texto en la basta de SANDO, arriba, fuera
+  de lo que tapan los botones.
+- **10,4 s:** el corte. Las dos barras del logo cruzan y abren el lado de WICHO. Es el único // del video.
+- **10,8 s:** «O arma el tuyo».
+- **13,4 s:** el logo oficial y sndwch.app.
+
+«Así se arma un Philly» queda para el primer Reel que grabes tú.
+
+## Las historias de los destacados (`historias/`)
+
+Un destacado se arma con historias publicadas. Cada uno vive en el mundo de su hermano:
+
+| destacado | historias | sale |
+|---|---|---|
+| Envíos | 2: todo Trujillo, y el envío por distancia | ya |
+| Carta | 6: un Signature por historia | ya |
+| Cómo pedir | 4: los pasos | al abrir: invita a pedir, y la app dice «Aún no abrimos» |
+| Bebidas | 3: The Bloom, Cold Brew Tea y The Cool en su lata | con las latas: al abrir salen en botella (dueño, 2026-10-24) |
+
+## Cómo se publica solo
+
+`publicar.json` tiene cada pieza en el orden de subida (de abajo hacia arriba), con su texto y cuándo sale.
+Los textos no invitan a pedir (`invitaAPedir()`) y no llevan cifras.
+1. **Cargar:** el workflow «Subir el Instagram final» (`subir-perfil.yml`) sube todo al bucket y lo deja como
+   borrador en el calendario. También bloquea los borradores del lanzamiento anterior (`docs/marketing/lanzamiento`),
+   que este reemplaza.
+2. **Publicar:** con el token de Instagram arreglado (`scripts/meta/INSTAGRAM_EN_CHROME.md`) y verificado con
+   `estado-apertura.yml`, se corre el mismo workflow con `publicar = si`. Las 17 que salen ya quedan programadas
+   cada 5 minutos, y el cron (cada 15) las publica en orden.
+3. **A mano, en el celular:**
+   - la foto de perfil, el nombre y la biografía;
+   - fijar Arma el tuyo, la carta y el Philly;
+   - armar los destacados desde las historias, con las portadas `destacado-*.jpg`.
+
+   La API de Instagram no hace nada de esto.
+
+Instagram pone lo más nuevo arriba, por eso se publica de abajo hacia arriba:
 
 1. Classic Tuna.
 2. Italian Hoagie.
@@ -79,13 +119,13 @@ Instagram pone lo más nuevo arriba, así que se publica de abajo hacia arriba:
 4. Turkey.
 5. El Reel.
 6. Meatball.
-7. Arma el tuyo, en carrusel.
-8. La carta, en carrusel.
-9. Abrimos.
+7. Arma el tuyo.
+8. La carta.
+9. Philly.
 
-Después se fijan Arma el tuyo, la carta y Abrimos, en ese orden; si quedan al revés, se desfijan y se vuelven
-a fijar. Las portadas de los destacados son `destacado-*.jpg`. Para regenerar:
-`FUENTES_CSS=$(bash scripts/piezas/fuentes-locales.sh) node docs/marketing/instagram-perfil/final/final.cjs`.
+Para regenerar (el Reel primero, porque la cuadrícula usa su portada):
+`FUENTES_CSS=$(bash scripts/piezas/fuentes-locales.sh)`, y después `node` con `reel.cjs`, `final.cjs` e `historias.cjs`,
+de esta carpeta. El Reel necesita `FFMPEG` (o `ffmpeg` en el PATH).
 
 ## Fuentes
 

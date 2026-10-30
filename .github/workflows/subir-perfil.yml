@@ -1,0 +1,27 @@
+name: Subir el Instagram final
+
+# El Instagram aprobado el 2026-10-30 (docs/marketing/instagram-perfil/final), con scripts/piezas/subir-perfil.mjs.
+# Sin «publicar»: sube las piezas y las deja en el calendario como borradores, en orden.
+# Con «publicar = si»: programa lo que sale ya; el cron auto-publish-calendar las publica en orden.
+on:
+  workflow_dispatch:
+    inputs:
+      publicar:
+        description: 'Programar ya lo que sale ahora (si / no)'
+        required: false
+        default: 'no'
+
+jobs:
+  subir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Subir y cargar
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PUBLICAR: ${{ inputs.publicar }}
+        run: node scripts/piezas/subir-perfil.mjs
