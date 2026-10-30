@@ -109,7 +109,26 @@ const DEST = [
 ];
 
 // El lado de SANDO: cada Signature con la foto limpia arriba y su basta acanalada abajo, con el texto.
-const sig = (d) => panelSig(d, { fondo: S.oliva, clase: 'rib', tit: papel, voz: papel, resto: papel });
+// El lado de SANDO: cada Signature, versión C (dueño, 2026-10-30, eligió «C: más cerca» porque «a las fotos de
+// sándwich les falta algo» y «falta el poder pedir por WhatsApp»). El sándwich llena el cuadro, el nombre es el
+// titular (un nombre descriptivo vende más: Wansink, Painter y van Ittersum, 2001), el momento va debajo, y abajo
+// «Pide por WhatsApp» con el número del código (src/app/01-catalogo-y-estado.ts) y el logo oficial como sello.
+const WA = (fs.readFileSync(`${REPO}/src/app/01-catalogo-y-estado.ts`, 'utf8').match(/var WA='(\d+)'/) || [])[1];
+if (!WA) throw new Error('no encontré el número de WhatsApp en 01-catalogo-y-estado.ts');
+const WA_BONITO = WA.replace(/^51/, '').replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
+const icoWa = (c, t) => `<svg width="${t}" height="${t}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.4L3.5 20.5l1.5-4.3A8.5 8.5 0 1 1 20.5 11.6z"/><path d="M9 8.6c.3-.6.8-.6 1.1 0l.6 1.4c.1.3 0 .6-.2.8l-.5.5c.6 1.2 1.6 2.2 2.8 2.8l.5-.5c.2-.2.5-.3.8-.2l1.4.6c.6.3.6.8 0 1.1-.8.6-1.8.8-2.8.4a8.4 8.4 0 0 1-4.3-4.3c-.4-1-.2-2 .6-2.6z"/></svg>`;
+const sello = (t) => `<div style="width:${t}px;height:${t}px;border-radius:999px;background:${papel};display:flex;align-items:center;justify-content:center;flex:none"><img src="${LOGO}" style="width:${t * 0.92}px;height:${t * 0.92}px"></div>`;
+// Encuadre de cada foto con el acercamiento: que el pan no toque el borde.
+const ENCUADRE = { '1-philly': 'center 50%', '5-turkey': 'center 38%' };
+const sig = (d) => caja(1080, 1350, `background:${S.oliva}`, `
+  <div class="full" style="bottom:430px;background:url('${img(`${FOTOS}/${d.f}`)}') ${ENCUADRE[d.n] || 'center 64%'}/128% auto no-repeat;background-color:#2a2018"></div>
+  <div class="abs rib" style="left:0;right:0;bottom:0;height:430px;background-color:${S.oliva}"></div>
+  <div class="abs" style="left:84px;right:84px;bottom:52px;height:326px;display:flex;flex-direction:column;color:${papel}">
+    <div class="mono" style="font-size:26px;color:${S.tan}">LOS DE LA CASA · ${FOOD.indexOf(d) + 1} DE ${FOOD.length}</div>
+    <div class="disp" style="font-size:${tam(d.nombre, 104)}px;margin-top:12px">${d.nombre}</div>
+    <div class="voz" style="font-size:42px;line-height:1.1;margin-top:10px">${d.tit} ${d.cita}</div>
+    <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:16px">${icoWa(papel, 46)}<span class="mono" style="font-size:28px">PIDE POR WHATSAPP · ${WA_BONITO}</span></div>${sello(96)}</div></div>`);
 // La carta: el mundo de SANDO, y la última línea ya es de WICHO (el puente a la publicación de al lado).
 const carta = caja(1080, 1350, `background:${S.verde};color:${papel}`, `<div class="abs" style="left:0;top:0;bottom:0;width:26px;background:${S.forro}"></div>
   <div class="abs rib" style="left:26px;right:0;bottom:0;height:150px;background-color:${S.oliva}"></div>

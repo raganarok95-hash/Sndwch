@@ -69,6 +69,18 @@ Quien entra entiende en segundos que puede elegir uno de la casa o armar el suyo
 - **Viernes:** un Signature en su momento: la cena del viernes.
 - **Historias todos los días:** encuestas («¿cuál pruebas primero?») y la cuenta regresiva cuando haya fecha.
 
+## Los Signatures, versión C (2026-10-30)
+
+Dueño: «a las fotos de sándwich les falta algo» y «falta el poder pedir por WhatsApp donde les pasamos igual la web».
+Entre tres opciones eligió **C: más cerca**:
+- **El sándwich llena el cuadro:** la foto entra al 128 % y cada una con su encuadre, para que el pan no toque el borde.
+  No hay un estudio directo detrás; es práctica de fotografía de comida.
+- **El nombre del sándwich es el titular** y el momento va debajo («Hambre en serio. Tan jugoso que no lleva salsa.»).
+  Un nombre descriptivo vende más (Wansink, Painter y van Ittersum, 2001).
+- **«Pide por WhatsApp» con el número** y el logo oficial como sello. El número sale del código
+  (`src/app/01-catalogo-y-estado.ts`), y los textos terminan con «Pide por WhatsApp al … o en sndwch.app».
+  Antes de abrir, el chat responde con la web.
+
 ## El Reel «Los seis de la casa» (`reel-los-seis-de-la-casa.mp4`)
 
 15,6 segundos, 1080 × 1920, sin música: Instagram no deja agregarla a un Reel publicado por sistema, así que sale
