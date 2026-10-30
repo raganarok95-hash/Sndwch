@@ -181,7 +181,7 @@
   ],
   "formato": "historia",
   "destacado": "Cómo pedir",
-  "cuando": "al-abrir"
+  "cuando": "ya"
  },
  {
   "src": "perfil-historia-como-pedir-2",
@@ -191,7 +191,7 @@
   ],
   "formato": "historia",
   "destacado": "Cómo pedir",
-  "cuando": "al-abrir"
+  "cuando": "ya"
  },
  {
   "src": "perfil-historia-como-pedir-3",
@@ -201,7 +201,7 @@
   ],
   "formato": "historia",
   "destacado": "Cómo pedir",
-  "cuando": "al-abrir"
+  "cuando": "ya"
  },
  {
   "src": "perfil-historia-como-pedir-4",
@@ -211,7 +211,7 @@
   ],
   "formato": "historia",
   "destacado": "Cómo pedir",
-  "cuando": "al-abrir"
+  "cuando": "ya"
  },
  {
   "src": "perfil-historia-bebidas-1",
@@ -221,7 +221,7 @@
   ],
   "formato": "historia",
   "destacado": "Bebidas",
-  "cuando": "con-latas"
+  "cuando": "ya"
  },
  {
   "src": "perfil-historia-bebidas-2",
@@ -231,7 +231,7 @@
   ],
   "formato": "historia",
   "destacado": "Bebidas",
-  "cuando": "con-latas"
+  "cuando": "ya"
  },
  {
   "src": "perfil-historia-bebidas-3",
@@ -241,6 +241,6 @@
   ],
   "formato": "historia",
   "destacado": "Bebidas",
-  "cuando": "con-latas"
+  "cuando": "ya"
  }
 ]

@@ -143,3 +143,7 @@
 Dueño: «no pongas que abrimos en noviembre en las imágenes». Una imagen publicada no se corrige y el día todavía no
 está confirmado: abajo de cada pieza va `SNDWCH.APP`. La fecha, si hace falta, va en el texto o en la biografía,
 que sí se editan.
+
+## 2026-10-30 · «Próximamente» en lo que todavía no llega
+Dueño: «Haz el cómo pedir y de las bebidas en lata, solo agrégale próximamente». Lo que todavía no se puede pedir o
+no llega en ese envase sale igual, con una píldora «PRÓXIMAMENTE» junto a la etiqueta, en el color del hermano.

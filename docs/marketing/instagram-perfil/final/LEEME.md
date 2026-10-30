@@ -91,8 +91,8 @@ Un destacado se arma con historias publicadas. Cada uno vive en el mundo de su h
 |---|---|---|
 | Envíos | 2: todo Trujillo, y el envío por distancia | ya |
 | Carta | 6: un Signature por historia | ya |
-| Cómo pedir | 4: los pasos | al abrir: invita a pedir, y la app dice «Aún no abrimos» |
-| Bebidas | 3: The Bloom, Cold Brew Tea y The Cool en su lata | con las latas: al abrir salen en botella (dueño, 2026-10-24) |
+| Cómo pedir | 4: los pasos, con «Próximamente» | ya (dueño: «solo agrégale próximamente») |
+| Bebidas | 3: The Bloom, Cold Brew Tea y The Cool en su lata, con «Próximamente» | ya: al abrir salen en botella (dueño, 2026-10-24), y la etiqueta dice que la lata todavía no llega |
 
 ## Cómo se publica solo
 
@@ -102,7 +102,7 @@ Los textos no invitan a pedir (`invitaAPedir()`) y no llevan cifras.
    borrador en el calendario. También bloquea los borradores del lanzamiento anterior (`docs/marketing/lanzamiento`),
    que este reemplaza.
 2. **Publicar:** con el token de Instagram arreglado (`scripts/meta/INSTAGRAM_EN_CHROME.md`) y verificado con
-   `estado-apertura.yml`, se corre el mismo workflow con `publicar = si`. Las 17 que salen ya quedan programadas
+   `estado-apertura.yml`, se corre el mismo workflow con `publicar = si`. Las 24 quedan programadas
    cada 5 minutos, y el cron (cada 15) las publica en orden.
 3. **A mano, en el celular:**
    - la foto de perfil, el nombre y la biografía;

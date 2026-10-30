@@ -6,9 +6,9 @@
 //     borradores del lanzamiento anterior, que ya no se usan. Es idempotente: lo cargado se actualiza y lo
 //     publicado no se toca.
 //  2. Con PUBLICAR=si: programa lo que sale ya (`cuando: 'ya'`), cinco minutos una de otra, para que cada
-//     corrida del cron (cada 15 minutos) publique tres como mucho y en orden. «Cómo pedir» espera a abrir
-//     (invita a pedir) y «Bebidas» espera las latas (al abrir salen en botella).
-// Nada que invite a pedir sale antes de abrir: se revisa con invitaAPedir() antes de programar.
+//     corrida del cron (cada 15 minutos) publique tres como mucho y en orden. Lo que todavía no llega sale con
+//     «Próximamente» en la imagen (dueño, 2026-10-30); lo que tenga otro `cuando` espera.
+// Ningún texto que invite a pedir sale antes de abrir: se revisa con invitaAPedir() antes de programar.
 import { readFileSync } from 'node:fs';
 import { SB, BUCKET, conectar } from '../video-auto/produccion.mjs';
 import { invitaAPedir } from '../video-auto/reglas-del-revisor.mjs';
