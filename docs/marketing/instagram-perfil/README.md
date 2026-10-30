@@ -1,7 +1,10 @@
 # El Instagram de SND//WCH: cómo se ve (propuesta del 2026-10-30)
 
 Dueño: «Diseñame cómo se debe ver nuestro Instagram, foto de perfil, destacados, miniaturas, todo».
-Maqueta: `perfil-maqueta.jpg`. **Es una propuesta: falta el sí del dueño.**
+**La versión vigente es `final/` (ver `final/LEEME.md`: el concepto, el porqué de cada elemento y cómo subirlo).**
+Lo que sigue es el historial de cómo se llegó.
+
+Maqueta: `perfil-maqueta.jpg`.
 
 Versión 3 (mismo día), la vigente. Dueño: «Creo que confundiste falta sando y wicho con ponlos en todo
 ig, ten creatividad o sea mira descompone usa los colores». Los hermanos ya no salen dibujados por todos lados:
