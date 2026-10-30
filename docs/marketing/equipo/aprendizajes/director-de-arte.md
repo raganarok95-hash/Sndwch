@@ -115,3 +115,7 @@
   oficial?». Pedir «una idea de foto de perfil» por versión no autoriza a reemplazar el logo. La
   idea se pone en el fondo, en cómo se presenta el isotipo de `img/marca/`, nunca en otra imagen.
   El logo no se redibuja ni se migra.
+- **2026-10-30 · Una sola versión, con su porqué.** «No necesita estar en las 7, ahora con toda la
+  información que tienes hazlo mejor, analiza cada cosa porque la coloco, cual es el concepto como
+  atrae cliente y dame una versión final revisada y completa». Después de abrir opciones, cerrar en
+  una con el concepto y una fila de «por qué vende» por elemento (`instagram-perfil/final/LEEME.md`).
