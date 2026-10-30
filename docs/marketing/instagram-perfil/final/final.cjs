@@ -84,6 +84,55 @@ const panelSig = (d, { fondo, clase = '', extra = '', tit, voz, resto, alto = 43
 const listaCarta = (c, t = 92) => `<div class="disp" style="font-size:${t}px;line-height:1.03;color:${c}">${SIGS.join('<br>')}</div>`;
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
+// «UN SÁNDWICH ES CAPAS» (2026-10-30, dueño: «No necesitas usar a SANDO y WICHO para todo, solo estás usando lo que ya
+// tienes, sé creativo»). Los destacados y sus historias se dibujan con objetos planos del mundo del sándwich: el corte
+// (Carta), las capas sueltas (Arma el tuyo), la bolsa kraft con el sello // (Envíos), la lata (Bebidas) y el celular
+// (Cómo pedir). Los hermanos quedan descompuestos en los fondos: el acanalado y el forro de SANDO, y las curvas, la
+// espiral y el celeste de WICHO. Colores de comida planos, sin brillo: se leen a 66 px.
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+const C = { pan: '#D9AE73', corteza: '#A8692F', miga: '#F3E2BF', lechuga: '#7FA650', tomate: '#D8503A', queso: '#EDB93B', carne: '#6E3F2A', cebolla: '#9C5A8C', kraft: '#C49A62', kraftO: '#9C7442' };
+// Una capa de relleno, con su forma: la lechuga ondea, el queso chorrea, el tomate lleva semillas.
+function capa(tipo, x, y, w, h) {
+  if (tipo === 'lechuga') { let d = `M${x},${y + h * 0.5}`; for (let k = 0; k <= 12; k++) d += ` Q${x + (k + 0.5) * w / 12},${y + (k % 2 ? h * 1.15 : -h * 0.1)} ${x + (k + 1) * w / 12},${y + h * 0.5}`; return `<path d="${d} L${x + w},${y + h} L${x},${y + h} Z" fill="${C.lechuga}"/>`; }
+  if (tipo === 'queso') { let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 3}" fill="${C.queso}"/>`; for (const f of [0.18, 0.47, 0.76]) s += `<path d="M${x + w * f - h * 0.6},${y + h * 0.9} Q${x + w * f},${y + h * 2.4} ${x + w * f + h * 0.6},${y + h * 0.9} Z" fill="${C.queso}"/>`; return s; }
+  if (tipo === 'tomate') { let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" fill="${C.tomate}"/>`; for (let k = 1; k < 8; k++) s += `<ellipse cx="${x + k * w / 8}" cy="${y + h / 2}" rx="${h * 0.14}" ry="${h * 0.22}" fill="#F4C9A8"/>`; return s; }
+  const col = { carne: C.carne, cebolla: C.cebolla }[tipo] || tipo;
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2.2}" fill="${col}"/>`;
+}
+// El sándwich de costado, como pan largo (nunca como hamburguesa): el pan de arriba es un domo bajo y alargado con
+// sus cortes en diagonal, los rellenos asoman por el lado y el pan de abajo es una tira. `abre` separa las capas.
+function sandwich(cx, cy, w, { abre = 0, rellenos = ['lechuga', 'tomate', 'queso', 'carne'] } = {}) {
+  const hp = w * 0.13, hb = w * 0.07, hr = w * 0.045, n = rellenos.length;
+  const alto = hp + hb + n * hr + (n + 1) * abre;
+  let y = cy - alto / 2, s = '';
+  const L = cx - w / 2, R = cx + w / 2, k = hp * 0.9;
+  s += `<path d="M${L + k},${y + hp} Q${L},${y + hp} ${L + k * 0.35},${y + hp * 0.45} Q${L + k},${y} ${L + k * 2},${y} L${R - k * 2},${y} Q${R - k},${y} ${R - k * 0.35},${y + hp * 0.45} Q${R},${y + hp} ${R - k},${y + hp} Z" fill="${C.pan}" stroke="${C.corteza}" stroke-width="${w * 0.014}"/>`;
+  s += [0.28, 0.43, 0.58, 0.73].map((f) => `<path d="M${L + w * f - w * 0.04},${y + hp * 0.62} L${L + w * f + w * 0.03},${y + hp * 0.22}" stroke="${C.corteza}" stroke-width="${w * 0.012}" stroke-linecap="round"/>`).join('');
+  y += hp + abre;
+  for (const r of rellenos) { s += capa(r, L + w * 0.015, y, w * 0.97, hr); y += hr + abre; }
+  s += `<rect x="${L + w * 0.01}" y="${y}" width="${w * 0.98}" height="${hb}" rx="${hb / 2}" fill="${C.pan}" stroke="${C.corteza}" stroke-width="${w * 0.014}"/>`;
+  return s;
+}
+// La bolsa kraft con el sello // (dos barras paralelas, dorada y celeste).
+function bolsa(cx, cy, w) {
+  const h = w * 1.18, x = cx - w / 2, y = cy - h / 2;
+  return `<path d="M${x + w * 0.04},${y + h * 0.16} L${x + w * 0.96},${y + h * 0.16} L${x + w},${y + h} L${x},${y + h} Z" fill="${C.kraft}"/>
+    <path d="M${x + w * 0.04},${y + h * 0.16} L${x + w * 0.1},${y} L${x + w * 0.9},${y} L${x + w * 0.96},${y + h * 0.16} Z" fill="${C.kraftO}"/>
+    <path d="M${x + w * 0.04},${y + h * 0.16} L${x + w * 0.96},${y + h * 0.16}" stroke="#8A6438" stroke-width="${w * 0.02}" stroke-dasharray="${w * 0.04} ${w * 0.03}"/>
+    <circle cx="${cx}" cy="${y + h * 0.6}" r="${w * 0.24}" fill="${papel}"/>
+    <g transform="translate(${cx},${y + h * 0.6}) skewX(-16)"><rect x="${-w * 0.075}" y="${-w * 0.12}" width="${w * 0.045}" height="${w * 0.24}" rx="2" fill="${S.oro}"/><rect x="${w * 0.03}" y="${-w * 0.12}" width="${w * 0.045}" height="${w * 0.24}" rx="2" fill="${celeste}"/></g>`;
+}
+// El celular con el sándwich en pantalla y el toque (la espiral de WICHO hecha onda).
+function celular(cx, cy, w) {
+  const h = w * 1.95, x = cx - w / 2, y = cy - h / 2;
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${w * 0.16}" fill="${W.tinta}"/>
+    <rect x="${x + w * 0.06}" y="${y + w * 0.06}" width="${w * 0.88}" height="${h - w * 0.12}" rx="${w * 0.11}" fill="${papel}"/>
+    ${sandwich(cx, y + h * 0.36, w * 0.8)}
+    <rect x="${x + w * 0.18}" y="${y + h * 0.66}" width="${w * 0.64}" height="${w * 0.17}" rx="${w * 0.085}" fill="${S.verde}"/>
+    ${espiral(cx + w * 0.16, y + h * 0.745, w * 0.32, W.lila, w * 0.03)}`;
+}
+const svg = (dentro) => `<svg class="abs" style="left:0;top:0" width="1080" height="1920">${dentro}</svg>`;
+// ════════════════════════════════════════════════════════════════════════════════════════════════
 // EL CONCEPTO: «Dos formas de comer SND//WCH». El logo ya lo dice: una cara partida en dos hermanos.
 // El perfil entero repite esa partición: el lado de SANDO son los Signatures (ya resueltos, tranquilos,
 // su oliva acanalado y su forro) y el lado de WICHO es «arma el tuyo» y cómo pedir (su celeste, sus
@@ -106,11 +155,11 @@ const perfil = caja(1080, 1080, '', `<div class="abs rib" style="left:0;top:0;bo
 // muestra unos cinco sin deslizar. Cada portada es distinta: Envíos ya no repite la cara de SANDO que lleva Carta.
 const anillos = (cx, cy, c) => `<svg class="abs" style="left:0;top:0" width="1080" height="1920">${[150, 250, 350, 450].map((r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="5" stroke-dasharray="${r > 300 ? '18 16' : 'none'}"/>`).join('')}</svg>`;
 const DEST = [
-  ['pedir', 'Cómo pedir', portada(W.pelaje, `${curvas(1080, 1920, 540, 960, W.curvas, 16, 70, 2)}<img src="${PJ('wicho2_rie')}" style="position:relative;height:840px;transform:translateY(30px)">`)],
-  ['carta', 'Carta', portada(S.oliva, `<div class="full rib"></div><img src="${PJ('sando2_frente')}" style="position:relative;height:1050px;transform:translateY(40px)">`)],
-  ['arma', 'Arma el tuyo', portada(W.tinta, `<div class="full cruz"></div>${curvas(1080, 1920, 540, 1100, 'rgba(144,204,240,.22)', 16, 70, 5)}<img src="${PJ('wicho2_celebra')}" style="position:relative;height:900px;transform:translateY(40px)">`)],
-  ['envios', 'Envíos', portada(S.verde, `<div class="abs" style="left:0;top:0;bottom:0;width:40px;background:${S.forro}"></div>${anillos(540, 960, 'rgba(201,168,124,.45)')}<div style="position:relative">${ico('zonas', papel, 420)}</div>`)],
-  ['bebidas', 'Bebidas', portada(W.lilaO, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(195,166,210,.35)', 22)}<img src="${PJ('wicho_asoma')}" class="abs" style="left:50%;transform:translateX(-50%);bottom:380px;height:1000px">`)],
+  ['pedir', 'Cómo pedir', portada(W.pelaje, `${curvas(1080, 1920, 540, 960, W.curvas, 16, 70, 2)}${svg(celular(540, 960, 380))}`)],
+  ['carta', 'Carta', portada(S.oliva, `<div class="full rib"></div>${svg(sandwich(540, 960, 820))}`)],
+  ['arma', 'Arma el tuyo', portada(W.tinta, `<div class="full cruz"></div>${curvas(1080, 1920, 540, 960, 'rgba(144,204,240,.22)', 16, 70, 5)}${svg(sandwich(540, 960, 800, { abre: 34 }))}`)],
+  ['envios', 'Envíos', portada(S.verde, `<div class="abs" style="left:0;top:0;bottom:0;width:40px;background:${S.forro}"></div>${anillos(540, 960, 'rgba(201,168,124,.40)')}${svg(bolsa(540, 975, 470))}`)],
+  ['bebidas', 'Bebidas', portada(W.lilaO, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(195,166,210,.35)', 22)}<img src="${img(`${REPO}/docs/marketing/instagram-perfil/final/latas/lata-bloom.png`)}" class="abs" style="left:50%;top:50%;height:860px;transform:translate(-50%,-50%) rotate(-8deg);filter:drop-shadow(0 30px 40px rgba(0,0,0,.35))">`)],
 ];
 
 // El lado de SANDO: cada Signature con la foto limpia arriba y su basta acanalada abajo, con el texto.
