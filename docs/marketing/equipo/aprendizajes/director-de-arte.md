@@ -119,3 +119,9 @@
   información que tienes hazlo mejor, analiza cada cosa porque la coloco, cual es el concepto como
   atrae cliente y dame una versión final revisada y completa». Después de abrir opciones, cerrar en
   una con el concepto y una fila de «por qué vende» por elemento (`instagram-perfil/final/LEEME.md`).
+- **2026-10-30 · Corrección: el catálogo de los hermanos puede crecer.** «Error, lo que no se cambia del
+  catálogo son los conceptos pero el catálogo puede crecer. Puedes inventar imágenes nuevas, básate en
+  wicho y en sando e inventa con esos personajes formas también». Corrige la entrada de hoy que decía
+  «nunca en otra imagen». Lo que se mantiene es el logo oficial y el concepto de cada hermano. Las poses,
+  escenas y formas nuevas sí se crean, revisadas contra su ficha. Primeras: WICHO en sticker
+  (celular, agitando la lata, haciendo malabares con lo que va encima).

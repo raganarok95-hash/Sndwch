@@ -14,9 +14,14 @@ El logo oficial ya lo cuenta: una cara partida entre dos hermanos. El perfil rep
 
 Quien entra entiende en segundos que hay dos caminos: elegir uno de la casa o armar el suyo.
 
-**Los hermanos dibujados salen una sola vez, en el logo.** Esa foto acompaña cada publicación, historia y
-comentario. En lo demás salen descompuestos, para no competir con la comida. La comida va limpia y
-arriba, sin nada encima.
+**Los hermanos salen en su lado, nunca encima de la comida.**
+- El logo oficial va en la foto de perfil.
+- WICHO, en poses nuevas de sticker, va en «Cómo pedir», «Bebidas» y «Arma el tuyo».
+- SANDO va en «Carta», «Zonas» y la publicación de la carta.
+- Los Signatures llevan la foto limpia arriba y la basta acanalada de SANDO abajo.
+
+Dueño, 2026-10-30: «el catálogo puede crecer… inventa con esos personajes formas también»
+(`docs/marketing/hermanos/nuevos/`).
 
 ## Cada elemento, por qué está y cómo atrae
 
@@ -33,6 +38,7 @@ Se cumple la regla del dueño del 2026-10-24: «primero investiga, luego haces»
 | **Los Signatures en su lugar y a su hora**, con el titular del momento («Hoy no cocinas», «El almuerzo que no te tumba la tarde») | Abren el hambre y dicen cuándo pedirlo | La comida lista para comer hace que la mente «la pruebe». Las palabras de momento, textura y temperatura la vuelven más atractiva | Elder y Krishna, 2012; Spence y otros, 2016; Papies, 2013; Orlando Wood, *Lemon*, 2019 | Guardados y compartidos de cada uno |
 | **El texto en una franja de color debajo de la foto, no encima** | La comida se ve entera y el texto se lee de un vistazo | Lo fácil de leer genera más confianza | Reber, Schwarz y Winkielman, 2004; estilo «Lo que llega» | — |
 | **Los hermanos descompuestos** (texturas y colores) | El perfil se reconoce como uno solo y distinto a otras cuentas de comida | Un color o textura que se repite igual termina siendo de la marca | Romaniuk, 2018. Que funcione con estas texturas **es una apuesta** | Comentarios que reconocen la marca |
+| **Los hermanos en poses nuevas**, cada uno en su lado: WICHO pidiendo, agitando la lata y armando; SANDO en la carta y las zonas | Un personaje que actúa lo que el destacado promete se entiende sin leer, y se vuelve el atajo para recordar la marca | Los personajes son de los activos de marca más fuertes | Romaniuk, 2018; Orlando Wood y System1, *Look Out*, 2021 (Reino Unido) | Vistas de cada destacado |
 | **El Reel al centro:** «Así se arma un Philly» | Es el formato que más llega a gente que no te sigue | Instagram reparte los Reels según si se ven completos y se envían a amigos | Mosseri, «Instagram Ranking Explained», 2023; declaraciones de enero de 2025 | Alcance en no seguidores y envíos por mensaje |
 | **Diseño pensado para el recorte 3:4** | Nada importante se corta en la cuadrícula | Instagram muestra el perfil en 3:4 desde enero de 2025 | Kapwing y Planoly, 2025 | — |
 | **Lo mismo en Facebook** | Llega a más gente | En el Perú urbano, el 84% de quienes usan redes está en Facebook y el 46% en Instagram | Ipsos Perú, 2022 | Alcance de cada red |
