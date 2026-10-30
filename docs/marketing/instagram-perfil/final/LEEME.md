@@ -24,11 +24,14 @@ Quien entra entiende en segundos que puede elegir uno de la casa o armar el suyo
 | Enlace | `https://sndwch.app/?src=ig-bio` | Mide cuántos llegan desde el perfil |
 | Botones | Mensaje y WhatsApp | El peruano compra más por WhatsApp que por otras redes (Ipsos Perú) |
 
-**Destacados, en el orden en que un cliente nuevo duda:**
+**Destacados, en el orden en que un cliente nuevo duda** (actualizado el 2026-10-30; dueño: «la de zonas no me convence,
+además como que falta destacado»). Instagram muestra unos cinco sin deslizar:
 1. **Cómo pedir** (WICHO): los 4 pasos.
-2. **Envíos** (SANDO): llegamos a todo Trujillo, y el envío se calcula por distancia; la app lo dice antes de pagar.
-3. **Carta** (SANDO): los seis Signatures.
-4. **Bebidas** (WICHO): las de la casa.
+2. **Carta** (SANDO): los seis Signatures.
+3. **Arma el tuyo** (WICHO, en su tinta): el pan, la proteína y lo de encima. Es la otra mitad del concepto y faltaba.
+4. **Envíos** (SANDO, sin su cara, para no repetir la portada de Carta): todo Trujillo, el envío según la distancia
+   con una boleta sin cifras, y el horario, que sale de `STORE_HOURS`: martes a domingo, 11:00 a 22:00.
+5. **Bebidas** (WICHO): las de la casa, con «Próximamente».
 
 **No hay «Zonas».** Dueño: «nuestra zona es todo Trujillo». El envío no tiene límite desde el 2026-09-30
 («mi proveedor de delivery no tiene límites de envío», `reglas.ts`).
@@ -101,7 +104,8 @@ Un destacado se arma con historias publicadas. Cada uno vive en el mundo de su h
 
 | destacado | historias | sale |
 |---|---|---|
-| Envíos | 2: todo Trujillo, y el envío por distancia | ya |
+| Envíos | 3: todo Trujillo, el envío por distancia y el horario | ya |
+| Arma el tuyo | 3: el pan, la proteína y lo de encima | ya |
 | Carta | 6: un Signature por historia | ya |
 | Cómo pedir | 4: los pasos | ya (dueño: «Quítale el próximamente, solo las bebidas deben tener el próximamente») |
 | Bebidas | 3: The Bloom, Cold Brew Tea y The Cool en su lata, con «Próximamente» | ya: al abrir salen en botella (dueño, 2026-10-24), y la etiqueta dice que la lata todavía no llega |
