@@ -9,16 +9,13 @@ también».
 salió una cola en la primera prueba y se descartó). El logo oficial (`img/marca/`) sigue sin tocarse.
 **Lo que sí crece son las poses, las escenas y las formas.**
 
-## Las nuevas (generadas con `gemini-3.1-flash-image` en Figma, revisadas contra la ficha)
+## WICHO: descartado (2026-10-30)
 
-| archivo | qué es | dónde se usa |
-|---|---|---|
-| `h-wicho-celular-recorte.png` | WICHO pidiendo desde el celular, en forma de sticker | destacado «Cómo pedir» |
-| `h-wicho-agita2-recorte.png` | WICHO agitando la lata PET sleek («Agítala y activa la magia») | destacado «Bebidas» |
-| `h-wicho-arma-recorte.png` | WICHO haciendo malabares con pan, tomate, lechuga y queso | publicación «Arma el tuyo» |
-
-WICHO sale en **forma de sticker**, con borde blanco recortado. Es su «energía de sticker», de su ficha.
-SANDO, cuyo mundo «no grita», va sin borde.
+Se generaron tres WICHO nuevos con `gemini-3.1-flash-image`, solo con texto y sin imagen de referencia: con el celular,
+agitando la lata y haciendo malabares. Dueño: **«Descarta el WICHO que creaste, lo modificaste demasiado»**. Le cambió el
+pelo, la proporción de la cara y el trazo, y lo sacó como sticker. **Se borraron** y el Instagram volvió a sus poses
+oficiales. Lección: un generador que solo recibe texto y no ve la referencia saca un personaje parecido, no el mismo.
+Las poses nuevas se piden a Flow **con la referencia** (`docs/marketing/estudio/`).
 
 **Pendientes de SANDO** (se acabaron los créditos de Figma el 2026-10-30; se renuevan a las 19:00 de Lima):
 - SANDO presentando un pan largo envuelto en kraft, para la carta. La primera prueba sacó una baguette en bolsa, que no es nuestro pan, y se descartó.

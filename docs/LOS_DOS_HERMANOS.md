@@ -77,6 +77,8 @@ imágenes nuevas, básate en WICHO y en SANDO e inventa con esos personajes form
 - **Se revisan contra esta ficha y su referencia** (`docs/marketing/estudio/referencias/`): cara, colores, ropa y
   trazo. No se les inventa nada que no tengan (una cola, otro color de ojos) y nunca se los fusiona.
 - **El logo oficial (`img/marca/`) no se toca.**
+- **Parecido no basta: tiene que ser él.** Dueño, 2026-10-30, sobre un WICHO generado solo con texto: «lo
+  modificaste demasiado». Las poses nuevas se generan **con la imagen de referencia** (Flow, `docs/marketing/estudio/`).
 - Las nuevas viven en `docs/marketing/hermanos/nuevos/`.
 
 ## Cuáles son obligatorios (confirmado por el dueño, 2026-09-17)
