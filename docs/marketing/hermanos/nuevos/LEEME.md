@@ -19,6 +19,6 @@ Las poses nuevas se piden a Flow **con la referencia** (`docs/marketing/estudio/
 
 **SANDO nuevo: pedido a Flow con su referencia, no generado a ciegas.** Encargos
 `2026-10-30-ig-sando-carta` (presentando un pan largo envuelto en kraft) y `2026-10-30-ig-sando-zonas`
-(con un mapa y un pin), en `docs/marketing/estudio/encargos/`. Los hace el Estudio de la laptop del dueño
+(con un mapa y un pin, para «Envíos»), en `docs/marketing/estudio/encargos/`. Los hace el Estudio de la laptop del dueño
 y antes de usarlos se comparan lado a lado con `referencias/sando.png`. Mientras tanto, el Instagram usa
 sus poses oficiales.
