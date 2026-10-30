@@ -92,16 +92,19 @@ const listaCarta = (c, t = 92) => `<div class="disp" style="font-size:${t}px;lin
 // no competir con la comida, que va siempre limpia y arriba (estilo «Lo que llega»).
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 const LOGO = img(`${REPO}/img/marca/avatar-1024-transparente.png`);
+// El catálogo de los hermanos crece (dueño, 2026-10-30): WICHO en formas nuevas, de sticker (su energía),
+// generadas contra su ficha; SANDO, por ahora, con sus poses oficiales (las suyas nuevas se generan luego).
+const NUEVO = (n) => img(`${process.env.HERMANOS || `${REPO}/docs/marketing/hermanos/nuevos`}/${n}-recorte.png`);
 const perfil = caja(1080, 1080, '', `<div class="abs rib" style="left:0;top:0;bottom:0;width:540px;background-color:${S.oliva}"></div>
   <div class="abs" style="right:0;top:0;bottom:0;width:540px;background:${W.pelaje}"></div>
   <div class="full" style="${centrado}"><img src="${LOGO}" style="width:940px;height:940px;position:relative"></div>`);
 
 // Destacados, en el orden en que un cliente nuevo pregunta: cómo pido, ¿llegan a mi zona?, qué hay, qué tomo.
 const DEST = [
-  ['pedir', 'Cómo pedir', portada(W.pelaje, `${curvas(1080, 1920, 540, 960, W.curvas, 16, 70, 2)}${ico('pedir', W.tinta)}`)],
-  ['zonas', 'Zonas', portada(S.verde, `<div class="abs" style="left:300px;top:0;bottom:0;width:60px;background:${S.forro}"></div>${ico('zonas', S.tan)}`)],
-  ['carta', 'Carta', portada(S.oliva, `<div class="full rib"></div>${ico('carta', papel)}`)],
-  ['bebidas', 'Bebidas', portada(W.lilaO, `${svgEsp(1080, 1920, 540, 960, 470, W.lila, 26)}${ico('bebidas', W.durazno, 340)}`)],
+  ['pedir', 'Cómo pedir', portada(W.pelaje, `${curvas(1080, 1920, 540, 960, W.curvas, 16, 70, 2)}<img src="${NUEVO('h-wicho-celular')}" style="position:relative;height:900px;transform:translateY(40px)">`)],
+  ['zonas', 'Zonas', portada(S.verde, `<div class="abs" style="left:250px;top:0;bottom:0;width:60px;background:${S.forro}"></div><img src="${PJ('sando2_asoma')}" class="abs" style="left:0;bottom:0;height:1500px">`)],
+  ['carta', 'Carta', portada(S.oliva, `<div class="full rib"></div><img src="${PJ('sando2_frente')}" style="position:relative;height:1050px;transform:translateY(40px)">`)],
+  ['bebidas', 'Bebidas', portada(W.lilaO, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(195,166,210,.35)', 22)}<img src="${NUEVO('h-wicho-agita2')}" style="position:relative;height:880px;transform:translateY(20px)">`)],
 ];
 
 // El lado de SANDO: cada Signature con la foto limpia arriba y su basta acanalada abajo, con el texto.
@@ -109,6 +112,7 @@ const sig = (d) => panelSig(d, { fondo: S.oliva, clase: 'rib', tit: papel, voz: 
 // La carta: el mundo de SANDO, y la última línea ya es de WICHO (el puente a la publicación de al lado).
 const carta = caja(1080, 1350, `background:${S.verde};color:${papel}`, `<div class="abs" style="left:0;top:0;bottom:0;width:26px;background:${S.forro}"></div>
   <div class="abs rib" style="left:26px;right:0;bottom:0;height:150px;background-color:${S.oliva}"></div>
+  <img src="${PJ('sando2_ladea')}" class="abs" style="right:40px;bottom:150px;height:500px">
   <div class="abs" style="left:110px;right:84px;top:92px"><div class="mono" style="font-size:26px;color:${S.tan}">LOS DE LA CASA · 15 CM Y 30 CM</div>
     <div style="margin-top:40px">${listaCarta(papel, 96)}</div>
     <div style="display:flex;align-items:center;gap:22px;margin-top:40px"><svg width="70" height="70">${espiral(35, 35, 31, W.lila, 5)}</svg><span class="voz" style="font-size:58px;color:${W.pelaje}">Y el que armas tú →</span></div></div>
@@ -117,12 +121,13 @@ const carta = caja(1080, 1350, `background:${S.verde};color:${papel}`, `<div cla
 // para armar, verduras y hasta tres salsas incluidas.
 const PROT = ['Res', 'Atún', 'Albóndiga', 'Pavo'];
 const arma = caja(1080, 1350, `background:${W.pelaje};color:${W.tinta}`, `${curvas(1080, 1350, 880, 1120, W.curvas, 18, 66, 3)}
+  <img src="${NUEVO('h-wicho-arma')}" class="abs" style="right:-20px;bottom:110px;height:560px">
   <div class="abs" style="left:96px;top:92px;right:96px">
     <div class="mono" style="font-size:26px">EL OTRO LADO</div>
     <div class="disp" style="font-size:168px;margin-top:30px">Arma<br>el tuyo.</div>
-    <div class="voz" style="font-size:54px;margin-top:30px;max-width:820px">Tú decides el pan, la proteína y todo lo que va encima.</div>
+    <div class="voz" style="font-size:52px;margin-top:30px;max-width:600px">Tú decides el pan, la proteína y todo lo que va encima.</div>
     <div style="margin-top:46px;display:flex;flex-direction:column;gap:22px">${[['Pan', 'Classic o Focaccia'], ['Proteína', PROT.join(' · ')], ['Encima', 'verduras y hasta 3 salsas incluidas']].map(([a, b]) => `<div style="display:flex;gap:22px;align-items:center">
-      <svg width="58" height="58"><circle cx="29" cy="29" r="29" fill="${W.lilaO}"/>${espiral(29, 29, 22, W.lila, 3.5)}</svg><span class="mono" style="font-size:26px;width:190px">${a.toUpperCase()}</span><span class="voz" style="font-size:44px">${b}</span></div>`).join('')}</div></div>
+      <svg width="58" height="58"><circle cx="29" cy="29" r="29" fill="${W.lilaO}"/>${espiral(29, 29, 22, W.lila, 3.5)}</svg><span class="mono" style="font-size:24px;width:170px">${a.toUpperCase()}</span><span class="voz" style="font-size:40px;max-width:330px">${b}</span></div>`).join('')}</div></div>
   <div class="abs" style="left:96px;right:96px;bottom:56px;display:flex;justify-content:space-between;align-items:center"><div class="mono" style="font-size:26px">${MONO}</div>${marca(W.tinta, 40)}</div>`);
 // El Reel que graba el dueño, al centro de la cuadrícula: su portada en la tinta de WICHO.
 const reel = caja(1080, 1350, `background:${W.tinta};color:${papel};${centrado};flex-direction:column;gap:26px;text-align:center;padding:110px`, `<div class="full cruz"></div>

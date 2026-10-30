@@ -68,6 +68,17 @@ espiral `#C3A6D2` sobre `#4A3D62` · durazno `#F0D8CC`.
 
 ---
 
+## El catálogo crece; el concepto no (dueño, 2026-10-30)
+
+«Lo que no se cambia del catálogo son los conceptos, pero el catálogo puede crecer. Puedes inventar
+imágenes nuevas, básate en WICHO y en SANDO e inventa con esos personajes formas también».
+
+- **Se pueden crear poses, escenas y formas nuevas** (stickers, iconos, detalles) de cada hermano, generadas o dibujadas.
+- **Se revisan contra esta ficha y su referencia** (`docs/marketing/estudio/referencias/`): cara, colores, ropa y
+  trazo. No se les inventa nada que no tengan (una cola, otro color de ojos) y nunca se los fusiona.
+- **El logo oficial (`img/marca/`) no se toca.**
+- Las nuevas viven en `docs/marketing/hermanos/nuevos/`.
+
 ## Cuáles son obligatorios (confirmado por el dueño, 2026-09-17)
 
 **Ninguno es obligatorio en todas las pantallas — solo los más característicos.** El reparto,
