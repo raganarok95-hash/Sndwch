@@ -160,3 +160,10 @@ Dueño: «la de zonas no me convence, además como que falta destacado». Envío
 casi no se distinguían. Envíos pasó a un ícono (el pin con anillos de distancia) y trae información útil: hasta dónde
 llega, cuánto cuesta y en qué horario. Se agregó **Arma el tuyo**, la otra mitad del concepto. Lección: cada portada se
 reconoce sola, y cada destacado responde una duda del cliente.
+
+## 2026-10-30 · No a los hermanos en todo: crear, no reciclar
+Dueño: «No necesitas usar a SANDO y WICHO para todo, solo estás usando lo que ya tienes, sé creativo». Es la segunda vez
+(la primera: «confundiste falta sando y wicho con ponlos en todo IG»). Las portadas y las historias pasaron a objetos
+dibujados del mundo del sándwich: el celular, el pan largo cerrado y en capas, la bolsa kraft con el //, la lata y la
+semana con su horario. Lección: antes de poner una pose, preguntarse qué objeto cuenta mejor la idea. Y el sándwich
+dibujado es siempre de pan largo: el primer intento salió como hamburguesa.

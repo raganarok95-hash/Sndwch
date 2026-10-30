@@ -84,6 +84,55 @@ const panelSig = (d, { fondo, clase = '', extra = '', tit, voz, resto, alto = 43
 const listaCarta = (c, t = 92) => `<div class="disp" style="font-size:${t}px;line-height:1.03;color:${c}">${SIGS.join('<br>')}</div>`;
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
+// «UN SÁNDWICH ES CAPAS» (2026-10-30, dueño: «No necesitas usar a SANDO y WICHO para todo, solo estás usando lo que ya
+// tienes, sé creativo»). Los destacados y sus historias se dibujan con objetos planos del mundo del sándwich: el corte
+// (Carta), las capas sueltas (Arma el tuyo), la bolsa kraft con el sello // (Envíos), la lata (Bebidas) y el celular
+// (Cómo pedir). Los hermanos quedan descompuestos en los fondos: el acanalado y el forro de SANDO, y las curvas, la
+// espiral y el celeste de WICHO. Colores de comida planos, sin brillo: se leen a 66 px.
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+const C = { pan: '#D9AE73', corteza: '#A8692F', miga: '#F3E2BF', lechuga: '#7FA650', tomate: '#D8503A', queso: '#EDB93B', carne: '#6E3F2A', cebolla: '#9C5A8C', kraft: '#C49A62', kraftO: '#9C7442' };
+// Una capa de relleno, con su forma: la lechuga ondea, el queso chorrea, el tomate lleva semillas.
+function capa(tipo, x, y, w, h) {
+  if (tipo === 'lechuga') { let d = `M${x},${y + h * 0.5}`; for (let k = 0; k <= 12; k++) d += ` Q${x + (k + 0.5) * w / 12},${y + (k % 2 ? h * 1.15 : -h * 0.1)} ${x + (k + 1) * w / 12},${y + h * 0.5}`; return `<path d="${d} L${x + w},${y + h} L${x},${y + h} Z" fill="${C.lechuga}"/>`; }
+  if (tipo === 'queso') { let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 3}" fill="${C.queso}"/>`; for (const f of [0.18, 0.47, 0.76]) s += `<path d="M${x + w * f - h * 0.6},${y + h * 0.9} Q${x + w * f},${y + h * 2.4} ${x + w * f + h * 0.6},${y + h * 0.9} Z" fill="${C.queso}"/>`; return s; }
+  if (tipo === 'tomate') { let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" fill="${C.tomate}"/>`; for (let k = 1; k < 8; k++) s += `<ellipse cx="${x + k * w / 8}" cy="${y + h / 2}" rx="${h * 0.14}" ry="${h * 0.22}" fill="#F4C9A8"/>`; return s; }
+  const col = { carne: C.carne, cebolla: C.cebolla }[tipo] || tipo;
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2.2}" fill="${col}"/>`;
+}
+// El sándwich de costado, como pan largo (nunca como hamburguesa): el pan de arriba es un domo bajo y alargado con
+// sus cortes en diagonal, los rellenos asoman por el lado y el pan de abajo es una tira. `abre` separa las capas.
+function sandwich(cx, cy, w, { abre = 0, rellenos = ['lechuga', 'tomate', 'queso', 'carne'] } = {}) {
+  const hp = w * 0.13, hb = w * 0.07, hr = w * 0.045, n = rellenos.length;
+  const alto = hp + hb + n * hr + (n + 1) * abre;
+  let y = cy - alto / 2, s = '';
+  const L = cx - w / 2, R = cx + w / 2, k = hp * 0.9;
+  s += `<path d="M${L + k},${y + hp} Q${L},${y + hp} ${L + k * 0.35},${y + hp * 0.45} Q${L + k},${y} ${L + k * 2},${y} L${R - k * 2},${y} Q${R - k},${y} ${R - k * 0.35},${y + hp * 0.45} Q${R},${y + hp} ${R - k},${y + hp} Z" fill="${C.pan}" stroke="${C.corteza}" stroke-width="${w * 0.014}"/>`;
+  s += [0.28, 0.43, 0.58, 0.73].map((f) => `<path d="M${L + w * f - w * 0.04},${y + hp * 0.62} L${L + w * f + w * 0.03},${y + hp * 0.22}" stroke="${C.corteza}" stroke-width="${w * 0.012}" stroke-linecap="round"/>`).join('');
+  y += hp + abre;
+  for (const r of rellenos) { s += capa(r, L + w * 0.015, y, w * 0.97, hr); y += hr + abre; }
+  s += `<rect x="${L + w * 0.01}" y="${y}" width="${w * 0.98}" height="${hb}" rx="${hb / 2}" fill="${C.pan}" stroke="${C.corteza}" stroke-width="${w * 0.014}"/>`;
+  return s;
+}
+// La bolsa kraft con el sello // (dos barras paralelas, dorada y celeste).
+function bolsa(cx, cy, w) {
+  const h = w * 1.18, x = cx - w / 2, y = cy - h / 2;
+  return `<path d="M${x + w * 0.04},${y + h * 0.16} L${x + w * 0.96},${y + h * 0.16} L${x + w},${y + h} L${x},${y + h} Z" fill="${C.kraft}"/>
+    <path d="M${x + w * 0.04},${y + h * 0.16} L${x + w * 0.1},${y} L${x + w * 0.9},${y} L${x + w * 0.96},${y + h * 0.16} Z" fill="${C.kraftO}"/>
+    <path d="M${x + w * 0.04},${y + h * 0.16} L${x + w * 0.96},${y + h * 0.16}" stroke="#8A6438" stroke-width="${w * 0.02}" stroke-dasharray="${w * 0.04} ${w * 0.03}"/>
+    <circle cx="${cx}" cy="${y + h * 0.6}" r="${w * 0.24}" fill="${papel}"/>
+    <g transform="translate(${cx},${y + h * 0.6}) skewX(-16)"><rect x="${-w * 0.075}" y="${-w * 0.12}" width="${w * 0.045}" height="${w * 0.24}" rx="2" fill="${S.oro}"/><rect x="${w * 0.03}" y="${-w * 0.12}" width="${w * 0.045}" height="${w * 0.24}" rx="2" fill="${celeste}"/></g>`;
+}
+// El celular con el sándwich en pantalla y el toque (la espiral de WICHO hecha onda).
+function celular(cx, cy, w) {
+  const h = w * 1.95, x = cx - w / 2, y = cy - h / 2;
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${w * 0.16}" fill="${W.tinta}"/>
+    <rect x="${x + w * 0.06}" y="${y + w * 0.06}" width="${w * 0.88}" height="${h - w * 0.12}" rx="${w * 0.11}" fill="${papel}"/>
+    ${sandwich(cx, y + h * 0.36, w * 0.8)}
+    <rect x="${x + w * 0.18}" y="${y + h * 0.66}" width="${w * 0.64}" height="${w * 0.17}" rx="${w * 0.085}" fill="${S.verde}"/>
+    ${espiral(cx + w * 0.16, y + h * 0.745, w * 0.32, W.lila, w * 0.03)}`;
+}
+const svg = (dentro) => `<svg class="abs" style="left:0;top:0" width="1080" height="1920">${dentro}</svg>`;
+// ════════════════════════════════════════════════════════════════════════════════════════════════
 // LAS HISTORIAS DE LOS DESTACADOS (2026-10-30). Un destacado se arma con historias publicadas: estas son
 // las de cada uno, en 1080 × 1920. Lo importante va entre los 250 px de arriba (nombre de la cuenta) y los 250
 // de abajo (la barra para responder). Cada destacado vive en el mundo de su hermano, igual que su portada:
@@ -104,16 +153,16 @@ const cabeza = (etiqueta, titulo, frase, t = 140, chip = '') => `<div class="abs
   <div class="disp" style="font-size:${t}px;margin-top:22px">${titulo}</div>
   <div class="voz" style="font-size:54px;line-height:1.12;margin-top:24px;max-width:860px">${frase}</div></div>`;
 
+// Cómo pedir, dibujado (sin WICHO): el celular, las dos formas, el pago y la bolsa que llega.
+const tarjeta = (x, y, w) => `<rect x="${x}" y="${y}" width="${w}" height="${w * 0.63}" rx="${w * 0.07}" fill="${S.verde}"/><rect x="${x + w * 0.1}" y="${y + w * 0.17}" width="${w * 0.17}" height="${w * 0.13}" rx="${w * 0.02}" fill="${S.oro}"/><rect x="${x + w * 0.1}" y="${y + w * 0.42}" width="${w * 0.55}" height="${w * 0.05}" rx="${w * 0.025}" fill="${papel}" opacity=".7"/>`;
 const PASOS_TXT = [
-  // Cada pose, una vez y anclada al borde por donde viene cortada (grita, por abajo; pulgar, por la derecha).
-  ['Entras a sndwch.app', 'Desde el celular. No hay nada que descargar.', 'wicho_saluda', 'left:50%;transform:translateX(-50%);bottom:250px;height:760px'],
-  ['Eliges uno o armas el tuyo', 'Uno de los seis de la casa, o el tuyo desde el pan.', 'wicho_grita', 'left:50%;transform:translateX(-50%);bottom:0;height:860px'],
-  ['Pagas con Yape o tarjeta', 'Antes de pagar ves el total, con el envío.', 'wicho_pulgar', 'right:0;bottom:330px;height:540px'],
-  ['Te llega a la puerta', 'Armado al momento y directo a tu casa.', 'wicho2_come', 'left:50%;transform:translateX(-50%);bottom:250px;height:760px'],
+  ['Entras a sndwch.app', 'Desde el celular. No hay nada que descargar.', svg(celular(540, 1350, 330))],
+  ['Eliges uno o armas el tuyo', 'Uno de los seis de la casa, o el tuyo desde el pan.', `${svg(`${sandwich(540, 1000, 720)}${sandwich(540, 1490, 720, { abre: 22 })}`)}<div class="abs voz" style="left:0;right:0;top:1150px;text-align:center;font-size:110px;line-height:1">o</div>`],
+  ['Pagas con Yape o tarjeta', 'Antes de pagar ves el total, con el envío.', svg(`<g transform="rotate(-8 400 1350)">${celular(400, 1350, 300).replace(/sandwich/g, 'sandwich')}</g><g transform="rotate(10 760 1420)">${tarjeta(600, 1320, 330)}</g>`)],
+  ['Te llega a la puerta', 'Armado al momento y directo a tu casa.', svg(`${[0, 1, 2].map((k) => `<path d="M${150 + k * 20},${1260 + k * 90} L${330 + k * 20},${1260 + k * 90}" stroke="${W.tinta}" stroke-width="16" stroke-linecap="round" opacity="${0.5 - k * 0.12}"/>`).join('')}${bolsa(620, 1360, 420)}`)],
 ];
-const pedir = PASOS_TXT.map(([t, f, pose, donde], i) => historia(W.pelaje, `${curvas(1080, 1920, 540, 1500, W.curvas, 22, 70, i + 2)}
-  ${cabeza(`CÓMO PEDIR · ${i + 1} DE ${PASOS_TXT.length}`, t, f, 132)}
-  <img src="${PJ(pose)}" class="abs" style="${donde}">`, W.tinta));
+const pedir = PASOS_TXT.map(([t, f, dibujo], i) => historia(W.pelaje, `${curvas(1080, 1920, 540, 1500, W.curvas, 22, 70, i + 2)}
+  ${cabeza(`CÓMO PEDIR · ${i + 1} DE ${PASOS_TXT.length}`, t, f, 132)}${dibujo}`, W.tinta));
 
 // Envíos (SANDO, sin repetir su cara): hasta dónde llega, cuánto cuesta y cuándo. El horario sale de STORE_HOURS
 // (_shared/reglas.ts, igual que store_hours en la base).
@@ -136,7 +185,7 @@ const envios = [
     ${cabeza('ENVÍOS · 1 DE 3', 'Llegamos a todo Trujillo.', 'No hay zonas: si estás en Trujillo, llegamos.')}`),
   historia(S.verde, `${fondoEnvios}${boleta}
     ${cabeza('ENVÍOS · 2 DE 3', 'El envío va por distancia.', 'La app te dice cuánto es antes de pagar. Sin sorpresas.')}`),
-  historia(S.verde, `${fondoEnvios}<img src="${PJ('sando2_pulgar')}" class="abs" style="left:0;bottom:330px;height:620px">
+  historia(S.verde, `${fondoEnvios}<div class="abs" style="left:110px;right:84px;top:1020px;display:grid;grid-template-columns:repeat(7,1fr);gap:14px">${[1, 2, 3, 4, 5, 6, 0].map((k) => `<div style="height:440px;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:26px 0;${HORAS[k] ? `background:${papel};color:${S.tinta}` : `border:4px dashed ${S.tan};color:${S.tan}`}"><span class="mono" style="font-size:30px">${DIAS[k].slice(0, 2).toUpperCase()}</span><span class="mono" style="font-size:26px;writing-mode:vertical-rl;transform:rotate(180deg)">${HORAS[k] ? `${hh(HORAS[k][0])}–${hh(HORAS[k][1])}` : 'DESCANSO'}</span></div>`).join('')}</div>
     ${cabeza('HORARIO · 3 DE 3', tituloHorario, `Los ${cerrados.map((k) => DIAS[k]).join(' y ')} descansamos.`)}`),
 ];
 
@@ -160,15 +209,30 @@ const bebidas = BEB.map(([f, n, d], i) => historia(W.lilaO, `${svgEsp(1080, 1920
 
 
 // Arma el tuyo (WICHO, en su tinta para no confundirse con Cómo pedir): pan, proteína y lo de encima.
+// El pan: el Classic largo y la Focaccia, dibujados (B01 y B03 de carta.ts).
+const panes = `${svg(`
+  <path d="M170,1150 Q170,1040 300,1030 L780,1030 Q910,1040 910,1150 Q910,1230 780,1235 L300,1235 Q170,1230 170,1150 Z" fill="${C.pan}" stroke="${C.corteza}" stroke-width="12"/>
+  ${[330, 470, 610, 750].map((x) => `<path d="M${x - 50},1080 q50,-30 100,0" fill="none" stroke="${C.corteza}" stroke-width="10" stroke-linecap="round"/>`).join('')}
+  <rect x="240" y="1390" width="600" height="250" rx="46" fill="${C.pan}" stroke="${C.corteza}" stroke-width="12"/>
+  ${Array.from({ length: 15 }, (_, k) => `<circle cx="${300 + (k % 5) * 120}" cy="${1440 + Math.floor(k / 5) * 75}" r="17" fill="${C.corteza}" opacity=".55"/>`).join('')}
+  ${Array.from({ length: 22 }, (_, k) => `<circle cx="${280 + ((k * 137) % 520)}" cy="${1420 + ((k * 61) % 190)}" r="5" fill="#fff"/>`).join('')}`)}
+  <div class="abs mono" style="left:0;right:0;top:1265px;text-align:center;font-size:34px">CLASSIC</div>
+  <div class="abs mono" style="left:0;right:0;top:1670px;text-align:center;font-size:34px">FOCACCIA</div>`;
+// La proteína: cuatro capas con su nombre, las que la app deja armar.
 const PROT = ['Res', 'Atún', 'Albóndiga', 'Pavo'];
+const colProt = { Res: C.carne, 'Atún': '#CDB894', 'Albóndiga': '#8A3F2C', Pavo: '#EAC9B2' };
+const proteinas = svg(PROT.map((n, k) => `<rect x="170" y="${1000 + k * 170}" width="740" height="120" rx="56" fill="${colProt[n]}"/>
+  <text x="540" y="${1000 + k * 170 + 76}" text-anchor="middle" font-family="IBM Plex Mono" font-weight="600" font-size="40" letter-spacing="3" fill="${n === 'Pavo' || n === 'Atún' ? W.tinta : papel}">${n.toUpperCase()}</text>`).join(''));
+// Lo de encima: el sándwich abierto y tres gotas de salsa.
+const gota = (x, y, c) => `<path d="M${x},${y} C${x + 34},${y + 50} ${x + 40},${y + 80} ${x},${y + 96} C${x - 40},${y + 80} ${x - 34},${y + 50} ${x},${y} Z" fill="${c}"/>`;
+const encima = svg(`${sandwich(470, 1330, 640, { abre: 30, rellenos: ['lechuga', 'tomate', 'cebolla', 'queso'] })}${gota(870, 1120, '#F4E3B5')}${gota(870, 1270, '#C9772F')}${gota(870, 1420, '#7FA650')}`);
 const ARMA = [
-  ['El pan.', 'Classic, de miga suave, o Focaccia, con aceite de oliva y sal gruesa.', 'wicho2_rie', 'left:50%;transform:translateX(-50%);bottom:250px;height:700px'],
-  ['La proteína.', PROT.join(', ').replace(/, ([^,]*)$/, ' o $1') + '.', 'wicho2_celebra', 'left:50%;transform:translateX(-50%);bottom:250px;height:760px'],
-  ['Lo de encima.', 'Verduras, queso y hasta 3 salsas incluidas. Lo eliges tú.', 'wicho_cuerpo', 'left:50%;transform:translateX(-50%);bottom:250px;height:760px'],
+  ['El pan.', 'Classic, de miga suave, o Focaccia, con aceite de oliva y sal gruesa.', panes],
+  ['La proteína.', PROT.join(', ').replace(/, ([^,]*)$/, ' o $1') + '.', proteinas],
+  ['Lo de encima.', 'Verduras, queso y hasta 3 salsas incluidas. Lo eliges tú.', encima],
 ];
-const armaHist = ARMA.map(([t, f, pose, donde], i) => historia(W.tinta, `<div class="full cruz"></div>${curvas(1080, 1920, 540, 1500, 'rgba(144,204,240,.20)', 22, 70, i + 7)}
-  ${cabeza(`ARMA EL TUYO · ${i + 1} DE ${ARMA.length}`, t, f, 150)}
-  <img src="${PJ(pose)}" class="abs" style="${donde}">`, papel));
+const armaHist = ARMA.map(([t, f, dibujo], i) => historia(W.tinta, `<div class="full cruz"></div>${curvas(1080, 1920, 540, 1500, 'rgba(144,204,240,.20)', 22, 70, i + 7)}
+  ${cabeza(`ARMA EL TUYO · ${i + 1} DE ${ARMA.length}`, t, f, 150)}${dibujo}`, papel));
 const HISTORIAS = { 'como-pedir': pedir, carta: cartaHist, arma: armaHist, envios, bebidas };
 
 (async () => {

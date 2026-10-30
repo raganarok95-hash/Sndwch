@@ -33,6 +33,18 @@ además como que falta destacado»). Instagram muestra unos cinco sin deslizar:
    con una boleta sin cifras, y el horario, que sale de `STORE_HOURS`: martes a domingo, 11:00 a 22:00.
 5. **Bebidas** (WICHO): las de la casa, con «Próximamente».
 
+**Las portadas y las historias, sin personajes: «un sándwich es capas»** (2026-10-30, dueño: «No necesitas usar a SANDO
+y WICHO para todo, solo estás usando lo que ya tienes, sé creativo»). Se dibujan con objetos planos del mundo del
+sándwich (`dibujos.cjs`), siempre de pan largo y nunca como hamburguesa:
+- Cómo pedir: el celular con un toque.
+- Carta: el sándwich cerrado.
+- Arma el tuyo: las capas sueltas.
+- Envíos: la bolsa kraft con el sello //.
+- Bebidas: la lata.
+
+Los hermanos quedan descompuestos en los fondos (el acanalado y el forro de SANDO; las curvas, la espiral y el celeste de
+WICHO). Dibujado, solo queda el logo de la foto de perfil.
+
 **No hay «Zonas».** Dueño: «nuestra zona es todo Trujillo». El envío no tiene límite desde el 2026-09-30
 («mi proveedor de delivery no tiene límites de envío», `reglas.ts`).
 
