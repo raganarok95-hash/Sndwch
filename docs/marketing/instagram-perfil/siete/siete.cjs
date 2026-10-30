@@ -238,6 +238,23 @@ V.push({ id: '7-con-voz', nombre: 'Con voz', idea: 'Los dos asomándose al círc
   reel: caja(1080, 1350, `background-color:${S.verde};color:${papel};${centrado};flex-direction:column;gap:26px;text-align:center;padding:120px`, `<div class="full rib" style="opacity:.6"></div><div class="disp" style="font-size:110px;position:relative">Detrás<br>del pan</div><div class="voz" style="font-size:46px;color:${S.tan};position:relative">«Así se hace.» — SANDO</div>`),
 });
 
+// ── La foto de perfil es SIEMPRE el logo oficial (dueño, 2026-10-30: «¿Por qué en ninguno tiene
+// nuestro logo oficial?»): el isotipo de img/marca/, que no se migra ni se redibuja
+// (docs/PANTALLAS_APROBADAS.md). Lo que cambia en cada versión es el fondo, con el mundo de esa versión.
+const LOGO = img(`${REPO}/img/marca/avatar-1024-transparente.png`);
+const isotipo = (fondo, t = 940) => caja(1080, 1080, '', `${fondo}<div class="full" style="${centrado}"><img src="${LOGO}" style="width:${t}px;height:${t}px;position:relative"></div>`);
+const mitad = (izq, der) => `<div class="abs" style="left:0;top:0;bottom:0;width:540px;${izq}"></div><div class="abs" style="right:0;top:0;bottom:0;width:540px;${der}"></div>`;
+const AV = [
+  ['El logo oficial sobre el oliva acanalado de la casaca de SANDO', isotipo(`<div class="full rib" style="background-color:${S.oliva}"></div>`)],
+  ['El logo oficial sobre el celeste de WICHO, con las curvas de nivel de su polo', isotipo(`<div class="full" style="background:${W.pelaje}">${curvas(1080, 1080, 540, 540, W.curvas, 12, 58, 3)}</div>`)],
+  ['El logo oficial tal como está aprobado: sobre el verde de la app (#1E3932)', isotipo('<div class="full" style="background:#1E3932"></div>')],
+  ['El logo oficial con el fondo partido igual que su cara: oliva detrás de SANDO, celeste detrás de WICHO', isotipo(mitad(`background:${S.oliva}`, `background:${W.pelaje}`))],
+  ['El logo oficial con el fondo partido en las texturas: el acanalado de SANDO y las curvas de nivel de WICHO', isotipo(mitad(`background-color:${S.oliva};background-image:repeating-linear-gradient(90deg,rgba(0,0,0,.16) 0 7px,rgba(255,255,255,.045) 7px 14px)`, `background:${W.pelaje}`) + `<div class="abs" style="right:0;top:0;width:540px;height:1080px">${curvas(540, 1080, 120, 540, W.curvas, 12, 56, 2)}</div>`)],
+  ['El logo oficial sobre el verde casi negro, con el // inclinado detrás como el corte del pan', isotipo(`<div class="full" style="background:${S.verde};${centrado}">${barras(1150)}</div>`)],
+  ['El logo oficial sobre el papel crema, limpio, como la firma de la marca', isotipo(`<div class="full" style="background:${papel}"></div>`)],
+];
+V.forEach((v, i) => { v.idea = AV[i][0]; v.avatar = AV[i][1]; });
+
 // ── Render
 const ui = (dir) => `body{background:#fff;font-family:Archivo,sans-serif;color:#0B0B0B}
   .t{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px;font:800 19px Archivo}

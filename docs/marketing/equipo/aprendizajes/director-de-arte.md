@@ -111,3 +111,7 @@
 - **2026-10-30 · Siete caminos para el Instagram.** «Mejora y cambia, dame 7 versiones más de todo lo
   que Instagram, con sando, wicho, sin, mezclados, descompuestos y en todas dame una idea por cada una
   de la foto de perfil». Están en `docs/marketing/instagram-perfil/siete/`. Falta que elija.
+- **2026-10-30 · La foto de perfil es el logo oficial.** «¿Por qué en ninguno tiene nuestro logo
+  oficial?». Pedir «una idea de foto de perfil» por versión no autoriza a reemplazar el logo. La
+  idea se pone en el fondo, en cómo se presenta el isotipo de `img/marca/`, nunca en otra imagen.
+  El logo no se redibuja ni se migra.
