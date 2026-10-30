@@ -138,3 +138,8 @@
   - la comida limpia arriba y la basta acanalada abajo;
   - dos carruseles fijados y un Reel por semana;
   - «Envíos» en lugar de «Zonas».
+
+## 2026-10-30 · Sin fecha en las imágenes
+Dueño: «no pongas que abrimos en noviembre en las imágenes». Una imagen publicada no se corrige y el día todavía no
+está confirmado: abajo de cada pieza va `SNDWCH.APP`. La fecha, si hace falta, va en el texto o en la biografía,
+que sí se editan.

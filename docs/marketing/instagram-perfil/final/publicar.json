@@ -1,0 +1,246 @@
+[
+ {
+  "src": "perfil-9-classic-tuna",
+  "pieza": "publicacion-9-classic-tuna",
+  "laminas": [
+   "publicacion-9-classic-tuna.jpg"
+  ],
+  "texto": "Se come con una mano.\nClassic Tuna: atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Simple y bien hecho.\nsndwch.app · enlace en el perfil.",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-8-italian-hoagie",
+  "pieza": "publicacion-8-italian-hoagie",
+  "laminas": [
+   "publicacion-8-italian-hoagie.jpg"
+  ],
+  "texto": "Cuando quieres de todo.\nItalian Hoagie: tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. Cada capa suma y ninguna sobra.\nsndwch.app · enlace en el perfil.",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-7-tuna-melt",
+  "pieza": "publicacion-7-tuna-melt",
+  "laminas": [
+   "publicacion-7-tuna-melt.jpg"
+  ],
+  "texto": "Antojo de algo caliente.\nTuna Melt: atún en lascas gruesas con mayonesa y pimienta blanca, bajo un cheddar fundido que se estira al primer mordisco.\nsndwch.app · enlace en el perfil.",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-6-turkey",
+  "pieza": "publicacion-6-turkey",
+  "laminas": [
+   "publicacion-6-turkey.jpg"
+  ],
+  "texto": "El almuerzo que no te tumba la tarde.\nTurkey: pavo horneado en lonjas finas, lechuga, tomate, cebolla y pimiento, con un toque de aceite y vinagre. Llena sin pesar.\nsndwch.app · enlace en el perfil.",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-5-reel",
+  "pieza": "reel-los-seis-de-la-casa",
+  "video": "reel-los-seis-de-la-casa.mp4",
+  "laminas": [
+   "reel-portada.jpg"
+  ],
+  "texto": "Los seis de la casa. ¿Con cuál empiezas? Te leemos.\nsndwch.app · enlace en el perfil.",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-4-meatball",
+  "pieza": "publicacion-4-meatball",
+  "laminas": [
+   "publicacion-4-meatball.jpg"
+  ],
+  "texto": "Hoy no cocinas.\nMeatball Marinara: albóndigas cocidas en su propia marinara y queso americano derretido hasta el borde. De los que se comen con las dos manos.\nsndwch.app · enlace en el perfil.",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-3-arma-el-tuyo",
+  "pieza": "arma-el-tuyo",
+  "laminas": [
+   "publicacion-3-arma-el-tuyo.jpg",
+   "carrusel-arma-2.jpg",
+   "carrusel-arma-3.jpg",
+   "carrusel-arma-4.jpg"
+  ],
+  "texto": "El otro lado: arma el tuyo.\nEliges el pan, la proteína y todo lo que va encima. Las reglas las pones tú. — WICHO\nsndwch.app · enlace en el perfil.",
+  "cuando": "ya",
+  "fijar": true
+ },
+ {
+  "src": "perfil-2-carta",
+  "pieza": "la-carta",
+  "laminas": [
+   "publicacion-2-carta.jpg",
+   "carrusel-carta-2.jpg",
+   "carrusel-carta-3.jpg",
+   "carrusel-carta-4.jpg",
+   "carrusel-carta-5.jpg",
+   "carrusel-carta-6.jpg",
+   "carrusel-carta-7.jpg"
+  ],
+  "texto": "Los de la casa: Philly Cheesesteak, Meatball Marinara, Turkey, Tuna Melt, Italian Hoagie y Classic Tuna. Desliza y quédate con uno.\nSándwiches de pan largo, al estilo americano, a domicilio en todo Trujillo.\nMándaselo a quien siempre elige por ti.\nsndwch.app · enlace en el perfil.",
+  "cuando": "ya",
+  "fijar": true
+ },
+ {
+  "src": "perfil-1-philly",
+  "pieza": "publicacion-1-philly",
+  "laminas": [
+   "publicacion-1-philly.jpg"
+  ],
+  "texto": "Hambre en serio.\nPhilly Cheesesteak: res laminada que se saltea al momento con cebolla y pimiento, y cheddar fundido encima. Tan jugoso que no lleva salsa.\nsndwch.app · enlace en el perfil.",
+  "cuando": "ya",
+  "fijar": true
+ },
+ {
+  "src": "perfil-historia-envios-1",
+  "pieza": "historia-envios-1",
+  "laminas": [
+   "historias/historia-envios-1.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Envíos",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-historia-envios-2",
+  "pieza": "historia-envios-2",
+  "laminas": [
+   "historias/historia-envios-2.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Envíos",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-historia-carta-1",
+  "pieza": "historia-carta-1",
+  "laminas": [
+   "historias/historia-carta-1.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Carta",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-historia-carta-2",
+  "pieza": "historia-carta-2",
+  "laminas": [
+   "historias/historia-carta-2.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Carta",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-historia-carta-3",
+  "pieza": "historia-carta-3",
+  "laminas": [
+   "historias/historia-carta-3.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Carta",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-historia-carta-4",
+  "pieza": "historia-carta-4",
+  "laminas": [
+   "historias/historia-carta-4.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Carta",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-historia-carta-5",
+  "pieza": "historia-carta-5",
+  "laminas": [
+   "historias/historia-carta-5.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Carta",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-historia-carta-6",
+  "pieza": "historia-carta-6",
+  "laminas": [
+   "historias/historia-carta-6.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Carta",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-historia-como-pedir-1",
+  "pieza": "historia-como-pedir-1",
+  "laminas": [
+   "historias/historia-como-pedir-1.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Cómo pedir",
+  "cuando": "al-abrir"
+ },
+ {
+  "src": "perfil-historia-como-pedir-2",
+  "pieza": "historia-como-pedir-2",
+  "laminas": [
+   "historias/historia-como-pedir-2.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Cómo pedir",
+  "cuando": "al-abrir"
+ },
+ {
+  "src": "perfil-historia-como-pedir-3",
+  "pieza": "historia-como-pedir-3",
+  "laminas": [
+   "historias/historia-como-pedir-3.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Cómo pedir",
+  "cuando": "al-abrir"
+ },
+ {
+  "src": "perfil-historia-como-pedir-4",
+  "pieza": "historia-como-pedir-4",
+  "laminas": [
+   "historias/historia-como-pedir-4.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Cómo pedir",
+  "cuando": "al-abrir"
+ },
+ {
+  "src": "perfil-historia-bebidas-1",
+  "pieza": "historia-bebidas-1",
+  "laminas": [
+   "historias/historia-bebidas-1.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Bebidas",
+  "cuando": "con-latas"
+ },
+ {
+  "src": "perfil-historia-bebidas-2",
+  "pieza": "historia-bebidas-2",
+  "laminas": [
+   "historias/historia-bebidas-2.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Bebidas",
+  "cuando": "con-latas"
+ },
+ {
+  "src": "perfil-historia-bebidas-3",
+  "pieza": "historia-bebidas-3",
+  "laminas": [
+   "historias/historia-bebidas-3.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Bebidas",
+  "cuando": "con-latas"
+ }
+]
