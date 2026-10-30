@@ -182,11 +182,14 @@ const boleta = `<div class="abs" style="left:150px;right:150px;top:1010px;backgr
   ${[['Tu pedido', '✓'], ['Envío', 'según distancia'], ['Total', 'antes de pagar']].map(([a, b], k) => `<div style="display:flex;justify-content:space-between;align-items:baseline;${k === 2 ? `border-top:3px dashed ${S.oliva};padding-top:30px` : ''}"><span class="mono" style="font-size:34px">${a.toUpperCase()}</span><span class="voz" style="font-size:48px">${b}</span></div>`).join('')}</div>`;
 const envios = [
   historia(S.verde, `${fondoEnvios}${anillos(540, 1330, 'rgba(201,168,124,.40)')}<div class="abs" style="left:50%;top:1330px;transform:translate(-50%,-62%)">${ico('zonas', S.forro, 300)}</div>
-    ${cabeza('ENVÍOS · 1 DE 3', 'Llegamos a todo Trujillo.', 'No hay zonas: si estás en Trujillo, llegamos.')}`),
+    ${cabeza('ENVÍOS · 1 DE 2', 'Llegamos a todo Trujillo.', 'No hay zonas: si estás en Trujillo, llegamos.')}`),
   historia(S.verde, `${fondoEnvios}${boleta}
-    ${cabeza('ENVÍOS · 2 DE 3', 'El envío va por distancia.', 'La app te dice cuánto es antes de pagar. Sin sorpresas.')}`),
+    ${cabeza('ENVÍOS · 2 DE 2', 'El envío va por distancia.', 'La app te dice cuánto es antes de pagar. Sin sorpresas.')}`),
+];
+// Horario, destacado propio (dueño: «Horario como destacado propio»).
+const horario = [
   historia(S.verde, `${fondoEnvios}<div class="abs" style="left:110px;right:84px;top:1020px;display:grid;grid-template-columns:repeat(7,1fr);gap:14px">${[1, 2, 3, 4, 5, 6, 0].map((k) => `<div style="height:440px;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:26px 0;${HORAS[k] ? `background:${papel};color:${S.tinta}` : `border:4px dashed ${S.tan};color:${S.tan}`}"><span class="mono" style="font-size:30px">${DIAS[k].slice(0, 2).toUpperCase()}</span><span class="mono" style="font-size:26px;writing-mode:vertical-rl;transform:rotate(180deg)">${HORAS[k] ? `${hh(HORAS[k][0])}–${hh(HORAS[k][1])}` : 'DESCANSO'}</span></div>`).join('')}</div>
-    ${cabeza('HORARIO · 3 DE 3', tituloHorario, `Los ${cerrados.map((k) => DIAS[k]).join(' y ')} descansamos.`)}`),
+    ${cabeza('HORARIO', tituloHorario, `Los ${cerrados.map((k) => DIAS[k]).join(' y ')} descansamos.`)}`),
 ];
 
 const cartaHist = FOOD.map((d, i) => historia(S.oliva, `
@@ -233,7 +236,7 @@ const ARMA = [
 ];
 const armaHist = ARMA.map(([t, f, dibujo], i) => historia(W.tinta, `<div class="full cruz"></div>${curvas(1080, 1920, 540, 1500, 'rgba(144,204,240,.20)', 22, 70, i + 7)}
   ${cabeza(`ARMA EL TUYO · ${i + 1} DE ${ARMA.length}`, t, f, 150)}${dibujo}`, papel));
-const HISTORIAS = { 'como-pedir': pedir, carta: cartaHist, arma: armaHist, envios, bebidas };
+const HISTORIAS = { 'como-pedir': pedir, carta: cartaHist, arma: armaHist, envios, horario, bebidas };
 
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
