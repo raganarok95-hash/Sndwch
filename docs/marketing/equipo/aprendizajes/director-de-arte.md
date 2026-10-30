@@ -104,3 +104,7 @@
   algo de color o de sando y wicho». En el perfil sí salen: el logo como foto de perfil, sus caras
   en los destacados y cada uno en su mundo en las piezas de información (SANDO en la carta, WICHO en
   cómo pedir). Siguen sin pegarse encima de las fotos de comida.
+- **2026-10-30 · Descomponer, no pegar.** «Creo que confundiste falta sando y wicho con ponlos en todo
+  ig, ten creatividad o sea mira descompone usa los colores». Que falte un hermano no se arregla
+  dibujándolo en todo: se arregla con sus elementos (el acanalado y el forro de SANDO, las curvas de
+  nivel y la espiral de WICHO, sus colores), igual que con el armador en «Noche».

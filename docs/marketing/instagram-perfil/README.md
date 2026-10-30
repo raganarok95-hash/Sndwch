@@ -3,10 +3,16 @@
 Dueño: «Diseñame cómo se debe ver nuestro Instagram, foto de perfil, destacados, miniaturas, todo».
 Maqueta: `perfil-maqueta.jpg`. **Es una propuesta: falta el sí del dueño.**
 
-Versión 2 (mismo día). Dueño: «Como que le falta un poco del logo, algo de color o de sando y wicho».
-Entran el logo como foto de perfil y los hermanos en los destacados y en las dos fijadas de información,
-cada uno en su mundo y con sus colores. **Las fotos de comida siguen limpias**: un hermano nunca se pega
-encima de una foto de comida (estilo «Lo que llega»).
+Versión 3 (mismo día), la vigente. Dueño: «Creo que confundiste falta sando y wicho con ponlos en todo
+ig, ten creatividad o sea mira descompone usa los colores». Los hermanos ya no salen dibujados por todos lados:
+**salen descompuestos** en sus elementos (`docs/LOS_DOS_HERMANOS.md`). Dibujado queda solo el logo de la foto de perfil.
+
+- **SANDO** (los Signatures): el oliva de su casaca con el acanalado de puños y basta, su verde casi negro
+  y el forro naranja como franja lisa y vertical, solo en su mundo (la carta y Zonas).
+- **WICHO** (arma el tuyo, cómo pedir): su celeste con las curvas de nivel del polo, la espiral lila de sus
+  ojos (calculada) y su tinta con la trama cruzada.
+- **Los Signatures** llevan la foto limpia arriba. Abajo va la basta acanalada de SANDO con el texto.
+  Nada se monta encima de la comida.
 
 ## Lo que va en el perfil
 
@@ -19,16 +25,20 @@ encima de una foto de comida (estilo «Lo que llega»).
 | Botones | Mensaje y WhatsApp |
 
 - **Foto de perfil** (`foto-de-perfil.jpg`): el logo de la app, con los dos hermanos, sobre el papel.
-- **Destacados** (`destacado-*.jpg`, portadas de 1080 × 1920): Carta (SANDO) · Cómo pedir (WICHO) · Bebidas
-  (SANDO) · Zonas (WICHO). Cada hermano va con su cara y sobre su color: SANDO en el papel, WICHO en su
-  celeste. Va «Zonas» y no «Dónde llegamos» porque Instagram corta el nombre a unos 10 caracteres.
+- **Destacados** (`destacado-*.jpg`, portadas de 1080 × 1920), cada uno un pedazo de un hermano con el ícono de la app:
+  - Carta: el acanalado oliva de SANDO.
+  - Cómo pedir: el celeste y las curvas de nivel de WICHO.
+  - Bebidas: la espiral lila de WICHO.
+  - Zonas: el verde y el forro de SANDO.
+
+  Va «Zonas» y no «Dónde llegamos» porque Instagram corta el nombre a unos 10 caracteres.
 - **Cuadrícula** (`publicacion-*.jpg`, 1080 × 1350). Todo lo importante va dentro del recorte 3:4 que hace
   Instagram en el perfil desde enero de 2025.
 
 | | 1 | 2 | 3 |
 |---|---|---|---|
-| fijadas | Abrimos (Philly, `instagram-preapertura/`) | La carta, en el mundo de SANDO (carrusel) | Cuatro pasos, en el mundo de WICHO (carrusel) |
-| | Meatball (`instagram-preapertura/`) | Turkey (rehecha: la anterior perdía «la tarde» en el recorte) | Tuna Melt |
+| fijadas | Abrimos (Philly) | La carta, en el mundo de SANDO (carrusel) | Cuatro pasos, en el mundo de WICHO (carrusel) |
+| | Meatball | Turkey | Tuna Melt |
 | | Italian Hoagie | Classic Tuna | Reel «Detrás del pan» (lo graba el dueño) |
 
 Las fotos nuevas (`anuncios/fotos/foto-tuna-melt.jpg`, `foto-italian-hoagie.jpg` y `foto-classic-tuna.jpg`)
@@ -43,5 +53,5 @@ A la Classic Tuna se le rehízo la foto porque traía una taza de café (nada qu
 ⚠ **La Meatball de preapertura muestra la bebida en un vaso.** Dueño, 2026-10-29: «Debe ser en los
 envases, nunca en jarra». Hay que regenerar esa foto con la bebida en su envase.
 
-Para regenerar: `FUENTES_CSS=$(bash scripts/piezas/fuentes-locales.sh) node docs/marketing/instagram-perfil/perfil-ig.cjs`.
+Para regenerar: `FUENTES_CSS=$(bash scripts/piezas/fuentes-locales.sh) SALIDA=out node docs/marketing/instagram-perfil/perfil-ig.cjs`.
 Escribe en `out/`, junto al script.
