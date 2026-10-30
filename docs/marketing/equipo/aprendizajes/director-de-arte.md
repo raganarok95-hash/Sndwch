@@ -132,3 +132,9 @@
   Trujillo». Antes de nombrar una sección, verificar el dato en el código: el envío no tiene límite
   desde el 2026-09-30 (`reglas.ts`). El destacado pasa a «Envíos» y la biografía dice «a domicilio en
   todo Trujillo».
+- **2026-10-30 · Instagram aprobado.** «Aprobado». La versión vigente es `instagram-perfil/final/`:
+  - el logo oficial con el fondo partido;
+  - los dos lados (SANDO y los Signatures, WICHO y arma el tuyo), con las poses oficiales;
+  - la comida limpia arriba y la basta acanalada abajo;
+  - dos carruseles fijados y un Reel por semana;
+  - «Envíos» en lugar de «Zonas».
