@@ -87,8 +87,8 @@ const listaCarta = (c, t = 92) => `<div class="disp" style="font-size:${t}px;lin
 // LAS HISTORIAS DE LOS DESTACADOS (2026-10-30). Un destacado se arma con historias publicadas: estas son
 // las de cada uno, en 1080 × 1920. Lo importante va entre los 250 px de arriba (nombre de la cuenta) y los 250
 // de abajo (la barra para responder). Cada destacado vive en el mundo de su hermano, igual que su portada:
-//  · Cómo pedir (WICHO): los 4 pasos, con «Próximamente» (dueño, 2026-10-30: «Haz el cómo pedir y de las
-//    bebidas en lata, solo agrégale próximamente»). Salen ya.
+//  · Cómo pedir (WICHO): los 4 pasos, sin «Próximamente» (dueño, 2026-10-30: «Quítale el próximamente, solo
+//    las bebidas deben tener el próximamente»). Salen ya.
 //  · Envíos (SANDO): todo Trujillo y el envío por distancia. Salen ya.
 //  · Carta (SANDO): los seis Signatures. Salen ya.
 //  · Bebidas (WICHO): las tres de la casa, en su lata, con «Próximamente»: al abrir salen en botella (dueño,
@@ -111,7 +111,7 @@ const PASOS_TXT = [
   ['Te llega a la puerta', 'Armado al momento y directo a tu casa.', 'wicho2_come', 'left:50%;transform:translateX(-50%);bottom:250px;height:760px'],
 ];
 const pedir = PASOS_TXT.map(([t, f, pose, donde], i) => historia(W.pelaje, `${curvas(1080, 1920, 540, 1500, W.curvas, 22, 70, i + 2)}
-  ${cabeza(`CÓMO PEDIR · ${i + 1} DE ${PASOS_TXT.length}`, t, f, 132, pronto(W.lilaO, papel))}
+  ${cabeza(`CÓMO PEDIR · ${i + 1} DE ${PASOS_TXT.length}`, t, f, 132)}
   <img src="${PJ(pose)}" class="abs" style="${donde}">`, W.tinta));
 
 const envios = [

@@ -147,3 +147,5 @@ que sí se editan.
 ## 2026-10-30 · «Próximamente» en lo que todavía no llega
 Dueño: «Haz el cómo pedir y de las bebidas en lata, solo agrégale próximamente». Lo que todavía no se puede pedir o
 no llega en ese envase sale igual, con una píldora «PRÓXIMAMENTE» junto a la etiqueta, en el color del hermano.
+Corrección del mismo día. Dueño: «Quítale el próximamente, solo las bebidas deben tener el próximamente». «Cómo pedir»
+va sin la píldora.

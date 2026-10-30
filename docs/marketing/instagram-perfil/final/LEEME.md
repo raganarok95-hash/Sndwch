@@ -91,7 +91,7 @@ Un destacado se arma con historias publicadas. Cada uno vive en el mundo de su h
 |---|---|---|
 | Envíos | 2: todo Trujillo, y el envío por distancia | ya |
 | Carta | 6: un Signature por historia | ya |
-| Cómo pedir | 4: los pasos, con «Próximamente» | ya (dueño: «solo agrégale próximamente») |
+| Cómo pedir | 4: los pasos | ya (dueño: «Quítale el próximamente, solo las bebidas deben tener el próximamente») |
 | Bebidas | 3: The Bloom, Cold Brew Tea y The Cool en su lata, con «Próximamente» | ya: al abrir salen en botella (dueño, 2026-10-24), y la etiqueta dice que la lata todavía no llega |
 
 ## Cómo se publica solo
