@@ -73,3 +73,17 @@ nuevo). La usa el lanzamiento de Instagram (la carta y la lámina del Turkey) en
 `fotos/foto-turkey-v4.jpg` (Figma, `gemini-3.1-flash-image`): el mismo prompt de la v3 con «CLOSE-UP:
 a single 15 cm submarine sandwich fills half to two thirds of the frame, three-quarter angle», sin
 laptop. Es la que usan las finales del anuncio (`piezas/2026-10-anuncio-turkey/final/`).
+
+## Los Signatures en 30 cm, partidos en dos (2026-10-30)
+
+Dueño: «No se ven grandes los sándwiches, dan la impresión de ser un pan pequeño, y recuerda que el de 15 siempre es la
+mitad de uno de 30». Las fotos anteriores mostraban un pan corto cerrado por las dos puntas, y ese pan no existe en la
+carta: el de 15 cm es la mitad de uno de 30, con una punta redonda y un corte.
+- **La toma nueva:** el de 30 cm partido en sus dos mitades, con las caras del corte de frente y el relleno a la vista,
+  sobre kraft y madera oscura.
+- **Lo que se probó:** también una versión con la nota «En la foto, el de 30 cm · el de 15 es la mitad». El dueño eligió
+  «Así, pero sin la nota».
+
+| archivo | herramienta | lo que pide el prompt |
+|---|---|---|
+| `fotos/foto-philly-30.jpg` | Gamma (`generate_image`, tipo foto, 4:5), porque Figma no tenía créditos | 30 cm Philly cheesesteak on a soft white sub roll, cut into two 15 cm halves, cut faces to camera: thinly sliced sautéed beef, sautéed white onion, green bell pepper, melted cheddar; no sauce; each half one rounded end and one cut end; generous but realistic; kraft paper, dark wood; no drinks, text or people |
