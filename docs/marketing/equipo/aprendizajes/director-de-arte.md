@@ -149,3 +149,8 @@ Dueño: «Haz el cómo pedir y de las bebidas en lata, solo agrégale próximame
 no llega en ese envase sale igual, con una píldora «PRÓXIMAMENTE» junto a la etiqueta, en el color del hermano.
 Corrección del mismo día. Dueño: «Quítale el próximamente, solo las bebidas deben tener el próximamente». «Cómo pedir»
 va sin la píldora.
+
+## 2026-10-30 · A los sándwiches «les faltaba algo»
+Dueño: «las fotos de sándwich igual como que les falta algo» y «falta el poder pedir por WhatsApp». Entre el actual, B (el
+nombre como titular, WhatsApp y el logo como sello) y C (lo mismo, con el sándwich llenando el cuadro), eligió **C**.
+Lección: en un Signature, el nombre manda, el sándwich llena el cuadro y siempre se dice por dónde pedir.

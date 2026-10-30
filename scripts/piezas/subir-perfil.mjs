@@ -8,10 +8,10 @@
 //  2. Con PUBLICAR=si: programa lo que sale ya (`cuando: 'ya'`), cinco minutos una de otra, para que cada
 //     corrida del cron (cada 15 minutos) publique tres como mucho y en orden. Lo que todavía no llega sale con
 //     «Próximamente» en la imagen (dueño, 2026-10-30); lo que tenga otro `cuando` espera.
-// Ningún texto que invite a pedir sale antes de abrir: se revisa con invitaAPedir() antes de programar.
+// Este set SÍ invita a pedir por WhatsApp antes de abrir, por decisión del dueño (2026-10-30: «falta el poder pedir por
+// WhatsApp donde les pasamos igual la web»). Por eso no pasa por invitaAPedir(): el resto del sistema sigue esperando a abrir.
 import { readFileSync } from 'node:fs';
 import { SB, BUCKET, conectar } from '../video-auto/produccion.mjs';
-import { invitaAPedir } from '../video-auto/reglas-del-revisor.mjs';
 
 const DIR = 'docs/marketing/instagram-perfil/final';
 const PUBLICAR = process.env.PUBLICAR === 'si';
@@ -23,7 +23,6 @@ const json = { 'Content-Type': 'application/json', Prefer: 'return=minimal' };
 
 if (PUBLICAR) {
   const ya = piezas.filter((p) => p.cuando === 'ya');
-  for (const p of ya) if (p.texto && invitaAPedir(p.texto)) throw new Error(`${p.src} invita a pedir: espera a abrir`);
   const base = Date.now();
   for (const [k, p] of ya.entries()) {
     const fila = await pedir(`${SB}/rest/v1/marketing_calendar?src=eq.${p.src}&select=id,status`);
