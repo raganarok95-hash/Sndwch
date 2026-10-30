@@ -59,7 +59,12 @@ de `instagram-preapertura/` todavía muestra el vaso: no se usa.
 Dueño: «dame 7 versiones más de todo lo que Instagram, con sando, wicho, sin, mezclados, descompuestos y en
 todas dame una idea por cada una de la foto de perfil». Están en `siete/`: la maqueta de cada una
 (`perfil-*.jpg`), las 7 fotos de perfil juntas (`fotos-de-perfil-7.jpg`) y la idea de cada foto
-(`ideas.json`). El script (`siete/siete.cjs`) genera también cada pieza suelta. Las versiones:
+(`ideas.json`). El script (`siete/siete.cjs`) genera también cada pieza suelta.
+
+**La foto de perfil es siempre el logo oficial** (dueño, 2026-10-30: «¿Por qué en ninguno tiene nuestro
+logo oficial?»). Es el isotipo de `img/marca/avatar-1024-transparente.png`, que no se redibuja ni se migra
+(`docs/PANTALLAS_APROBADAS.md`). En cada versión cambia solo el fondo. La primera tanda de las 7 había
+inventado otras fotos de perfil, y eso fue un error. Las versiones:
 
 1. SANDO
 2. WICHO
