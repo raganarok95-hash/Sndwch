@@ -1,6 +1,6 @@
 ---
 id: 2026-10-30-ig-sando-zonas
-pieza: Instagram, destacado «Zonas» (docs/marketing/instagram-perfil/final/)
+pieza: Instagram, destacado «Envíos» (antes «Zonas») (docs/marketing/instagram-perfil/final/)
 tipo: imagen
 formato: "1:1"
 personajes: [SANDO]

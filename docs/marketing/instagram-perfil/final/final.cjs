@@ -98,10 +98,12 @@ const perfil = caja(1080, 1080, '', `<div class="abs rib" style="left:0;top:0;bo
   <div class="abs" style="right:0;top:0;bottom:0;width:540px;background:${W.pelaje}"></div>
   <div class="full" style="${centrado}"><img src="${LOGO}" style="width:940px;height:940px;position:relative"></div>`);
 
-// Destacados, en el orden en que un cliente nuevo pregunta: cómo pido, ¿llegan a mi zona?, qué hay, qué tomo.
+// Destacados, en el orden en que un cliente nuevo pregunta: cómo pido, ¿cuánto me cobran por traerlo?, qué hay,
+// qué tomo. No hay «zonas»: el envío llega a todo Trujillo y se cobra por distancia (reglas.ts, sin límite
+// desde el 2026-09-30).
 const DEST = [
   ['pedir', 'Cómo pedir', portada(W.pelaje, `${curvas(1080, 1920, 540, 960, W.curvas, 16, 70, 2)}<img src="${PJ('wicho2_rie')}" style="position:relative;height:840px;transform:translateY(30px)">`)],
-  ['zonas', 'Zonas', portada(S.verde, `<div class="abs" style="left:250px;top:0;bottom:0;width:60px;background:${S.forro}"></div><img src="${PJ('sando2_asoma')}" class="abs" style="left:0;bottom:0;height:1500px">`)],
+  ['envios', 'Envíos', portada(S.verde, `<div class="abs" style="left:250px;top:0;bottom:0;width:60px;background:${S.forro}"></div><img src="${PJ('sando2_asoma')}" class="abs" style="left:0;bottom:0;height:1500px">`)],
   ['carta', 'Carta', portada(S.oliva, `<div class="full rib"></div><img src="${PJ('sando2_frente')}" style="position:relative;height:1050px;transform:translateY(40px)">`)],
   ['bebidas', 'Bebidas', portada(W.lilaO, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(195,166,210,.35)', 22)}<img src="${PJ('wicho_asoma')}" class="abs" style="left:50%;transform:translateX(-50%);bottom:380px;height:1000px">`)],
 ];
@@ -135,6 +137,19 @@ const reel = caja(1080, 1350, `background:${W.tinta};color:${papel};${centrado};
   <div class="voz" style="font-size:44px;color:${W.durazno};position:relative">Tu video, de 10 a 15 segundos: el pan, la plancha y el armado. La comida en el primer segundo.</div>`);
 
 const F = Object.fromEntries(FOOD.map((d) => [d.n, d]));
+const laminaArma = (n, titulo, frase, pose, alto) => caja(1080, 1350, `background:${W.pelaje};color:${W.tinta}`, `${curvas(1080, 1350, 880, 1120, W.curvas, 18, 66, n + 3)}
+  <img src="${PJ(pose)}" class="abs" style="right:20px;bottom:110px;height:${alto}px">
+  <div class="abs" style="left:96px;top:92px;right:96px"><div class="mono" style="font-size:26px">ARMA EL TUYO · ${n} DE 3</div>
+    <div class="disp" style="font-size:150px;margin-top:30px">${titulo}</div><div class="voz" style="font-size:56px;margin-top:30px;max-width:640px">${frase}</div></div>
+  <div class="abs" style="left:96px;right:96px;bottom:56px;display:flex;justify-content:space-between;align-items:center"><div class="mono" style="font-size:26px">${MONO}</div>${marca(W.tinta, 40)}</div>`);
+const CARRUSELES = {
+  carta: FOOD.map((d) => sig(d)),
+  arma: [
+    laminaArma(1, 'El pan.', 'Classic, de miga suave, o Focaccia, con aceite de oliva y sal gruesa.', 'wicho2_rie', 520),
+    laminaArma(2, 'La proteína.', PROT.join(', ').replace(/, ([^,]*)$/, ' o $1') + '.', 'wicho_saluda', 560),
+    laminaArma(3, 'Lo de encima.', 'Verduras, queso y hasta 3 salsas incluidas. Lo eliges tú.', 'wicho2_come', 580),
+  ],
+};
 // La cuadrícula, de izquierda a derecha y de arriba abajo. Las 3 primeras van fijadas.
 const POSTS = [
   { n: '1-abrimos', html: sig(F['1-abrimos']), fijada: true, por: 'Fijada 1: anuncia la apertura con el Signature estrella.' },
@@ -147,7 +162,7 @@ const POSTS = [
   { n: '8-italian-hoagie', html: sig(F['7-italian-hoagie']), por: 'El de todo.' },
   { n: '9-classic-tuna', html: sig(F['8-classic-tuna']), por: 'El del escritorio.' },
 ];
-const BIO = ['Sándwiches de pan largo, al estilo americano.', 'Elige uno de la casa o arma el tuyo.', 'A domicilio · Abrimos en noviembre.'];
+const BIO = ['Sándwiches de pan largo, al estilo americano.', 'Elige uno de la casa o arma el tuyo.', 'A domicilio en todo Trujillo · Abrimos en noviembre.'];
 
 const ui = `body{background:#fff;font-family:Archivo,sans-serif;color:#0B0B0B}
   .t{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px;font:800 19px Archivo}
@@ -178,6 +193,7 @@ const rl = '<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d=
   await sacar(pagina(1080, 1080, perfil), 1080, 1080, path.join(OUT, 'foto-de-perfil.jpg'));
   for (const [k, , html] of DEST) await sacar(pagina(1080, 1920, html), 1080, 1920, path.join(OUT, `destacado-${k}.jpg`));
   for (const p of POSTS) { p.jpg = path.join(OUT, `publicacion-${p.n}.jpg`); await sacar(pagina(1080, 1350, p.html), 1080, 1350, p.jpg); }
+  for (const [k, laminas] of Object.entries(CARRUSELES)) for (const [i, html] of laminas.entries()) await sacar(pagina(1080, 1350, html), 1080, 1350, path.join(OUT, `carrusel-${k}-${i + 2}.jpg`));
   const cuerpo = `<div style="width:390px"><div class="t"><span>snd__wch</span><span style="font-weight:400">≡</span></div>
     <div class="cab"><div class="av"></div><div class="num"><div>9<span>publicaciones</span></div><div>—<span>seguidores</span></div><div>—<span>seguidos</span></div></div></div>
     <div class="bio"><b>SND//WCH · Sándwiches a domicilio</b><br><span class="cat">Restaurante de sándwiches</span><br>${BIO.join('<br>')}<br><a>sndwch.app</a></div>

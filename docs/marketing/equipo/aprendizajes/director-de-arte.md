@@ -128,3 +128,7 @@
 - **2026-10-30 · El WICHO nuevo, descartado.** «Descarta el wicho que creaste, lo modificaste demasiado».
   Lo generado solo con texto sale parecido, no el mismo: otro pelo, otra cara, borde de sticker. Las
   poses nuevas se piden con la referencia a la vista (Flow) y se comparan lado a lado antes de usarlas.
+- **2026-10-30 · No hay «Zonas».** «¿Por qué tenemos algo llamado zonas? Si nuestra zona es todo
+  Trujillo». Antes de nombrar una sección, verificar el dato en el código: el envío no tiene límite
+  desde el 2026-09-30 (`reglas.ts`). El destacado pasa a «Envíos» y la biografía dice «a domicilio en
+  todo Trujillo».
