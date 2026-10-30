@@ -1,0 +1,37 @@
+[
+ {
+  "id": "1-sando",
+  "nombre": "SANDO",
+  "idea": "SANDO sonriendo, de tres cuartos, sobre el oliva acanalado de su casaca"
+ },
+ {
+  "id": "2-wicho",
+  "nombre": "WICHO",
+  "idea": "WICHO riéndose, de frente, sobre su celeste con las curvas de nivel de su polo"
+ },
+ {
+  "id": "3-sin",
+  "nombre": "Sin hermanos",
+  "idea": "Solo el // (dorado y celeste) sobre el papel: la marca más simple, se lee a cualquier tamaño"
+ },
+ {
+  "id": "4-mezclados",
+  "nombre": "Mezclados",
+  "idea": "Los dos juntos: SANDO a la izquierda sobre su oliva y WICHO a la derecha sobre su celeste, partidos al medio como el logo"
+ },
+ {
+  "id": "5-descompuestos",
+  "nombre": "Descompuestos",
+  "idea": "Un círculo partido por el //: la mitad acanalada de SANDO y la mitad de curvas de nivel de WICHO, sin dibujo"
+ },
+ {
+  "id": "6-el-corte",
+  "nombre": "El corte",
+  "idea": "La comida misma: un primer plano del Philly. En el feed se entiende al instante que vendemos sándwiches"
+ },
+ {
+  "id": "7-con-voz",
+  "nombre": "Con voz",
+  "idea": "Los dos asomándose al círculo, uno por cada lado, con el // en medio: como si te miraran desde la puerta"
+ }
+]

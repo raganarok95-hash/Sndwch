@@ -114,7 +114,7 @@ const POSTS = [
   { n: '1-abrimos', html: sig({ foto: `${FOTOS}/foto-philly.jpg`, titular: 'Hambre en serio.', voz: 'Philly Cheesesteak. Tan jugoso que no lleva salsa.' }), fijada: true },
   { n: '2-carta', html: carta, fijada: true },
   { n: '3-como-pedir', html: comoPedir, fijada: true },
-  { n: '4-meatball', html: sig({ foto: `${FOTOS}/foto-meatball.jpg`, titular: 'Hoy no cocinas.', voz: 'Meatball Marinara. Albóndigas en su propia marinara.' }) },
+  { n: '4-meatball', html: sig({ foto: `${FOTOS}/foto-meatball-lata.jpg`, titular: 'Hoy no cocinas.', voz: 'Meatball Marinara. Albóndigas en su propia marinara.' }) },
   { n: '5-turkey', html: sig({ foto: `${FOTOS}/foto-turkey-v4.jpg`, titular: 'El almuerzo que no<br>te tumba la tarde.', tam: 100, voz: 'Turkey. Llena sin pesar.' }) },
   { n: '6-tuna-melt', html: sig({ foto: `${FOTOS}/foto-tuna-melt.jpg`, titular: 'Antojo de algo<br>caliente.', tam: 104, voz: 'Tuna Melt. El cheddar se estira al primer mordisco.' }) },
   { n: '7-italian-hoagie', html: sig({ foto: `${FOTOS}/foto-italian-hoagie.jpg`, titular: 'Cuando quieres<br>de todo.', tam: 104, voz: 'Italian Hoagie. Cada capa suma y ninguna sobra.' }) },
