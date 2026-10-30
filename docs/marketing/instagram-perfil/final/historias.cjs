@@ -87,16 +87,19 @@ const listaCarta = (c, t = 92) => `<div class="disp" style="font-size:${t}px;lin
 // LAS HISTORIAS DE LOS DESTACADOS (2026-10-30). Un destacado se arma con historias publicadas: estas son
 // las de cada uno, en 1080 × 1920. Lo importante va entre los 250 px de arriba (nombre de la cuenta) y los 250
 // de abajo (la barra para responder). Cada destacado vive en el mundo de su hermano, igual que su portada:
-//  · Cómo pedir (WICHO): los 4 pasos. Esperan a abrir: invitan a pedir y la app dice «Aún no abrimos».
+//  · Cómo pedir (WICHO): los 4 pasos, con «Próximamente» (dueño, 2026-10-30: «Haz el cómo pedir y de las
+//    bebidas en lata, solo agrégale próximamente»). Salen ya.
 //  · Envíos (SANDO): todo Trujillo y el envío por distancia. Salen ya.
 //  · Carta (SANDO): los seis Signatures. Salen ya.
-//  · Bebidas (WICHO): las tres de la casa, en su lata. Esperan las latas: al abrir salen en botella (dueño,
-//    2026-10-24: «Botella al abrir, latas después»), y la historia no puede mostrar un envase que no llega.
+//  · Bebidas (WICHO): las tres de la casa, en su lata, con «Próximamente»: al abrir salen en botella (dueño,
+//    2026-10-24: «Botella al abrir, latas después»), y la etiqueta dice que la lata todavía no llega. Salen ya.
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 const LATAS = `${REPO}/docs/marketing/instagram-perfil/final/latas`;
 const historia = (fondo, dentro, color = papel) => caja(1080, 1920, `background:${fondo};color:${color}`, dentro);
-const cabeza = (etiqueta, titulo, frase, t = 140) => `<div class="abs" style="left:84px;right:84px;top:270px">
-  <div class="mono" style="font-size:30px">${etiqueta}</div>
+// «Próximamente»: una píldora junto a la etiqueta, en el color del hermano.
+const pronto = (fondo, color) => `<span class="mono" style="font-size:38px;background:${fondo};color:${color};padding:12px 30px;border-radius:999px">PRÓXIMAMENTE</span>`;
+const cabeza = (etiqueta, titulo, frase, t = 140, chip = '') => `<div class="abs" style="left:84px;right:84px;top:270px">
+  <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap"><span class="mono" style="font-size:30px">${etiqueta}</span>${chip}</div>
   <div class="disp" style="font-size:${t}px;margin-top:22px">${titulo}</div>
   <div class="voz" style="font-size:54px;line-height:1.12;margin-top:24px;max-width:860px">${frase}</div></div>`;
 
@@ -108,7 +111,7 @@ const PASOS_TXT = [
   ['Te llega a la puerta', 'Armado al momento y directo a tu casa.', 'wicho2_come', 'left:50%;transform:translateX(-50%);bottom:250px;height:760px'],
 ];
 const pedir = PASOS_TXT.map(([t, f, pose, donde], i) => historia(W.pelaje, `${curvas(1080, 1920, 540, 1500, W.curvas, 22, 70, i + 2)}
-  ${cabeza(`CÓMO PEDIR · ${i + 1} DE ${PASOS_TXT.length}`, t, f, 132)}
+  ${cabeza(`CÓMO PEDIR · ${i + 1} DE ${PASOS_TXT.length}`, t, f, 132, pronto(W.lilaO, papel))}
   <img src="${PJ(pose)}" class="abs" style="${donde}">`, W.tinta));
 
 const envios = [
@@ -135,7 +138,7 @@ const BEB = [
   ['cool', 'The Cool', 'Hierba luisa y menta fresca en infusión helada.'],
 ];
 const bebidas = BEB.map(([f, n, d], i) => historia(W.lilaO, `${svgEsp(1080, 1920, 540, 1180, 640, 'rgba(195,166,210,.22)', 26)}
-  ${cabeza(`BEBIDAS DE LA CASA · ${i + 1} DE ${BEB.length}`, n, d, 132)}
+  ${cabeza(`BEBIDAS DE LA CASA · ${i + 1} DE ${BEB.length}`, n, d, 132, pronto(W.lila, W.lilaO))}
   <img src="${img(`${LATAS}/lata-${f}.png`)}" class="abs" style="left:50%;transform:translateX(-50%);bottom:250px;height:880px;filter:drop-shadow(0 30px 40px rgba(0,0,0,.35))">`));
 
 const HISTORIAS = { 'como-pedir': pedir, envios, carta: cartaHist, bebidas };
