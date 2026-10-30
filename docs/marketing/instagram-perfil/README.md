@@ -50,8 +50,24 @@ se generaron fieles a la receta de `_shared/carta.ts`:
 Las fotos de `img/` de esos tres no calzan con la receta: el Tuna Melt sale abierto y el Classic Tuna con lechuga, tomate y pepino.
 A la Classic Tuna se le rehízo la foto porque traía una taza de café (nada que no se venda).
 
-⚠ **La Meatball de preapertura muestra la bebida en un vaso.** Dueño, 2026-10-29: «Debe ser en los
-envases, nunca en jarra». Hay que regenerar esa foto con la bebida en su envase.
+**La Meatball, rehecha (2026-10-30, dueño: «sí, regenera la Meatball con la bebida en su envase»).**
+Lleva la bebida en la lata PET sleek, sin vaso (`anuncios/fotos/foto-meatball-lata.jpg`). La pieza vieja
+de `instagram-preapertura/` todavía muestra el vaso: no se usa.
+
+## Las 7 versiones más (2026-10-30)
+
+Dueño: «dame 7 versiones más de todo lo que Instagram, con sando, wicho, sin, mezclados, descompuestos y en
+todas dame una idea por cada una de la foto de perfil». Están en `siete/`: la maqueta de cada una
+(`perfil-*.jpg`), las 7 fotos de perfil juntas (`fotos-de-perfil-7.jpg`) y la idea de cada foto
+(`ideas.json`). El script (`siete/siete.cjs`) genera también cada pieza suelta. Las versiones:
+
+1. SANDO
+2. WICHO
+3. Sin hermanos
+4. Mezclados
+5. Descompuestos
+6. El corte
+7. Con voz
 
 Para regenerar: `FUENTES_CSS=$(bash scripts/piezas/fuentes-locales.sh) SALIDA=out node docs/marketing/instagram-perfil/perfil-ig.cjs`.
 Escribe en `out/`, junto al script.

@@ -108,3 +108,6 @@
   ig, ten creatividad o sea mira descompone usa los colores». Que falte un hermano no se arregla
   dibujándolo en todo: se arregla con sus elementos (el acanalado y el forro de SANDO, las curvas de
   nivel y la espiral de WICHO, sus colores), igual que con el armador en «Noche».
+- **2026-10-30 · Siete caminos para el Instagram.** «Mejora y cambia, dame 7 versiones más de todo lo
+  que Instagram, con sando, wicho, sin, mezclados, descompuestos y en todas dame una idea por cada una
+  de la foto de perfil». Están en `docs/marketing/instagram-perfil/siete/`. Falta que elija.
