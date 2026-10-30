@@ -154,3 +154,9 @@ va sin la píldora.
 Dueño: «las fotos de sándwich igual como que les falta algo» y «falta el poder pedir por WhatsApp». Entre el actual, B (el
 nombre como titular, WhatsApp y el logo como sello) y C (lo mismo, con el sándwich llenando el cuadro), eligió **C**.
 Lección: en un Signature, el nombre manda, el sándwich llena el cuadro y siempre se dice por dónde pedir.
+
+## 2026-10-30 · Los destacados no se repiten
+Dueño: «la de zonas no me convence, además como que falta destacado». Envíos y Carta tenían las dos la cara de SANDO y
+casi no se distinguían. Envíos pasó a un ícono (el pin con anillos de distancia) y trae información útil: hasta dónde
+llega, cuánto cuesta y en qué horario. Se agregó **Arma el tuyo**, la otra mitad del concepto. Lección: cada portada se
+reconoce sola, y cada destacado responde una duda del cliente.

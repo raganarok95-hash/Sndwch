@@ -94,23 +94,43 @@
   "fijar": true
  },
  {
-  "src": "perfil-historia-envios-1",
-  "pieza": "historia-envios-1",
+  "src": "perfil-historia-como-pedir-1",
+  "pieza": "historia-como-pedir-1",
   "laminas": [
-   "historias/historia-envios-1.jpg"
+   "historias/historia-como-pedir-1.jpg"
   ],
   "formato": "historia",
-  "destacado": "Envíos",
+  "destacado": "Cómo pedir",
   "cuando": "ya"
  },
  {
-  "src": "perfil-historia-envios-2",
-  "pieza": "historia-envios-2",
+  "src": "perfil-historia-como-pedir-2",
+  "pieza": "historia-como-pedir-2",
   "laminas": [
-   "historias/historia-envios-2.jpg"
+   "historias/historia-como-pedir-2.jpg"
   ],
   "formato": "historia",
-  "destacado": "Envíos",
+  "destacado": "Cómo pedir",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-historia-como-pedir-3",
+  "pieza": "historia-como-pedir-3",
+  "laminas": [
+   "historias/historia-como-pedir-3.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Cómo pedir",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-historia-como-pedir-4",
+  "pieza": "historia-como-pedir-4",
+  "laminas": [
+   "historias/historia-como-pedir-4.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Cómo pedir",
   "cuando": "ya"
  },
  {
@@ -174,43 +194,63 @@
   "cuando": "ya"
  },
  {
-  "src": "perfil-historia-como-pedir-1",
-  "pieza": "historia-como-pedir-1",
+  "src": "perfil-historia-arma-1",
+  "pieza": "historia-arma-1",
   "laminas": [
-   "historias/historia-como-pedir-1.jpg"
+   "historias/historia-arma-1.jpg"
   ],
   "formato": "historia",
-  "destacado": "Cómo pedir",
+  "destacado": "Arma el tuyo",
   "cuando": "ya"
  },
  {
-  "src": "perfil-historia-como-pedir-2",
-  "pieza": "historia-como-pedir-2",
+  "src": "perfil-historia-arma-2",
+  "pieza": "historia-arma-2",
   "laminas": [
-   "historias/historia-como-pedir-2.jpg"
+   "historias/historia-arma-2.jpg"
   ],
   "formato": "historia",
-  "destacado": "Cómo pedir",
+  "destacado": "Arma el tuyo",
   "cuando": "ya"
  },
  {
-  "src": "perfil-historia-como-pedir-3",
-  "pieza": "historia-como-pedir-3",
+  "src": "perfil-historia-arma-3",
+  "pieza": "historia-arma-3",
   "laminas": [
-   "historias/historia-como-pedir-3.jpg"
+   "historias/historia-arma-3.jpg"
   ],
   "formato": "historia",
-  "destacado": "Cómo pedir",
+  "destacado": "Arma el tuyo",
   "cuando": "ya"
  },
  {
-  "src": "perfil-historia-como-pedir-4",
-  "pieza": "historia-como-pedir-4",
+  "src": "perfil-historia-envios-1",
+  "pieza": "historia-envios-1",
   "laminas": [
-   "historias/historia-como-pedir-4.jpg"
+   "historias/historia-envios-1.jpg"
   ],
   "formato": "historia",
-  "destacado": "Cómo pedir",
+  "destacado": "Envíos",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-historia-envios-2",
+  "pieza": "historia-envios-2",
+  "laminas": [
+   "historias/historia-envios-2.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Envíos",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-historia-envios-3",
+  "pieza": "historia-envios-3",
+  "laminas": [
+   "historias/historia-envios-3.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Envíos",
   "cuando": "ya"
  },
  {

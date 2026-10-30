@@ -101,10 +101,15 @@ const perfil = caja(1080, 1080, '', `<div class="abs rib" style="left:0;top:0;bo
 // Destacados, en el orden en que un cliente nuevo pregunta: cómo pido, ¿cuánto me cobran por traerlo?, qué hay,
 // qué tomo. No hay «zonas»: el envío llega a todo Trujillo y se cobra por distancia (reglas.ts, sin límite
 // desde el 2026-09-30).
+// Destacados (dueño, 2026-10-30: «la de zonas no me convence, además como que falta destacado»). Cinco, en el orden en
+// que un cliente nuevo duda: cómo pido, qué hay de la casa, cómo armo el mío, cuánto y cuándo llega, qué tomo. Instagram
+// muestra unos cinco sin deslizar. Cada portada es distinta: Envíos ya no repite la cara de SANDO que lleva Carta.
+const anillos = (cx, cy, c) => `<svg class="abs" style="left:0;top:0" width="1080" height="1920">${[150, 250, 350, 450].map((r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="5" stroke-dasharray="${r > 300 ? '18 16' : 'none'}"/>`).join('')}</svg>`;
 const DEST = [
   ['pedir', 'Cómo pedir', portada(W.pelaje, `${curvas(1080, 1920, 540, 960, W.curvas, 16, 70, 2)}<img src="${PJ('wicho2_rie')}" style="position:relative;height:840px;transform:translateY(30px)">`)],
-  ['envios', 'Envíos', portada(S.verde, `<div class="abs" style="left:250px;top:0;bottom:0;width:60px;background:${S.forro}"></div><img src="${PJ('sando2_asoma')}" class="abs" style="left:0;bottom:0;height:1500px">`)],
   ['carta', 'Carta', portada(S.oliva, `<div class="full rib"></div><img src="${PJ('sando2_frente')}" style="position:relative;height:1050px;transform:translateY(40px)">`)],
+  ['arma', 'Arma el tuyo', portada(W.tinta, `<div class="full cruz"></div>${curvas(1080, 1920, 540, 1100, 'rgba(144,204,240,.22)', 16, 70, 5)}<img src="${PJ('wicho2_celebra')}" style="position:relative;height:900px;transform:translateY(40px)">`)],
+  ['envios', 'Envíos', portada(S.verde, `<div class="abs" style="left:0;top:0;bottom:0;width:40px;background:${S.forro}"></div>${anillos(540, 960, 'rgba(201,168,124,.45)')}<div style="position:relative">${ico('zonas', papel, 420)}</div>`)],
   ['bebidas', 'Bebidas', portada(W.lilaO, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(195,166,210,.35)', 22)}<img src="${PJ('wicho_asoma')}" class="abs" style="left:50%;transform:translateX(-50%);bottom:380px;height:1000px">`)],
 ];
 

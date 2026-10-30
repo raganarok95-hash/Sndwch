@@ -94,6 +94,7 @@ const listaCarta = (c, t = 92) => `<div class="disp" style="font-size:${t}px;lin
 //  · Bebidas (WICHO): las tres de la casa, en su lata, con «Próximamente»: al abrir salen en botella (dueño,
 //    2026-10-24: «Botella al abrir, latas después»), y la etiqueta dice que la lata todavía no llega. Salen ya.
 // ════════════════════════════════════════════════════════════════════════════════════════════════
+const anillos = (cx, cy, c) => `<svg class="abs" style="left:0;top:0" width="1080" height="1920">${[150, 250, 350, 450].map((r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="5" stroke-dasharray="${r > 300 ? '18 16' : 'none'}"/>`).join('')}</svg>`;
 const LATAS = `${REPO}/docs/marketing/instagram-perfil/final/latas`;
 const historia = (fondo, dentro, color = papel) => caja(1080, 1920, `background:${fondo};color:${color}`, dentro);
 // «Próximamente»: una píldora junto a la etiqueta, en el color del hermano.
@@ -114,13 +115,29 @@ const pedir = PASOS_TXT.map(([t, f, pose, donde], i) => historia(W.pelaje, `${cu
   ${cabeza(`CÓMO PEDIR · ${i + 1} DE ${PASOS_TXT.length}`, t, f, 132)}
   <img src="${PJ(pose)}" class="abs" style="${donde}">`, W.tinta));
 
+// Envíos (SANDO, sin repetir su cara): hasta dónde llega, cuánto cuesta y cuándo. El horario sale de STORE_HOURS
+// (_shared/reglas.ts, igual que store_hours en la base).
+const HORAS = JSON.parse(fs.readFileSync(`${REPO}/supabase/functions/_shared/reglas.ts`, 'utf8').match(/STORE_HOURS[^=]*=\s*(\[[\s\S]*?\]);/)[1].replace(/\s/g, '').replace(/,\]/g, ']'));
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const abiertos = HORAS.map((h, k) => (h ? k : null)).filter((k) => k !== null);
+const cerrados = HORAS.map((h, k) => (h ? null : k)).filter((k) => k !== null);
+const hh = (n) => String(n).padStart(2, '0') + ':00';
+const unaHora = HORAS.find(Boolean);
+// «Martes a domingo» solo si los días abiertos son seguidos a partir del primero después del descanso.
+const desde = cerrados.length === 1 ? (cerrados[0] + 1) % 7 : abiertos[0];
+const seguidos = abiertos.every((k) => HORAS[k][0] === unaHora[0] && HORAS[k][1] === unaHora[1]);
+const tituloHorario = `${DIAS[desde][0].toUpperCase() + DIAS[desde].slice(1)} a ${DIAS[(desde + abiertos.length - 1) % 7]}, ${hh(unaHora[0])} a ${hh(unaHora[1])}.`;
+if (!seguidos || cerrados.length !== 1) throw new Error('el horario cambió: revisa la historia de Envíos');
+const fondoEnvios = `<div class="abs" style="left:0;top:0;bottom:0;width:26px;background:${S.forro}"></div>`;
+const boleta = `<div class="abs" style="left:150px;right:150px;top:1010px;background:${papel};color:${S.tinta};border-radius:20px;padding:56px 60px;display:flex;flex-direction:column;gap:30px;box-shadow:0 30px 60px rgba(0,0,0,.35)">
+  ${[['Tu pedido', '✓'], ['Envío', 'según distancia'], ['Total', 'antes de pagar']].map(([a, b], k) => `<div style="display:flex;justify-content:space-between;align-items:baseline;${k === 2 ? `border-top:3px dashed ${S.oliva};padding-top:30px` : ''}"><span class="mono" style="font-size:34px">${a.toUpperCase()}</span><span class="voz" style="font-size:48px">${b}</span></div>`).join('')}</div>`;
 const envios = [
-  historia(S.verde, `<div class="abs" style="left:0;top:0;bottom:0;width:26px;background:${S.forro}"></div>
-    ${cabeza('ENVÍOS', 'Llegamos a todo Trujillo.', 'No hay zonas: si estás en Trujillo, llegamos.')}
-    <img src="${PJ('sando2_asoma')}" class="abs" style="left:26px;bottom:0;height:1080px">`),
-  historia(S.verde, `<div class="abs" style="left:0;top:0;bottom:0;width:26px;background:${S.forro}"></div>
-    ${cabeza('ENVÍOS', 'El envío se calcula por distancia.', 'La app te dice cuánto es antes de pagar.')}
-    <img src="${PJ('sando2_pulgar')}" class="abs" style="left:0;bottom:320px;height:620px">`),
+  historia(S.verde, `${fondoEnvios}${anillos(540, 1330, 'rgba(201,168,124,.40)')}<div class="abs" style="left:50%;top:1330px;transform:translate(-50%,-62%)">${ico('zonas', S.forro, 300)}</div>
+    ${cabeza('ENVÍOS · 1 DE 3', 'Llegamos a todo Trujillo.', 'No hay zonas: si estás en Trujillo, llegamos.')}`),
+  historia(S.verde, `${fondoEnvios}${boleta}
+    ${cabeza('ENVÍOS · 2 DE 3', 'El envío va por distancia.', 'La app te dice cuánto es antes de pagar. Sin sorpresas.')}`),
+  historia(S.verde, `${fondoEnvios}<img src="${PJ('sando2_pulgar')}" class="abs" style="left:0;bottom:330px;height:620px">
+    ${cabeza('HORARIO · 3 DE 3', tituloHorario, `Los ${cerrados.map((k) => DIAS[k]).join(' y ')} descansamos.`)}`),
 ];
 
 const cartaHist = FOOD.map((d, i) => historia(S.oliva, `
@@ -141,7 +158,18 @@ const bebidas = BEB.map(([f, n, d], i) => historia(W.lilaO, `${svgEsp(1080, 1920
   ${cabeza(`BEBIDAS DE LA CASA · ${i + 1} DE ${BEB.length}`, n, d, 132, pronto(W.lila, W.lilaO))}
   <img src="${img(`${LATAS}/lata-${f}.png`)}" class="abs" style="left:50%;transform:translateX(-50%);bottom:250px;height:880px;filter:drop-shadow(0 30px 40px rgba(0,0,0,.35))">`));
 
-const HISTORIAS = { 'como-pedir': pedir, envios, carta: cartaHist, bebidas };
+
+// Arma el tuyo (WICHO, en su tinta para no confundirse con Cómo pedir): pan, proteína y lo de encima.
+const PROT = ['Res', 'Atún', 'Albóndiga', 'Pavo'];
+const ARMA = [
+  ['El pan.', 'Classic, de miga suave, o Focaccia, con aceite de oliva y sal gruesa.', 'wicho2_rie', 'left:50%;transform:translateX(-50%);bottom:250px;height:700px'],
+  ['La proteína.', PROT.join(', ').replace(/, ([^,]*)$/, ' o $1') + '.', 'wicho2_celebra', 'left:50%;transform:translateX(-50%);bottom:250px;height:760px'],
+  ['Lo de encima.', 'Verduras, queso y hasta 3 salsas incluidas. Lo eliges tú.', 'wicho_cuerpo', 'left:50%;transform:translateX(-50%);bottom:250px;height:760px'],
+];
+const armaHist = ARMA.map(([t, f, pose, donde], i) => historia(W.tinta, `<div class="full cruz"></div>${curvas(1080, 1920, 540, 1500, 'rgba(144,204,240,.20)', 22, 70, i + 7)}
+  ${cabeza(`ARMA EL TUYO · ${i + 1} DE ${ARMA.length}`, t, f, 150)}
+  <img src="${PJ(pose)}" class="abs" style="${donde}">`, papel));
+const HISTORIAS = { 'como-pedir': pedir, carta: cartaHist, arma: armaHist, envios, bebidas };
 
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
