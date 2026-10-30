@@ -3,6 +3,11 @@
 Dueño: «Diseñame cómo se debe ver nuestro Instagram, foto de perfil, destacados, miniaturas, todo».
 Maqueta: `perfil-maqueta.jpg`. **Es una propuesta: falta el sí del dueño.**
 
+Versión 2 (mismo día). Dueño: «Como que le falta un poco del logo, algo de color o de sando y wicho».
+Entran el logo como foto de perfil y los hermanos en los destacados y en las dos fijadas de información,
+cada uno en su mundo y con sus colores. **Las fotos de comida siguen limpias**: un hermano nunca se pega
+encima de una foto de comida (estilo «Lo que llega»).
+
 ## Lo que va en el perfil
 
 | campo | texto |
@@ -13,15 +18,16 @@ Maqueta: `perfil-maqueta.jpg`. **Es una propuesta: falta el sí del dueño.**
 | Enlace | `https://sndwch.app/?src=ig-bio` (ya puesto por el dueño, P37) |
 | Botones | Mensaje y WhatsApp |
 
-- **Foto de perfil** (`foto-de-perfil.jpg`): el `//`, la barra dorada y la celeste, sobre la tinta.
-- **Destacados** (`destacado-*.jpg`, portadas de 1080 × 1920): Carta · Cómo pedir · Bebidas · Zonas. Son los
-  íconos de la app en papel sobre tinta. Va «Zonas» y no «Dónde llegamos» porque Instagram corta el nombre a unos 10 caracteres.
+- **Foto de perfil** (`foto-de-perfil.jpg`): el logo de la app, con los dos hermanos, sobre el papel.
+- **Destacados** (`destacado-*.jpg`, portadas de 1080 × 1920): Carta (SANDO) · Cómo pedir (WICHO) · Bebidas
+  (SANDO) · Zonas (WICHO). Cada hermano va con su cara y sobre su color: SANDO en el papel, WICHO en su
+  celeste. Va «Zonas» y no «Dónde llegamos» porque Instagram corta el nombre a unos 10 caracteres.
 - **Cuadrícula** (`publicacion-*.jpg`, 1080 × 1350). Todo lo importante va dentro del recorte 3:4 que hace
   Instagram en el perfil desde enero de 2025.
 
 | | 1 | 2 | 3 |
 |---|---|---|---|
-| fijadas | Abrimos (Philly, `instagram-preapertura/`) | La carta (carrusel) | Cuatro pasos (carrusel) |
+| fijadas | Abrimos (Philly, `instagram-preapertura/`) | La carta, en el mundo de SANDO (carrusel) | Cuatro pasos, en el mundo de WICHO (carrusel) |
 | | Meatball (`instagram-preapertura/`) | Turkey (rehecha: la anterior perdía «la tarde» en el recorte) | Tuna Melt |
 | | Italian Hoagie | Classic Tuna | Reel «Detrás del pan» (lo graba el dueño) |
 
