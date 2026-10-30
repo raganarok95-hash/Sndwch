@@ -6,7 +6,8 @@ const fs = require('fs'), path = require('path');
 const D = __dirname, OUT = path.join(D, 'out'); fs.mkdirSync(OUT, { recursive: true });
 const FUENTES = fs.readFileSync(process.env.FUENTES_CSS, 'utf8');
 const img = (p) => 'file://' + path.resolve(p);
-const C = { papel: '#EFE6D4', tinta: '#1E2B22', oro: '#CBA258', celeste: '#8CC8EC' };
+const C = { papel: '#EFE6D4', tinta: '#1E2B22', oro: '#CBA258', celeste: '#8CC8EC', pelaje: '#90CCF0', tintaW: '#1E2F3A', durazno: '#F0D8CC' };
+const IMG = (n) => img(`${'/home/user/Sndwch'}/img/${n}.png`);
 const REPO = '/home/user/Sndwch';
 
 const BASE = `*{box-sizing:border-box;margin:0;padding:0}
@@ -21,8 +22,8 @@ const marca = (color = C.papel, t = 46) => `<span class="wm" style="color:${colo
 const pagina = (w, h, cuerpo, extra = '') => `<!doctype html><html><head><meta charset="utf-8"><style>${FUENTES}html,body{width:${w}px;height:${h}px;overflow:hidden}${BASE}${extra}</style></head><body>${cuerpo}</body></html>`;
 
 // ── 1. Foto de perfil: el // solo, sobre la tinta. Se lee a 32 px, donde «SND//WCH» ya no.
-const perfil = pagina(1080, 1080, `<div style="width:1080px;height:1080px;background:${C.tinta};display:flex;align-items:center;justify-content:center">
-  <span class="mk" style="font-size:560px;margin:0;transform:translateX(-14px)"><i></i><i></i></span></div>`);
+const perfil = pagina(1080, 1080, `<div style="width:1080px;height:1080px;background:${C.papel};display:flex;align-items:center;justify-content:center">
+  <img src="${img('/home/user/Sndwch/img/logo-avatar-640.webp')}" style="width:900px;height:900px"></div>`);
 
 // ── 2. Destacados: el ícono de la app en papel sobre tinta, dentro del círculo que recorta Instagram.
 const ICON = {
@@ -32,8 +33,9 @@ const ICON = {
   zonas: '<path d="M12 21s7-7.5 7-12a7 7 0 1 0-14 0c0 4.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.3"/>',
 };
 const DEST = [['carta', 'Carta'], ['pedir', 'Cómo pedir'], ['bebidas', 'Bebidas'], ['zonas', 'Zonas']];
-const portada = (k) => pagina(1080, 1920, `<div style="width:1080px;height:1920px;background:${C.tinta};display:flex;align-items:center;justify-content:center">
-  <svg width="600" height="600" viewBox="0 0 24 24" fill="none" stroke="${C.papel}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${ICON[k]}</svg></div>`);
+const CARA = { carta: ['sando2_sonrie', C.papel, 1180], pedir: ['wicho2_rie', C.pelaje, 860], bebidas: ['sando2_frente', C.papel, 1100], zonas: ['wicho_asoma', C.pelaje, 980] };
+const portada = (k) => pagina(1080, 1920, `<div style="width:1080px;height:1920px;background:${CARA[k][1]};display:flex;align-items:center;justify-content:center">
+  <img src="${IMG(CARA[k][0])}" style="height:${CARA[k][2]}px;transform:translateY(${k === 'zonas' ? 60 : 30}px)"></div>`);
 
 // ── 3. Las publicaciones (4:5). Todo lo importante dentro del recorte 3:4 de la cuadrícula.
 const VELOS = `.foto{position:absolute;inset:0;background-size:cover;background-position:center}
@@ -48,17 +50,19 @@ const foto = ({ foto: f, titular, tam, voz }) => pagina(1080, 1350, `<div style=
     <div class="mono" style="font-size:28px;color:${C.papel}">ABRIMOS EN NOVIEMBRE</div>${marca()}</div></div>`, VELOS);
 // Las dos fijadas de información: papel y tinta, sin foto (son la carta y los pasos, no un antojo).
 const SIGS = ['Philly Cheesesteak', 'Meatball Marinara', 'Turkey', 'Tuna Melt', 'Italian Hoagie', 'Classic Tuna'];
-const carta = pagina(1080, 1350, `<div style="width:1080px;height:1350px;background:${C.papel};color:${C.tinta};padding:96px 96px 80px;display:flex;flex-direction:column">
+const carta = pagina(1080, 1350, `<div style="position:relative;width:1080px;height:1350px;background:${C.papel};color:${C.tinta};padding:96px 96px 80px;display:flex;flex-direction:column;overflow:hidden">
+  <img src="${IMG('sando2_cuerpo')}" style="position:absolute;right:-6px;bottom:-60px;height:880px;clip-path:inset(0 0 0 7%)">
   <div class="mono" style="font-size:28px">LA CARTA · 15 CM Y 30 CM</div>
-  <div class="disp" style="font-size:112px;margin-top:40px;line-height:1">${SIGS.join('<br>')}</div>
-  <div class="voz" style="font-size:56px;margin-top:40px">Y el que armas tú.</div>
-  <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end"><div class="mono" style="font-size:28px">DESLIZA →</div>${marca(C.tinta)}</div></div>`);
+  <div class="disp" style="font-size:84px;margin-top:40px;line-height:1.04;position:relative">${SIGS.join('<br>')}</div>
+  <div class="voz" style="font-size:54px;margin-top:36px;position:relative">Y el que armas tú.</div>
+  <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;position:relative"><div class="mono" style="font-size:28px">DESLIZA →</div></div></div>`);
 const pasos = [['1', 'Entras a sndwch.app'], ['2', 'Eliges uno o armas el tuyo'], ['3', 'Pagas con Yape o tarjeta'], ['4', 'Te llega a la puerta']];
-const comoPedir = pagina(1080, 1350, `<div style="width:1080px;height:1350px;background:${C.tinta};color:${C.papel};padding:96px 96px 80px;display:flex;flex-direction:column">
+const comoPedir = pagina(1080, 1350, `<div style="position:relative;width:1080px;height:1350px;background:${C.pelaje};color:${C.tintaW};padding:96px 96px 80px;display:flex;flex-direction:column;overflow:hidden">
+  <img src="${IMG('wicho_saluda')}" style="position:absolute;right:20px;bottom:30px;height:510px">
   <div class="mono" style="font-size:28px">ASÍ DE FÁCIL</div>
-  <div class="disp" style="font-size:150px;margin-top:36px">Cuatro<br>pasos.</div>
-  <div style="margin-top:64px;display:flex;flex-direction:column;gap:34px">${pasos.map(([n, t]) => `<div style="display:flex;gap:34px;align-items:baseline"><span class="disp" style="font-size:84px;color:${C.papel};opacity:.45;width:60px">${n}</span><span class="voz" style="font-size:60px">${t}</span></div>`).join('')}</div>
-  <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end"><div class="mono" style="font-size:28px">ABRIMOS EN NOVIEMBRE</div>${marca()}</div></div>`);
+  <div class="disp" style="font-size:150px;margin-top:36px;position:relative">Cuatro<br>pasos.</div>
+  <div style="margin-top:56px;display:flex;flex-direction:column;gap:30px;position:relative">${pasos.map(([n, t]) => `<div style="display:flex;gap:30px;align-items:baseline"><span class="disp" style="font-size:80px;opacity:.5;width:56px">${n}</span><span class="voz" style="font-size:56px">${t}</span></div>`).join('')}</div>
+  <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;position:relative"><div class="mono" style="font-size:28px">ABRIMOS EN NOVIEMBRE</div></div></div>`);
 const reel = pagina(1080, 1350, `<div style="width:1080px;height:1350px;background:#2A332D;color:${C.papel};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;text-align:center;padding:120px">
   <svg width="160" height="160" viewBox="0 0 24 24" fill="none" stroke="${C.papel}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M3 8h18M9 3l2.5 5M15 3l2.5 5"/><path d="M10.5 11.5v6l5-3z"/></svg>
   <div class="disp" style="font-size:96px">Detrás<br>del pan</div>

@@ -100,3 +100,7 @@
 - **2026-10-29 · Las bebidas, siempre en su envase.** «Debe ser en los envases, nunca en jarra. En
   el [envase] PET sleek». Las simulaciones de bebida se hacen sobre la lata PET sleek real (la foto
   del dueño, `fotolata`), con su sticker; nunca en jarra, vaso ni botella genérica de IA.
+- **2026-10-30 · El Instagram sin los hermanos se veía vacío.** «Como que le falta un poco del logo,
+  algo de color o de sando y wicho». En el perfil sí salen: el logo como foto de perfil, sus caras
+  en los destacados y cada uno en su mundo en las piezas de información (SANDO en la carta, WICHO en
+  cómo pedir). Siguen sin pegarse encima de las fotos de comida.
