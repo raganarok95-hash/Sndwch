@@ -798,3 +798,11 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
 - La cuenta publicitaria 1488138326460689 no ve ningún Instagram (`ads_get_ig_accounts` devuelve
   vacío): hay que asignar @snd__wch a la cuenta publicitaria en la configuración del Business
   (`docs/marketing/INSTAGRAM_AHORA.md` §1).
+
+## La consola de Meta no se maneja desde la nube (2026-10-30)
+
+Desde esta sesión de la nube no se puede tocar developers.facebook.com, el Business ni los secrets de Supabase
+con la sesión del dueño: no hay navegador con su sesión y `list_computer_folders` sale vacío (su laptop es
+Windows y Remote Control no sirve carpetas de Windows). La vía es **Claude in Chrome en su laptop**, con
+`scripts/meta/INSTAGRAM_EN_CHROME.md`. El token nuevo se verifica con `estado-apertura.yml` («Publicar probado
+contra Meta»).
