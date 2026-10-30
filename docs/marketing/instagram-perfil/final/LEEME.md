@@ -1,7 +1,7 @@
 # El Instagram de SND//WCH: versión final (2026-10-30)
 
 Dueño: «Dame la versión bien pensada, analizada y con respaldo en estudios del feed de Instagram».
-Maqueta: `perfil-final.jpg`. **Falta su sí.**
+Maqueta: `perfil-final.jpg`. **Aprobado por el dueño el 2026-10-30** («Aprobado, ahora sigamos con el token de Instagram»).
 
 ## El concepto: «Dos formas de comer SND//WCH»
 
