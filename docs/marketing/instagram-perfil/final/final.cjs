@@ -92,19 +92,18 @@ const listaCarta = (c, t = 92) => `<div class="disp" style="font-size:${t}px;lin
 // no competir con la comida, que va siempre limpia y arriba (estilo «Lo que llega»).
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 const LOGO = img(`${REPO}/img/marca/avatar-1024-transparente.png`);
-// El catálogo de los hermanos crece (dueño, 2026-10-30): WICHO en formas nuevas, de sticker (su energía),
-// generadas contra su ficha; SANDO, por ahora, con sus poses oficiales (las suyas nuevas se generan luego).
-const NUEVO = (n) => img(`${process.env.HERMANOS || `${REPO}/docs/marketing/hermanos/nuevos`}/${n}-recorte.png`);
+// Los hermanos, con sus poses oficiales. El WICHO generado el 2026-10-30 se descartó (dueño: «lo
+// modificaste demasiado»): una pose nueva tiene que ser el mismo personaje, no uno parecido.
 const perfil = caja(1080, 1080, '', `<div class="abs rib" style="left:0;top:0;bottom:0;width:540px;background-color:${S.oliva}"></div>
   <div class="abs" style="right:0;top:0;bottom:0;width:540px;background:${W.pelaje}"></div>
   <div class="full" style="${centrado}"><img src="${LOGO}" style="width:940px;height:940px;position:relative"></div>`);
 
 // Destacados, en el orden en que un cliente nuevo pregunta: cómo pido, ¿llegan a mi zona?, qué hay, qué tomo.
 const DEST = [
-  ['pedir', 'Cómo pedir', portada(W.pelaje, `${curvas(1080, 1920, 540, 960, W.curvas, 16, 70, 2)}<img src="${NUEVO('h-wicho-celular')}" style="position:relative;height:900px;transform:translateY(40px)">`)],
+  ['pedir', 'Cómo pedir', portada(W.pelaje, `${curvas(1080, 1920, 540, 960, W.curvas, 16, 70, 2)}<img src="${PJ('wicho2_rie')}" style="position:relative;height:840px;transform:translateY(30px)">`)],
   ['zonas', 'Zonas', portada(S.verde, `<div class="abs" style="left:250px;top:0;bottom:0;width:60px;background:${S.forro}"></div><img src="${PJ('sando2_asoma')}" class="abs" style="left:0;bottom:0;height:1500px">`)],
   ['carta', 'Carta', portada(S.oliva, `<div class="full rib"></div><img src="${PJ('sando2_frente')}" style="position:relative;height:1050px;transform:translateY(40px)">`)],
-  ['bebidas', 'Bebidas', portada(W.lilaO, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(195,166,210,.35)', 22)}<img src="${NUEVO('h-wicho-agita2')}" style="position:relative;height:880px;transform:translateY(20px)">`)],
+  ['bebidas', 'Bebidas', portada(W.lilaO, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(195,166,210,.35)', 22)}<img src="${PJ('wicho_asoma')}" class="abs" style="left:50%;transform:translateX(-50%);bottom:380px;height:1000px">`)],
 ];
 
 // El lado de SANDO: cada Signature con la foto limpia arriba y su basta acanalada abajo, con el texto.
@@ -121,7 +120,7 @@ const carta = caja(1080, 1350, `background:${S.verde};color:${papel}`, `<div cla
 // para armar, verduras y hasta tres salsas incluidas.
 const PROT = ['Res', 'Atún', 'Albóndiga', 'Pavo'];
 const arma = caja(1080, 1350, `background:${W.pelaje};color:${W.tinta}`, `${curvas(1080, 1350, 880, 1120, W.curvas, 18, 66, 3)}
-  <img src="${NUEVO('h-wicho-arma')}" class="abs" style="right:-20px;bottom:110px;height:560px">
+  <img src="${PJ('wicho2_celebra')}" class="abs" style="right:10px;bottom:110px;height:560px">
   <div class="abs" style="left:96px;top:92px;right:96px">
     <div class="mono" style="font-size:26px">EL OTRO LADO</div>
     <div class="disp" style="font-size:168px;margin-top:30px">Arma<br>el tuyo.</div>

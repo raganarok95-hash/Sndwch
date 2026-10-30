@@ -125,3 +125,6 @@
   «nunca en otra imagen». Lo que se mantiene es el logo oficial y el concepto de cada hermano. Las poses,
   escenas y formas nuevas sí se crean, revisadas contra su ficha. Primeras: WICHO en sticker
   (celular, agitando la lata, haciendo malabares con lo que va encima).
+- **2026-10-30 · El WICHO nuevo, descartado.** «Descarta el wicho que creaste, lo modificaste demasiado».
+  Lo generado solo con texto sale parecido, no el mismo: otro pelo, otra cara, borde de sticker. Las
+  poses nuevas se piden con la referencia a la vista (Flow) y se comparan lado a lado antes de usarlas.
