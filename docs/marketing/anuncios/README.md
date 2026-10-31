@@ -87,3 +87,12 @@ carta: el de 15 cm es la mitad de uno de 30, con una punta redonda y un corte.
 | archivo | herramienta | lo que pide el prompt |
 |---|---|---|
 | `fotos/foto-philly-30.jpg` | Gamma (`generate_image`, tipo foto, 4:5), porque Figma no tenía créditos | 30 cm Philly cheesesteak on a soft white sub roll, cut into two 15 cm halves, cut faces to camera: thinly sliced sautéed beef, sautéed white onion, green bell pepper, melted cheddar; no sauce; each half one rounded end and one cut end; generous but realistic; kraft paper, dark wood; no drinks, text or people |
+| `fotos/foto-meatball-30.jpg` | Figma, `gpt-image-2.5-flare` (1024 × 1280) | 30 cm meatball marinara sub cut into two halves: small beef meatballs in marinara, melted yellow American cheese, tomato slices, thin red onion; no herbs, no other cheese; behind, a slim 355 ml clear PET can with ruby hibiscus drink and a plain magenta label without text |
+| `fotos/foto-turkey-30.jpg` | igual | 30 cm turkey sub cut into two halves: thin folded roasted turkey, lettuce, tomato, red onion, green bell pepper, a little oil and vinegar; no cheese, no cucumber, no mayonnaise |
+| `fotos/foto-tuna-melt-30.jpg` | igual | 30 cm hot tuna melt cut into two halves: chunky flaked tuna (never a paste) with a little mayonnaise and white pepper, under melted cheddar that stretches; no vegetables |
+| `fotos/foto-italian-hoagie-30.jpg` | igual | 30 cm Italian hoagie cut into two halves: three Italian cold cuts folded in pleats, yellow American cheese, shredded lettuce, tomato, red onion, green bell pepper, oil and vinegar |
+| `fotos/foto-classic-tuna-30.jpg` | igual | 30 cm classic tuna sub cut into two halves: chunky flaked tuna with just the right mayonnaise and white pepper; nothing else |
+
+Las seis van sobre kraft arrugado y madera oscura, con luz de ventana, y en todas la toma es la misma: cada mitad con
+una punta redonda y un corte, el relleno generoso pero real. El recorte en la publicación (`ENCUADRE` en `final.cjs`)
+deja la foto a su ancho completo para que ninguna mitad quede cortada.

@@ -62,11 +62,11 @@ const foto = (n, pos = 'center 62%') => `background:url('${img(`${FOTOS}/${n}`)}
 
 const FOOD = [
   { n: '1-philly', f: 'foto-philly-30.jpg', tit: 'Hambre en serio.', voz: 'Philly Cheesesteak. Tan jugoso que no lleva salsa.', cita: 'Tan jugoso que no lleva salsa.', nombre: 'Philly Cheesesteak' },
-  { n: '4-meatball', f: 'foto-meatball-lata.jpg', tit: 'Hoy no cocinas.', voz: 'Meatball Marinara. Albóndigas en su propia marinara.', cita: 'Albóndigas en su propia marinara.', nombre: 'Meatball Marinara' },
-  { n: '5-turkey', f: 'foto-turkey-v4.jpg', tit: 'El almuerzo que no te tumba la tarde.', voz: 'Turkey. Llena sin pesar.', cita: 'Llena sin pesar.', nombre: 'Turkey' },
-  { n: '6-tuna-melt', f: 'foto-tuna-melt.jpg', tit: 'Antojo de algo caliente.', voz: 'Tuna Melt. El cheddar se estira al primer mordisco.', cita: 'El cheddar se estira al primer mordisco.', nombre: 'Tuna Melt' },
-  { n: '7-italian-hoagie', f: 'foto-italian-hoagie.jpg', tit: 'Cuando quieres de todo.', voz: 'Italian Hoagie. Cada capa suma y ninguna sobra.', cita: 'Cada capa suma y ninguna sobra.', nombre: 'Italian Hoagie' },
-  { n: '8-classic-tuna', f: 'foto-classic-tuna.jpg', tit: 'Se come con una mano.', voz: 'Classic Tuna. Simple y bien hecho.', cita: 'Simple y bien hecho.', nombre: 'Classic Tuna' },
+  { n: '4-meatball', f: 'foto-meatball-30.jpg', tit: 'Hoy no cocinas.', voz: 'Meatball Marinara. Albóndigas en su propia marinara.', cita: 'Albóndigas en su propia marinara.', nombre: 'Meatball Marinara' },
+  { n: '5-turkey', f: 'foto-turkey-30.jpg', tit: 'El almuerzo que no te tumba la tarde.', voz: 'Turkey. Llena sin pesar.', cita: 'Llena sin pesar.', nombre: 'Turkey' },
+  { n: '6-tuna-melt', f: 'foto-tuna-melt-30.jpg', tit: 'Antojo de algo caliente.', voz: 'Tuna Melt. El cheddar se estira al primer mordisco.', cita: 'El cheddar se estira al primer mordisco.', nombre: 'Tuna Melt' },
+  { n: '7-italian-hoagie', f: 'foto-italian-hoagie-30.jpg', tit: 'Cuando quieres de todo.', voz: 'Italian Hoagie. Cada capa suma y ninguna sobra.', cita: 'Cada capa suma y ninguna sobra.', nombre: 'Italian Hoagie' },
+  { n: '8-classic-tuna', f: 'foto-classic-tuna-30.jpg', tit: 'Se come con una mano.', voz: 'Classic Tuna. Simple y bien hecho.', cita: 'Simple y bien hecho.', nombre: 'Classic Tuna' },
 ];
 const SIGS = FOOD.map((x) => x.nombre);
 const tam = (t, base = 112) => (t.length <= 16 ? base : t.length <= 24 ? Math.round(base * 0.88) : Math.round(base * 0.76));
@@ -179,7 +179,8 @@ const WA_BONITO = WA.replace(/^51/, '').replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 
 const icoWa = (c, t) => `<svg width="${t}" height="${t}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 11.6a8.5 8.5 0 0 1-12.6 7.4L3.5 20.5l1.5-4.3A8.5 8.5 0 1 1 20.5 11.6z"/><path d="M9 8.6c.3-.6.8-.6 1.1 0l.6 1.4c.1.3 0 .6-.2.8l-.5.5c.6 1.2 1.6 2.2 2.8 2.8l.5-.5c.2-.2.5-.3.8-.2l1.4.6c.6.3.6.8 0 1.1-.8.6-1.8.8-2.8.4a8.4 8.4 0 0 1-4.3-4.3c-.4-1-.2-2 .6-2.6z"/></svg>`;
 const sello = (t) => `<div style="width:${t}px;height:${t}px;border-radius:999px;background:${papel};display:flex;align-items:center;justify-content:center;flex:none"><img src="${LOGO}" style="width:${t * 0.92}px;height:${t * 0.92}px"></div>`;
 // Encuadre de cada foto con el acercamiento: que el pan no toque el borde.
-const ENCUADRE = { '1-philly': 'center 47%/104%', '5-turkey': 'center 38%/128%' };
+// Las 6 fotos son del de 30 cm partido en dos (4:5): entran casi enteras, con el par de mitades al centro.
+const ENCUADRE = { '1-philly': 'center 47%/104%', '4-meatball': 'center 58%/100%', '5-turkey': 'center 50%/100%', '6-tuna-melt': 'center 52%/100%', '7-italian-hoagie': 'center 50%/100%', '8-classic-tuna': 'center 50%/100%' };
 const sig = (d) => caja(1080, 1350, `background:${S.oliva}`, `
   <div class="full" style="bottom:430px;background:url('${img(`${FOTOS}/${d.f}`)}') ${ENCUADRE[d.n] || 'center 64%/128%'} auto no-repeat;background-color:#2a2018"></div>
   <div class="abs rib" style="left:0;right:0;bottom:0;height:430px;background-color:${S.oliva}"></div>
