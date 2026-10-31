@@ -9,6 +9,15 @@ const fs = require('fs'), path = require('path');
 const D = __dirname, REPO = path.resolve(D, '../../../..');
 const OUT = process.env.SALIDA ? path.resolve(process.env.SALIDA) : D; fs.mkdirSync(OUT, { recursive: true });
 const FUENTES = fs.readFileSync(process.env.FUENTES_CSS, 'utf8'); // FUENTES_CSS=$(bash scripts/piezas/fuentes-locales.sh)
+// Exporta sin ensuciar el color: la captura sale en PNG y PIL la pasa a JPEG al 95 % sin submuestreo de croma (4:4:4),
+// para que los bordes de las letras y del sándwich queden limpios (2026-10-31, dueño: «se ven como que de poca calidad»).
+const { execFileSync: _ejecutar } = require('child_process');
+async function captura(pg, salida, opciones = {}) {
+  const png = salida.replace(/\.jpg$/, '.png');
+  await pg.screenshot({ path: png, type: 'png', ...opciones });
+  _ejecutar('python3', ['-c', "import sys;from PIL import Image;Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2],quality=95,subsampling=0)", png, salida]);
+  fs.rmSync(png);
+}
 const FOTOS = `${REPO}/docs/marketing/anuncios/fotos`;
 const img = (p) => 'file://' + path.resolve(p);
 const PJ = (n) => img(`${REPO}/img/${n}.png`);
@@ -180,7 +189,7 @@ const icoWa = (c, t) => `<svg width="${t}" height="${t}" viewBox="0 0 24 24" fil
 const sello = (t) => `<div style="width:${t}px;height:${t}px;border-radius:999px;background:${papel};display:flex;align-items:center;justify-content:center;flex:none"><img src="${LOGO}" style="width:${t * 0.92}px;height:${t * 0.92}px"></div>`;
 // Encuadre de cada foto con el acercamiento: que el pan no toque el borde.
 // Las 6 fotos son del de 30 cm partido en dos (4:5): entran casi enteras, con el par de mitades al centro.
-const ENCUADRE = { '1-philly': 'center 47%/104%', '4-meatball': 'center 58%/100%', '5-turkey': 'center 50%/100%', '6-tuna-melt': 'center 52%/100%', '7-italian-hoagie': 'center 50%/100%', '8-classic-tuna': 'center 50%/100%' };
+const ENCUADRE = { '1-philly': 'center 47%/104%', '4-meatball': 'center 30%/100%', '5-turkey': 'center 50%/100%', '6-tuna-melt': 'center 52%/100%', '7-italian-hoagie': 'center 50%/100%', '8-classic-tuna': 'center 50%/100%' };
 const sig = (d) => caja(1080, 1350, `background:${S.oliva}`, `
   <div class="full" style="bottom:430px;background:url('${img(`${FOTOS}/${d.f}`)}') ${ENCUADRE[d.n] || 'center 64%/128%'} auto no-repeat;background-color:#2a2018"></div>
   <div class="abs rib" style="left:0;right:0;bottom:0;height:430px;background-color:${S.oliva}"></div>
@@ -265,7 +274,7 @@ const rl = '<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d=
     await pg.evaluate(async () => { await Promise.all(['400 40px "Anton"', '800 40px "Archivo"', '600 40px "IBM Plex Mono"', 'italic 400 40px "Instrument Serif"'].map((f) => document.fonts.load(f))); });
     const faltan = await pg.evaluate(() => ['Anton', 'Archivo', 'IBM Plex Mono', 'Instrument Serif'].filter((f) => ![...document.fonts].some((x) => x.family.replace(/["']/g, '') === f && x.status === 'loaded')));
     if (faltan.length) throw new Error('faltan fuentes: ' + faltan);
-    await pg.screenshot({ path: salida, type: 'jpeg', quality: 92 });
+    await captura(pg, salida);
   };
   await sacar(pagina(1080, 1080, perfil), 1080, 1080, path.join(OUT, 'foto-de-perfil.jpg'));
   for (const [k, , html] of DEST) await sacar(pagina(1080, 1920, html), 1080, 1920, path.join(OUT, `destacado-${k}.jpg`));
@@ -283,7 +292,7 @@ const rl = '<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d=
   const alto = await pg.evaluate(() => document.body.scrollHeight);
   const pg2 = await b.newPage({ viewport: { width: 390, height: alto }, deviceScaleFactor: 2 });
   await pg2.goto('file://' + tmp, { waitUntil: 'load' }); await pg2.evaluate(() => document.fonts.ready);
-  await pg2.screenshot({ path: path.join(OUT, 'perfil-final.jpg'), type: 'jpeg', quality: 90, fullPage: true });
+  await captura(pg2, path.join(OUT, 'perfil-final.jpg'), { fullPage: true });
   fs.rmSync(tmp, { force: true }); await b.close();
   fs.writeFileSync(path.join(OUT, 'orden.json'), JSON.stringify(POSTS.map((p) => ({ n: p.n, por: p.por })), null, 1));
   console.log('listo', OUT);

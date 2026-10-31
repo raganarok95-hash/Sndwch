@@ -164,3 +164,23 @@ de esta carpeta. El Reel necesita `FFMPEG` (o `ffmpeg` en el PATH).
 - Buffer, «How Often Should You Post on Instagram» (2.1 millones de publicaciones): buffer.com/resources/how-often-to-post-on-instagram
 - Mosseri, «Instagram Ranking Explained» (2023); sobre los envíos: searchenginejournal.com
 - Ipsos Perú: compras por WhatsApp (ipsos.com/es-pe/node/724226) y uso de redes (ipsos.com/es-pe/node/464646)
+
+## Calidad (2026-10-31)
+
+Dueño: «se ven como que de poca calidad, hay que mejorarlo». Lo que se cambió:
+- **Las latas, en alta.** El sticker se renderiza al doble (24 px por mm) y la lata sale a 1042 × 2785 px; antes era
+  de 521 px y la letra salía borrosa (`latas/`).
+- **Las fotos de los sándwiches, más nítidas.** El generador entrega 1024 × 1280 como máximo (también al pedirle 2048),
+  así que se les aplica un enfoque en dos escalas: el detalle fino y el contraste local, sin halos.
+- **La exportación.** Las piezas salen en PNG y se pasan a JPEG al 95 % sin submuestreo de color (4:4:4), para que el
+  borde de las letras no se ensucie (`captura()` en los scripts).
+
+Queda pendiente un escalador con IA: no está en las herramientas conectadas y no se pudo instalar uno.
+
+## El carrusel de las bebidas (`carrusel-bebidas-1…4`)
+
+Dueño: «también faltan imágenes de las bebidas». Son 4 láminas, con «Próximamente» porque al abrir salen en botella:
+- la portada: las tres latas juntas;
+- una lámina por bebida, con la lata en alta y el nombre y la descripción de `carta.ts`.
+
+Se sube **al final**, después del Philly: así queda justo debajo de las tres fijadas (`bebidas.cjs`).
