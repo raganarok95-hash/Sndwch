@@ -94,6 +94,18 @@
   "fijar": true
  },
  {
+  "src": "perfil-10-bebidas",
+  "pieza": "bebidas",
+  "laminas": [
+   "carrusel-bebidas-1.jpg",
+   "carrusel-bebidas-2.jpg",
+   "carrusel-bebidas-3.jpg",
+   "carrusel-bebidas-4.jpg"
+  ],
+  "texto": "Próximamente, en su lata: The Bloom (jamaica y canela), Cold Brew Tea (té negro reposado doce horas en frío) y The Cool (hierba luisa y menta).\n¿Cuál pruebas primero? Te leemos.",
+  "cuando": "ya"
+ },
+ {
   "src": "perfil-historia-como-pedir-1",
   "pieza": "historia-como-pedir-1",
   "laminas": [

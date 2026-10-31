@@ -9,6 +9,15 @@ const fs = require('fs'), path = require('path');
 const D = __dirname, REPO = path.resolve(D, '../../../..');
 const OUT = process.env.SALIDA ? path.resolve(process.env.SALIDA) : D; fs.mkdirSync(OUT, { recursive: true });
 const FUENTES = fs.readFileSync(process.env.FUENTES_CSS, 'utf8'); // FUENTES_CSS=$(bash scripts/piezas/fuentes-locales.sh)
+// Exporta sin ensuciar el color: la captura sale en PNG y PIL la pasa a JPEG al 95 % sin submuestreo de croma (4:4:4),
+// para que los bordes de las letras y del sándwich queden limpios (2026-10-31, dueño: «se ven como que de poca calidad»).
+const { execFileSync: _ejecutar } = require('child_process');
+async function captura(pg, salida, opciones = {}) {
+  const png = salida.replace(/\.jpg$/, '.png');
+  await pg.screenshot({ path: png, type: 'png', ...opciones });
+  _ejecutar('python3', ['-c', "import sys;from PIL import Image;Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2],quality=95,subsampling=0)", png, salida]);
+  fs.rmSync(png);
+}
 const FOTOS = `${REPO}/docs/marketing/anuncios/fotos`;
 const img = (p) => 'file://' + path.resolve(p);
 const PJ = (n) => img(`${REPO}/img/${n}.png`);
@@ -247,7 +256,7 @@ const HISTORIAS = { 'como-pedir': pedir, carta: cartaHist, arma: armaHist, envio
     fs.writeFileSync(tmp, pagina(1080, 1920, html));
     await pg.goto('file://' + tmp, { waitUntil: 'load' });
     await pg.evaluate(async () => { await Promise.all(['400 40px "Anton"', '800 40px "Archivo"', '600 40px "IBM Plex Mono"', 'italic 400 40px "Instrument Serif"'].map((f) => document.fonts.load(f))); });
-    await pg.screenshot({ path: path.join(dir, `historia-${k}-${i + 1}.jpg`), type: 'jpeg', quality: 92 });
+    await captura(pg, path.join(dir, `historia-${k}-${i + 1}.jpg`));
   }
   fs.rmSync(tmp, { force: true }); await b.close();
   console.log('historias', Object.entries(HISTORIAS).map(([k, v]) => `${k}: ${v.length}`).join(' · '));
