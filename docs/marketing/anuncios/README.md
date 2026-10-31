@@ -96,3 +96,8 @@ carta: el de 15 cm es la mitad de uno de 30, con una punta redonda y un corte.
 Las seis van sobre kraft arrugado y madera oscura, con luz de ventana, y en todas la toma es la misma: cada mitad con
 una punta redonda y un corte, el relleno generoso pero real. El recorte en la publicación (`ENCUADRE` en `final.cjs`)
 deja la foto a su ancho completo para que ninguna mitad quede cortada.
+
+**La lata de la Meatball es la nuestra** (dueño, 2026-10-31: «¿Por qué tiene el Meatball una botella que no es la
+nuestra?»). El generador solo lee texto y dibujó una lata genérica. Encima va el render real de The Bloom
+(`instagram-perfil/final/latas/lata-bloom.png`), con la luz de la foto, un poco de desenfoque y la sombra; el pan queda
+delante. Regla: una bebida nuestra en una foto se compone con su render real, nunca se pide al generador.
