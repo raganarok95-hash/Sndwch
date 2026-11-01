@@ -167,3 +167,10 @@ Dueño: «No necesitas usar a SANDO y WICHO para todo, solo estás usando lo que
 dibujados del mundo del sándwich: el celular, el pan largo cerrado y en capas, la bolsa kraft con el //, la lata y la
 semana con su horario. Lección: antes de poner una pose, preguntarse qué objeto cuenta mejor la idea. Y el sándwich
 dibujado es siempre de pan largo: el primer intento salió como hamburguesa.
+
+## 2026-11-01 · «Miniaturas» son los círculos de los destacados
+Dueño: «El perfil sale con miniaturas erróneas, pasa miniaturas acordes a la estética del negocio». Se rehicieron las
+portadas de la cuadrícula (carta, Arma el tuyo, Reel) y respondió: «Las miniaturas nuevas no las usaré, lo que te pedí es
+que hagas miniaturas distintas por fa menos la de las bebidas». Al preguntarle, aclaró que se refería a los **círculos de
+los destacados**, con **otro estilo** (más parecido a la app y a la marca). La de Bebidas se queda. Lección: cuando una
+palabra del dueño puede nombrar dos cosas del perfil, se pregunta cuál antes de producir.
