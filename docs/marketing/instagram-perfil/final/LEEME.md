@@ -26,7 +26,7 @@ Quien entra entiende en segundos que puede elegir uno de la casa o armar el suyo
 
 **Destacados, en el orden en que un cliente nuevo duda** (actualizado el 2026-10-30; dueño: «la de zonas no me convence,
 además como que falta destacado»). Instagram muestra unos cinco sin deslizar; el sexto se ve al deslizar:
-1. **Cómo pedir** (WICHO): los 4 pasos.
+1. **Cómo pedir** (WICHO): los 14 pasos con las pantallas reales de la app (desde el 2026-11-01; ver abajo).
 2. **Carta** (SANDO): los seis Signatures.
 3. **Arma el tuyo** (WICHO, en su tinta): el pan, la proteína y lo de encima. Es la otra mitad del concepto y faltaba.
 4. **Envíos** (la bolsa kraft con el //): todo Trujillo, y el envío según la distancia con una boleta sin cifras.
@@ -121,7 +121,7 @@ Un destacado se arma con historias publicadas. Cada uno vive en el mundo de su h
 | Horario | 1: la semana, con el lunes de descanso | ya |
 | Arma el tuyo | 3: el pan, la proteína y lo de encima | ya |
 | Carta | 6: un Signature por historia | ya |
-| Cómo pedir | 4: los pasos | ya (dueño: «Quítale el próximamente, solo las bebidas deben tener el próximamente») |
+| Cómo pedir | 14: un paso por historia, con la pantalla real de la app (`historia-como-pedir-paso-01..14`). Reemplazan a las 4 dibujadas | ya (dueño: «Quítale el próximamente, solo las bebidas deben tener el próximamente») |
 | Bebidas | 3: The Bloom, Cold Brew Tea y The Cool en su lata, con «Próximamente» | ya: al abrir salen en botella (dueño, 2026-10-24), y la etiqueta dice que la lata todavía no llega |
 
 ## Cómo se publica solo
@@ -184,3 +184,33 @@ Dueño: «también faltan imágenes de las bebidas». Son 4 láminas, con «Pró
 - una lámina por bebida, con la lata en alta y el nombre y la descripción de `carta.ts`.
 
 Se sube **al final**, después del Philly: así queda justo debajo de las tres fijadas (`bebidas.cjs`).
+
+## La guía «Cómo pedir», con la web real (2026-11-01)
+
+Dueño: «Necesito también el cómo pedir de manera ultra detallada, con los pasos en la web con imágenes de la propia web
+y señalando cómo hacer el paso a paso detallado». Son 14 historias (`historias/historia-como-pedir-paso-01..14.jpg`),
+una por pantalla del pedido: la puerta, la carta, el plato, el tamaño, «Lo quiero», la bebida, el nombre, el celular,
+la dirección, el mapa, pagar, Yape, «Ya pagué» y el pedido en la cocina.
+
+- **Las pantallas son la app de verdad** (`index.html`), recorrida en un celular de 390 × 844 por
+  `scripts/guia-pedir/capturas.spec.ts`, con el backend simulado como en las pruebas y el horario real de `STORE_HOURS`.
+  Si la app cambia, se vuelven a sacar en un minuto: los dos comandos están al inicio de `scripts/guia-pedir/componer.cjs`.
+- **Cada historia señala qué tocar**: un aro naranja con el número del paso sobre el botón y una lupa a la derecha que lo
+  amplía. Cuando hay que llenar algo (el nombre y el celular), la lupa muestra lo que se llena y el aro, el botón.
+- **El número de Yape sale de `reglas.ts`**, no se escribe. El mapa en sí no se fotografía (sin red no carga Google
+  Maps): la historia 10 muestra el botón que lo abre y explica el pin.
+- Por qué así: la apuesta es que ver el flujo real antes de usarlo baja la duda de pedir por primera vez en una tienda
+  que nadie conoce. No hay un estudio verificado en esta sesión que lo mida para el Perú: se mide al abrir, con las
+  visitas que llegan desde el destacado. La lupa existe porque la pantalla del celular dentro de una historia se lee
+  en chiquito.
+
+## Las miniaturas de la cuadrícula, sin personajes (2026-11-01)
+
+Dueño: «El perfil sale con miniaturas erróneas, pasa miniaturas acordes a la estética del negocio». Cambió:
+- **La carta** (fijada 2): el sándwich dibujado en capas en vez de SANDO.
+- **Arma el tuyo** (fijada 3) y sus láminas 2 a 4: el pan, las proteínas y lo de encima dibujados sobre la tinta, en vez
+  de WICHO.
+- **El Reel**: la portada pasó del mosaico de seis (amontonado en chiquito) al corte del Philly de cerca, distinto de
+  la foto entera de la publicación 1.
+- **La maqueta** pone las 3 fijadas arriba, como hace Instagram, y el carrusel de bebidas justo debajo.
+

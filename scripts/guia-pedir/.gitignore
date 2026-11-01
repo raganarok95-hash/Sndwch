@@ -1,0 +1,4 @@
+# Las capturas y las historias en PNG se regeneran (ver componer.cjs); las que se suben van en JPEG al perfil.
+capturas/*.png
+historias/
+test-results/

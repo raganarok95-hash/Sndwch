@@ -12,10 +12,12 @@ const FUENTES = fs.readFileSync(process.env.FUENTES_CSS, 'utf8'); // FUENTES_CSS
 // Exporta sin ensuciar el color: la captura sale en PNG y PIL la pasa a JPEG al 95 % sin submuestreo de croma (4:4:4),
 // para que los bordes de las letras y del sándwich queden limpios (2026-10-31, dueño: «se ven como que de poca calidad»).
 const { execFileSync: _ejecutar } = require('child_process');
+// El primer Python que tenga PIL: en algunos contenedores el «python3» del PATH no lo trae.
+const PY_PIL = ['python3', '/usr/bin/python3', 'python3.13', 'python3.12'].find((p) => { try { _ejecutar(p, ['-c', 'from PIL import Image'], { stdio: 'ignore' }); return true; } catch (e) { return false; } }) || 'python3';
 async function captura(pg, salida, opciones = {}) {
   const png = salida.replace(/\.jpg$/, '.png');
   await pg.screenshot({ path: png, type: 'png', ...opciones });
-  _ejecutar('python3', ['-c', "import sys;from PIL import Image;Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2],quality=95,subsampling=0)", png, salida]);
+  _ejecutar(PY_PIL, ['-c', "import sys;from PIL import Image;Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2],quality=95,subsampling=0)", png, salida]);
   fs.rmSync(png);
 }
 const FOTOS = `${REPO}/docs/marketing/anuncios/fotos`;
@@ -199,10 +201,11 @@ const sig = (d) => caja(1080, 1350, `background:${S.oliva}`, `
     <div class="voz" style="font-size:42px;line-height:1.1;margin-top:10px">${d.tit} ${d.cita}</div>
     <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:center">
       <div style="display:flex;align-items:center;gap:16px">${icoWa(papel, 46)}<span class="mono" style="font-size:28px">PIDE POR WHATSAPP · ${WA_BONITO}</span></div>${sello(96)}</div></div>`);
-// La carta: el mundo de SANDO, y la última línea ya es de WICHO (el puente a la publicación de al lado).
+// La carta: el mundo de SANDO y el pan largo dibujado, cerrado (2026-11-01, dueño: «pasa miniaturas acorde a la
+// estética del negocio»: sin personajes, como los destacados).
 const carta = caja(1080, 1350, `background:${S.verde};color:${papel}`, `<div class="abs" style="left:0;top:0;bottom:0;width:26px;background:${S.forro}"></div>
   <div class="abs rib" style="left:26px;right:0;bottom:0;height:150px;background-color:${S.oliva}"></div>
-  <img src="${PJ('sando2_ladea')}" class="abs" style="right:40px;bottom:150px;height:500px">
+  ${svg(sandwich(770, 1060, 470))}
   <div class="abs" style="left:110px;right:84px;top:92px"><div class="mono" style="font-size:26px;color:${S.tan}">LOS DE LA CASA · 15 CM Y 30 CM</div>
     <div style="margin-top:40px">${listaCarta(papel, 96)}</div>
     <div style="display:flex;align-items:center;gap:22px;margin-top:40px"><svg width="70" height="70">${espiral(35, 35, 31, W.lila, 5)}</svg><span class="voz" style="font-size:58px;color:${W.pelaje}">Y el que armas tú →</span></div></div>
@@ -211,7 +214,7 @@ const carta = caja(1080, 1350, `background:${S.verde};color:${papel}`, `<div cla
 // para armar, verduras y hasta tres salsas incluidas.
 const PROT = ['Res', 'Atún', 'Albóndiga', 'Pavo'];
 const arma = caja(1080, 1350, `background:${W.pelaje};color:${W.tinta}`, `${curvas(1080, 1350, 880, 1120, W.curvas, 18, 66, 3)}
-  <img src="${PJ('wicho2_celebra')}" class="abs" style="right:10px;bottom:110px;height:560px">
+  ${svg(sandwich(830, 1075, 380, { abre: 24 }))}
   <div class="abs" style="left:96px;top:92px;right:96px">
     <div class="mono" style="font-size:26px">EL OTRO LADO</div>
     <div class="disp" style="font-size:168px;margin-top:30px">Arma<br>el tuyo.</div>
@@ -223,24 +226,37 @@ const arma = caja(1080, 1350, `background:${W.pelaje};color:${W.tinta}`, `${curv
 const reel = caja(1080, 1350, `background:url('${img(path.join(OUT, 'reel-portada.jpg'))}') center/cover`, '');
 
 const F = Object.fromEntries(FOOD.map((d) => [d.n, d]));
-const laminaArma = (n, titulo, frase, pose, alto) => caja(1080, 1350, `background:${W.pelaje};color:${W.tinta}`, `${curvas(1080, 1350, 880, 1120, W.curvas, 18, 66, n + 3)}
-  <img src="${PJ(pose)}" class="abs" style="right:20px;bottom:110px;height:${alto}px">
+// Las láminas de «Arma el tuyo», dibujadas como sus historias: los dos panes, las proteínas como capas y lo de encima.
+const colProtL = { Res: '#6E3F2A', 'Atún': '#CDB894', 'Albóndiga': '#8A3F2C', Pavo: '#EAC9B2' };
+const dibujosArma = {
+  pan: svg(`<path d="M190,820 Q190,720 310,712 L770,712 Q890,720 890,820 Q890,896 770,900 L310,900 Q190,896 190,820 Z" fill="${C.pan}" stroke="${C.corteza}" stroke-width="12"/>
+    ${[340, 470, 600, 730].map((x) => `<path d="M${x - 50},760 q50,-30 100,0" fill="none" stroke="${C.corteza}" stroke-width="10" stroke-linecap="round"/>`).join('')}
+    <rect x="260" y="960" width="560" height="230" rx="44" fill="${C.pan}" stroke="${C.corteza}" stroke-width="12"/>
+    ${Array.from({ length: 15 }, (_, k) => `<circle cx="${315 + (k % 5) * 112}" cy="${1005 + Math.floor(k / 5) * 70}" r="16" fill="${C.corteza}" opacity=".55"/>`).join('')}`),
+  proteina: svg(PROT.map((n, k) => `<rect x="190" y="${700 + k * 130}" width="700" height="100" rx="48" fill="${colProtL[n]}"/>
+    <text x="540" y="${700 + k * 130 + 64}" text-anchor="middle" font-family="IBM Plex Mono" font-weight="600" font-size="36" letter-spacing="3" fill="${n === 'Pavo' || n === 'Atún' ? W.tinta : papel}">${n.toUpperCase()}</text>`).join('')),
+  encima: svg(`${sandwich(470, 960, 600, { abre: 26, rellenos: ['lechuga', 'tomate', 'cebolla', 'queso'] })}
+    ${[['#F4E3B5', 800], ['#C9772F', 940], ['#7FA650', 1080]].map(([c, y]) => `<path d="M880,${y} C912,${y + 46} 918,${y + 74} 880,${y + 88} C842,${y + 74} 848,${y + 46} 880,${y} Z" fill="${c}"/>`).join('')}`),
+};
+const laminaArma = (n, titulo, frase, dibujo) => caja(1080, 1350, `background:${W.tinta};color:${papel}`, `<div class="full cruz"></div>${curvas(1080, 1350, 880, 1120, 'rgba(144,204,240,.20)', 18, 66, n + 3)}
+  ${dibujosArma[dibujo]}
   <div class="abs" style="left:96px;top:92px;right:96px"><div class="mono" style="font-size:26px">ARMA EL TUYO · ${n} DE 3</div>
-    <div class="disp" style="font-size:150px;margin-top:30px">${titulo}</div><div class="voz" style="font-size:56px;margin-top:30px;max-width:640px">${frase}</div></div>
-  <div class="abs" style="left:96px;right:96px;bottom:56px;display:flex;justify-content:space-between;align-items:center"><div class="mono" style="font-size:26px">${MONO}</div>${marca(W.tinta, 40)}</div>`);
+    <div class="disp" style="font-size:150px;margin-top:30px">${titulo}</div><div class="voz" style="font-size:52px;margin-top:24px;max-width:860px">${frase}</div></div>
+  <div class="abs" style="left:96px;right:96px;bottom:56px;display:flex;justify-content:space-between;align-items:center"><div class="mono" style="font-size:26px">${MONO}</div>${marca(papel, 40)}</div>`);
 const CARRUSELES = {
   carta: FOOD.map((d) => sig(d)),
   arma: [
-    laminaArma(1, 'El pan.', 'Classic, de miga suave, o Focaccia, con aceite de oliva y sal gruesa.', 'wicho2_rie', 520),
-    laminaArma(2, 'La proteína.', PROT.join(', ').replace(/, ([^,]*)$/, ' o $1') + '.', 'wicho_saluda', 560),
-    laminaArma(3, 'Lo de encima.', 'Verduras, queso y hasta 3 salsas incluidas. Lo eliges tú.', 'wicho2_come', 580),
+    laminaArma(1, 'El pan.', 'Classic, de miga suave, o Focaccia, con aceite de oliva y sal gruesa.', 'pan'),
+    laminaArma(2, 'La proteína.', PROT.join(', ').replace(/, ([^,]*)$/, ' o $1') + '.', 'proteina'),
+    laminaArma(3, 'Lo de encima.', 'Verduras, queso y hasta 3 salsas incluidas. Lo eliges tú.', 'encima'),
   ],
 };
-// La cuadrícula, de izquierda a derecha y de arriba abajo. Las 3 primeras van fijadas.
+// La cuadrícula, de izquierda a derecha y de arriba abajo. Las 3 primeras van fijadas: Instagram las pone arriba aunque haya otras más nuevas.
 const POSTS = [
   { n: '1-philly', html: sig(F['1-philly']), fijada: true, por: 'Fijada 1: el Signature estrella, lo primero que se ve.' },
   { n: '2-carta', html: carta, fijada: true, por: 'Fijada 2: el lado de SANDO, los seis de la casa (carrusel: una lámina por Signature).' },
   { n: '3-arma-el-tuyo', html: arma, fijada: true, por: 'Fijada 3: el lado de WICHO, armar el tuyo.' },
+  { n: '10-bebidas', html: '', img: 'carrusel-bebidas-1.jpg', por: 'El carrusel de las bebidas: se sube al final y queda justo debajo de las fijadas.' },
   { n: '4-meatball', html: sig(F['4-meatball']), por: 'La cena.' },
   { n: '5-reel', html: reel, reel: true, por: 'El Reel «Los seis de la casa», al centro: lo que más alcance trae entre gente que no te sigue.' },
   { n: '6-turkey', html: sig(F['5-turkey']), por: 'El almuerzo.' },
@@ -278,10 +294,11 @@ const rl = '<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d=
   };
   await sacar(pagina(1080, 1080, perfil), 1080, 1080, path.join(OUT, 'foto-de-perfil.jpg'));
   for (const [k, , html] of DEST) await sacar(pagina(1080, 1920, html), 1080, 1920, path.join(OUT, `destacado-${k}.jpg`));
-  for (const p of POSTS) { p.jpg = path.join(OUT, `publicacion-${p.n}.jpg`); await sacar(pagina(1080, 1350, p.html), 1080, 1350, p.jpg); }
+  // Una pieza que ya existe (el carrusel de bebidas, de bebidas.cjs) entra a la maqueta con su imagen; el resto se renderiza.
+  for (const p of POSTS) { if (p.img) { p.jpg = path.join(OUT, p.img); continue; } p.jpg = path.join(OUT, `publicacion-${p.n}.jpg`); await sacar(pagina(1080, 1350, p.html), 1080, 1350, p.jpg); }
   for (const [k, laminas] of Object.entries(CARRUSELES)) for (const [i, html] of laminas.entries()) await sacar(pagina(1080, 1350, html), 1080, 1350, path.join(OUT, `carrusel-${k}-${i + 2}.jpg`));
   const cuerpo = `<div style="width:390px"><div class="t"><span>snd__wch</span><span style="font-weight:400">≡</span></div>
-    <div class="cab"><div class="av"></div><div class="num"><div>9<span>publicaciones</span></div><div>—<span>seguidores</span></div><div>—<span>seguidos</span></div></div></div>
+    <div class="cab"><div class="av"></div><div class="num"><div>${POSTS.length}<span>publicaciones</span></div><div>—<span>seguidores</span></div><div>—<span>seguidos</span></div></div></div>
     <div class="bio"><b>SND//WCH · Sándwiches a domicilio</b><br><span class="cat">Restaurante de sándwiches</span><br>${BIO.join('<br>')}<br><a>sndwch.app</a></div>
     <div class="bt"><div class="az">Seguir</div><div>Mensaje</div><div>WhatsApp</div></div>
     <div class="hl">${DEST.map(([k, t]) => `<div class="h"><i><b style="background-image:url('${img(path.join(OUT, `destacado-${k}.jpg`))}')"></b></i>${t}</div>`).join('')}</div>
