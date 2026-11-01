@@ -188,3 +188,10 @@ Dueño: «Para las bebidas quita el próximamente en todas las imágenes, solo h
 diseñada bonita, porque luego la podemos eliminar y quedaría todo tal cual». La etiqueta «Próximamente» estaba en cada
 lámina y en cada historia. Pasó a una pieza aparte que abre el carrusel y el destacado: las latas reales en penumbra,
 con un foco. Lección: lo temporal no se mezcla con lo permanente. Va en su propia pieza, que se borra sin rehacer nada.
+
+## 2026-11-01 · Arma el tuyo: el mismo molde que los Signatures, no un catálogo
+Dueño: «mejora las imágenes de arma el tuyo, están bien sosas». La versión con ingredientes recortados y sueltos sobre la
+tinta, al estilo de un catálogo, recibió: «No me gusta para nada la dirección que estabas tomando». Quedó con el molde de
+los seis Signatures, que ya aprobó: la foto arriba en la misma mesa de kraft y madera, y abajo el panel, celeste con las
+curvas de WICHO. Lección: una pieza nueva del feed se hace con el molde que el dueño ya aprobó y se cambia solo el mundo
+del hermano. Un estilo nuevo en medio del feed se ve como de otra marca.

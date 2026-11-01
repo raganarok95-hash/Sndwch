@@ -245,3 +245,21 @@ miniaturas nuevas no las usaré». Hablaba de los círculos de los destacados (v
 versión aprobada el 2026-10-30: SANDO en la carta, WICHO en Arma el tuyo y el mosaico en la portada del Reel. De ese
 intento quedó un solo cambio: en la maqueta, las 3 fijadas van arriba, como hace Instagram, y el carrusel de bebidas
 justo debajo.
+
+## Arma el tuyo, como los Signatures (2026-11-01)
+
+El dueño pidió: «mejora las imágenes de arma el tuyo, están bien sosas». Se probó una versión con los ingredientes recortados y
+sueltos sobre la tinta, y respondió: «no me gusta para nada la dirección». Quedó con el mismo molde de los seis Signatures:
+- **arriba**, la foto en la misma mesa de kraft arrugado y madera oscura, con luz de ventana;
+- **abajo**, el panel en el mundo de WICHO, celeste con sus curvas, en vez del acanalado oliva de SANDO;
+- **el texto**, igual que los Signatures: «Pide por WhatsApp» y el logo como sello.
+
+Las láminas del carrusel y las historias del destacado:
+- **portada:** el sándwich abierto por capas, con «Arma el tuyo»;
+- **el pan:** Classic y Focaccia;
+- **la proteína:** atún, albóndiga, pavo y res;
+- **lo de encima:** las verduras, los dos quesos y tres salsas.
+
+Son los ingredientes que la app deja elegir (`docs/hechos/CARTA.md`). Las fotos están en
+`docs/marketing/anuncios/fotos/foto-arma-*.jpg`, y sus prompts en el README de anuncios.
+

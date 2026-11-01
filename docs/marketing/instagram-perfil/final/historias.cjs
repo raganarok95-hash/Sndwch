@@ -220,31 +220,27 @@ const bebidas = BEB.map(([f, n, d], i) => historia(W.lilaO, `${svgEsp(1080, 1920
   <img src="${img(`${LATAS}/lata-${f}.png`)}" class="abs" style="left:50%;transform:translateX(-50%);bottom:250px;height:880px;filter:drop-shadow(0 30px 40px rgba(0,0,0,.35))">`));
 
 
-// Arma el tuyo (WICHO, en su tinta para no confundirse con Cómo pedir): pan, proteína y lo de encima.
-// El pan: el Classic largo y la Focaccia, dibujados (B01 y B03 de carta.ts).
-const panes = `${svg(`
-  <path d="M170,1150 Q170,1040 300,1030 L780,1030 Q910,1040 910,1150 Q910,1230 780,1235 L300,1235 Q170,1230 170,1150 Z" fill="${C.pan}" stroke="${C.corteza}" stroke-width="12"/>
-  ${[330, 470, 610, 750].map((x) => `<path d="M${x - 50},1080 q50,-30 100,0" fill="none" stroke="${C.corteza}" stroke-width="10" stroke-linecap="round"/>`).join('')}
-  <rect x="240" y="1390" width="600" height="250" rx="46" fill="${C.pan}" stroke="${C.corteza}" stroke-width="12"/>
-  ${Array.from({ length: 15 }, (_, k) => `<circle cx="${300 + (k % 5) * 120}" cy="${1440 + Math.floor(k / 5) * 75}" r="17" fill="${C.corteza}" opacity=".55"/>`).join('')}
-  ${Array.from({ length: 22 }, (_, k) => `<circle cx="${280 + ((k * 137) % 520)}" cy="${1420 + ((k * 61) % 190)}" r="5" fill="#fff"/>`).join('')}`)}
-  <div class="abs mono" style="left:0;right:0;top:1265px;text-align:center;font-size:34px">CLASSIC</div>
-  <div class="abs mono" style="left:0;right:0;top:1670px;text-align:center;font-size:34px">FOCACCIA</div>`;
-// La proteína: cuatro capas con su nombre, las que la app deja armar.
+// Arma el tuyo: las cuatro proteínas que la app deja elegir.
 const PROT = ['Res', 'Atún', 'Albóndiga', 'Pavo'];
-const colProt = { Res: C.carne, 'Atún': '#CDB894', 'Albóndiga': '#8A3F2C', Pavo: '#EAC9B2' };
-const proteinas = svg(PROT.map((n, k) => `<rect x="170" y="${1000 + k * 170}" width="740" height="120" rx="56" fill="${colProt[n]}"/>
-  <text x="540" y="${1000 + k * 170 + 76}" text-anchor="middle" font-family="IBM Plex Mono" font-weight="600" font-size="40" letter-spacing="3" fill="${n === 'Pavo' || n === 'Atún' ? W.tinta : papel}">${n.toUpperCase()}</text>`).join(''));
-// Lo de encima: el sándwich abierto y tres gotas de salsa.
-const gota = (x, y, c) => `<path d="M${x},${y} C${x + 34},${y + 50} ${x + 40},${y + 80} ${x},${y + 96} C${x - 40},${y + 80} ${x - 34},${y + 50} ${x},${y} Z" fill="${c}"/>`;
-const encima = svg(`${sandwich(470, 1330, 640, { abre: 30, rellenos: ['lechuga', 'tomate', 'cebolla', 'queso'] })}${gota(870, 1120, '#F4E3B5')}${gota(870, 1270, '#C9772F')}${gota(870, 1420, '#7FA650')}`);
-const ARMA = [
-  ['El pan.', 'Classic, de miga suave, o Focaccia, con aceite de oliva y sal gruesa.', panes],
-  ['La proteína.', PROT.join(', ').replace(/, ([^,]*)$/, ' o $1') + '.', proteinas],
-  ['Lo de encima.', 'Verduras, queso y hasta 3 salsas incluidas. Lo eliges tú.', encima],
+// Arma el tuyo, como los Signatures (2026-11-01). Dueño: «mejora las imágenes de arma el tuyo, están bien sosas», y de la
+// versión con ingredientes sueltos sobre la tinta: «no me gusta para nada la dirección». La foto va arriba, en la misma
+// mesa de kraft y madera que los seis Signatures, y el panel de abajo en el mundo de WICHO: celeste con sus curvas, en vez
+// del acanalado de SANDO. Las fotos se generaron en Figma, fieles a lo que la app deja elegir (docs/hechos/CARTA.md,
+// «Arma el tuyo»), y están en docs/marketing/anuncios/fotos/foto-arma-*.jpg.
+const ARMA_FOTOS = [
+  ['foto-arma-capas.jpg', 'EL OTRO LADO', 'Arma el tuyo', 'Tú decides el pan, la proteína y todo lo que va encima.', 'center 36%'],
+  ['foto-arma-pan.jpg', 'ARMA EL TUYO · 1 DE 3', 'El pan', 'Classic, de miga suave, o Focaccia, con aceite de oliva y sal gruesa.'],
+  ['foto-arma-proteina.jpg', 'ARMA EL TUYO · 2 DE 3', 'La proteína', PROT.join(', ').replace(/, ([^,]*)$/, ' o $1') + '.'],
+  ['foto-arma-encima.jpg', 'ARMA EL TUYO · 3 DE 3', 'Lo de encima', 'Verduras, queso y hasta 3 salsas incluidas. Lo eliges tú.'],
 ];
-const armaHist = ARMA.map(([t, f, dibujo], i) => historia(W.tinta, `<div class="full cruz"></div>${curvas(1080, 1920, 540, 1500, 'rgba(144,204,240,.20)', 22, 70, i + 7)}
-  ${cabeza(`ARMA EL TUYO · ${i + 1} DE ${ARMA.length}`, t, f, 150)}${dibujo}`, papel));
+// Las historias, como las de la carta: el panel arriba, celeste con las curvas de WICHO, y la foto abajo.
+const armaHist = ARMA_FOTOS.slice(1).map(([f, etiqueta, titulo, frase], i) => historia(W.pelaje, `
+  <div class="abs" style="left:0;right:0;top:600px;bottom:0;${foto(f, 'center 55%')}"></div>
+  <div class="abs" style="left:0;right:0;top:0;height:600px;background:${W.pelaje};overflow:hidden">${curvas(1080, 600, 880, 520, W.curvas, 12, 60, i + 7)}</div>
+  <div class="abs" style="left:84px;right:84px;top:250px">
+    <div class="mono" style="font-size:28px">${etiqueta}</div>
+    <div class="disp" style="font-size:120px;margin-top:16px">${titulo}</div>
+    <div class="voz" style="font-size:44px;line-height:1.1;margin-top:12px">${frase}</div></div>`, W.tinta));
 const HISTORIAS = { 'como-pedir': pedir, carta: cartaHist, arma: armaHist, envios, horario, bebidas };
 
 (async () => {

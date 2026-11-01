@@ -92,6 +92,10 @@ carta: el de 15 cm es la mitad de uno de 30, con una punta redonda y un corte.
 | `fotos/foto-tuna-melt-30.jpg` | igual | 30 cm hot tuna melt cut into two halves: chunky flaked tuna (never a paste) with a little mayonnaise and white pepper, under melted cheddar that stretches; no vegetables |
 | `fotos/foto-italian-hoagie-30.jpg` | igual | 30 cm Italian hoagie cut into two halves: three Italian cold cuts folded in pleats, yellow American cheese, shredded lettuce, tomato, red onion, green bell pepper, oil and vinegar |
 | `fotos/foto-classic-tuna-30.jpg` | igual | 30 cm classic tuna sub cut into two halves: chunky flaked tuna with just the right mayonnaise and white pepper; nothing else |
+| `fotos/foto-arma-capas.jpg` | Figma, `gpt-image-2.5-flare` (1024 × 1280), 2026-11-01 | exploded 15 cm sub hovering over kraft paper: soft white sub roll, shredded lettuce, tomato, thinly sliced sautéed beef, cheddar, red onion; long roll, never a burger bun. Portada de «Arma el tuyo» |
+| `fotos/foto-arma-pan.jpg` | igual | a 15 cm soft white sub roll (one end cut to show the crumb) and a 15 cm focaccia with olive oil and coarse salt, side by side |
+| `fotos/foto-arma-proteina.jpg` | igual | four small portions on the kraft paper: chunky tuna flakes with a little mayonnaise (never a paste), small meatballs in marinara, thin folded roast turkey, thinly sliced sautéed beef |
+| `fotos/foto-arma-encima.jpg` | igual | tomato, red onion, green pepper, shredded lettuce, dill pickles, cucumber, pickled jalapeño, American and cheddar slices, and three ramekins (mayonnaise, honey mustard, ketchup) |
 
 Las seis van sobre kraft arrugado y madera oscura, con luz de ventana, y en todas la toma es la misma: cada mitad con
 una punta redonda y un corte, el relleno generoso pero real. El recorte en la publicación (`ENCUADRE` en `final.cjs`)

@@ -228,31 +228,35 @@ const carta = caja(1080, 1350, `background:${S.verde};color:${papel}`, `<div cla
 // El lado de WICHO: armar el tuyo. Solo lo que la app ya hace (carta.ts): dos panes, cuatro proteínas
 // para armar, verduras y hasta tres salsas incluidas.
 const PROT = ['Res', 'Atún', 'Albóndiga', 'Pavo'];
-const arma = caja(1080, 1350, `background:${W.pelaje};color:${W.tinta}`, `${curvas(1080, 1350, 880, 1120, W.curvas, 18, 66, 3)}
-  <img src="${PJ('wicho2_celebra')}" class="abs" style="right:10px;bottom:110px;height:560px">
-  <div class="abs" style="left:96px;top:92px;right:96px">
-    <div class="mono" style="font-size:26px">EL OTRO LADO</div>
-    <div class="disp" style="font-size:168px;margin-top:30px">Arma<br>el tuyo.</div>
-    <div class="voz" style="font-size:52px;margin-top:30px;max-width:600px">Tú decides el pan, la proteína y todo lo que va encima.</div>
-    <div style="margin-top:46px;display:flex;flex-direction:column;gap:22px">${[['Pan', 'Classic o Focaccia'], ['Proteína', PROT.join(' · ')], ['Encima', 'verduras y hasta 3 salsas incluidas']].map(([a, b]) => `<div style="display:flex;gap:22px;align-items:center">
-      <svg width="58" height="58"><circle cx="29" cy="29" r="29" fill="${W.lilaO}"/>${espiral(29, 29, 22, W.lila, 3.5)}</svg><span class="mono" style="font-size:24px;width:170px">${a.toUpperCase()}</span><span class="voz" style="font-size:40px;max-width:330px">${b}</span></div>`).join('')}</div></div>
-  <div class="abs" style="left:96px;right:96px;bottom:56px;display:flex;justify-content:space-between;align-items:center"><div class="mono" style="font-size:26px">${MONO}</div>${marca(W.tinta, 40)}</div>`);
+// Arma el tuyo, como los Signatures (2026-11-01). Dueño: «mejora las imágenes de arma el tuyo, están bien sosas», y de la
+// versión con ingredientes sueltos sobre la tinta: «no me gusta para nada la dirección». La foto va arriba, en la misma
+// mesa de kraft y madera que los seis Signatures, y el panel de abajo en el mundo de WICHO: celeste con sus curvas, en vez
+// del acanalado de SANDO. Las fotos se generaron en Figma, fieles a lo que la app deja elegir (docs/hechos/CARTA.md,
+// «Arma el tuyo»), y están en docs/marketing/anuncios/fotos/foto-arma-*.jpg.
+const ARMA_FOTOS = [
+  ['foto-arma-capas.jpg', 'EL OTRO LADO', 'Arma el tuyo', 'Tú decides el pan, la proteína y todo lo que va encima.', 'center 36%'],
+  ['foto-arma-pan.jpg', 'ARMA EL TUYO · 1 DE 3', 'El pan', 'Classic, de miga suave, o Focaccia, con aceite de oliva y sal gruesa.'],
+  ['foto-arma-proteina.jpg', 'ARMA EL TUYO · 2 DE 3', 'La proteína', PROT.join(', ').replace(/, ([^,]*)$/, ' o $1') + '.'],
+  ['foto-arma-encima.jpg', 'ARMA EL TUYO · 3 DE 3', 'Lo de encima', 'Verduras, queso y hasta 3 salsas incluidas. Lo eliges tú.'],
+];
+// El quinto dato es el encuadre de la foto: la portada sube para que no se corte el pan de arriba.
+const laminaArmaFoto = ([f, etiqueta, titulo, frase, encuadre = 'center 55%'], n) => caja(1080, 1350, `background:${W.pelaje}`, `
+  <div class="full" style="bottom:460px;background:url('${img(`${FOTOS}/${f}`)}') ${encuadre}/cover no-repeat;background-color:#2a2018"></div>
+  <div class="abs" style="left:0;right:0;bottom:0;height:460px;background:${W.pelaje};overflow:hidden">${curvas(1080, 460, 900, 400, W.curvas, 10, 62, n + 3)}</div>
+  <div class="abs" style="left:84px;right:84px;bottom:52px;height:356px;display:flex;flex-direction:column;color:${W.tinta}">
+    <div class="mono" style="font-size:26px">${etiqueta}</div>
+    <div class="disp" style="font-size:100px;margin-top:12px">${titulo}</div>
+    <div class="voz" style="font-size:40px;line-height:1.1;margin-top:10px">${frase}</div>
+    <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:16px">${icoWa(W.tinta, 46)}<span class="mono" style="font-size:28px">PIDE POR WHATSAPP · ${WA_BONITO}</span></div>${sello(96)}</div></div>`);
+const arma = laminaArmaFoto(ARMA_FOTOS[0], 0);
 // El Reel «Los seis de la casa» (reel.cjs), al centro de la cuadrícula: su portada es su primer cuadro.
 const reel = caja(1080, 1350, `background:url('${img(path.join(OUT, 'reel-portada.jpg'))}') center/cover`, '');
 
 const F = Object.fromEntries(FOOD.map((d) => [d.n, d]));
-const laminaArma = (n, titulo, frase, pose, alto) => caja(1080, 1350, `background:${W.pelaje};color:${W.tinta}`, `${curvas(1080, 1350, 880, 1120, W.curvas, 18, 66, n + 3)}
-  <img src="${PJ(pose)}" class="abs" style="right:20px;bottom:110px;height:${alto}px">
-  <div class="abs" style="left:96px;top:92px;right:96px"><div class="mono" style="font-size:26px">ARMA EL TUYO · ${n} DE 3</div>
-    <div class="disp" style="font-size:150px;margin-top:30px">${titulo}</div><div class="voz" style="font-size:56px;margin-top:30px;max-width:640px">${frase}</div></div>
-  <div class="abs" style="left:96px;right:96px;bottom:56px;display:flex;justify-content:space-between;align-items:center"><div class="mono" style="font-size:26px">${MONO}</div>${marca(W.tinta, 40)}</div>`);
 const CARRUSELES = {
   carta: FOOD.map((d) => sig(d)),
-  arma: [
-    laminaArma(1, 'El pan.', 'Classic, de miga suave, o Focaccia, con aceite de oliva y sal gruesa.', 'wicho2_rie', 520),
-    laminaArma(2, 'La proteína.', PROT.join(', ').replace(/, ([^,]*)$/, ' o $1') + '.', 'wicho_saluda', 560),
-    laminaArma(3, 'Lo de encima.', 'Verduras, queso y hasta 3 salsas incluidas. Lo eliges tú.', 'wicho2_come', 580),
-  ],
+  arma: ARMA_FOTOS.slice(1).map((d, i) => laminaArmaFoto(d, i + 1)),
 };
 // La cuadrícula, de izquierda a derecha y de arriba abajo. Las 3 primeras van fijadas: Instagram las pone arriba aunque haya otras más nuevas.
 const POSTS = [
