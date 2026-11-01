@@ -12,10 +12,12 @@ const FUENTES = fs.readFileSync(process.env.FUENTES_CSS, 'utf8'); // FUENTES_CSS
 // Exporta sin ensuciar el color: la captura sale en PNG y PIL la pasa a JPEG al 95 % sin submuestreo de croma (4:4:4),
 // para que los bordes de las letras y del sándwich queden limpios (2026-10-31, dueño: «se ven como que de poca calidad»).
 const { execFileSync: _ejecutar } = require('child_process');
+// El primer Python que tenga PIL: en algunos contenedores el «python3» del PATH no lo trae.
+const PY_PIL = ['python3', '/usr/bin/python3', 'python3.13', 'python3.12'].find((p) => { try { _ejecutar(p, ['-c', 'from PIL import Image'], { stdio: 'ignore' }); return true; } catch (e) { return false; } }) || 'python3';
 async function captura(pg, salida, opciones = {}) {
   const png = salida.replace(/\.jpg$/, '.png');
   await pg.screenshot({ path: png, type: 'png', ...opciones });
-  _ejecutar('python3', ['-c', "import sys;from PIL import Image;Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2],quality=95,subsampling=0)", png, salida]);
+  _ejecutar(PY_PIL, ['-c', "import sys;from PIL import Image;Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2],quality=95,subsampling=0)", png, salida]);
   fs.rmSync(png);
 }
 const FOTOS = `${REPO}/docs/marketing/anuncios/fotos`;
@@ -97,7 +99,7 @@ const listaCarta = (c, t = 92) => `<div class="disp" style="font-size:${t}px;lin
 // feed y el video también»). 1080 × 1920, 30 cuadros por segundo, sin audio (la música la pone el dueño en
 // la app de Instagram, que trae las licencias). El guion repite el concepto del perfil, «Dos formas de comer
 // SND//WCH»:
-//  0,0 s  la portada: los seis en mosaico. Es el primer cuadro, y la API toma el primer cuadro como portada
+//  0,0 s  la portada: el corte del Philly de cerca y «Los seis de la casa» (2026-11-01: el mosaico se veía amontonado en chiquito, y la foto entera repetía la publicación 1). Es el primer cuadro, y la API toma el primer cuadro como portada
 //         (thumb_offset 0). La comida está en el primer segundo.
 //  0,8 s  los seis Signatures, 1,6 s cada uno: la foto entera abajo y el texto en la basta acanalada de SANDO,
 //         arriba, nunca sobre la comida. El texto queda fuera de la franja que tapan los botones y el caption.
@@ -115,13 +117,13 @@ const DURA = T_CIERRE + T.cierre;
 const PROT = ['Res', 'Atún', 'Albóndiga', 'Pavo'];
 const FILAS = [['Pan', 'Classic o Focaccia'], ['Proteína', PROT.join(' · ')], ['Encima', 'verduras y hasta 3 salsas incluidas']];
 
-const mosaico = FOOD.map((d) => `<div style="${foto(d.f, 'center 60%')};border-radius:8px"></div>`).join('');
 const escenas = `
 <div id="portada" class="full" style="background:${S.verde}">
-  <div class="abs" style="left:0;top:0;bottom:0;width:26px;background:${S.forro}"></div>
-  <div class="abs" style="left:96px;right:84px;top:300px"><div class="mono" style="font-size:30px;color:${S.tan}">LOS DE LA CASA · 15 CM Y 30 CM</div>
-    <div class="disp" style="font-size:150px;color:${papel};margin-top:24px">Los seis<br>de la casa.</div></div>
-  <div class="abs" style="left:96px;right:84px;top:760px;height:840px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(2,1fr);gap:14px">${mosaico}</div>
+  <div class="abs" style="left:0;right:0;top:0;height:1180px;background:url('${img(`${FOTOS}/${FOOD[0].f}`)}') -810px -560px/1964px auto"></div>
+  <div class="abs rib" style="left:0;right:0;top:1180px;bottom:0;background-color:${S.verde}"></div>
+  <div class="abs" style="left:0;top:1180px;bottom:0;width:26px;background:${S.forro}"></div>
+  <div class="abs" style="left:96px;right:84px;top:1236px;color:${papel}"><div class="mono" style="font-size:30px;color:${S.tan}">REEL · LOS DE LA CASA</div>
+    <div class="disp" style="font-size:150px;margin-top:20px">Los seis<br>de la casa.</div></div>
 </div>
 ${FOOD.map((d, i) => `<div id="sig${i}" class="full" style="background:${S.oliva};display:none">
   <div class="abs" style="left:0;right:0;top:580px;bottom:0;overflow:hidden"><div class="sigfoto full" style="${foto(d.f, 'center 62%')};transform-origin:50% 62%"></div></div>
@@ -216,7 +218,7 @@ function pintar(t, c) {
     '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo', '-shortest',
     '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-crf', '19', '-preset', 'medium',
     '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', mp4]);
-  // La portada en la cuadrícula: el primer cuadro (el mosaico de los seis).
+  // La portada en la cuadrícula: el primer cuadro.
   fs.copyFileSync(path.join(dir, '0000.jpg'), path.join(OUT, 'reel-portada.jpg'));
   console.log('reel', mp4, `${DURA.toFixed(1)} s, ${total} cuadros`);
 })();
