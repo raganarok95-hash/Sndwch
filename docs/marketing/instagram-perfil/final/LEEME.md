@@ -108,7 +108,7 @@ Entre tres opciones eligió **C: más cerca**:
 - **El sándwich llena el cuadro:** la foto entra al 128 % y cada una con su encuadre, para que el pan no toque el borde.
   No hay un estudio directo detrás; es práctica de fotografía de comida.
 - **El nombre del sándwich es el titular** y el momento va debajo («Hambre en serio. Tan jugoso que no lleva salsa.»).
-  Un nombre descriptivo vende más (Wansink, Painter y van Ittersum, 2001).
+  Un texto que habla de sabor y textura se elige más que uno neutro o de salud (Turnwald et al., *JAMA Internal Medicine* 2017 y *Psychological Science* 2019). Antes se citaba a Wansink (2001), pero sus estudios se retractaron por mala conducta académica.
 - **«Pide por WhatsApp» con el número** y el logo oficial como sello. El número sale del código
   (`src/app/01-catalogo-y-estado.ts`), y los textos terminan con «Pide por WhatsApp al … o en sndwch.app».
   Antes de abrir, el chat responde con la web.

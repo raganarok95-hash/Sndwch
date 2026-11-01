@@ -62,3 +62,10 @@
 - **2026-10-24 · Sin fruta, sin esencias.** Dueño: «Sin fruta para mantener el cero azúcar. Si es
   pera sería esencia, pero no deseamos esencias». En las latas, el sabor sale de flores, hojas,
   especias, té y cáscaras de cítrico. Un aroma destilado también cuenta como esencia.
+
+## 2026-11-01 · «Se come con una mano» no vende solo
+Dueño, sobre el Classic Tuna: «¿Por qué dice se come con una mano? Como que no tiene sentido, ajusta y estudia para
+vender». La frase salía de la descripción de la carta («no lleva nada suelto, así que se come con una mano»): sin ese
+contexto, en un post, no se entiende. Pasó a «Cremoso y en lascas.», que habla de sabor y textura y se ve en la foto. Un
+texto que habla de sabor se elige más que uno neutro o de salud (Turnwald et al., 2017 y 2019). Lección: un beneficio
+práctico que necesita explicación no va de titular. El titular dice cómo sabe.
