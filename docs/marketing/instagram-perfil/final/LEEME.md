@@ -28,7 +28,7 @@ Quien entra entiende en segundos que puede elegir uno de la casa o armar el suyo
 1. **Cómo pedir**: los 14 pasos con las pantallas reales de la app (ver abajo).
 2. **Carta**: los seis Signatures.
 3. **Arma el tuyo**: el pan, la proteína y lo de encima. Es la otra mitad del concepto.
-4. **Bebidas**: las de la casa en su lata, con «Próximamente».
+4. **Bebidas**: las de la casa en su lata. Abre con una historia de «Próximamente» que se borra cuando llegue la lata.
 5. **Delivery** (el dueño lo llamó así en su perfil): todo Trujillo, y el envío según la distancia.
 6. **Horario**: la semana, con el lunes de descanso. Sale de `STORE_HOURS`.
 
@@ -138,7 +138,7 @@ Un destacado se arma con historias publicadas. Cada uno vive en el mundo de su h
 | Arma el tuyo | 3: el pan, la proteína y lo de encima | ya |
 | Carta | 6: un Signature por historia | ya |
 | Cómo pedir | 14: un paso por historia, con la pantalla real de la app (`historia-como-pedir-paso-01..14`). Reemplazan a las 4 dibujadas | ya (dueño: «Quítale el próximamente, solo las bebidas deben tener el próximamente») |
-| Bebidas | 3: The Bloom, Cold Brew Tea y The Cool en su lata, con «Próximamente» | ya: al abrir salen en botella (dueño, 2026-10-24), y la etiqueta dice que la lata todavía no llega |
+| Bebidas | 1 + 3: «Próximamente» (`historia-bebidas-proximamente`) y The Bloom, Cold Brew Tea y The Cool en su lata, ya sin la etiqueta | ya. Al abrir salen en botella (dueño, 2026-10-24): la de «Próximamente» se borra cuando la lata esté a la venta |
 
 ## Cómo se publica solo
 
@@ -193,11 +193,25 @@ Dueño: «se ven como que de poca calidad, hay que mejorarlo». Lo que se cambi�
 
 Queda pendiente un escalador con IA: no está en las herramientas conectadas y no se pudo instalar uno.
 
-## El carrusel de las bebidas (`carrusel-bebidas-1…4`)
+## El carrusel de las bebidas (`carrusel-bebidas-proximamente` y `carrusel-bebidas-1…4`)
 
-Dueño: «también faltan imágenes de las bebidas». Son 4 láminas, con «Próximamente» porque al abrir salen en botella:
+Dueño: «también faltan imágenes de las bebidas». Son 4 láminas:
 - la portada: las tres latas juntas;
 - una lámina por bebida, con la lata en alta y el nombre y la descripción de `carta.ts`.
+
+**«Próximamente», aparte** (2026-11-01, dueño: «quita el próximamente en todas las imágenes, solo haz una de próximamente
+como una imagen previa diseñada bonita, porque luego la podemos eliminar y quedaría todo tal cual»). Las cuatro láminas
+y las tres historias ya no llevan la etiqueta. El aviso va en una pieza aparte que abre el carrusel
+(`carrusel-bebidas-proximamente.jpg`, 4:5) y el destacado (`historias/historia-bebidas-proximamente.jpg`, 9:16).
+- **Qué muestra:** las tres latas reales en penumbra, con un foco desde arriba que enciende las tapas y deja adivinar el
+  color de cada una. La lámina siguiente las muestra con luz.
+- **Cuándo se borra:** cuando la lata esté a la venta, porque al abrir salen en botella. Instagram deja borrar una lámina
+  de un carrusel, y el resto queda igual.
+- **El texto,** al borrarla, se edita y queda así: «Las de la casa, en su lata: The Bloom (jamaica y canela), Cold Brew Tea
+  (té negro reposado doce horas en frío) y The Cool (hierba luisa y menta). ¿Cuál pruebas primero? Te leemos.».
+- **Por qué:** mostrar un poco y guardar el resto abre una brecha de curiosidad que empuja a mirar lo que sigue
+  (Loewenstein, 1994, *Psychological Bulletin*). Los anuncios que despiertan curiosidad logran más atención y recuerdo
+  (Menon y Soman, 2002, *Journal of Advertising*). Las dos fuentes son de EE. UU.; no encontré un estudio peruano.
 
 Se sube **al final**, después del Philly: así queda justo debajo de las tres fijadas (`bebidas.cjs`).
 

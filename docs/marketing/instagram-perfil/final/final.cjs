@@ -259,7 +259,7 @@ const POSTS = [
   { n: '1-philly', html: sig(F['1-philly']), fijada: true, por: 'Fijada 1: el Signature estrella, lo primero que se ve.' },
   { n: '2-carta', html: carta, fijada: true, por: 'Fijada 2: el lado de SANDO, los seis de la casa (carrusel: una lámina por Signature).' },
   { n: '3-arma-el-tuyo', html: arma, fijada: true, por: 'Fijada 3: el lado de WICHO, armar el tuyo.' },
-  { n: '10-bebidas', html: '', img: 'carrusel-bebidas-1.jpg', por: 'El carrusel de las bebidas: se sube al final y queda justo debajo de las fijadas.' },
+  { n: '10-bebidas', html: '', img: 'carrusel-bebidas-proximamente.jpg', por: 'El carrusel de las bebidas: se sube al final y queda justo debajo de las fijadas. Abre con «Próximamente», que se borra cuando llegue la lata.' },
   { n: '4-meatball', html: sig(F['4-meatball']), por: 'La cena.' },
   { n: '5-reel', html: reel, reel: true, por: 'El Reel «Los seis de la casa», al centro: lo que más alcance trae entre gente que no te sigue.' },
   { n: '6-turkey', html: sig(F['5-turkey']), por: 'El almuerzo.' },
