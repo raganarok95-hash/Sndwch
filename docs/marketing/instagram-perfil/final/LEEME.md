@@ -193,7 +193,7 @@ Dueño: «se ven como que de poca calidad, hay que mejorarlo». Lo que se cambi�
 
 Queda pendiente un escalador con IA: no está en las herramientas conectadas y no se pudo instalar uno.
 
-## El carrusel de las bebidas (`carrusel-bebidas-proximamente` y `carrusel-bebidas-1…4`)
+## El carrusel de las bebidas (`carrusel-bebidas-proximamente` y `carrusel-bebidas-2…4`)
 
 Dueño: «también faltan imágenes de las bebidas». Son 4 láminas:
 - la portada: las tres latas juntas;
@@ -203,8 +203,12 @@ Dueño: «también faltan imágenes de las bebidas». Son 4 láminas:
 como una imagen previa diseñada bonita, porque luego la podemos eliminar y quedaría todo tal cual»). Las cuatro láminas
 y las tres historias ya no llevan la etiqueta. El aviso va en una pieza aparte que abre el carrusel
 (`carrusel-bebidas-proximamente.jpg`, 4:5) y el destacado (`historias/historia-bebidas-proximamente.jpg`, 9:16).
-- **Qué muestra:** las tres latas reales en penumbra, con un foco desde arriba que enciende las tapas y deja adivinar el
-  color de cada una. La lámina siguiente las muestra con luz.
+- **Qué muestra:** solo la palabra «Próximamente.» y, debajo, las tres latas reales en penumbra y desenfocadas: se
+  adivina el color de cada una y no se lee nada más (dueño: «haz una que solo diga próximamente en una sola imagen,
+  luego las otras tres que ya tenías pero quitándole la palabra próximamente»). Las láminas siguientes las muestran
+  con luz.
+- **El post queda en 4:** «Próximamente» y una lámina por bebida (`carrusel-bebidas-2…4`). «Las de la casa»
+  (`carrusel-bebidas-1`) ya no entra.
 - **Cuándo se borra:** cuando la lata esté a la venta, porque al abrir salen en botella. Instagram deja borrar una lámina
   de un carrusel, y el resto queda igual.
 - **El texto,** al borrarla, se edita y queda así: «Las de la casa, en su lata: The Bloom (jamaica y canela), Cold Brew Tea
