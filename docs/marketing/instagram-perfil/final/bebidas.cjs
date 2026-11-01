@@ -126,26 +126,26 @@ const laminaBeb = (b, i) => caja(1080, 1350, `background:${W.lilaO};color:${pape
     <div class="disp" style="font-size:112px;margin-top:30px">${b.n.replace(/^(\S+) /, '$1<br>')}</div>
     <div class="voz" style="font-size:50px;line-height:1.12;margin-top:26px">${b.d}</div></div>${pie}`);
 const LAMINAS = [portadaBeb, ...BEB.map(laminaBeb)];
-// «Próximamente», la pieza aparte que se borra cuando llegue la lata: las tres latas reales en penumbra, con un foco desde
-// arriba que enciende las tapas y deja adivinar el color de cada una. La lámina siguiente (o la historia siguiente) las
+// «Próximamente», la pieza aparte que se borra cuando llegue la lata: las tres latas reales en penumbra y desenfocadas,
+// con un foco desde arriba: se adivina el color de cada una y no se lee nada más que «Próximamente». La lámina siguiente (o la historia siguiente) las
 // muestra con luz. Sale en 4:5 para abrir el carrusel y en 9:16 para abrir el destacado.
 // La máscara del brillo va como data: (un file:// no sirve de máscara: Chromium la bloquea por origen).
 const penumbra = (f, estilo) => { const u = `url('data:image/png;base64,${fs.readFileSync(`${LATAS_HD}/lata-${f}.png`).toString('base64')}') center/contain no-repeat`;
   return `<div class="abs" style="${estilo};aspect-ratio:1042/2785;filter:drop-shadow(0 0 2px rgba(236,224,246,.55)) drop-shadow(0 0 30px rgba(195,166,210,.30)) drop-shadow(0 36px 40px rgba(0,0,0,.5))">
-    <img src="${img(`${LATAS_HD}/lata-${f}.png`)}" style="position:absolute;inset:0;width:100%;height:100%;filter:brightness(.30) saturate(1.45) contrast(1.3)">
-    <div style="position:absolute;inset:0;-webkit-mask:${u};mask:${u};mix-blend-mode:screen;background:linear-gradient(180deg,rgba(240,230,250,.62) 0%,rgba(240,230,250,.22) 7%,rgba(240,230,250,0) 22%),linear-gradient(90deg,rgba(255,255,255,0) 14%,rgba(236,224,246,.26) 19%,rgba(255,255,255,0) 24%)"></div></div>`; };
-const proximamente = (h, abajo) => caja(1080, h, `background:${W.lilaO};color:${papel}`, `
+    <img src="${img(`${LATAS_HD}/lata-${f}.png`)}" style="position:absolute;inset:0;width:100%;height:100%;filter:blur(13px) brightness(.24) saturate(1.8)">
+    <div style="position:absolute;inset:0;-webkit-mask:${u};mask:${u};mix-blend-mode:screen;filter:blur(10px);background:linear-gradient(180deg,rgba(240,230,250,.62) 0%,rgba(240,230,250,.22) 7%,rgba(240,230,250,0) 22%),linear-gradient(90deg,rgba(255,255,255,0) 14%,rgba(236,224,246,.26) 19%,rgba(255,255,255,0) 24%)"></div></div>`; };
+// El post queda en 4: «Próximamente» y una lámina por bebida; «Las de la casa» (carrusel-bebidas-1) ya no entra.
+// Solo dice «Próximamente» (dueño, 2026-11-01: «haz una que solo diga próximamente en una sola imagen, luego las otras
+// tres que ya tenías pero quitándole la palabra próximamente»): la palabra centrada y las latas en penumbra debajo.
+const proximamente = (h) => { const cy = h * (h > 1500 ? 0.6 : 0.6), alto = h > 1500 ? 680 : 600;
+  return caja(1080, h, `background:${W.lilaO};color:${papel}`, `
   <div class="full" style="background:linear-gradient(180deg,${W.lilaO} 0%,#2E2440 62%,#1B1525 100%)"></div>
-  <div class="full" style="background:radial-gradient(ellipse 46% 38% at 50% ${h > 1500 ? 60 : 62}%,rgba(195,166,210,.38),rgba(195,166,210,0) 100%)"></div>
-  ${svgEsp(1080, h, 540, h * 0.66, h > 1500 ? 700 : 600, 'rgba(195,166,210,.24)', 26)}
-  <div class="abs" style="left:84px;right:84px;top:${h > 1500 ? 270 : 84}px">
-    <div class="mono" style="font-size:28px">BEBIDAS DE LA CASA · 355 ML</div>
-    <div class="disp" style="font-size:150px;margin-top:22px">Próximamente.</div>
-    <div class="voz" style="font-size:56px;line-height:1.1;margin-top:18px">Tres de la casa, en su lata.</div></div>
-  ${penumbra('cold-brew', `left:110px;top:${h * 0.66 - 300}px;height:600px;transform:rotate(-7deg)`)}
-  ${penumbra('cool', `right:110px;top:${h * 0.66 - 300}px;height:600px;transform:rotate(7deg)`)}
-  ${penumbra('bloom', `left:50%;top:${h * 0.66 - 360}px;height:690px;transform:translateX(-50%)`)}
-  ${h > 1500 ? `<div class="abs mono" style="left:0;right:0;bottom:290px;text-align:center;font-size:30px;color:${W.lila}">${abajo}</div>` : `<div class="abs" style="left:84px;right:84px;bottom:56px;display:flex;justify-content:space-between;align-items:center;color:${papel}"><div class="mono" style="font-size:26px;color:${W.lila}">${abajo}</div>${marca(papel, 40)}</div>`}`);
+  <div class="full" style="background:radial-gradient(ellipse 46% 38% at 50% ${(cy / h) * 100}%,rgba(195,166,210,.38),rgba(195,166,210,0) 100%)"></div>
+  ${svgEsp(1080, h, 540, cy, h > 1500 ? 700 : 620, 'rgba(195,166,210,.24)', 26)}
+  <div class="abs disp" style="left:0;right:0;top:${h > 1500 ? 420 : 150}px;text-align:center;font-size:150px">Próximamente.</div>
+  ${penumbra('cold-brew', `left:${h > 1500 ? 90 : 110}px;top:${cy - alto * 0.5}px;height:${alto}px;transform:rotate(-7deg)`)}
+  ${penumbra('cool', `right:${h > 1500 ? 90 : 110}px;top:${cy - alto * 0.5}px;height:${alto}px;transform:rotate(7deg)`)}
+  ${penumbra('bloom', `left:50%;top:${cy - alto * 0.6}px;height:${alto * 1.15}px;transform:translateX(-50%)`)}`); };
 
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
@@ -158,12 +158,12 @@ const proximamente = (h, abajo) => caja(1080, h, `background:${W.lilaO};color:${
     await captura(pg, path.join(OUT, `carrusel-bebidas-${i + 1}.jpg`));
   }
   const listas = async () => pg.evaluate(async () => { await Promise.all(['400 40px "Anton"', '600 40px "IBM Plex Mono"', 'italic 400 40px "Instrument Serif"'].map((f) => document.fonts.load(f))); });
-  fs.writeFileSync(tmp, pagina(1080, 1350, proximamente(1350, 'DESLIZA Y CONÓCELAS →')));
+  fs.writeFileSync(tmp, pagina(1080, 1350, proximamente(1350)));
   await pg.goto('file://' + tmp, { waitUntil: 'load' }); await listas();
   await captura(pg, path.join(OUT, 'carrusel-bebidas-proximamente.jpg'));
   await pg.setViewportSize({ width: 1080, height: 1920 });
   fs.mkdirSync(path.join(OUT, 'historias'), { recursive: true });
-  fs.writeFileSync(tmp, pagina(1080, 1920, proximamente(1920, 'TOCA PARA CONOCERLAS →')));
+  fs.writeFileSync(tmp, pagina(1080, 1920, proximamente(1920)));
   await pg.goto('file://' + tmp, { waitUntil: 'load' }); await listas();
   await captura(pg, path.join(OUT, 'historias', 'historia-bebidas-proximamente.jpg'));
   fs.rmSync(tmp, { force: true }); await b.close();
