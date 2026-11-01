@@ -118,7 +118,7 @@ const POSTS = [
   { n: '5-turkey', html: sig({ foto: `${FOTOS}/foto-turkey-v4.jpg`, titular: 'El almuerzo que no<br>te tumba la tarde.', tam: 100, voz: 'Turkey. Llena sin pesar.' }) },
   { n: '6-tuna-melt', html: sig({ foto: `${FOTOS}/foto-tuna-melt.jpg`, titular: 'Antojo de algo<br>caliente.', tam: 104, voz: 'Tuna Melt. El cheddar se estira al primer mordisco.' }) },
   { n: '7-italian-hoagie', html: sig({ foto: `${FOTOS}/foto-italian-hoagie.jpg`, titular: 'Cuando quieres<br>de todo.', tam: 104, voz: 'Italian Hoagie. Cada capa suma y ninguna sobra.' }) },
-  { n: '8-classic-tuna', html: sig({ foto: `${FOTOS}/foto-classic-tuna.jpg`, titular: 'Se come con<br>una mano.', tam: 104, voz: 'Classic Tuna. Simple y bien hecho.' }) },
+  { n: '8-classic-tuna', html: sig({ foto: `${FOTOS}/foto-classic-tuna.jpg`, titular: 'Cremoso y<br>en lascas.', tam: 104, voz: 'Classic Tuna. Simple y bien hecho.' }) },
   { n: '9-reel-detras', html: reel, reel: true },
 ];
 

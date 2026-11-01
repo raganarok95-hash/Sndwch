@@ -94,7 +94,7 @@ almuerzo que no te tumba la tarde», a las 11:30.
 | D1 | **Para cuándo** | 26 | propuesta |
 | D2 | **Quincena**: el 15 y el 30, el de 30CM «porque hoy se puede»; antes de quincena, el 15CM | 23 | banco |
 | D3 | **Mañana cerramos**: domingo 7 p. m., WICHO se despide de la cocina hasta el martes | 22 | banco |
-| D4 | **El partido**: el sándwich que se come con una mano sin dejar de mirar (Classic Tuna), solo en fechas de partido | 21 | banco |
+| D4 | **El partido**: el Classic Tuna, cremoso y en lascas, para ver el partido sin cocinar, solo en fechas de partido | 21 | banco |
 
 ### E · El cliente decide
 | # | idea | total | estado |

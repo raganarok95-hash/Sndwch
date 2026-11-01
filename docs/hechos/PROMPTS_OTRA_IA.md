@@ -56,7 +56,7 @@ Abre a más tardar la segunda semana de octubre de 2026: todavía no hay cliente
 ### Classic Tuna
 - **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/10.90 / +S/21.90
 - **Receta:** pan Classic // White · Atún // House · vegetales: — · salsas: — · queso: no lleva
-- **Cómo se vende:** Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Simple y bien hecho: no lleva nada suelto, así que se come con una mano, en el escritorio o en camino.
+- **Cómo se vende:** Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Cremoso, simple y bien hecho.
 
 ## Menú secreto (Reserve)
 - Se desbloquea desde el pedido número **3** (el número real es editable desde el panel: `secret_signature.min_orders`).
@@ -210,7 +210,7 @@ Abre a más tardar la segunda semana de octubre de 2026: todavía no hay cliente
 ### Classic Tuna
 - **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/10.90 / +S/21.90
 - **Receta:** pan Classic // White · Atún // House · vegetales: — · salsas: — · queso: no lleva
-- **Cómo se vende:** Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Simple y bien hecho: no lleva nada suelto, así que se come con una mano, en el escritorio o en camino.
+- **Cómo se vende:** Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Cremoso, simple y bien hecho.
 
 ## Menú secreto (Reserve)
 - Se desbloquea desde el pedido número **3** (el número real es editable desde el panel: `secret_signature.min_orders`).
