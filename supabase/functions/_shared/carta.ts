@@ -200,7 +200,7 @@ export const CARTA: Carta = {
     { id: "SIG11", nombre: "Italian Hoagie", tipo: "Signature", orden: 5, pan: "B01", prot: "P05", vegetales: ["T09", "T01", "T03", "T06"], salsas: ["S06"], p15: 19.9, p30: 30.9, queso: "C01", foto: "img/sig11.jpg", fotoVertical: "img/sig11_v.webp",
       pitch: "Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. El sándwich de deli de toda la vida: cada capa suma sabor y ninguna sobra. Para cuando quieres de todo en un solo pan." },
     { id: "SIG04", nombre: "Classic Tuna", tipo: "Signature", orden: 6, pan: "B01", prot: "P04", vegetales: [], salsas: [], p15: 19.9, p30: 30.9, foto: "img/sig04.jpg", fotoVertical: "img/sig04_v.webp",
-      pitch: "Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Simple y bien hecho: no lleva nada suelto, así que se come con una mano, en el escritorio o en camino." },
+      pitch: "Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Cremoso, simple y bien hecho." },
     { id: "SIG05", nombre: "Menú secreto", tipo: "Reserve", orden: 99, secreto: { minPedidos: 3 }, pan: "B03", prot: "P03", vegetales: ["T04", "T06", "T03"], salsas: ["S02", "S12"], p15: 24.9, p30: 35.9, foto: "img/sig05.jpg", fotoVertical: "img/sig05_v.webp",
       pitch: "Solo para clientes iniciados. Una combinación que no está en ningún menú — te la ganaste a pedidos. No preguntes qué lleva. Pruébalo." },
   ],

@@ -14,7 +14,7 @@ y cada afirmación sale de «Cómo se vende» de `docs/hechos/CARTA.md`.
 | La res | 2 | — | El cheddar lo amarra todo. | Philly: «cheddar que se funde encima hasta amarrarlo todo» |
 | ¿Lo aplasto? | 1 | WICHO | ¿Lo aplasto? | la discusión |
 | ¿Lo aplasto? | 2 | SANDO | En lascas. Siempre. | Atún // House: «en lascas gruesas» |
-| ¿Lo aplasto? | 3 | — | Classic Tuna. Se come con una mano. | Classic Tuna: «se come con una mano» |
+| ¿Lo aplasto? | 3 | — | Classic Tuna. Cremoso y en lascas. | Classic Tuna: «cremoso, simple y bien hecho» (2026-11-01: el dueño quitó «se come con una mano», «no tiene sentido») |
 | Capas | 1 | WICHO | Hoy probé de todo. | el armador |
 | Capas | 2 | WICHO | Cada capa la vas a elegir tú. | el armador existe en la app |
 | Hechas acá | 1 | SANDO | Hechas acá. | Albóndiga: «hechas acá» |

@@ -49,7 +49,7 @@ Por cada uno de los 6 Signatures, tres tomas:
 | Turkey | las lonjas de pavo en pliegues y las verduras crujientes |
 | Tuna Melt | el queso estirándose al separar las dos mitades |
 | Italian Hoagie | los tres embutidos en pliegues, de costado |
-| Classic Tuna | una mano sosteniéndolo (se come con una mano) |
+| Classic Tuna | el corte de cerca: las lascas gruesas y cremosas (2026-11-01: sale «se come con una mano») |
 
 Además:
 - **El proceso**: manos armando, pan abriéndose, la plancha. Sirve para reels.

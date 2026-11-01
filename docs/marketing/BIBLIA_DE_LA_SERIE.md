@@ -106,7 +106,7 @@ bucle**: que el último cuadro empalme con el primero, así se ve dos veces.
 | Signature | la situación (frase de la carta) | cuándo se publica |
 |---|---|---|
 | Turkey | «el almuerzo que no te tumba la tarde» | martes a viernes, 11:30 |
-| Classic Tuna | «se come con una mano, en el escritorio» | martes a viernes, 12:00 |
+| Classic Tuna | «cremoso y en lascas» | martes a viernes, 12:00 |
 | Meatball Marinara | «la noche en que ya decidiste no cocinar» | viernes y sábado, 19:00 |
 | Philly Cheesesteak | «cuando el hambre va en serio» | sábado y domingo, 13:00 |
 | Italian Hoagie | «cuando quieres de todo en un solo pan» | domingo, 13:00 |
@@ -127,8 +127,8 @@ Entre llaves, lo que se interpola. Ninguno se publica sin pasar por el Revisor.
    «Se desbloquea pidiendo».
 6. **La tarde** — WICHO dormido sobre un escritorio a las tres. SANDO deja un Turkey a su lado:
    «Otro día.» Remate: el almuerzo que no te tumba la tarde.
-7. **Una mano** — WICHO intenta escribir y comer con las dos manos a la vez. SANDO, con una mano:
-   «Así.» Remate: Classic Tuna.
+7. **En lascas** — WICHO aplasta el atún con un tenedor hasta hacerlo pasta. SANDO le quita el tenedor: «En lascas.»
+   Remate: Classic Tuna. (Antes era «Una mano»; el dueño la sacó el 2026-11-01: «no tiene sentido».)
 8. **No cocinas** — La cocina del cliente, luz fría, olla vacía. Entra la bolsa. Ni una palabra.
    Remate: Meatball Marinara.
 9. **El último** — WICHO llega corriendo; SANDO sostiene el último del día. Solo si el inventario
