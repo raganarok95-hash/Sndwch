@@ -182,3 +182,9 @@ de WICHO tono sobre tono y un objeto con volumen (la lata real), girado y con so
 misma receta con objetos fotográficos: el celular con la app real, el Philly, el sándwich abierto por capas, la bolsa
 kraft con el logo y el reloj en las 11. Lección: para el dueño, la calidad está en el objeto con volumen y en su
 acabado; un ícono plano, aunque sea prolijo, se lee como menos.
+
+## 2026-11-01 · Un aviso que se va a borrar va en su propia pieza
+Dueño: «Para las bebidas quita el próximamente en todas las imágenes, solo haz una de próximamente como una imagen previa
+diseñada bonita, porque luego la podemos eliminar y quedaría todo tal cual». La etiqueta «Próximamente» estaba en cada
+lámina y en cada historia. Pasó a una pieza aparte que abre el carrusel y el destacado: las latas reales en penumbra,
+con un foco. Lección: lo temporal no se mezcla con lo permanente. Va en su propia pieza, que se borra sin rehacer nada.

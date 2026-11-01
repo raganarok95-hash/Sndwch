@@ -151,14 +151,12 @@ const svg = (dentro) => `<svg class="abs" style="left:0;top:0" width="1080" heig
 //    las bebidas deben tener el próximamente»). Salen ya.
 //  · Envíos (SANDO): todo Trujillo y el envío por distancia. Salen ya.
 //  · Carta (SANDO): los seis Signatures. Salen ya.
-//  · Bebidas (WICHO): las tres de la casa, en su lata, con «Próximamente»: al abrir salen en botella (dueño,
-//    2026-10-24: «Botella al abrir, latas después»), y la etiqueta dice que la lata todavía no llega. Salen ya.
+//  · Bebidas (WICHO): las tres de la casa, en su lata. Sin «Próximamente» en cada una (dueño, 2026-11-01): el aviso va en
+//    una historia aparte que abre el destacado (bebidas.cjs) y se borra cuando la lata esté a la venta. Salen ya.
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 const anillos = (cx, cy, c) => `<svg class="abs" style="left:0;top:0" width="1080" height="1920">${[150, 250, 350, 450].map((r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="5" stroke-dasharray="${r > 300 ? '18 16' : 'none'}"/>`).join('')}</svg>`;
 const LATAS = `${REPO}/docs/marketing/instagram-perfil/final/latas`;
 const historia = (fondo, dentro, color = papel) => caja(1080, 1920, `background:${fondo};color:${color}`, dentro);
-// «Próximamente»: una píldora junto a la etiqueta, en el color del hermano.
-const pronto = (fondo, color) => `<span class="mono" style="font-size:38px;background:${fondo};color:${color};padding:12px 30px;border-radius:999px">PRÓXIMAMENTE</span>`;
 const cabeza = (etiqueta, titulo, frase, t = 140, chip = '') => `<div class="abs" style="left:84px;right:84px;top:270px">
   <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap"><span class="mono" style="font-size:30px">${etiqueta}</span>${chip}</div>
   <div class="disp" style="font-size:${t}px;margin-top:22px">${titulo}</div>
@@ -218,7 +216,7 @@ const BEB = [
   ['cool', 'The Cool', 'Hierba luisa y menta fresca en infusión helada.'],
 ];
 const bebidas = BEB.map(([f, n, d], i) => historia(W.lilaO, `${svgEsp(1080, 1920, 540, 1180, 640, 'rgba(195,166,210,.22)', 26)}
-  ${cabeza(`BEBIDAS DE LA CASA · ${i + 1} DE ${BEB.length}`, n, d, 132, pronto(W.lila, W.lilaO))}
+  ${cabeza(`BEBIDAS DE LA CASA · ${i + 1} DE ${BEB.length}`, n, d, 132)}
   <img src="${img(`${LATAS}/lata-${f}.png`)}" class="abs" style="left:50%;transform:translateX(-50%);bottom:250px;height:880px;filter:drop-shadow(0 30px 40px rgba(0,0,0,.35))">`));
 
 

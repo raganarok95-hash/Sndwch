@@ -97,6 +97,7 @@
   "src": "perfil-10-bebidas",
   "pieza": "bebidas",
   "laminas": [
+   "carrusel-bebidas-proximamente.jpg",
    "carrusel-bebidas-1.jpg",
    "carrusel-bebidas-2.jpg",
    "carrusel-bebidas-3.jpg",
@@ -363,6 +364,16 @@
   ],
   "formato": "historia",
   "destacado": "Horario",
+  "cuando": "ya"
+ },
+ {
+  "src": "perfil-historia-bebidas-proximamente",
+  "pieza": "historia-bebidas-proximamente",
+  "laminas": [
+   "historias/historia-bebidas-proximamente.jpg"
+  ],
+  "formato": "historia",
+  "destacado": "Bebidas",
   "cuando": "ya"
  },
  {
