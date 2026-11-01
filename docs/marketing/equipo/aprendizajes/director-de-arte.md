@@ -174,3 +174,11 @@ portadas de la cuadrícula (carta, Arma el tuyo, Reel) y respondió: «Las minia
 que hagas miniaturas distintas por fa menos la de las bebidas». Al preguntarle, aclaró que se refería a los **círculos de
 los destacados**, con **otro estilo** (más parecido a la app y a la marca). La de Bebidas se queda. Lección: cuando una
 palabra del dueño puede nombrar dos cosas del perfil, se pregunta cuál antes de producir.
+
+## 2026-11-01 · Las portadas, como la de Bebidas: objetos con volumen, no íconos planos
+Al ver tres estilos de íconos de línea (kraft, noche y la carta de tarot), el dueño respondió: «Ninguno de esos me gustó,
+algo que se parezca al de bebidas o con la calidad de WICHO». La portada de Bebidas es un color de la marca, la espiral
+de WICHO tono sobre tono y un objeto con volumen (la lata real), girado y con sombra. Las otras cinco pasaron a esa
+misma receta con objetos fotográficos: el celular con la app real, el Philly, el sándwich abierto por capas, la bolsa
+kraft con el logo y el reloj en las 11. Lección: para el dueño, la calidad está en el objeto con volumen y en su
+acabado; un ícono plano, aunque sea prolijo, se lee como menos.

@@ -165,18 +165,34 @@ const perfil = caja(1080, 1080, '', `<div class="abs rib" style="left:0;top:0;bo
 // que un cliente nuevo duda: cómo pido, qué hay de la casa, cómo armo el mío, cuánto y cuándo llega, qué tomo. Instagram
 // muestra unos cinco sin deslizar. Cada portada es distinta: Envíos ya no repite la cara de SANDO que lleva Carta.
 const anillos = (cx, cy, c) => `<svg class="abs" style="left:0;top:0" width="1080" height="1920">${[150, 250, 350, 450].map((r) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="5" stroke-dasharray="${r > 300 ? '18 16' : 'none'}"/>`).join('')}</svg>`;
+// Los objetos de las portadas, con la misma sombra que la lata de Bebidas.
+const OBJ = `${REPO}/docs/marketing/instagram-perfil/final/objetos`;
+const objeto = (f, tam, giro) => `<img src="${img(`${OBJ}/${f}`)}" class="abs" style="left:50%;top:50%;${tam};transform:translate(-50%,-50%) rotate(${giro}deg);filter:drop-shadow(0 30px 40px rgba(0,0,0,.35))">`;
+// El celular: la pantalla real de la puerta en un marco de metal oscuro, con el reflejo del vidrio.
+const celularReal = (giro) => `<div class="abs" style="left:50%;top:50%;width:420px;height:880px;transform:translate(-50%,-50%) rotate(${giro}deg);border-radius:74px;padding:15px;
+    background:linear-gradient(135deg,#4a4d55,#17181c 32%,#2c2e34 64%,#0c0d10);box-shadow:inset 0 0 0 2px rgba(255,255,255,.14),0 30px 40px rgba(0,0,0,.35)">
+    <div style="position:relative;width:100%;height:100%;border-radius:60px;overflow:hidden;background:#000 url('${img(`${OBJ}/pantalla-puerta.jpg`)}') center/cover">
+      <div style="position:absolute;left:50%;top:18px;width:118px;height:34px;transform:translateX(-50%);border-radius:20px;background:#000"></div>
+      <div style="position:absolute;inset:0;background:linear-gradient(118deg,rgba(255,255,255,.20) 0%,rgba(255,255,255,.04) 34%,rgba(255,255,255,0) 35%)"></div></div>
+    <div style="position:absolute;right:-6px;top:200px;width:6px;height:110px;border-radius:3px;background:#2a2c31"></div>
+    <div style="position:absolute;left:-6px;top:170px;width:6px;height:70px;border-radius:3px;background:#2a2c31"></div>
+    <div style="position:absolute;left:-6px;top:260px;width:6px;height:70px;border-radius:3px;background:#2a2c31"></div></div>`;
 const DEST = [
-  ['pedir', 'Cómo pedir', portada(W.pelaje, `${curvas(1080, 1920, 540, 960, W.curvas, 16, 70, 2)}${svg(celular(540, 960, 380))}`)],
-  ['carta', 'Carta', portada(S.oliva, `<div class="full rib"></div>${svg(sandwich(540, 960, 820))}`)],
-  ['arma', 'Arma el tuyo', portada(W.tinta, `<div class="full cruz"></div>${curvas(1080, 1920, 540, 960, 'rgba(144,204,240,.22)', 16, 70, 5)}${svg(sandwich(540, 960, 800, { abre: 34 }))}`)],
-  ['envios', 'Envíos', portada(S.verde, `<div class="abs" style="left:0;top:0;bottom:0;width:40px;background:${S.forro}"></div>${anillos(540, 960, 'rgba(201,168,124,.40)')}${svg(bolsa(540, 975, 470))}`)],
-  // Horario: un reloj en las 11 con el arco hasta las 22, sobre papel (dueño: «Horario como destacado propio»).
-  ['horario', 'Horario', portada(papel, svg(`<circle cx="540" cy="960" r="330" fill="none" stroke="${S.tinta}" stroke-width="34"/>
-    <path d="M${540 + 270 * Math.cos(-Math.PI / 2 - Math.PI / 6)},${960 + 270 * Math.sin(-Math.PI / 2 - Math.PI / 6)} A270,270 0 1,1 ${540 + 270 * Math.cos(-Math.PI / 2 - Math.PI / 3)},${960 + 270 * Math.sin(-Math.PI / 2 - Math.PI / 3)}" fill="none" stroke="${S.forro}" stroke-width="40" stroke-linecap="round"/>
-    ${Array.from({ length: 12 }, (_, k) => `<circle cx="${540 + 300 * Math.cos(k * Math.PI / 6)}" cy="${960 + 300 * Math.sin(k * Math.PI / 6)}" r="9" fill="${S.tinta}"/>`).join('')}
-    <path d="M540,960 L${540 + 150 * Math.cos(-Math.PI / 2 - Math.PI / 6)},${960 + 150 * Math.sin(-Math.PI / 2 - Math.PI / 6)}" stroke="${S.tinta}" stroke-width="30" stroke-linecap="round"/>
-    <path d="M540,960 L540,720" stroke="${S.tinta}" stroke-width="22" stroke-linecap="round"/><circle cx="540" cy="960" r="26" fill="${S.forro}"/>`))],
+  // 2026-11-01, dueño: «algo que se parezca al de bebidas o con la calidad de WICHO». Las cinco siguen la receta de la
+  // portada de Bebidas: un color de la marca, la espiral de WICHO tono sobre tono y un objeto con volumen, girado y con
+  // sombra. Los objetos están en objetos/ (generados en Figma y recortados; ver LEEME). El celular lleva la pantalla real
+  // de la puerta (scripts/guia-pedir) y la bolsa, el logo oficial como etiqueta.
+  ['pedir', 'Cómo pedir', portada(W.pelaje, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(30,47,58,.16)', 22)}${celularReal(-8)}`)],
+  ['carta', 'Carta', portada(S.verde, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(201,168,124,.30)', 22)}${objeto('philly.png', 'width:860px', -6)}`)],
+  ['arma', 'Arma el tuyo', portada(W.tinta, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(144,204,240,.24)', 22)}${objeto('capas.png', 'width:800px', -4)}`)],
+  // Bebidas va antes de Delivery y Horario: esos dos ya están subidos, e Instagram pone a la izquierda el destacado que
+  // recibió una historia al último (se crean Bebidas, Arma el tuyo, Carta y al final Cómo pedir).
   ['bebidas', 'Bebidas', portada(W.lilaO, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(195,166,210,.35)', 22)}<img src="${img(`${REPO}/docs/marketing/instagram-perfil/final/latas/lata-bloom.png`)}" class="abs" style="left:50%;top:50%;height:860px;transform:translate(-50%,-50%) rotate(-8deg);filter:drop-shadow(0 30px 40px rgba(0,0,0,.35))">`)],
+  ['envios', 'Delivery', portada(S.oliva, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(239,230,212,.24)', 22)}<div class="abs" style="left:50%;top:50%;height:840px;aspect-ratio:619/942;transform:translate(-50%,-50%) rotate(6deg);filter:drop-shadow(0 30px 40px rgba(0,0,0,.35))">
+    <img src="${img(`${OBJ}/bolsa.png`)}" style="width:100%;height:100%;display:block">
+    <img src="${LOGO}" style="position:absolute;left:43.6%;top:58%;width:44%;transform:translate(-50%,-50%);border-radius:999px;box-shadow:0 2px 3px rgba(60,40,20,.35)"></div>`)],
+  // Horario: el reloj marca las 11, la hora en que abre la cocina (STORE_HOURS).
+  ['horario', 'Horario', portada(S.forro, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(30,47,58,.18)', 22)}${objeto('reloj.png', 'width:760px', -6)}`)],
 ];
 
 // El lado de SANDO: cada Signature con la foto limpia arriba y su basta acanalada abajo, con el texto.
@@ -201,11 +217,10 @@ const sig = (d) => caja(1080, 1350, `background:${S.oliva}`, `
     <div class="voz" style="font-size:42px;line-height:1.1;margin-top:10px">${d.tit} ${d.cita}</div>
     <div style="margin-top:auto;display:flex;justify-content:space-between;align-items:center">
       <div style="display:flex;align-items:center;gap:16px">${icoWa(papel, 46)}<span class="mono" style="font-size:28px">PIDE POR WHATSAPP · ${WA_BONITO}</span></div>${sello(96)}</div></div>`);
-// La carta: el mundo de SANDO y el pan largo dibujado, cerrado (2026-11-01, dueño: «pasa miniaturas acorde a la
-// estética del negocio»: sin personajes, como los destacados).
+// La carta: el mundo de SANDO, y la última línea ya es de WICHO (el puente a la publicación de al lado).
 const carta = caja(1080, 1350, `background:${S.verde};color:${papel}`, `<div class="abs" style="left:0;top:0;bottom:0;width:26px;background:${S.forro}"></div>
   <div class="abs rib" style="left:26px;right:0;bottom:0;height:150px;background-color:${S.oliva}"></div>
-  ${svg(sandwich(770, 1060, 470))}
+  <img src="${PJ('sando2_ladea')}" class="abs" style="right:40px;bottom:150px;height:500px">
   <div class="abs" style="left:110px;right:84px;top:92px"><div class="mono" style="font-size:26px;color:${S.tan}">LOS DE LA CASA · 15 CM Y 30 CM</div>
     <div style="margin-top:40px">${listaCarta(papel, 96)}</div>
     <div style="display:flex;align-items:center;gap:22px;margin-top:40px"><svg width="70" height="70">${espiral(35, 35, 31, W.lila, 5)}</svg><span class="voz" style="font-size:58px;color:${W.pelaje}">Y el que armas tú →</span></div></div>
@@ -214,7 +229,7 @@ const carta = caja(1080, 1350, `background:${S.verde};color:${papel}`, `<div cla
 // para armar, verduras y hasta tres salsas incluidas.
 const PROT = ['Res', 'Atún', 'Albóndiga', 'Pavo'];
 const arma = caja(1080, 1350, `background:${W.pelaje};color:${W.tinta}`, `${curvas(1080, 1350, 880, 1120, W.curvas, 18, 66, 3)}
-  ${svg(sandwich(830, 1075, 380, { abre: 24 }))}
+  <img src="${PJ('wicho2_celebra')}" class="abs" style="right:10px;bottom:110px;height:560px">
   <div class="abs" style="left:96px;top:92px;right:96px">
     <div class="mono" style="font-size:26px">EL OTRO LADO</div>
     <div class="disp" style="font-size:168px;margin-top:30px">Arma<br>el tuyo.</div>
@@ -226,29 +241,17 @@ const arma = caja(1080, 1350, `background:${W.pelaje};color:${W.tinta}`, `${curv
 const reel = caja(1080, 1350, `background:url('${img(path.join(OUT, 'reel-portada.jpg'))}') center/cover`, '');
 
 const F = Object.fromEntries(FOOD.map((d) => [d.n, d]));
-// Las láminas de «Arma el tuyo», dibujadas como sus historias: los dos panes, las proteínas como capas y lo de encima.
-const colProtL = { Res: '#6E3F2A', 'Atún': '#CDB894', 'Albóndiga': '#8A3F2C', Pavo: '#EAC9B2' };
-const dibujosArma = {
-  pan: svg(`<path d="M190,820 Q190,720 310,712 L770,712 Q890,720 890,820 Q890,896 770,900 L310,900 Q190,896 190,820 Z" fill="${C.pan}" stroke="${C.corteza}" stroke-width="12"/>
-    ${[340, 470, 600, 730].map((x) => `<path d="M${x - 50},760 q50,-30 100,0" fill="none" stroke="${C.corteza}" stroke-width="10" stroke-linecap="round"/>`).join('')}
-    <rect x="260" y="960" width="560" height="230" rx="44" fill="${C.pan}" stroke="${C.corteza}" stroke-width="12"/>
-    ${Array.from({ length: 15 }, (_, k) => `<circle cx="${315 + (k % 5) * 112}" cy="${1005 + Math.floor(k / 5) * 70}" r="16" fill="${C.corteza}" opacity=".55"/>`).join('')}`),
-  proteina: svg(PROT.map((n, k) => `<rect x="190" y="${700 + k * 130}" width="700" height="100" rx="48" fill="${colProtL[n]}"/>
-    <text x="540" y="${700 + k * 130 + 64}" text-anchor="middle" font-family="IBM Plex Mono" font-weight="600" font-size="36" letter-spacing="3" fill="${n === 'Pavo' || n === 'Atún' ? W.tinta : papel}">${n.toUpperCase()}</text>`).join('')),
-  encima: svg(`${sandwich(470, 960, 600, { abre: 26, rellenos: ['lechuga', 'tomate', 'cebolla', 'queso'] })}
-    ${[['#F4E3B5', 800], ['#C9772F', 940], ['#7FA650', 1080]].map(([c, y]) => `<path d="M880,${y} C912,${y + 46} 918,${y + 74} 880,${y + 88} C842,${y + 74} 848,${y + 46} 880,${y} Z" fill="${c}"/>`).join('')}`),
-};
-const laminaArma = (n, titulo, frase, dibujo) => caja(1080, 1350, `background:${W.tinta};color:${papel}`, `<div class="full cruz"></div>${curvas(1080, 1350, 880, 1120, 'rgba(144,204,240,.20)', 18, 66, n + 3)}
-  ${dibujosArma[dibujo]}
+const laminaArma = (n, titulo, frase, pose, alto) => caja(1080, 1350, `background:${W.pelaje};color:${W.tinta}`, `${curvas(1080, 1350, 880, 1120, W.curvas, 18, 66, n + 3)}
+  <img src="${PJ(pose)}" class="abs" style="right:20px;bottom:110px;height:${alto}px">
   <div class="abs" style="left:96px;top:92px;right:96px"><div class="mono" style="font-size:26px">ARMA EL TUYO · ${n} DE 3</div>
-    <div class="disp" style="font-size:150px;margin-top:30px">${titulo}</div><div class="voz" style="font-size:52px;margin-top:24px;max-width:860px">${frase}</div></div>
-  <div class="abs" style="left:96px;right:96px;bottom:56px;display:flex;justify-content:space-between;align-items:center"><div class="mono" style="font-size:26px">${MONO}</div>${marca(papel, 40)}</div>`);
+    <div class="disp" style="font-size:150px;margin-top:30px">${titulo}</div><div class="voz" style="font-size:56px;margin-top:30px;max-width:640px">${frase}</div></div>
+  <div class="abs" style="left:96px;right:96px;bottom:56px;display:flex;justify-content:space-between;align-items:center"><div class="mono" style="font-size:26px">${MONO}</div>${marca(W.tinta, 40)}</div>`);
 const CARRUSELES = {
   carta: FOOD.map((d) => sig(d)),
   arma: [
-    laminaArma(1, 'El pan.', 'Classic, de miga suave, o Focaccia, con aceite de oliva y sal gruesa.', 'pan'),
-    laminaArma(2, 'La proteína.', PROT.join(', ').replace(/, ([^,]*)$/, ' o $1') + '.', 'proteina'),
-    laminaArma(3, 'Lo de encima.', 'Verduras, queso y hasta 3 salsas incluidas. Lo eliges tú.', 'encima'),
+    laminaArma(1, 'El pan.', 'Classic, de miga suave, o Focaccia, con aceite de oliva y sal gruesa.', 'wicho2_rie', 520),
+    laminaArma(2, 'La proteína.', PROT.join(', ').replace(/, ([^,]*)$/, ' o $1') + '.', 'wicho_saluda', 560),
+    laminaArma(3, 'Lo de encima.', 'Verduras, queso y hasta 3 salsas incluidas. Lo eliges tú.', 'wicho2_come', 580),
   ],
 };
 // La cuadrícula, de izquierda a derecha y de arriba abajo. Las 3 primeras van fijadas: Instagram las pone arriba aunque haya otras más nuevas.
@@ -264,7 +267,8 @@ const POSTS = [
   { n: '8-italian-hoagie', html: sig(F['7-italian-hoagie']), por: 'El de todo.' },
   { n: '9-classic-tuna', html: sig(F['8-classic-tuna']), por: 'El del escritorio.' },
 ];
-const BIO = ['Sándwiches de pan largo, al estilo americano.', 'Elige uno de la casa o arma el tuyo.', 'A domicilio en todo Trujillo.'];
+// La biografía como la escribió el dueño en su perfil (captura del 2026-11-01).
+const BIO = ['Sándwiches de pan largo, al estilo americano de 15 o 30 cm.', 'Elige uno de la casa o arma el tuyo.', 'A domicilio en todo Trujillo.'];
 
 const ui = `body{background:#fff;font-family:Archivo,sans-serif;color:#0B0B0B}
   .t{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px;font:800 19px Archivo}
