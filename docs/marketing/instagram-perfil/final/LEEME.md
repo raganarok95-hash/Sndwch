@@ -24,27 +24,43 @@ Quien entra entiende en segundos que puede elegir uno de la casa o armar el suyo
 | Enlace | `https://sndwch.app/?src=ig-bio` | Mide cuántos llegan desde el perfil |
 | Botones | Mensaje y WhatsApp | El peruano compra más por WhatsApp que por otras redes (Ipsos Perú) |
 
-**Destacados, en el orden en que un cliente nuevo duda** (actualizado el 2026-10-30; dueño: «la de zonas no me convence,
-además como que falta destacado»). Instagram muestra unos cinco sin deslizar; el sexto se ve al deslizar:
-1. **Cómo pedir** (WICHO): los 14 pasos con las pantallas reales de la app (desde el 2026-11-01; ver abajo).
-2. **Carta** (SANDO): los seis Signatures.
-3. **Arma el tuyo** (WICHO, en su tinta): el pan, la proteína y lo de encima. Es la otra mitad del concepto y faltaba.
-4. **Envíos** (la bolsa kraft con el //): todo Trujillo, y el envío según la distancia con una boleta sin cifras.
-5. **Horario** (un reloj en las 11 con el arco hasta las 22), separado de Envíos por pedido del dueño («Horario como
-   destacado propio»): la semana, con el lunes de descanso. Sale de `STORE_HOURS`.
-6. **Bebidas** (la lata): las de la casa, con «Próximamente».
+**Destacados** (actualizado el 2026-11-01). En el perfil quedan así, de izquierda a derecha:
+1. **Cómo pedir**: los 14 pasos con las pantallas reales de la app (ver abajo).
+2. **Carta**: los seis Signatures.
+3. **Arma el tuyo**: el pan, la proteína y lo de encima. Es la otra mitad del concepto.
+4. **Bebidas**: las de la casa en su lata, con «Próximamente».
+5. **Delivery** (el dueño lo llamó así en su perfil): todo Trujillo, y el envío según la distancia.
+6. **Horario**: la semana, con el lunes de descanso. Sale de `STORE_HOURS`.
 
-**Las portadas y las historias, sin personajes: «un sándwich es capas»** (2026-10-30, dueño: «No necesitas usar a SANDO
-y WICHO para todo, solo estás usando lo que ya tienes, sé creativo»). Se dibujan con objetos planos del mundo del
-sándwich (las funciones de dibujo van al inicio de `final.cjs` e `historias.cjs`), siempre de pan largo y nunca como hamburguesa:
-- Cómo pedir: el celular con un toque.
-- Carta: el sándwich cerrado.
-- Arma el tuyo: las capas sueltas.
-- Envíos: la bolsa kraft con el sello //.
-- Bebidas: la lata.
+Bebidas va antes de Delivery y Horario porque esos dos ya están subidos, e Instagram pone a la izquierda el destacado que
+recibió una historia al último. Se crean en este orden: Bebidas, Arma el tuyo, Carta y al final Cómo pedir.
 
-Los hermanos quedan descompuestos en los fondos (el acanalado y el forro de SANDO; las curvas, la espiral y el celeste de
-WICHO). Dibujado, solo queda el logo de la foto de perfil.
+**Las portadas, como la de Bebidas** (2026-11-01). El dueño descartó los íconos planos y los tres estilos sacados de la
+app: «Ninguno de esos me gustó, algo que se parezca al de bebidas o con la calidad de WICHO». Las cinco siguen la receta
+de la portada de Bebidas: un color de la marca, la espiral de WICHO tono sobre tono y un objeto con volumen, girado y con
+la misma sombra.
+
+| destacado | color | objeto |
+|---|---|---|
+| Cómo pedir | celeste de WICHO | un celular con la pantalla real de la puerta (`objetos/pantalla-puerta.jpg`, de `scripts/guia-pedir`) |
+| Carta | verde de SANDO | el Philly de 30 cm partido en dos (`objetos/philly.png`) |
+| Arma el tuyo | tinta de WICHO | el sándwich abierto por capas, de pan largo (`objetos/capas.png`) |
+| Bebidas | lila oscuro | la lata de The Bloom (sin cambios) |
+| Delivery | oliva de SANDO | la bolsa kraft con el logo oficial como etiqueta (`objetos/bolsa.png`) |
+| Horario | naranja (el forro de SANDO) | un reloj que marca las 11, la hora en que abre la cocina (`objetos/reloj.png`) |
+
+Los cuatro objetos se generaron en Figma (`gpt-image-2.5-flare`, créditos del plan del dueño) sobre blanco puro. Se bajaron
+con `traer-imagenes.yml`, porque desde la sesión Figma da 403, y se recortaron dejando transparente el blanco que toca
+el borde. Los prompts terminan todos en «Isolated on a pure flat white background (#FFFFFF), no shadow, no props, no
+text, no logos»:
+- **Philly**: «a 30 cm Philly cheesesteak sub cut into two 15 cm halves, … soft white sub roll, thinly sliced sautéed
+  beef, sautéed onions, green bell pepper strips, melted cheddar cheese… one even layer of beef, not overflowing».
+  Es fiel a la receta de `docs/hechos/CARTA.md`.
+- **Capas**: «an exploded long sub sandwich made on a 15 cm soft white sub roll, every layer floating… lettuce, tomato
+  slices, thinly sliced roast beef, cheddar… clearly long and narrow like a baguette sub, never round like a burger bun».
+- **Bolsa**: «a plain brown kraft paper takeaway bag with flat paper handles… completely blank».
+- **Reloj**: «a modern minimalist round analog desk clock: matte dark navy body, cream face… orange hour hand pointing
+  exactly at 11 and a dark navy minute hand pointing exactly at 12».
 
 **No hay «Zonas».** Dueño: «nuestra zona es todo Trujillo». El envío no tiene límite desde el 2026-09-30
 («mi proveedor de delivery no tiene límites de envío», `reglas.ts`).
@@ -204,13 +220,10 @@ la dirección, el mapa, pagar, Yape, «Ya pagué» y el pedido en la cocina.
   visitas que llegan desde el destacado. La lupa existe porque la pantalla del celular dentro de una historia se lee
   en chiquito.
 
-## Las miniaturas de la cuadrícula, sin personajes (2026-11-01)
+## Las miniaturas de la cuadrícula: se quedan las aprobadas (2026-11-01)
 
-Dueño: «El perfil sale con miniaturas erróneas, pasa miniaturas acordes a la estética del negocio». Cambió:
-- **La carta** (fijada 2): el sándwich dibujado en capas en vez de SANDO.
-- **Arma el tuyo** (fijada 3) y sus láminas 2 a 4: el pan, las proteínas y lo de encima dibujados sobre la tinta, en vez
-  de WICHO.
-- **El Reel**: la portada pasó del mosaico de seis (amontonado en chiquito) al corte del Philly de cerca, distinto de
-  la foto entera de la publicación 1.
-- **La maqueta** pone las 3 fijadas arriba, como hace Instagram, y el carrusel de bebidas justo debajo.
-
+Por «miniaturas erróneas» se rehicieron la carta, Arma el tuyo y el Reel sin personajes. El dueño respondió: «Las
+miniaturas nuevas no las usaré». Hablaba de los círculos de los destacados (ver arriba). La cuadrícula volvió a la
+versión aprobada el 2026-10-30: SANDO en la carta, WICHO en Arma el tuyo y el mosaico en la portada del Reel. De ese
+intento quedó un solo cambio: en la maqueta, las 3 fijadas van arriba, como hace Instagram, y el carrusel de bebidas
+justo debajo.
