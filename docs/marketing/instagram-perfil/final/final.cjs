@@ -77,7 +77,7 @@ const FOOD = [
   { n: '5-turkey', f: 'foto-turkey-30.jpg', tit: 'El almuerzo que no te tumba la tarde.', voz: 'Turkey. Llena sin pesar.', cita: 'Llena sin pesar.', nombre: 'Turkey' },
   { n: '6-tuna-melt', f: 'foto-tuna-melt-30.jpg', tit: 'Antojo de algo caliente.', voz: 'Tuna Melt. El cheddar se estira al primer mordisco.', cita: 'El cheddar se estira al primer mordisco.', nombre: 'Tuna Melt' },
   { n: '7-italian-hoagie', f: 'foto-italian-hoagie-30.jpg', tit: 'Cuando quieres de todo.', voz: 'Italian Hoagie. Cada capa suma y ninguna sobra.', cita: 'Cada capa suma y ninguna sobra.', nombre: 'Italian Hoagie' },
-  { n: '8-classic-tuna', f: 'foto-classic-tuna-30.jpg', tit: 'Se come con una mano.', voz: 'Classic Tuna. Simple y bien hecho.', cita: 'Simple y bien hecho.', nombre: 'Classic Tuna' },
+  { n: '8-classic-tuna', f: 'foto-classic-tuna-30.jpg', tit: 'Cremoso y en lascas.', voz: 'Classic Tuna. Simple y bien hecho.', cita: 'Simple y bien hecho.', nombre: 'Classic Tuna' },
 ];
 const SIGS = FOOD.map((x) => x.nombre);
 const tam = (t, base = 112) => (t.length <= 16 ? base : t.length <= 24 ? Math.round(base * 0.88) : Math.round(base * 0.76));
@@ -198,7 +198,7 @@ const DEST = [
 // El lado de SANDO: cada Signature con la foto limpia arriba y su basta acanalada abajo, con el texto.
 // El lado de SANDO: cada Signature, versión C (dueño, 2026-10-30, eligió «C: más cerca» porque «a las fotos de
 // sándwich les falta algo» y «falta el poder pedir por WhatsApp»). El sándwich llena el cuadro, el nombre es el
-// titular (un nombre descriptivo vende más: Wansink, Painter y van Ittersum, 2001), el momento va debajo, y abajo
+// titular (el texto que habla de sabor se elige más que el neutro o el de salud: Turnwald et al., 2017 y 2019), el momento va debajo, y abajo
 // «Pide por WhatsApp» con el número del código (src/app/01-catalogo-y-estado.ts) y el logo oficial como sello.
 const WA = (fs.readFileSync(`${REPO}/src/app/01-catalogo-y-estado.ts`, 'utf8').match(/var WA='(\d+)'/) || [])[1];
 if (!WA) throw new Error('no encontré el número de WhatsApp en 01-catalogo-y-estado.ts');
