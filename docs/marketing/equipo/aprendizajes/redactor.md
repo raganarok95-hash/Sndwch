@@ -76,3 +76,9 @@ igual con el Philly». Las frases de momento («Hoy no cocinas.», «Hambre en s
 sándwich, sacadas de la carta: «Queso fundido hasta el borde.» y «Salteado al momento.». Va con «Cremoso y en lascas.»
 del Classic Tuna. Lección: en la publicación de un Signature, la línea bajo el nombre describe sabor o textura; el
 momento de compra va en otras piezas.
+
+## 2026-11-02 · Un nombre que nadie conoce se explica
+Dueño: «Nadie conoce qué es un Philly, entonces debemos venderlo como sándwich de estilo Filadelfia». En Trujillo,
+«Philly Cheesesteak» no dice nada. Bajo el nombre va qué es y qué lleva: «El sándwich más famoso de Filadelfia: res,
+cebolla y cheddar fundido.». Lección: si el nombre de un producto es extranjero o poco conocido, la primera línea dice qué
+es antes que cómo sabe. Revisar lo mismo con Hoagie y Tuna Melt.

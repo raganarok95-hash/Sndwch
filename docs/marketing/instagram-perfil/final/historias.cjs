@@ -72,7 +72,7 @@ const conCara = (fondo, pose, alto, dy = 0, clase = '') => portada(fondo, `<div 
 const foto = (n, pos = 'center 62%') => `background:url('${img(`${FOTOS}/${n}`)}') ${pos}/cover`;
 
 const FOOD = [
-  { n: '1-philly', f: 'foto-philly-30.jpg', tit: 'Salteado al momento.', voz: 'Philly Cheesesteak. Tan jugoso que no lleva salsa.', cita: 'Tan jugoso que no lleva salsa.', nombre: 'Philly Cheesesteak' },
+  { n: '1-philly', f: 'foto-philly-30.jpg', tit: 'El sándwich más famoso de Filadelfia.', linea: 'El sándwich más famoso de Filadelfia: res, cebolla y cheddar fundido.', voz: 'Philly Cheesesteak. Tan jugoso que no lleva salsa.', cita: 'Tan jugoso que no lleva salsa.', nombre: 'Philly Cheesesteak' },
   { n: '4-meatball', f: 'foto-meatball-30.jpg', tit: 'Queso fundido hasta el borde.', voz: 'Meatball Marinara. Albóndigas en su propia marinara.', cita: 'Albóndigas en su propia marinara.', nombre: 'Meatball Marinara' },
   { n: '5-turkey', f: 'foto-turkey-30.jpg', tit: 'El almuerzo que no te tumba la tarde.', voz: 'Turkey. Llena sin pesar.', cita: 'Llena sin pesar.', nombre: 'Turkey' },
   { n: '6-tuna-melt', f: 'foto-tuna-melt-30.jpg', tit: 'Antojo de algo caliente.', voz: 'Tuna Melt. El cheddar se estira al primer mordisco.', cita: 'El cheddar se estira al primer mordisco.', nombre: 'Tuna Melt' },
