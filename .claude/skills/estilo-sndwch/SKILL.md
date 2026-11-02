@@ -48,6 +48,27 @@ otra cosa.
    verdad de la carta**; toda cifra sale del código. Cuanto menos texto, mejor: lo que no ayuda a
    decidir en dos segundos, sobra.
 
+7. **Cada pieza estrena imagen** (dueño, 2026-11-02: «El marketing está repitiendo lo que ya tenemos como imagen… por
+   ahora están algo simples, no la idea, la ejecución»). Una foto que ya está en el feed, en un destacado o en la app no
+   vuelve como protagonista de una pieza nueva, ni recortada ni acercada. Antes de producir, mira lo publicado
+   (`docs/marketing/instagram-perfil/final/` y las semanas anteriores). Si la idea necesita imagen nueva, se genera, y
+   esos créditos se piden en el resumen de la semana.
+8. **La ejecución tiene que sorprender, además de la idea.** Cada concepto elige una forma de verlo que el feed todavía
+   no tiene:
+   - **despiece**: las capas flotando, con rótulos en mono como un plano técnico;
+   - **macro de proceso**: la res en la plancha, el vapor, el queso estirándose;
+   - **cenital con dos luces**: lo frío con luz de día y lo caliente con lámpara, en la misma mesa;
+   - **escala**: el pan de 30 cm junto a una regla o a la mano;
+   - **objeto aislado sobre el color de un hermano**, como las portadas de los destacados;
+   - **tipografía gigante con un objeto**: la palabra y el ingrediente que la explica.
+
+   Una lámina que es «la foto de siempre con la franja de siempre» no pasa.
+
+**El sistema del feed aprobado (2026-10-30, `instagram-perfil/final/LEEME.md`).** En el feed, la foto va arriba y la
+franja del hermano va abajo: el acanalado oliva de SANDO o el celeste con curvas de WICHO. Esa franja es parte del
+sistema aprobado, a diferencia de la franja naranja suelta de los anuncios, que sigue prohibida. La regla 8 cambia lo
+que va **arriba**: el sistema de abajo se mantiene.
+
 ## La rúbrica de arte (cada criterio de 1 a 5)
 
 **Pasa** con ningún criterio bajo 3 y un promedio de 4 o más. **Verdad** en 4 o 5, siempre.
@@ -62,6 +83,7 @@ otra cosa.
 | **Coherencia** | ¿Cada elemento tiene un ancla en la marca? | decoración sin dueño (una franja, un marco, un sticker) |
 | **Zonas** | ¿El texto evita la comida y lo que tapa Instagram? | texto sobre el pan; precio debajo de los botones |
 | **Limpieza** | ¿Sobra algo? | un elemento que, si se quita, la pieza mejora |
+| **Novedad** | ¿Esta imagen es nueva en el feed? ¿Su forma de verse es una que el feed no tiene? | la misma foto ya publicada, acercada o recortada |
 
 ## Errores ya cometidos (no se repiten)
 
@@ -74,5 +96,7 @@ otra cosa.
   con otro queso): no sirve para un anuncio pagado.
 - **Un objeto que nadie pidió** en la imagen generada (un vaso de cerveza, gente en la oficina).
 - **Teñir la comida con el color de un hermano** (2026-09-17): la comida se ve como es.
+- **Reciclar las fotos del feed** (2026-11-02, semana del 9). Se hicieron «¿Qué es un Philly?» y «Cómo se dice» con las
+  mismas fotos ya publicadas y acercamientos de ellas. La idea gustó, pero la ejecución, no: «están algo simples».
 
 Más, con fecha y palabras del dueño: `docs/marketing/equipo/aprendizajes/director-de-arte.md`.

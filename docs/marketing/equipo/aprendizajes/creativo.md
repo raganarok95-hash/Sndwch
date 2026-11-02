@@ -8,3 +8,6 @@
   lea en dos segundos, por la Puerta 1.
 - **2026-10-16 · «Seamos más creativos».** El primer intento fue la plantilla de siempre (foto,
   titular, precio). La creatividad está en el momento y en lo que se ve, no en adornos.
+- **2026-11-02 · Ejecución, no solo idea.** «Te lo explicamos» le gustó al dueño, pero la ejecución le pareció simple:
+  «están algo simples, no la idea, la ejecución». Cada concepto trae ahora tres formas de verlo y elige la que el feed no
+  tiene (`idear-y-cerrar` §3).

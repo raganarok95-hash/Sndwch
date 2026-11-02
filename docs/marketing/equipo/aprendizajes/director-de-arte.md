@@ -201,3 +201,9 @@ Dueño: «El arte de cómo pedir está hermoso, no quiero que cambies eso, pero 
 máximo 3 historias». De 14 historias se pasó a 3 (elegir, tus datos y pagar), con el mismo arte: las pantallas reales,
 el aro y la lupa. Lección: cuando el dueño aprueba el arte y pide menos, se recorta el contenido y el arte no se toca.
 Y en un destacado de ayuda, tres pasos se ven simples; catorce se ven difíciles.
+
+## 2026-11-02 · La idea gustó, la ejecución no: no se reciclan fotos
+Dueño, sobre el feed de la semana del 9 («¿Qué es un Philly?», «¿Frío o gratinado?», «Cómo se dice»): «El marketing está
+repitiendo lo que ya tenemos como imagen… por ahora están algo simples, no la idea, la ejecución». Se habían hecho con las
+fotos ya publicadas y con acercamientos de ellas, sin maqueta previa. Lección: cada pieza estrena imagen y una forma de
+verse que el feed no tiene (`estilo-sndwch` reglas 7 y 8, criterio Novedad), y el dueño ve la maqueta antes.

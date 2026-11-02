@@ -18,6 +18,12 @@ programada): **no preguntes nada**. Llamas a cada especialista con Agent (`subag
 nombre) y les pasas **rutas**. Si un subagente no aparece en la lista, usa `general-purpose` con
 «Lee `.claude/agents/<nombre>.md` y sus skills, y trabaja como ese especialista».
 
+
+> **Ejecución (dueño, 2026-11-02: «el marketing está repitiendo lo que ya tenemos como imagen… mejoremos mucho más»).**
+> Ninguna pieza sale con una foto que ya está publicada (`estilo-sndwch` reglas 7 y 8, criterio **Novedad**). El
+> dueño ve la maqueta de cada pieza antes de producirla. Si hacen falta imágenes nuevas, el resumen dice cuántas y
+> cuántos créditos de Figma cuestan, y se generan solo con su sí.
+
 ## 0 · Qué semana
 La que empieza el **próximo lunes** (o la del argumento): `docs/marketing/semanas/<AAAA-MM-DD>/`.
 **Si esa carpeta ya existe, no la toques**: responde «la semana <fecha> ya estaba hecha» y termina.

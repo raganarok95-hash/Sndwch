@@ -36,6 +36,8 @@ Lo que sostiene la rúbrica:
 ## 3 · Cada concepto que pasa
 - **El concepto en una frase.**
 - **Lo que se ve** (qué hay en el cuadro, dónde y a qué hora), para la maqueta del Director de arte.
+- **La ejecución**: tres formas de verlo, sacadas de `estilo-sndwch` regla 8. Se elige una que el feed todavía no
+  tenga y se dice qué imagen nueva hace falta (dueño, 2026-11-02: «no la idea, la ejecución»).
 - El titular candidato (el Redactor lo pule).
 - **Por qué funciona**, citando el criterio de la rúbrica que más suma.
 - **El riesgo**: qué podría salir mal (verdad, marca, gusto) y cómo se evita.
