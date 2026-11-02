@@ -198,7 +198,7 @@ for (const L of LATAS) {
           .map((n, i) => { const v = L.nut[i]; const f = (x) => (x === null ? '[sal]' : (Number.isInteger(x) ? String(x) : x.toFixed(1)).replace('.', ','));
             const lata = v === null ? null : (i === 0 ? Math.round(v * 3.55) : Math.round(v * 3.55 * 10) / 10);
             return '<tr><td>' + n + '</td><td ' + der + '>' + f(v) + '</td><td ' + der + '>' + f(lata) + '</td></tr>'; }).join('') + '</table>'
-          + '<div style="font-size:1.4mm;margin:-0.3mm 0 0.8mm">Valores estimados [se confirman con laboratorio].</div>';
+          + '<div style="font-size:1.4mm;margin:-0.3mm 0 0.8mm">Valores aproximados, calculados a partir de sus ingredientes.</div>';
       const legal = '<div style="position:absolute;left:4mm;top:20.2mm;width:42mm;font:500 1.8mm/1.3 Archivo,sans-serif;color:' + t + '">'
         + '<b style="font-weight:800">Ingredientes:</b> ' + esc(L.ing) + '.' + tabla
         + '<b style="font-weight:800">Contenido neto: 355 ml.</b> Mantener refrigerada a 4&nbsp;°C o menos. Agítala antes de abrir.<br>'

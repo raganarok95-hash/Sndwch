@@ -96,3 +96,10 @@ Fuentes: USDA FoodData Central (té negro, infusión de hierbas y jugo de limón
   «[nombre del titular] (SNDWCH)» hasta que el dueño lo confirme.
 - **Titular del RUC:** el dueño lo dio el 2026-11-02. **No se escribe en el repo** (es público): se pasa al generar con
   `LEGAL_TITULAR='…'`. Los stickers con el nombre están fuera del repo, en la carpeta del proyecto (`latas/imprenta-v3/`).
+
+## Sin laboratorio por ahora (dueño, 2026-11-02: «No pasarán por laboratorio por el momento»)
+
+- La tabla queda **calculada** y lo dice: «Valores aproximados, calculados a partir de sus ingredientes».
+- **El riesgo:** «Cero azúcar» se sostiene con el cálculo (0.3 g o menos frente al tope de 0.5 g). Si INDECOPI o DIGESA lo
+  piden, hay que respaldarlo con la receta y este cálculo. El análisis se hace cuando vayan a tiendas (P66).
+- **La vida útil** de la tapa (vence) sale de la prueba casera de 7, 14 y 21 días (§3, §23), no de un estudio.
