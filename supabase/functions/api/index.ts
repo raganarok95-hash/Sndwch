@@ -66,7 +66,7 @@ import { actAdminZoneWaitlist, actAdminNotifyZone } from "./actions/zones.ts";
 import {
   actCreateGroupOrder, actGetGroupOrder, actAddGroupItem, actRemoveGroupItem, actCancelGroupOrder, actCloseGroupOrder, actSplitGroupOrder, actGroupSplitPreview, actExpireGroupShares,
 } from "./actions/group.ts";
-import { actAdminCalendarUploadImage, actAdminPublishSocial, actAdminMetaAds, actAdminUploadRawVideo, actAdminListRawUploads, actAutoPublishCalendar, actRegistrarVisita } from "./actions/social.ts";
+import { actAdminCalendarUploadImage, actAdminPublishSocial, actAdminMetaAds, actAdminUploadRawVideo, actAdminListRawUploads, actAutoPublishCalendar, actAutoRenovarInstagram, actRegistrarVisita } from "./actions/social.ts";
 import { actAdminVideoScript } from "./actions/video.ts";
 import { actAdminEmbajadores, actAdminEmbajadorCrear, actAdminEmbajadorPagar } from "./actions/embajadores.ts";
 import { ApiError } from "./types.ts";
@@ -235,6 +235,7 @@ const ACTIONS: ConContrato & SinContrato = {
   "admin-upload-raw-video": actAdminUploadRawVideo,
   "admin-list-raw-uploads": actAdminListRawUploads,
   "auto-publish-calendar": actAutoPublishCalendar,
+  "auto-renovar-instagram": actAutoRenovarInstagram,
   "verificar-meta": actVerificarMeta,
   "registrar-visita": actRegistrarVisita,
   "admin-publish-social": actAdminPublishSocial,

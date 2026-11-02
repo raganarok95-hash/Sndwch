@@ -13,7 +13,7 @@
 // ese procesamiento, solo publica lo que ya llega listo. El cron auto-publish-calendar
 // (cron.job en Supabase, cada 15 min) publica solas las entradas 'scheduled' cuya fecha
 // ya llegó, sin que nadie toque "Publicar ahora" a mano.
-import { sbGet, sbUpdate, sbInsert, storageUpload, leer, rpc } from "../db.ts";
+import { sbGet, sbUpdate, sbInsert, sbUpsert, storageUpload, leer, rpc } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin, verifyCronSecret } from "../session.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
@@ -145,12 +145,13 @@ export type VerificacionPublicacion = { token: boolean; pagina: string | null; i
 export async function verificarPublicacion(): Promise<VerificacionPublicacion> {
   const v: VerificacionPublicacion = { token: !!META_PAGE_ACCESS_TOKEN, pagina: null, instagram: null, puedePublicar: null, detalle: null, permisos: null, vinculo: null };
   // Con la puerta de Instagram (sin página), se prueba esa: es la que publica.
-  if (INSTAGRAM_LOGIN_TOKEN) {
+  const igTok = await tokenDeInstagram();
+  if (igTok) {
     v.token = true;
     try {
-      const me = await metaGraphGet("me", { fields: "user_id,username", access_token: INSTAGRAM_LOGIN_TOKEN }, GRAPH_IG);
+      const me = await metaGraphGet("me", { fields: "user_id,username", access_token: igTok }, GRAPH_IG);
       v.instagram = `@${me?.username || "?"} (${me?.user_id || "?"}) · sin página, con su propio login`;
-      await metaGraphGet(`${me?.user_id}/content_publishing_limit`, { fields: "quota_usage", access_token: INSTAGRAM_LOGIN_TOKEN }, GRAPH_IG);
+      await metaGraphGet(`${me?.user_id}/content_publishing_limit`, { fields: "quota_usage", access_token: igTok }, GRAPH_IG);
       v.puedePublicar = true;
     } catch (e: any) {
       v.puedePublicar = false;
@@ -268,7 +269,10 @@ async function publishCalendarEntry(entry: any): Promise<string> {
   const mediaUrl = isVideo ? entry.video_url : entry.image_url;
   if (!mediaUrl) throw new ApiError(`Sube ${isVideo ? "un video" : "una foto"} antes de publicar.`, 400);
   const caption = String(entry.caption_text || entry.title || "");
-  if (entry.channel === "instagram" && INSTAGRAM_LOGIN_TOKEN) return await publicarConInstagramLogin(entry, caption, isVideo);
+  if (entry.channel === "instagram") {
+    const igTok = await tokenDeInstagram();
+    if (igTok) return await publicarConInstagramLogin(entry, caption, isVideo, igTok);
+  }
   if (!META_PAGE_ACCESS_TOKEN) {
     throw new ApiError("Publicación de Meta sin configurar — falta el secret META_PAGE_ACCESS_TOKEN (docs/PENDIENTE_DEL_DUENO.md, P33).", 503);
   }
@@ -308,10 +312,57 @@ async function publishCalendarEntry(entry: any): Promise<string> {
   return publishedRef;
 }
 
+// El token de Instagram que vale hoy (2026-11-02): el último renovado (tabla instagram_token, lo
+// escribe auto-renovar-instagram cada domingo) y, si nunca se renovó, el secret. Sin esto, a los
+// 60 días el secret vence e Instagram deja de publicar sin avisar.
+export async function tokenDeInstagram(): Promise<string | null> {
+  try {
+    const [fila] = await leer("instagram_token", ["token"], "id=eq.true");
+    if (fila?.token) return fila.token;
+  } catch (_) { /* sin la tabla, vale el secret */ }
+  return INSTAGRAM_LOGIN_TOKEN || null;
+}
+
+/** Pide a Instagram un token nuevo de 60 días a cambio del vigente (que debe tener 24 h o más). */
+export async function renovarTokenDeInstagram(tok: string): Promise<{ token: string; expires_at: string | null }> {
+  const qs = new URLSearchParams({ grant_type: "ig_refresh_token", access_token: tok });
+  const r = await fetch(`${GRAPH_IG}/refresh_access_token?${qs}`);
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok || !data?.access_token) throw new ApiError("Instagram no renovó el token: " + (data?.error?.message || r.status), 502);
+  const segundos = Number(data.expires_in);
+  return { token: String(data.access_token), expires_at: Number.isFinite(segundos) && segundos > 0 ? new Date(Date.now() + segundos * 1000).toISOString() : null };
+}
+
+export async function actAutoRenovarInstagram(b: Entrada<"auto-renovar-instagram">) {
+  if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
+  const candidatos: string[] = [];
+  try {
+    const [fila] = await leer("instagram_token", ["token"], "id=eq.true");
+    if (fila?.token) candidatos.push(fila.token);
+  } catch (_) { /* sin fila */ }
+  // Si el dueño puso un secret nuevo, también sirve: se prueba después del guardado.
+  if (INSTAGRAM_LOGIN_TOKEN && !candidatos.includes(INSTAGRAM_LOGIN_TOKEN)) candidatos.push(INSTAGRAM_LOGIN_TOKEN);
+  if (!candidatos.length) return { ok: true, renovado: false, motivo: "sin token de Instagram" };
+  let ultimo = "";
+  for (const tok of candidatos) {
+    try {
+      const nuevo = await renovarTokenDeInstagram(tok);
+      await sbUpsert("instagram_token", { id: true, token: nuevo.token, expires_at: nuevo.expires_at, refreshed_at: new Date().toISOString() }, "id");
+      return { ok: true, renovado: true, vence: nuevo.expires_at };
+    } catch (e: any) {
+      ultimo = String(e?.message || e).slice(0, 300);
+    }
+  }
+  // Que no pase en silencio: el dueño se entera antes de que deje de publicar.
+  await debugLog({ stage: "exception", context: "auto-renovar-instagram", error: ultimo });
+  await sendPushToAdmins({ title: "Instagram: no se pudo renovar el acceso", body: "Genera un token nuevo de Instagram y ponlo en Supabase, o dejará de publicar." }).catch(() => {});
+  throw new ApiError(ultimo || "No se pudo renovar el token de Instagram.", 502);
+}
+
 // Instagram por su propia puerta (INSTAGRAM_LOGIN_TOKEN): el id de la cuenta sale del token
 // (`me?fields=user_id`), y los contenedores son los mismos que por la página.
 let igLoginId: string | null = null;
-export async function publicarConInstagramLogin(entry: any, caption: string, isVideo: boolean, tok = INSTAGRAM_LOGIN_TOKEN!): Promise<string> {
+export async function publicarConInstagramLogin(entry: any, caption: string, isVideo: boolean, tok: string): Promise<string> {
   if (!igLoginId) {
     const me = await metaGraphGet("me", { fields: "user_id,username", access_token: tok }, GRAPH_IG);
     igLoginId = String(me?.user_id || me?.id || "");
