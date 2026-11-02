@@ -34,6 +34,8 @@ La que empieza el **próximo lunes** (o la del argumento): `docs/marketing/seman
 - `investigador` → `INSUMOS.md`.
 
 ## 2 · El brief
+- **Hasta el 6 de diciembre de 2026**, el tema y la meta de la semana salen de `docs/marketing/APERTURA.md`
+  (el marco de la apertura del 20 de noviembre); el brief los toma de ahí.
 - `estratega` → `BRIEF.md` (plantilla de `docs/marketing/AGENCIA.md` §4), con `DATOS.md`,
   `INSUMOS.md`, la carpeta de la semana anterior y `docs/marketing/equipo/aprendizajes/`.
 - **PREAPERTURA** (dueño, 2026-10-22): mientras no se abre (`enPreapertura()` en

@@ -10,9 +10,9 @@ más por eso (Mosseri, 2025). No invita a pedir, porque todavía no hay día de 
 
 | día | hora | publicación | formato | lado | para qué |
 |---|---|---|---|---|---|
-| lun 10 | 12:30 | ¿Qué es un Philly? | carrusel de 4 | SANDO | explica el Signature estrella capa por capa |
-| mié 12 | 19:30 | ¿Frío o gratinado? | foto sola | los dos | comentarios: Classic Tuna contra Tuna Melt |
-| vie 14 | 12:30 | Cómo se dice: Sub, Hoagie, Melt | carrusel de 5 | WICHO | las palabras de la carta, en simple |
+| mar 10 | 12:30 | ¿Qué es un Philly? | carrusel de 4 | SANDO | explica el Signature estrella capa por capa |
+| jue 12 | 19:30 | ¿Frío o gratinado? | foto sola | los dos | comentarios: Classic Tuna contra Tuna Melt |
+| sáb 14 | 12:30 | Cómo se dice: Sub, Hoagie, Melt | carrusel de 5 | WICHO | las palabras de la carta, en simple |
 
 Imágenes en `feed/` (1080 × 1350, 4:5), hechas con `feed.cjs` sobre las fotos aprobadas y el mismo sistema del perfil
 aprobado el 2026-10-30 (`instagram-perfil/final/`). No se generó nada nuevo y no se gastaron créditos.
