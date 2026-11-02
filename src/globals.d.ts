@@ -41,6 +41,7 @@ interface Window {
   _lNom?: string;
   _lPhone?: string;
   _lSummary?: string;
+  _lItems?: any[];
   _lRankUp?: string | null;
   // Desbloqueo del menú secreto — evento propio, independiente del rango. El umbral es
   // editable desde el panel admin y ya no coincide con ningún rango de RANKS.
