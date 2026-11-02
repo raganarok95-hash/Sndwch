@@ -1050,6 +1050,8 @@ function finalizeOrderSuccess(res,po,chargeId){
   // que el cron lo cancele solo, ver STALE_MANUAL_PAYMENT_HOURS_CLIENT.
   window._lOrderCreatedAt=Date.now();
   window._lRef=po.ref;avisoPaso='aviso';aErr='';
+  window._lStatus=(res.order&&res.order.status)||'RECIBIDO';window._lSalio=0;window._lLlego=0;
+  window._lAddr=po.addr||'';window._lNom=po.nom||'';window._lPhone=po.phone||'';window._lSummary=po.summary||'';
   window._lOrderId=res.order&&res.order.id?String(res.order.id):'';
   // El código del QR ya se usó (vale una vez por celular): no se vuelve a ofrecer escrito.
   if(po.promoCode){try{localStorage.removeItem('sw_codigo');}catch(e){}}
@@ -1067,7 +1069,7 @@ function finalizeOrderSuccess(res,po,chargeId){
   busy=false;sndScreen='o_sent';render();
   // La captura elegida en la 31 («Subir mi captura») se sube apenas existe el pedido, y se lee sola.
   if(_capturaAlPagar){var cap=_capturaAlPagar;_capturaAlPagar=null;receiptUploadState='uploading';render();uploadReceiptBase64(cap);}
-  if(window._lPendingPayment)vigilarElPago(window._lRef);
+  vigilarElPedido(window._lRef);
   // eventID = referencia del pedido: el servidor manda esta MISMA compra por Conversions
   // API con el mismo id, y Meta descarta el duplicado en vez de contar la venta dos veces.
   // Solo se reporta si el pedido ya quedó pagado — un Yape pendiente todavía no es venta,
@@ -1091,18 +1093,28 @@ function textoParaWhatsApp():string{
 function mandarPorWhatsApp(){
   window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(textoParaWhatsApp()),'_blank');
 }
-// Si el pago se aprueba A MANO (desde el panel o desde el WhatsApp del cliente), la pantalla del
-// cliente se entera sola: antes seguía diciendo «la estamos revisando» hasta que recargaba.
-// Pregunta cada 15 s solo mientras esta pantalla está abierta y el pago sigue pendiente.
-var _vigiaPago:any=null;
-function vigilarElPago(ref:string){
-  if(_vigiaPago)clearInterval(_vigiaPago);
-  _vigiaPago=setInterval(async function(){
-    if(sndScreen!=='o_sent'||window._lRef!==ref||receiptUploadState==='confirmado'||!window._lPendingPayment){clearInterval(_vigiaPago);_vigiaPago=null;return;}
+// La pantalla del pedido se actualiza sola (dueño, 2026-11-02, «Tu pedido, en vivo»): si el pago se
+// aprueba a mano (panel o WhatsApp), si sale o si llega, el cliente lo ve sin recargar. Antes seguía
+// diciendo «la estamos revisando» hasta que recargaba. Pregunta cada 15 s solo mientras esta pantalla
+// está abierta y el pedido no terminó.
+var _vigiaPedido:any=null;
+function vigilarElPedido(ref:string){
+  if(_vigiaPedido)clearInterval(_vigiaPedido);
+  _vigiaPedido=setInterval(async function(){
+    var fin=window._lStatus==='ENTREGADO'||window._lStatus==='CANCELADO';
+    if(sndScreen!=='o_sent'||window._lRef!==ref||fin){clearInterval(_vigiaPedido);_vigiaPedido=null;return;}
     try{
       var r=cust&&token?await api('my-orders',{token:token}):await api('my-orders',{ref:ref});
       var o=((r&&r.orders)||[]).find(function(x:any){return x.ref===ref;});
-      if(o&&o.payment_status==='paid'&&sndScreen==='o_sent'&&window._lRef===ref){receiptUploadState='confirmado';capturaMotivo=null;render();}
+      if(!o||sndScreen!=='o_sent'||window._lRef!==ref)return;
+      var cambio=false;
+      if(o.payment_status==='paid'&&window._lPendingPayment&&receiptUploadState!=='confirmado'){receiptUploadState='confirmado';capturaMotivo=null;cambio=true;}
+      if(o.status&&o.status!==window._lStatus){
+        window._lStatus=o.status;cambio=true;
+        if(o.status==='EN CAMINO')window._lSalio=o.status_changed_at?Date.parse(o.status_changed_at):Date.now();
+        if(o.status==='ENTREGADO')window._lLlego=o.delivered_at?Date.parse(o.delivered_at):Date.now();
+      }
+      if(cambio)render();
     }catch(e){}
   },15000);
 }
@@ -1169,21 +1181,63 @@ async function dejarFijoDeEstePedido(){
     window._lFijo=null;render();
   }catch(e){showToast('No se pudo dejar fijo: '+e.message,'error');}
 }
-// «En la cocina» solo cuando el pago cuadró (dueño, 2026-11-02, «Sí a todo»; aprobadas/pedido-simple-
-// pago-confirmado.png y -la-estamos-revisando.png). Antes lo decía con el Yape aún sin confirmar.
+// ── TU PEDIDO, EN VIVO (dueño, 2026-11-02: «Dale, hazlo como propones»; aprobadas/pedido-en-vivo.png).
+// La pantalla del pedido enviado ES el seguimiento: arriba qué pasa y a qué hora llega, debajo los
+// cuatro pasos, y si el cliente tiene algo que hacer, eso va primero. Se actualiza sola
+// (vigilarElPedido). «En la cocina» solo cuando el pago cuadró (2026-11-02, «Sí a todo»).
+function etapaDelPedido(manualWaiting:boolean):string{
+  var st=window._lStatus||'RECIBIDO';
+  if(st==='CANCELADO')return'cancelado';
+  if(st==='ENTREGADO')return'llego';
+  if(st==='EN CAMINO')return'camino';
+  if(manualWaiting&&receiptUploadState!=='confirmado')return'pago';
+  return'cocina';
+}
 function arribaDelPedido(manualWaiting:boolean):string{
+  var et=etapaDelPedido(manualWaiting);
   var st=receiptUploadState;
-  var t=!manualWaiting||st==='confirmado'
-    ?{ok:manualWaiting?'Pago confirmado':'Pedido recibido',h:'YA ESTÁ<br>EN LA<br>COCINA',q:'“Ya prendí<br>la plancha.”',e:'en-la-cocina'}
-    :st==='uploading'||st==='reading'||st==='done'
-      ?{ok:'Captura recibida',h:'COMPRO&shy;BANDO<br>TU PAGO',q:'“Un segundo,<br>ya la miro.”',e:'comprobando'}
-      :st==='revisamos'&&puedeSubirOtra(capturaMotivo)
-        ?{ok:'Tu captura no cuadra',h:'REVISA<br>TU<br>CAPTURA',q:'“Te digo abajo<br>qué pasó.”',e:'captura-no-cuadra'}
-      :st==='revisamos'
-        ?{ok:'Captura recibida',h:'LA ESTAMOS<br>REVISANDO',q:'“Un momento,<br>ya la miro.”',e:'revisando'}
-        :{ok:'Pedido recibido',h:'FALTA TU<br>CAPTURA',q:'“Súbela y<br>prendo la plancha.”',e:'falta-captura'};
+  var ref=window._lRef?'Pedido #'+esc(window._lRef):'Tu pedido';
+  var t=et==='cancelado'?{ok:ref,h:'SE<br>CANCELÓ',e:'cancelado'}
+    :et==='llego'?{ok:ref,h:'YA<br>LLEGÓ',e:'llego'}
+    :et==='camino'?{ok:window._lSalio?'Salió a las '+esc(horaLima(window._lSalio)):'Ya salió',h:'VA EN<br>CAMINO',e:'en-camino'}
+    :et==='cocina'?{ok:manualWaiting?'✓ Pago confirmado':'Pedido recibido',h:'EN LA<br>COCINA',e:'en-la-cocina'}
+    :st==='uploading'||st==='reading'||st==='done'?{ok:ref,h:'COMPRO&shy;BANDO<br>TU PAGO',e:'comprobando'}
+    :st==='revisamos'&&puedeSubirOtra(capturaMotivo)?{ok:ref,h:'FALTA<br>TU PAGO',e:'captura-no-cuadra'}
+    :st==='revisamos'?{ok:ref,h:'LA ESTAMOS<br>REVISANDO',e:'revisando'}
+    :{ok:ref,h:'FALTA TU<br>CAPTURA',e:'falta-captura'};
+  var v=window._lVentana;
+  var eta=et==='llego'?(window._lLlego?'Llegó a las<b>'+esc(horaLima(window._lLlego))+'</b>':'')
+    :et==='cancelado'?''
+    :v?(et==='pago'?'Al confirmar, llega':'Llega')+'<b>'+esc(v)+'</b>':'';
   return'<div class="arriba" data-estado-pago="'+t.e+'"><div class="ok">'+t.ok+'</div><h1>'+t.h+'</h1>'
-    +'<div class="sub">'+t.q+'<u>Sando</u></div></div>';
+    +(eta?'<div class="eta">'+eta+'</div>':'')+'</div>';
+}
+function pasosDelPedido(et:string):string{
+  var orden=['pago','cocina','camino','llego'];
+  var nombres=['Pago','Cocina','En camino','Llegó'];
+  var i=orden.indexOf(et);
+  return'<div class="pasos" data-etapa="'+et+'">'+orden.map(function(_x,k){
+    // Al llegar, los cuatro quedan hechos; mientras tanto, el actual va a medias.
+    var hecho=k<i||et==='llego';
+    var c=hecho?'si':k===i?'ya':'';
+    return'<div class="'+c+'"><i></i><span>'+nombres[k]+(hecho?' ✓':'')+'</span></div>';
+  }).join('')+'</div>';
+}
+var POSE_DEL_PEDIDO:Record<string,string>={pago:'mira',cocina:'alegre',camino:'cuerpo',llego:'alegre',cancelado:'serio'};
+// Un mensaje general por WhatsApp (no el de «mi captura no se leyó»).
+function escribirnosDelPedido(){
+  var ref=window._lRef||'';
+  window.open('https://wa.me/'+WA+'?text='+encodeURIComponent('Hola, te escribo por mi pedido #'+ref+'.'),'_blank');
+}
+async function yaMeLlegoDesdeElPedido(){
+  if(!window._lOrderId||!window._lRef)return;
+  await doYaMeLlego(window._lOrderId,window._lRef);
+  window._lStatus='ENTREGADO';window._lLlego=Date.now();render();
+}
+// Enmascara el celular como en la maqueta: 9•• ••• 640.
+function celularVisible(ph:string):string{
+  var d=String(ph||'').replace(/\D/g,'');
+  return d.length>=9?d.charAt(0)+'•• ••• '+d.slice(-3):'';
 }
 function sOSent(){
   var pending=window._lPendingPayment;
@@ -1217,52 +1271,68 @@ function sOSent(){
     pie='<button class="oro" onclick="avisoVerificar()">Guardar</button><button class="cel" onclick="avisoPaso=\'aviso\';aErr=\'\';render()">Ahora no</button>';
   }else{
     var rankPerk=window._lSecretUnlock?'Ya puedes verlo':null;
-    losa='<div class="ca"><em>Tu pedido</em><u>'+ref+'</u></div>'
-      +(window._lVentana?'<div class="dr"><span>Llega</span><b>'+esc(window._lVentana)+'</b></div>':'')
-      +'<div class="dr"><span>Pagaste</span><b>'+SOLES_TXT+pz(window._lTot||0)+'</b></div>'
-      +(window._lRewardLabel?'<div class="dr"><span>Canjeaste</span><b>'+esc(window._lRewardLabel)+'</b></div>':'')
-      +(cust&&pts>0?'<div class="dr"><span>'+(pending?'Al confirmar':'Ganaste')+'</span><b class="pt">+'+pts+' puntos</b></div>':'')
-      +(invitado?avisoDePuntosHTML(pts):'')
-      +(manualWaiting?'<div class="nota">'+(receiptUploadState==='confirmado'?'':'Confirmamos tu '+methodLabel+' contra la cuenta'
-        +(deadlineLabel?'; si no lo hacemos antes de las '+esc(deadlineLabel)+', el pedido se cancela solo':'')+'.<br>')
-        +(receiptUploadState==='confirmado'?'<b data-captura="confirmado">✓ ¡Pago confirmado! Tu pedido ya entró a la cocina.</b>'
-          :receiptUploadState==='revisamos'?'<span data-motivo-captura="'+esc(capturaMotivo?capturaMotivo.codigo:'')+'">'+esc(textoDelMotivo(capturaMotivo))+'</span>'
-            +(puedeSubirOtra(capturaMotivo)?'<br><label class="otra-captura" data-accion="subir-otra-captura">Subir otra captura →<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>':'')
-            +'<br><button class="otra-captura" data-accion="mandar-por-whatsapp" onclick="mandarPorWhatsApp()">O mándanos el pedido y la captura por WhatsApp →</button>'
-          :receiptUploadState==='reading'?'✓ Captura recibida. Comprobando tu pago…'
-          :receiptUploadState==='done'?'✓ Comprobante recibido.'
-          :receiptUploadState==='uploading'?'Subiendo el comprobante…'
+    var et=etapaDelPedido(manualWaiting);
+    var stR=receiptUploadState;
+    var errSubida=typeof stR==='string'&&stR.indexOf('error:')===0;
+    // Lo que el cliente tiene que hacer, PRIMERO (antes iba debajo de «Pagaste» y de los puntos).
+    var pendiente=et!=='pago'?''
+      :'<div class="alerta" role="status">'
+        +(stR==='revisamos'?'<span data-motivo-captura="'+esc(capturaMotivo?capturaMotivo.codigo:'')+'">'+esc(textoDelMotivo(capturaMotivo))+'</span>'
+            +(puedeSubirOtra(capturaMotivo)?'<label class="otra-captura" data-accion="subir-otra-captura">Subir otra captura →<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>':'')
+            +'<button class="otra-captura" data-accion="mandar-por-whatsapp" onclick="mandarPorWhatsApp()">O mándanos el pedido y la captura por WhatsApp →</button>'
+          :stR==='reading'?'✓ Captura recibida. Comprobando tu pago…'
+          :stR==='done'?'✓ Comprobante recibido.'
+          :stR==='uploading'?'Subiendo el comprobante…'
+          :errSubida?esc(stR.slice(6))+'<button class="otra-captura" data-accion="mandar-por-whatsapp" onclick="mandarPorWhatsApp()">O mándanos el pedido y la captura por WhatsApp →</button>'
           :'<label data-accion="subir-captura">Sube la captura de tu '+methodLabel+': si cuadra, tu pedido entra a la cocina solo, sin esperar a que lo revisemos<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>')
-        +(typeof receiptUploadState==='string'&&receiptUploadState.indexOf('error:')===0?'<br>'+esc(receiptUploadState.slice(6))
-          +'<br><button class="otra-captura" data-accion="mandar-por-whatsapp" onclick="mandarPorWhatsApp()">O mándanos el pedido y la captura por WhatsApp →</button>':'')
-        +'</div>':'')
+        +'</div>';
+    var direccion=window._lAddr?'<div class="dr"><span>Llega a</span><b>'+esc(window._lAddr)+'</b></div>':'';
+    var dice=et==='cocina'?'“Ya prendí la plancha.” — Sando'
+      :et==='camino'?'Ya salió de la cocina y va hacia ti.'
+      :et==='llego'?'¡Buen provecho!'
+      :et==='cancelado'?'Este pedido se canceló. Si ya habías pagado, te lo devolvemos: lo ves en tu cuenta o te escribimos.':'';
+    losa='<div class="ca"><em>Tu pedido</em><u>'+ref+'</u></div>'
+      +pasosDelPedido(et==='cancelado'?'pago':et)
+      +pendiente
+      +(dice?'<div class="bien'+(et==='cancelado'?' mal':'')+'">'+esc(dice)+'</div>':'')
+      +(et==='camino'
+        ?direccion+(window._lNom?'<div class="dr"><span>Recibe</span><b>'+esc(window._lNom)+(celularVisible(window._lPhone||'')?' · '+celularVisible(window._lPhone||''):'')+'</b></div>':'')
+          +'<div class="mini">Cuando lo tengas en la mano, toca «Ya me llegó».</div>'
+        :(window._lSummary&&et!=='pago'?'<div class="dr"><span>Pediste</span><b>'+esc(window._lSummary)+'</b></div>':'')
+          +'<div class="dr"><span>'+(et==='pago'?'Total':et==='cancelado'?'Ibas a pagar':'Pagaste')+'</span><b>'+SOLES_TXT+pz(window._lTot||0)+'</b></div>'
+          +(et==='pago'?direccion:'')
+          +(window._lRewardLabel?'<div class="dr"><span>Canjeaste</span><b>'+esc(window._lRewardLabel)+'</b></div>':'')
+          +(cust&&pts>0&&et!=='cancelado'?'<div class="dr"><span>'+(et==='pago'?'Al confirmar':'Ganaste')+'</span><b class="pt">+'+pts+' puntos</b></div>':'')
+          +(invitado&&et!=='cancelado'?avisoDePuntosHTML(pts):'')
+          +(et==='pago'&&deadlineLabel?'<div class="mini">Si no lo confirmamos antes de las '+esc(deadlineLabel)+', el pedido se cancela solo.</div>':''))
       +(window._lRankUp?'<div class="dr"><span>Subiste a</span><b class="pt">'+esc(window._lRankUp)+'</b></div>':'')
       +(rankPerk?'<div class="dr"><span>Menú secreto</span><b class="pt">'+rankPerk+'</b></div>':'')
       +'<div class="extra">'
-      // Sin WhatsApp (dueño, 2026-11-02: «automatizarlo sin tener que pasar por wsp»): el pedido llega
-      // al panel con su aviso («Nuevo pedido», push a los admins); el cliente no tiene que mandar nada.
       // Justo después del primer pedido pagado es el momento de mayor intención para activar
-      // las notificaciones: quiere saber cuándo llega SU pedido.
-      // Y también a quien pidió SIN cuenta (2026-10-09): sin esto, los avisos de recompra (el
-      // regalo de las 24 h y el del día 7-10) no le llegaban nunca, en silencio. Se guarda con
-      // el teléfono de su pedido (push-subscribe-pedido).
-      +(!pushSubscribed&&('serviceWorker' in navigator)&&('PushManager' in window)
+      // las notificaciones: quiere saber cuándo llega SU pedido. También a quien pidió SIN cuenta
+      // (2026-10-09): sin esto, los avisos de recompra no le llegaban nunca (push-subscribe-pedido).
+      +((et==='pago'||et==='cocina')&&!pushSubscribed&&('serviceWorker' in navigator)&&('PushManager' in window)
         &&((cust&&cust.total_orders===1)||(!cust&&window._lOrderId))
         ?'<button data-accion="avisame-cuando-salga" onclick="'+(cust?'togglePushNotifications()':'avisarSinCuenta()')+'">'+(pushMsg&&!cust?esc(pushMsg):'Avísame cuando salga')+' <span>→</span></button>':'')
       // El pedido fijo, ofrecido una vez: al terminar el segundo pedido (ver ofertaDeFijo).
-      +(cust&&window._lFijo?'<button data-accion="dejar-fijo" onclick="dejarFijoDeEstePedido()">¿Lo dejamos fijo '+esc(textoDelFijo(window._lFijo))+'? <span>→</span></button>':'')
-      // Referidos (dueño, 2026-10-09: «1 y 2 aprobados»). El premio de quien invita vive en su
-      // cuenta, así que a quien pidió sin cuenta el mismo botón lo lleva a guardarla (el flujo
-      // aprobado de la losa) con el motivo dicho; con cuenta, comparte el link por WhatsApp.
-      +(cust?'<button data-accion="invitar" onclick="shareReferral()">Invita a alguien <span>→</span></button>'
+      +(cust&&window._lFijo&&et!=='cancelado'?'<button data-accion="dejar-fijo" onclick="dejarFijoDeEstePedido()">¿Lo dejamos fijo '+esc(textoDelFijo(window._lFijo))+'? <span>→</span></button>':'')
+      // Referidos (dueño, 2026-10-09: «1 y 2 aprobados»): sin cuenta, el botón lleva a guardarla.
+      +(et==='cancelado'?''
+        :cust?'<button data-accion="invitar" onclick="shareReferral()">Invita a alguien <span>→</span></button>'
         :(invitado?'<button data-accion="invitar" onclick="avisoPaso=\'correo\';aErr=\'Guarda tu cuenta y te damos tu link: cuando tu amigo pida, ganas un sándwich.\';render()">Invita a alguien y gana un sándwich <span>→</span></button>':''))
       +'</div>'
       // Si algo sale mal con este pedido, es acá donde el cliente lo va a buscar.
       +legalLinksHTML('o_sent');
-    pie='<button class="oro" onclick="seguirElPedido()">Seguir el pedido</button><button class="cel" onclick="seguirElPedido()" aria-label="Seguir el pedido">→</button>';
+    // La barra de abajo es lo que toca hacer AHORA, no «Seguir el pedido»: ya estás en el seguimiento.
+    var subir=et==='pago'&&(!stR||errSubida||(stR==='revisamos'&&puedeSubirOtra(capturaMotivo)));
+    pie=subir?'<label class="oro" data-accion="subir-captura-abajo">Subir mi captura<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label><span class="cel">'+SOLES_TXT+pz(window._lTot||0)+'</span>'
+      :et==='camino'?'<button class="oro" data-accion="ya-me-llego" onclick="yaMeLlegoDesdeElPedido()">Ya me llegó</button><span class="cel">'+ref+'</span>'
+      :et==='llego'||et==='cancelado'?'<button class="oro" data-accion="pedir-otra-vez" onclick="volverALaPuerta()">Pedir otra vez</button><button class="cel" onclick="volverALaPuerta()" aria-label="Pedir otra vez">→</button>'
+      :'<button class="oro" data-accion="escribirnos" onclick="escribirnosDelPedido()">Escribirnos</button><button class="cel" onclick="escribirnosDelPedido()">WhatsApp</button>';
   }
-  return'<div class="m06 fi'+(sube?' sube':'')+'"><div class="forro"></div>'
-    +'<div class="arr"><div class="col"><img src="'+broPose('sando','asoma')+'" alt="" aria-hidden="true"></div>'
+  var pose=sube?'asoma':POSE_DEL_PEDIDO[etapaDelPedido(manualWaiting)]||'asoma';
+  return'<div class="m06 fi'+(sube?' sube':' vivo')+'"><div class="forro"></div>'
+    +'<div class="arr"><div class="col"><img src="'+broPose('sando',pose)+'" alt="" aria-hidden="true"></div>'
     +arribaDelPedido(manualWaiting)+'</div>'
     +'<div class="losa">'+losa+'</div>'
     +'</div>'

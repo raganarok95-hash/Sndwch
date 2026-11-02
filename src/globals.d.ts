@@ -33,6 +33,14 @@ interface Window {
   _lRef?: string;
   _lOrderId?: string;
   _lVentana?: string;
+  // Tu pedido, en vivo: lo que la pantalla del pedido muestra y vigilarElPedido actualiza.
+  _lStatus?: string;
+  _lSalio?: number;
+  _lLlego?: number;
+  _lAddr?: string;
+  _lNom?: string;
+  _lPhone?: string;
+  _lSummary?: string;
   _lRankUp?: string | null;
   // Desbloqueo del menú secreto — evento propio, independiente del rango. El umbral es
   // editable desde el panel admin y ya no coincide con ningún rango de RANKS.

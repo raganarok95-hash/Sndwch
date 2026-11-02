@@ -23,7 +23,7 @@ async function pagarComoInvitado(page: Page) {
   await ponerDireccion(page, 'Av. España 123, Trujillo', '');
   await ponerRecibe(page, 'Cliente Invitado', '987654321');
   await pagarConYape(page);
-  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.m06 [data-estado-pago]')).toBeVisible({ timeout: 10000 });
 }
 
 test('la app abre en la puerta aunque la vez pasada se haya elegido un lado, y sin barra', async ({ page }) => {

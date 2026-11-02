@@ -128,7 +128,7 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   await ponerDireccion(page, 'Av. España 123, Trujillo', '');
   await ponerRecibe(page, 'Ana Cliente', '900000001');
   await pagarConYape(page);
-  await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.m06 [data-estado-pago]')).toBeVisible({ timeout: 10000 });
 
   const placeOrder = calls.find((c) => c.action === 'place-order');
   expect(placeOrder).toBeTruthy();

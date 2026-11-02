@@ -1007,6 +1007,27 @@ body.kb-open #app{padding-bottom:0}
 .m06-go .oro{background:#D8823C;color:#231204;justify-content:flex-end;padding-right:16px}
 .m06-go .cel{background:#EFE6D4;color:#241B12;justify-content:flex-start;padding-left:16px}
 .m06-go button:focus-visible{outline:2px solid #241B12;outline-offset:-4px}
+/* TU PEDIDO, EN VIVO (aprobadas/pedido-en-vivo.png): arriba más corto, con la hora; debajo los cuatro
+   pasos y, si el cliente tiene algo que hacer, eso primero. */
+.m06-go label,.m06-go span{box-sizing:border-box;cursor:pointer;flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase;position:relative}
+.m06-go span{cursor:default;letter-spacing:.06em}
+.m06.vivo .arr{height:300px}
+.m06.vivo .arriba{top:64px;width:190px}
+.m06.vivo .col img{height:280px;bottom:-12px;right:-14px}
+.m06 .eta{font:400 12px/1.3 'IBM Plex Mono',monospace;color:#EFE6D4;margin-top:14px;letter-spacing:.06em}
+.m06 .eta b{display:block;font-family:Anton,sans-serif;font-weight:400;font-size:22px;color:#E8D08A;letter-spacing:0;margin-top:4px}
+.m06 .pasos{display:flex;gap:4px;padding:14px 0 12px}
+.m06 .pasos div{flex:1;min-width:0}
+.m06 .pasos i{display:block;height:5px;border-radius:999px;background:rgba(36,27,18,.15)}
+.m06 .pasos .si i{background:#5F7358}
+.m06 .pasos .ya i{background:linear-gradient(90deg,#CBA258 60%,rgba(36,27,18,.15) 60%)}
+.m06 .pasos span{display:block;font:700 8px/1.2 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#8b8172;margin-top:6px}
+.m06 .pasos .si span{color:#5F7358}.m06 .pasos .ya span{color:#241B12}
+.m06 .alerta{background:#F6DFC6;border-left:4px solid #B3651A;border-radius:8px;padding:12px 12px 8px;font:400 15px/1.45 Archivo,sans-serif;color:#33230F;margin-bottom:6px}
+.m06 .alerta label,.m06 .alerta button.otra-captura{all:unset;display:block;cursor:pointer;position:relative;margin-top:8px;padding:6px 0;font:700 11px/1.4 'IBM Plex Mono',monospace;letter-spacing:.04em;color:#B3651A;text-decoration:underline;text-underline-offset:3px}
+.m06 .alerta label[data-accion="subir-captura"]{font:400 15px/1.45 Archivo,sans-serif;margin-top:0;letter-spacing:0}
+.m06 .bien{font:400 15px/1.45 Archivo,sans-serif;background:rgba(95,115,88,.12);border-radius:8px;padding:10px 12px;color:#33230F;margin-bottom:4px}
+.m06 .bien.mal{background:rgba(154,42,18,.1)}
 
 /* ═══ MUNDO WICHO · el armador (maqueta M22 + el puente, aprobada 2026-09-24) ═══════════════
    docs/maquetas/aprobadas/mundo-wicho-M22-con-puente.png y su fuente m22-con-puente.html.
