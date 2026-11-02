@@ -42,7 +42,8 @@ const LATAS = [
     desc: 'Suave como terciopelo.',
     ing: 'agua, té negro, edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)' },
 ];
-const LEGAL = { razonSocial: '[nombre del titular del RUC] (SNDWCH)', ruc: '10736044523',  // dueño, 2026-11-02: «SNDWCH», RUC 10…: persona natural, va su nombre
+// El nombre del titular NO se commitea (repo público): se pasa al imprimir con LEGAL_TITULAR.
+const LEGAL = { razonSocial: (process.env.LEGAL_TITULAR || '[nombre del titular del RUC]') + ' (SNDWCH)', ruc: '10736044523',  // dueño, 2026-11-02: «SNDWCH», RUC 10…: persona natural, va su nombre
   direccion: 'Av. Prolongación César Vallejo 2670, Trujillo', registro: null };  // dirección: dueño, 2026-11-02. R.S.: solo si DIGESA lo pide
 const URL_LATA = 'https://sndwch.app/?src=lata';
 

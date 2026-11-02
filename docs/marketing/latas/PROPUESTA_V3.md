@@ -94,3 +94,5 @@ Fuentes: USDA FoodData Central (té negro, infusión de hierbas y jugo de limón
 - **Razón social: «SNDWCH», RUC 10736044523.** Un RUC que empieza con 10 es de **persona natural**: la razón social es el
   nombre completo del titular tal como figura en SUNAT, y SNDWCH es el nombre comercial. En la etiqueta va
   «[nombre del titular] (SNDWCH)» hasta que el dueño lo confirme.
+- **Titular del RUC:** el dueño lo dio el 2026-11-02. **No se escribe en el repo** (es público): se pasa al generar con
+  `LEGAL_TITULAR='…'`. Los stickers con el nombre están fuera del repo, en la carpeta del proyecto (`latas/imprenta-v3/`).
