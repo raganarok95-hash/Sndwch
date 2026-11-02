@@ -18,7 +18,7 @@ import { ApiError } from "../types.ts";
 import { requireAdmin, verifyCronSecret } from "../session.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 import { sendPushToAdmins } from "../push.ts";
-import { SB_URL, META_PAGE_ACCESS_TOKEN, META_PAGE_ID, META_IG_USER_ID, META_GRAPH_VERSION, META_AD_ACCOUNT_ID, META_ADS_TOKEN } from "../env.ts";
+import { SB_URL, META_PAGE_ACCESS_TOKEN, META_PAGE_ID, META_IG_USER_ID, META_GRAPH_VERSION, META_AD_ACCOUNT_ID, META_ADS_TOKEN, INSTAGRAM_LOGIN_TOKEN } from "../env.ts";
 import type { Entrada, Salida } from "../../_shared/contrato.ts";
 import { fechaLima } from "../franja.ts";
 
@@ -69,9 +69,13 @@ export async function actAdminCalendarUploadImage(b: Entrada<"admin-calendar-upl
 
 const SOCIAL_CHANNELS = new Set(["instagram", "facebook"]);
 
-async function metaGraphPost(path: string, params: Record<string, string>): Promise<any> {
+// Las dos puertas de Meta: graph.facebook.com (página + Instagram vinculado) y graph.instagram.com
+// (Instagram con su propio login, sin página). Mismas rutas /media y /media_publish.
+const GRAPH_FB = "https://graph.facebook.com";
+const GRAPH_IG = "https://graph.instagram.com";
+async function metaGraphPost(path: string, params: Record<string, string>, host = GRAPH_FB): Promise<any> {
   const body = new URLSearchParams(params);
-  const r = await fetch(`https://graph.facebook.com/${META_GRAPH_VERSION}/${path}`, { method: "POST", body });
+  const r = await fetch(`${host}/${META_GRAPH_VERSION}/${path}`, { method: "POST", body });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) {
     const msg = data?.error?.message || "Meta rechazó la publicación.";
@@ -79,9 +83,9 @@ async function metaGraphPost(path: string, params: Record<string, string>): Prom
   }
   return data;
 }
-async function metaGraphGet(path: string, params: Record<string, string>): Promise<any> {
+async function metaGraphGet(path: string, params: Record<string, string>, host = GRAPH_FB): Promise<any> {
   const qs = new URLSearchParams(params);
-  const r = await fetch(`https://graph.facebook.com/${META_GRAPH_VERSION}/${path}?${qs}`);
+  const r = await fetch(`${host}/${META_GRAPH_VERSION}/${path}?${qs}`);
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new ApiError("Meta: " + (data?.error?.message || "Error consultando estado."), 502);
   return data;
@@ -91,9 +95,9 @@ async function metaGraphGet(path: string, params: Record<string, string>): Promi
 // poder publicar. 40 intentos cada 3s = 2 minutos de margen, suficiente para un Reel
 // corto; si no termina en ese tiempo, se corta con un error claro en vez de colgar la
 // función indefinidamente (los edge functions tienen un límite de tiempo real).
-async function waitForIgContainerReady(creationId: string, token: string): Promise<void> {
+async function waitForIgContainerReady(creationId: string, token: string, host = GRAPH_FB): Promise<void> {
   for (let i = 0; i < 40; i++) {
-    const status = await metaGraphGet(creationId, { fields: "status_code", access_token: token });
+    const status = await metaGraphGet(creationId, { fields: "status_code", access_token: token }, host);
     if (status.status_code === "FINISHED") return;
     if (status.status_code === "ERROR") throw new ApiError("Meta no pudo procesar el video (status ERROR).", 502);
     await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -140,6 +144,20 @@ async function instagramDeLaPagina(pagina: { id: string; token: string }): Promi
 export type VerificacionPublicacion = { token: boolean; pagina: string | null; instagram: string | null; puedePublicar: boolean | null; detalle: string | null; permisos: string | null; vinculo: string | null };
 export async function verificarPublicacion(): Promise<VerificacionPublicacion> {
   const v: VerificacionPublicacion = { token: !!META_PAGE_ACCESS_TOKEN, pagina: null, instagram: null, puedePublicar: null, detalle: null, permisos: null, vinculo: null };
+  // Con la puerta de Instagram (sin página), se prueba esa: es la que publica.
+  if (INSTAGRAM_LOGIN_TOKEN) {
+    v.token = true;
+    try {
+      const me = await metaGraphGet("me", { fields: "user_id,username", access_token: INSTAGRAM_LOGIN_TOKEN }, GRAPH_IG);
+      v.instagram = `@${me?.username || "?"} (${me?.user_id || "?"}) · sin página, con su propio login`;
+      await metaGraphGet(`${me?.user_id}/content_publishing_limit`, { fields: "quota_usage", access_token: INSTAGRAM_LOGIN_TOKEN }, GRAPH_IG);
+      v.puedePublicar = true;
+    } catch (e: any) {
+      v.puedePublicar = false;
+      v.detalle = "INSTAGRAM_LOGIN_TOKEN: " + String(e?.message || e).slice(0, 200);
+    }
+    return v;
+  }
   if (!v.token) return v;
   try {
     const pagina = await paginaDelToken();
@@ -249,13 +267,14 @@ async function publishCalendarEntry(entry: any): Promise<string> {
   const isVideo = entry.media_type === "video";
   const mediaUrl = isVideo ? entry.video_url : entry.image_url;
   if (!mediaUrl) throw new ApiError(`Sube ${isVideo ? "un video" : "una foto"} antes de publicar.`, 400);
+  const caption = String(entry.caption_text || entry.title || "");
+  if (entry.channel === "instagram" && INSTAGRAM_LOGIN_TOKEN) return await publicarConInstagramLogin(entry, caption, isVideo);
   if (!META_PAGE_ACCESS_TOKEN) {
     throw new ApiError("Publicación de Meta sin configurar — falta el secret META_PAGE_ACCESS_TOKEN (docs/PENDIENTE_DEL_DUENO.md, P33).", 503);
   }
   const pagina = await paginaDelToken();
   const pageId = pagina.id;
   const tok = pagina.token;
-  const caption = String(entry.caption_text || entry.title || "");
 
   let publishedRef: string;
   if (entry.channel === "facebook" && entry.formato === "historia") {
@@ -287,6 +306,30 @@ async function publishCalendarEntry(entry: any): Promise<string> {
     publishedRef = String(published.id || "");
   }
   return publishedRef;
+}
+
+// Instagram por su propia puerta (INSTAGRAM_LOGIN_TOKEN): el id de la cuenta sale del token
+// (`me?fields=user_id`), y los contenedores son los mismos que por la página.
+let igLoginId: string | null = null;
+export async function publicarConInstagramLogin(entry: any, caption: string, isVideo: boolean, tok = INSTAGRAM_LOGIN_TOKEN!): Promise<string> {
+  if (!igLoginId) {
+    const me = await metaGraphGet("me", { fields: "user_id,username", access_token: tok }, GRAPH_IG);
+    igLoginId = String(me?.user_id || me?.id || "");
+    if (!igLoginId) throw new ApiError("Instagram no devolvió la cuenta del token (INSTAGRAM_LOGIN_TOKEN).", 502);
+  }
+  const plan = contenedoresDeInstagram(entry, caption);
+  if (plan.hijos.length) {
+    const ids: string[] = [];
+    for (const h of plan.hijos) ids.push(String((await metaGraphPost(`${igLoginId}/media`, { ...h, access_token: tok }, GRAPH_IG)).id || ""));
+    if (ids.some((x) => !x)) throw new ApiError("Instagram no devolvió un contenedor válido para una lámina del carrusel.", 502);
+    plan.padre.children = ids.join(",");
+  }
+  const container = await metaGraphPost(`${igLoginId}/media`, { ...plan.padre, access_token: tok }, GRAPH_IG);
+  const creationId = String(container.id || "");
+  if (!creationId) throw new ApiError("Instagram no devolvió un contenedor de media válido.", 502);
+  if (isVideo) await waitForIgContainerReady(creationId, tok, GRAPH_IG);
+  const published = await metaGraphPost(`${igLoginId}/media_publish`, { creation_id: creationId, access_token: tok }, GRAPH_IG);
+  return String(published.id || "");
 }
 
 // Reclama una fila atómicamente (status=eq.scheduled&status=eq.draft varía por caller —
