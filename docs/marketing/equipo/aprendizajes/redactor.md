@@ -69,3 +69,10 @@ vender». La frase salía de la descripción de la carta («no lleva nada suelto
 contexto, en un post, no se entiende. Pasó a «Cremoso y en lascas.», que habla de sabor y textura y se ve en la foto. Un
 texto que habla de sabor se elige más que uno neutro o de salud (Turnwald et al., 2017 y 2019). Lección: un beneficio
 práctico que necesita explicación no va de titular. El titular dice cómo sabe.
+
+## 2026-11-02 · En un Signature, la frase describe el sándwich
+Dueño, sobre la Meatball: «No necesita llevar "hoy no cocinas", por favor algo más descriptivo», y del Philly: «guárdalo
+igual con el Philly». Las frases de momento («Hoy no cocinas.», «Hambre en serio.») pasaron a frases que dicen cómo es el
+sándwich, sacadas de la carta: «Queso fundido hasta el borde.» y «Salteado al momento.». Va con «Cremoso y en lascas.»
+del Classic Tuna. Lección: en la publicación de un Signature, la línea bajo el nombre describe sabor o textura; el
+momento de compra va en otras piezas.
