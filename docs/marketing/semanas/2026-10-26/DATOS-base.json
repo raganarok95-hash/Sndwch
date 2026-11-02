@@ -1,0 +1,45 @@
+{
+ "semana": "2026-10-26",
+ "prueba": true,
+ "pedidos": 0,
+ "clientesNuevos": 0,
+ "clientesQueVuelven": 0,
+ "ticketPromedio": null,
+ "enGrupo": 0,
+ "conPedidoFijo": 0,
+ "porOrigen": [
+  {
+   "origen": "directo",
+   "visitas": 127,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  },
+  {
+   "origen": "ig-bio",
+   "visitas": 9,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  },
+  {
+   "origen": "meta-carta",
+   "visitas": 1,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  },
+  {
+   "origen": "meta-philly",
+   "visitas": 1,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  }
+ ],
+ "porHora": {},
+ "porDia": {},
+ "gastoDePauta": {},
+ "costoPorClienteNuevoMeta": null,
+ "generado": "2026-11-02T12:20:31.222Z"
+}
