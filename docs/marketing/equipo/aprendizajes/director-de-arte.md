@@ -207,3 +207,8 @@ Dueño, sobre el feed de la semana del 9 («¿Qué es un Philly?», «¿Frío o 
 repitiendo lo que ya tenemos como imagen… por ahora están algo simples, no la idea, la ejecución». Se habían hecho con las
 fotos ya publicadas y con acercamientos de ellas, sin maqueta previa. Lección: cada pieza estrena imagen y una forma de
 verse que el feed no tiene (`estilo-sndwch` reglas 7 y 8, criterio Novedad), y el dueño ve la maqueta antes.
+
+## 2026-11-02 · Aprobada la v2 de la semana del 9
+Dueño, al ver las 10 láminas con imágenes nuevas (el despiece del Philly, la plancha, la mesa con dos luces y las
+palabras con su objeto): «Genial, mucho mejor». Lección: lo que movió la aguja fue la imagen nueva y una forma de verse
+que el feed no tenía, con el mismo sistema de franjas. Se mantiene como estándar.
