@@ -329,6 +329,36 @@ function initCheckoutFields(){
   // Un pedido nuevo no arrastra los avisos del anterior: el carrito pasó de vacío a
   // tener su primer producto, así que el checkout empieza limpio igual que los campos.
   _fieldBad={};
+  traerRecibe();
+}
+// ── EL INVITADO NO VUELVE A ESCRIBIR SUS DATOS (dueño, 2026-11-02: «sigue buscando más procesos»)
+// Un invitado sale a Yape a pagar y, si el navegador recarga la app al volver, el carrito seguía
+// ahí pero nombre, celular, dirección y pin se borraban: a escribir todo y a mover el mapa otra vez,
+// justo antes de pagar. Se guarda en ESTE celular lo que escribió (como el autocompletar del
+// navegador) y se rellena solo lo que esté vacío. Una cuenta no lo usa: tiene sus datos guardados.
+var RECIBE_DIAS=90;
+function recordarRecibe(){
+  if(cust)return;
+  try{
+    var g:any={nom:confNom,phone:confPhone,addr:addrText,dist:deliveryDistrict,ts:Date.now()};
+    if(typeof window._mLat==='number'&&typeof window._mLon==='number'){g.lat=window._mLat;g.lon=window._mLon;}
+    if(!g.nom&&!g.phone&&!g.addr)return;
+    localStorage.setItem('sw_recibe',JSON.stringify(g));
+  }catch(e){}
+}
+function traerRecibe(){
+  if(cust)return;
+  var g:any=null;
+  try{g=JSON.parse(localStorage.getItem('sw_recibe')||'null');}catch(e){}
+  if(!g||Date.now()-(g.ts||0)>RECIBE_DIAS*86400000)return;
+  if(!confNom&&g.nom)confNom=String(g.nom);
+  if(!confPhone&&g.phone)confPhone=String(g.phone);
+  if(!addrText&&g.addr){
+    addrText=String(g.addr);
+    if(g.dist&&!deliveryDistrict)deliveryDistrict=String(g.dist);
+    // El pin va con SU dirección: nunca un pin viejo debajo de una dirección escrita nueva.
+    if(typeof g.lat==='number'&&typeof g.lon==='number'&&typeof window._mLat!=='number'){window._mLat=g.lat;window._mLon=g.lon;}
+  }
 }
 // Antes de cualquier re-render disparado DESDE la propia pantalla de carrito/checkout
 // (toggle de recompensa, horario, crédito, elegir una dirección guardada) hay que
@@ -341,6 +371,7 @@ function syncConfirmFields(){
   if(e)confEmail=e.value;
   if(no)confNotes=no.value;
   if(a)addrText=a.value;
+  recordarRecibe();
 }
 function confirmRerender(){syncConfirmFields();render();}
 // ── EL ORDEN DE LA CARTA, UNO SOLO PARA LAS DOS PANTALLAS ────────────────────────────

@@ -529,6 +529,7 @@ async function hojaListo(){
     if(no)confNotes=no.value;
     if(!confNom.trim()){hojaErr='Escribe a nombre de quién va.';render();return;}
     if(confPhone.replace(/\D/g,'').length<6){hojaErr='Escribe un celular válido.';render();return;}
+    recordarRecibe();
     // Sin el punto del mapa, «Listo» lleva al mapa (dueño, 2026-11-02, «menos toques»,
     // docs/maquetas/aprobadas/menos-toques-mapa.png): antes cerraba la hoja y Pagar la volvía a abrir.
     if(!direccionLista()){hojaAlMapa();alMapaDesdeListo=true;return;}
@@ -2277,6 +2278,7 @@ function confirmMap(){
   // adivinarlo de lo escrito, que es lo único que había antes.
   var inferred=window._mDistrict||districtFromAddress(a);
   if(inferred){deliveryDistrict=inferred;deliveryDistrictFromPin=!!window._mDistrict;}
+  if(!mapaVuelveA)recordarRecibe();
   // El mapa también lo usan «Tus direcciones» y el cierre del pedido en grupo: vuelve a la
   // pantalla que lo abrió con el texto y el pin (despuesDelMapa, 07-*).
   if(mapaVuelveA){var vuelve=mapaVuelveA;mapaVuelveA=null;despuesDelMapa(vuelve,a);return;}
