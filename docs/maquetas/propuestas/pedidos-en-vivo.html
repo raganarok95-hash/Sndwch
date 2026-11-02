@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Tu pedido, en vivo</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;700&family=EB+Garamond:ital@0;1&family=IBM+Plex+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{background:#EFE6D4;font-family:'EB Garamond',serif;color:#1E4636}
+.lam{width:max-content;padding:48px 56px 56px;display:none}
+.lam.on{display:block}
+.k{font-family:Archivo,sans-serif;font-weight:700;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:#A07E3C}
+h1{font-family:Anton,sans-serif;font-weight:400;font-size:56px;line-height:1;margin:8px 0 6px;text-transform:uppercase}
+.sub{font-size:22px;max-width:1300px;line-height:1.35}
+.fila{display:flex;gap:22px;margin-top:30px;align-items:flex-start}
+.et{font-family:Archivo,sans-serif;font-weight:700;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#7a7468;margin-bottom:8px}
+.et.nuevo{color:#A07E3C}
+.hoy img{width:250px;height:705px;object-fit:cover;object-position:top;border-radius:18px;display:block;box-shadow:0 8px 24px rgba(0,0,0,.2);filter:saturate(.85)}
+.pie{font-size:17px;line-height:1.3;margin-top:10px;color:#3a3a3a;width:250px}
+.pie b{color:#B3651A}
+/* ── teléfono propuesto ── */
+.tel{width:330px;height:714px;border-radius:22px;overflow:hidden;background:#EFE6D4;box-shadow:0 10px 30px rgba(0,0,0,.28);position:relative;display:flex;flex-direction:column}
+.tel .top{background:#241B12;color:#EFE6D4;padding:22px 22px 18px;position:relative;min-height:212px}
+.tel .top .ok{font:700 9px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;text-transform:uppercase;color:#E8D08A}
+.tel .top h2{font-family:Anton,sans-serif;font-weight:400;font-size:40px;line-height:.92;text-transform:uppercase;margin-top:10px;max-width:170px}
+.tel .top .eta{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#EFE6D4;margin-top:12px;letter-spacing:.06em}
+.tel .top .eta b{font-family:Anton,sans-serif;font-weight:400;font-size:22px;color:#E8D08A;letter-spacing:0;display:block;margin-top:4px}
+.tel .top img{position:absolute;right:-4px;bottom:0;height:150px}
+.pasos{display:flex;gap:4px;padding:14px 22px 6px;background:#EFE6D4}
+.pasos div{flex:1}
+.pasos i{display:block;height:5px;border-radius:999px;background:rgba(36,27,18,.15)}
+.pasos .si i{background:#5F7358}.pasos .ya i{background:linear-gradient(90deg,#CBA258 60%,rgba(36,27,18,.15) 60%)}
+.pasos span{display:block;font:700 8px/1.2 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#8b8172;margin-top:6px}
+.pasos .si span{color:#5F7358}.pasos .ya span{color:#241B12}
+.cuerpo{padding:10px 22px 0;color:#33230F;flex:1}
+.alerta{background:#F6DFC6;border-left:4px solid #B3651A;border-radius:8px;padding:12px 12px 10px;font:400 14px/1.4 Archivo,sans-serif}
+.alerta b{display:block;font-weight:700;margin-bottom:4px}
+.alerta .bt{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.alerta .bt u{font:700 11px/1 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#B3651A;text-underline-offset:3px;padding:6px 0}
+.bien{font:400 14px/1.4 Archivo,sans-serif;background:rgba(95,115,88,.12);border-radius:8px;padding:10px 12px;color:#33230F}
+.dr{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(30,43,34,.16);font:11px 'IBM Plex Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#5F7358}
+.dr b{color:#241B12;font-family:Anton,sans-serif;font-weight:400;letter-spacing:0;font-size:15px;text-transform:none}
+.mini{font:400 12px/1.45 Archivo,sans-serif;color:#6C7C64;margin-top:10px}
+.go{display:flex;height:58px}
+.go .a{flex:1;background:#CBA258;color:#1a1200;font:700 12px/58px 'IBM Plex Mono',monospace;letter-spacing:.14em;text-transform:uppercase;padding-left:18px}
+.go .b{width:110px;background:#8CC8EC;color:#09161F;font:700 12px/58px 'IBM Plex Mono',monospace;text-align:center;letter-spacing:.1em;text-transform:uppercase}
+.nota{margin-top:26px;font-size:18px;max-width:1300px;line-height:1.45;color:#2f2f2f}
+.nota li{margin-bottom:8px}
+.ev{font-size:16px;color:#5a5a5a;margin-top:14px;max-width:1300px;line-height:1.4}
+.flecha{align-self:center;font-family:Anton,sans-serif;font-size:34px;color:#A07E3C}
+</style></head><body>
+
+<section class="lam" id="l1">
+  <div class="k">Tu pedido, en vivo · 1 de 2 · lo que pasa hoy</div>
+  <h1>Después de pagar, la app cambia de mundo tres veces</h1>
+  <p class="sub">Pagas en morado, el pedido se confirma en crema, «Seguir el pedido» te lleva a tu historial («Has comido acá 1 vez») y el detalle es un recibo kraft. Ninguna de las tres pantallas se actualiza sola: si apruebas el pago o el pedido sale, el cliente no se entera hasta que recarga.</p>
+  <div class="fila">
+    <div class="hoy"><div class="et">Pagar</div><img src="pedidos-en-vivo/hoy-a-31.png"><div class="pie">Bien: un solo paso, Yape o tarjeta.</div></div>
+    <div class="hoy"><div class="et">Pedido enviado</div><img src="pedidos-en-vivo/hoy-b-06.png"><div class="pie">Dice «Te digo abajo qué pasó», pero abajo primero vienen <b>«Pagaste S/27.90»</b> (aún no está confirmado) y los puntos. El motivo y los botones quedan bajo el pliegue.</div></div>
+    <div class="hoy"><div class="et">«Seguir el pedido»</div><img src="pedidos-en-vivo/hoy-c-seguir.png"><div class="pie">Lleva al historial, no al pedido. El estado es una línea gris de 9 px: <b>«Preparando · S/27.90»</b>. Sin pasos ni hora.</div></div>
+    <div class="hoy"><div class="et">Detalle</div><img src="pedidos-en-vivo/hoy-d-detalle.png"><div class="pie">Un recibo bonito para después, no para el momento en que esperas tu sándwich.</div></div>
+  </div>
+</section>
+
+<section class="lam" id="l2">
+  <div class="k">Tu pedido, en vivo · 2 de 2 · la propuesta</div>
+  <h1>Una sola pantalla que avanza sola</h1>
+  <p class="sub">La pantalla de «pedido enviado» pasa a ser el seguimiento. Arriba, en grande, qué está pasando y a qué hora llega; debajo, cuatro pasos; y si hay algo que el cliente tiene que hacer, va primero. Se actualiza sola cada pocos segundos. El historial y el recibo se quedan como están, en Mi cuenta.</p>
+  <div class="fila">
+
+    <div><div class="et nuevo">Si la captura no cuadra</div>
+    <div class="tel">
+      <div class="top"><div class="ok">Pedido #ORD-Z9G8EX</div><h2>Falta tu pago</h2><div class="eta">Al confirmar, llega<b>12:40 – 12:55</b></div><img src="../../../img/sando2_mira.png" alt=""></div>
+      <div class="pasos"><div class="ya"><i></i><span>Pago</span></div><div><i></i><span>Cocina</span></div><div><i></i><span>En camino</span></div><div><i></i><span>Llegó</span></div></div>
+      <div class="cuerpo">
+        <div class="alerta"><b>No pudimos leer tu captura.</b>Sube la pantalla completa de «¡Yapeaste!», sin recortar.
+          <div class="bt"><u>Subir otra captura →</u><u>O mándanos el pedido y la captura por WhatsApp →</u></div></div>
+        <div class="dr"><span>Total</span><b>S/27.90</b></div>
+        <div class="dr"><span>Llega a</span><b>Av. España 1234</b></div>
+        <div class="mini">Si no lo confirmamos antes de las 10:54, se cancela solo.</div>
+      </div>
+      <div class="go"><div class="a">Subir mi captura</div><div class="b">S/27.90</div></div>
+    </div></div>
+
+    <div class="flecha">→</div>
+
+    <div><div class="et nuevo">Pago aprobado: se mueve sola</div>
+    <div class="tel">
+      <div class="top"><div class="ok">✓ Pago confirmado</div><h2>En la cocina</h2><div class="eta">Llega<b>12:40 – 12:55</b></div><img src="../../../img/sando2_sonrie.png" alt=""></div>
+      <div class="pasos"><div class="si"><i></i><span>Pago ✓</span></div><div class="ya"><i></i><span>Cocina</span></div><div><i></i><span>En camino</span></div><div><i></i><span>Llegó</span></div></div>
+      <div class="cuerpo">
+        <div class="bien">“Ya prendí la plancha.” — Sando</div>
+        <div class="dr"><span>1× Meatball 15 cm</span><b>S/19.90</b></div>
+        <div class="dr"><span>Envío</span><b>S/8.00</b></div>
+        <div class="dr"><span>Pagaste</span><b>S/27.90</b></div>
+        <div class="dr"><span>Al confirmar</span><b>+20 puntos</b></div>
+        <div class="mini">Guárdalos con tu correo · Avísame cuando salga</div>
+      </div>
+      <div class="go"><div class="a">Escribirnos</div><div class="b">WhatsApp</div></div>
+    </div></div>
+
+    <div class="flecha">→</div>
+
+    <div><div class="et nuevo">Va en camino</div>
+    <div class="tel">
+      <div class="top"><div class="ok">Salió a las 12:38</div><h2>Va en camino</h2><div class="eta">Llega<b>12:40 – 12:55</b></div><img src="../../../img/sando2_cuerpo.png" alt=""></div>
+      <div class="pasos"><div class="si"><i></i><span>Pago ✓</span></div><div class="si"><i></i><span>Cocina ✓</span></div><div class="ya"><i></i><span>En camino</span></div><div><i></i><span>Llegó</span></div></div>
+      <div class="cuerpo">
+        <div class="bien">Ya salió de la cocina y va hacia ti.</div>
+        <div class="dr"><span>Llega a</span><b>Av. España 1234</b></div>
+        <div class="dr"><span>Recibe</span><b>Ezra · 9•• ••• 640</b></div>
+        <div class="mini">Cuando lo tengas en la mano, toca «Ya me llegó».</div>
+      </div>
+      <div class="go"><div class="a">Ya me llegó</div><div class="b">#Z9G8EX</div></div>
+    </div></div>
+  </div>
+
+  <ul class="nota">
+    <li><b>Lo que hay que hacer, primero.</b> Hoy el motivo de la captura está debajo de «Pagaste» y de los puntos. Va arriba, y «Pagaste» no aparece hasta que el pago esté confirmado.</li>
+    <li><b>Los cuatro pasos y la hora, siempre a la vista.</b> Es lo que el cliente viene a mirar mientras espera.</li>
+    <li><b>Se mueve sola.</b> Cuando apruebas desde el panel o desde WhatsApp, o marcas «Salió», su pantalla cambia sin recargar.</li>
+    <li><b>«Seguir el pedido» desaparece</b>: ya estás en el seguimiento. El historial con los sellos se queda en Mi cuenta.</li>
+    <li><b>Un mismo mundo</b>: la parte de arriba oscura con SANDO y la losa crema de hoy, sin saltar al kraft ni al historial.</li>
+  </ul>
+  <p class="ev"><b>Por qué funciona:</b> el seguimiento por pasos de Domino's (2008) nació porque los clientes llamaban ansiosos a la tienda; hoy lo copian Uber Eats, Rappi y PedidosYa, que después de pagar te dejan directo en el seguimiento. Un estudio de Harvard y UCL (Buell, Kim y Tsay, <i>Management Science</i>) midió que cuando el cliente ve el trabajo que se hace por él, la calidad que percibe sube 22 %. Y Baymard, con más de 90 sesiones en apps de comida, encontró que la gente duda de terminar cuando no sabe cómo seguir su pedido ni cómo contactar. No hay un dato peruano de este punto en particular.</p>
+</section>
+
+<script>
+var q=new URLSearchParams(location.search).get('l')||'1';
+document.getElementById('l'+q).classList.add('on');
+</script>
+</body></html>

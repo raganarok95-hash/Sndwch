@@ -209,6 +209,8 @@ var PROT_IMG:Record<string,string>=CARTA_VIEJA.PROT_IMG;
 // sándwich) y la palanca de attach que el modelo mide, así que se ganan una foto igual
 // que una proteína. Un id sin fila acá vuelve al ícono — nunca a un hueco.
 var DRINK_IMG:Record<string,string>=CARTA_VIEJA.DRINK_IMG;
+// Lo que trae cada lata (dueño, 2026-11-02: «355 ml, como la lata»). Antes la app decía 500 ml.
+var BEBIDA_ML=355;
 // Reestructurado esta sesión — ver el comentario espejo en REWARDS (catalog.ts) para el
 // porqué completo. R01 se retiró (topping extra ya es gratis para todos, sin nada real
 // que canjear). R02/R03/R05 quedan repreciadas contra el mismo "tipo de cambio" real que
@@ -1076,6 +1078,9 @@ var adminAddressFlags=null;
 var deliveryTokenFromUrl=null,deliveryConfirmState=null;
 // ?pedido=REF: el enlace del aviso «va en camino» (abrirPedidoDelEnlace, 06-*).
 var pedidoFromUrl:string|null=null;
+// El pedido que el dueño abrió desde el WhatsApp de un cliente cuya captura no se leyó
+// (dueño, 2026-11-02: «desde wsp poder aprobarlo manualmente»): el panel lo resalta.
+var pedidoARevisar:string|null=null;
 // Guard contra doble-tap en las acciones que mutan un pedido desde la cola admin —
 // updateStatus/confirmOrderPayment/confirmAndAdvance no tenían ninguna protección (a
 // diferencia de doOrder(), que sí usa _payingInProgress), así que dos taps rápidos en

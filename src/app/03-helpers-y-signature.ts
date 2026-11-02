@@ -907,7 +907,7 @@ function sMundoBebidas(){
         return'<button class="bd'+(on?' on':'')+'" aria-pressed="'+on+'" onclick="bebidaSel=\''+x.id+'\';render()">'
           +(DRINK_IMG[x.id]?'<img src="'+DRINK_IMG[x.id]+'" alt="" loading="lazy">':'')+'<div class="v"></div>'
           +(on?'<i class="ok">✓ Elegida</i>':'')
-          +'<div class="tx"><b>'+esc(x.l)+'</b><s>'+esc(x.s)+' · 500 ml</s><p>'+esc(x.d||'')+'</p></div>'
+          +'<div class="tx"><b>'+esc(x.l)+'</b><s>'+esc(x.s)+' · '+BEBIDA_ML+' ml</s><p>'+esc(x.d||'')+'</p></div>'
           +'<div class="pz">'+precioBebidaHTML(x)+'</div></button>';
       }).join('')
       +'<div class="pie">Con cualquier sándwich, la bebida baja '+SOLES_TXT+pz(COMBO_DISCOUNT_PER_PAIR)+'.<br>Se aplica sola en el carrito.'
@@ -919,7 +919,7 @@ function sMundoBebidas(){
     +lista.map(function(x,i){
       return'<section class="vaso" aria-label="'+esc(x.l)+'"><div class="fo">'+(DRINK_IMG[x.id]?'<img src="'+DRINK_IMG[x.id]+'" alt="" '+(i?'loading="lazy"':'')+'>':'')+'<div class="v"></div></div>'
         +'<div class="arr"><em>Algo para tomar</em><u>'+(lista.length>1?'Desliza →':'')+'</u></div>'
-        +'<div class="nom"><b>'+esc(x.l)+'</b><s>'+esc(x.s)+' · 500 ml</s><p>'+esc(x.d||'')+'</p></div>'
+        +'<div class="nom"><b>'+esc(x.l)+'</b><s>'+esc(x.s)+' · '+BEBIDA_ML+' ml</s><p>'+esc(x.d||'')+'</p></div>'
         +'<div class="pz">'+precioBebidaHTML(x)+'</div>'
         +'<div class="cn" aria-hidden="true">'+lista.map(function(_y,k){return'<i class="'+(k===i?'on':'')+'"></i>';}).join('')+'</div>'
         +'</section>';
@@ -1345,7 +1345,7 @@ function sumarAlGrupoHTML(g:any):string{
   h+='<h3>Para tomar</h3>'+SIDES.filter(function(d){return isAvail(d.id);}).map(function(d){
     var foto=DRINK_IMG[d.id];
     return'<div class="it">'+(foto?'<img src="'+foto+'" alt="" loading="lazy">':'')
-      +'<div class="t"><b>'+esc(d.l)+'</b><s>'+esc(primeraFraseCorta(d.d||''))+'</s><i>'+SOLES_TXT+pz(d.p)+' · 500 ml</i></div>'
+      +'<div class="t"><b>'+esc(d.l)+'</b><s>'+esc(primeraFraseCorta(d.d||''))+'</s><i>'+SOLES_TXT+pz(d.p)+' · '+BEBIDA_ML+' ml</i></div>'
       +'<button onclick="doAddGroupSide(\''+d.id+'\')">Agregar</button></div>';
   }).join('');
   return h+'<div class="msg" role="status">'+esc(groupMsg)+'</div></div>';

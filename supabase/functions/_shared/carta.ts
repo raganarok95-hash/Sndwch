@@ -182,9 +182,9 @@ export const CARTA: Carta = {
   // D07 se llamaba «The Midnight»: el nombre venía del concepto de las horas, que el dueño
   // descartó. 2026-10-24: «Cold Brew // Tea», a prueba 4 semanas (docs/BEBIDAS_PRODUCTO.md §19).
   bebidas: [
-    { id: "D06", nombre: "The Bloom", sabor: "Hibiscus", precio: 6, desc: "Flor de jamaica en infusión con un toque de canela, bien helada. Ácida y floral: limpia el paladar entre bocado y bocado, así el último sabe como el primero. La pareja de los sándwiches calientes.", icono: "flor", foto: "img/drink_d06.jpg" },
-    { id: "D07", nombre: "Cold Brew", sabor: "Tea", precio: 5, desc: "Té negro de hoja entera, reposado doce horas en frío. Sale suave y redondo, bien helado y con el punto justo de cafeína para seguir con el día.", icono: "hielo", foto: "img/drink_d07.jpg" },
-    { id: "D08", nombre: "The Cool", sabor: "Mint", precio: 6, desc: "Hierba luisa y menta fresca en infusión helada. Ligera y aromática: refresca sin empalagar y deja la boca lista para el siguiente bocado. La que más pide un día de calor.", icono: "hoja", foto: "img/drink_d08.jpg" },
+    { id: "D06", nombre: "The Bloom", sabor: "Hibiscus", precio: 6, desc: "Flor de jamaica en infusión con un toque de canela, bien helada. Ácida y floral: limpia el paladar entre bocado y bocado, así el último sabe como el primero. La pareja de los sándwiches calientes.", icono: "flor", foto: "img/drink_d06.webp" },
+    { id: "D07", nombre: "Cold Brew", sabor: "Tea", precio: 5, desc: "Té negro de hoja entera, reposado doce horas en frío. Sale suave y redondo, bien helado y con el punto justo de cafeína para seguir con el día.", icono: "hielo", foto: "img/drink_d07.webp" },
+    { id: "D08", nombre: "The Cool", sabor: "Mint", precio: 6, desc: "Hierba luisa y menta fresca en infusión helada. Ligera y aromática: refresca sin empalagar y deja la boca lista para el siguiente bocado. La que más pide un día de calor.", icono: "hoja", foto: "img/drink_d08.webp" },
   ],
   // Orden de la carta v4: la estrella primero (Philly, la mayor contribución por unidad), y
   // después alternando lo caliente y lo frío para que la carta no se lea como dos bloques.

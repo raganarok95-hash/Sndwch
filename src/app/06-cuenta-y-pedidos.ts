@@ -270,6 +270,9 @@ function puedeDecirQueLlego(o){return!!o&&o.status==='EN CAMINO'&&!(o.payment_me
 // ?pedido=REF — el enlace del aviso «va en camino» (push y correo). Abre ESE pedido aunque quien
 // lo hizo sea invitado y haya cerrado la app: el ref es la misma llave con la que ya lo veía.
 async function abrirPedidoDelEnlace(ref){
+  // El mismo enlace que manda el cliente por WhatsApp, abierto por el dueño: va al panel, a ESE
+  // pedido, con su captura y «Pago recibido · armar →» a un toque.
+  if(isAdmin&&token){pedidoARevisar=ref;panelModo='cocina';await loadAdmin();llevarAlPedidoARevisar(0);return;}
   if(!cust){try{localStorage.setItem('sw_last_ref',ref);}catch(e){}}
   sndScreen='p_orders';listLoading=true;render();
   try{
@@ -279,6 +282,15 @@ async function abrirPedidoDelEnlace(ref){
   var o=(myOrders||[]).find(function(x:any){return x.ref===ref;});
   if(o){_sndOd=o.id;rtStars=0;rtMsg='';sndScreen='p_ord_detail';}
   render();
+}
+function llevarAlPedidoARevisar(intento:number){
+  var ref=pedidoARevisar;if(!ref)return;
+  var o=(adminOrders||[]).find(function(x:any){return x.ref===ref;});
+  if(!o){pedidoARevisar=null;showToast('El pedido #'+ref+' ya no está pendiente en la cocina.');render();return;}
+  // El panel se descarga aparte (admin.js): se espera a que la tarjeta exista para llevarla al centro.
+  var el=document.querySelector('.coc-p[data-ref="'+ref+'"]');
+  if(el){el.scrollIntoView({block:'center'});return;}
+  if(intento<40)setTimeout(function(){llevarAlPedidoARevisar(intento+1);},150);
 }
 var _yaMeLlegoEnCurso=false;
 async function doYaMeLlego(ordId,ref){

@@ -807,8 +807,10 @@ function tarjetaDeCocina(o){
   var tarde=(et==='cola'||et==='pago')&&!luego&&mins!==null&&mins>=10;
   var reloj=luego?'para las '+horaLima(new Date(o.delivery_time).getTime()):(mins===null?'':'hace '+mins+' min');
   var etiqueta={pago:'PAGO POR CONFIRMAR',cola:'EN COLA',armando:'ARMANDO',camino:'EN CAMINO',luego:'PROGRAMADO'}[et];
-  return'<div class="coc-p '+et+(tarde?' tarde':'')+'" data-pedido="'+o.id+'" onclick="abrirPedidoEnCocina(\''+o.id+'\')">'
+  var revisar=pedidoARevisar&&o.ref===pedidoARevisar;
+  return'<div class="coc-p '+et+(tarde?' tarde':'')+(revisar?' revisar':'')+'" data-pedido="'+o.id+'" data-ref="'+esc(o.ref||'')+'" onclick="abrirPedidoEnCocina(\''+o.id+'\')">'
     +'<div class="h"><b>'+esc(o.ref||'')+'</b><span class="tag">'+etiqueta+'</span><span class="min">'+reloj+'</span></div>'
+    +(revisar?'<div class="q" data-revisar>Te lo mandaron por WhatsApp: mira la captura en el chat.</div>':'')
     +'<div class="it">'+esc(o.summary||'')+'</div>'
     +(et==='pago'?'<div class="q">'+(o.payment_method==='plin'?'Plin':'Yape')+' · '+soles(o.total)+'</div>':'')
     +(et==='armando'?'<div class="q">'+esc(o.customer_address||'')+(o.notes?' · '+esc(o.notes):'')+'</div>':'')

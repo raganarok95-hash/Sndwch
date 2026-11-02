@@ -209,3 +209,13 @@ lleva), `776050809` (papas), `150082453` (pan de molde y papas), `128065892` (se
   3,10 MB juntos; la app nunca los muestra a más de ~400 px). Los originales a tamaño completo
   quedan en `img/fuente/personajes/` y **son las referencias para Flow** (el regenerar contra
   `img/sando2_frente.png` pasa a ser contra `img/fuente/personajes/sando2_frente.png`).
+
+## Bebidas en lata (2026-11-02)
+
+Dueño: «Ya tienes acá las nuevas fotos en lata de las bebidas». Son las latas con la etiqueta de la
+casa que se hicieron para Instagram (`docs/marketing/instagram-perfil/final/latas/lata-{bloom,cold-brew,cool}.png`,
+1042 × 2785, fondo transparente; ver su LEEME). No pasan por `tratar_fotos.py` (ese script es para
+las fotos de los Signature): se escalan a 900 px de alto, se les agrega un halo suave del color de
+cada lata y una sombra, y se guardan en WebP con transparencia como `img/drink_d06|d07|d08.webp`.
+Se ven enteras (`object-fit:contain`), nunca recortadas. Los `.jpg` anteriores (vasos de stock) se
+quedan solo porque las maquetas viejas de `docs/maquetas/fuentes/` los citan.
