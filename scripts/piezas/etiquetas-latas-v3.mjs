@@ -9,8 +9,8 @@
 //             el nombre igual que el frente; ingredientes con su INS; tabla nutricional por 100 ml y
 //             por lata; «Hecho en Perú»; el lema «Para los que no se conforman //»
 //   tapa    · verde de la marca; el aro con el nombre y «//»; «HECHA / VENCE / LOTE» con el año
-// La tabla nutricional va ESTIMADA (dueño: «calculémoslo»; docs/marketing/latas/PROPUESTA_V3.md); el sodio
-// espera la dosis de sal. Lo que no se sabe va entre corchetes: nunca se inventa (P65, P66).
+// La tabla nutricional va ESTIMADA (dueño: «calculémoslo»; docs/marketing/latas/PROPUESTA_V3.md); sin sal
+// (dueño: «la receta no lo lleva»), el sodio sale del agua y la infusión. Lo que no se sabe va entre corchetes: nunca se inventa (P65, P66).
 //
 // Uso: FUENTES_CSS=… node scripts/piezas/etiquetas-latas-v2.mjs   (con Bodoni Moda 700 en el CSS)
 import { chromium } from '@playwright/test';
@@ -23,26 +23,27 @@ mkdirSync(OUT, { recursive: true });
 
 const CREMA = '#F2F0EB', OSCURA = '#1E3932', ORO = '#CBA258', CELESTE = '#8CC8EC';
 const LATAS = [
-  { id: 'bloom', nut: [2, 0, 0, 0.5, 0.2, 0], nombre: 'BLOOM', sabor: 'Hibiscus', icono: 'flor', tinta: CREMA, liquido: '#7F0D31',
+  { id: 'bloom', nut: [2, 0, 0, 0.5, 0.2, 0, 4], nombre: 'BLOOM', sabor: 'Hibiscus', icono: 'flor', tinta: CREMA, liquido: '#7F0D31',
     desc: 'Floral, vibrante y bien helada.',
     ing: 'agua, flor de jamaica (hibiscus), cáscara de naranja, canela, edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)' },
-  { id: 'cool', nut: [2, 0, 0, 0.6, 0.2, 0], nombre: 'COOL', sabor: 'Hierba luisa y menta', icono: 'rama', tinta: OSCURA, liquido: '#BFB662',
+  { id: 'cool', nut: [2, 0, 0, 0.6, 0.2, 0, 2], nombre: 'COOL', sabor: 'Hierba luisa y menta', icono: 'rama', tinta: OSCURA, liquido: '#BFB662',
     desc: 'Un respiro de menta helada.',
     ing: 'agua, hierba luisa, menta, jugo de limón, edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)' },
   // LEMON TEA: con 60 ml de limón por litro (BEBIDAS_PRODUCTO §18)
-  { id: 'lemon-tea', nut: [2, 0, 0, 0.7, 0.2, 0], nombre: 'LEMON TEA', sabor: 'Té negro y limón', icono: 'limon', tinta: CREMA, liquido: '#AD5E13',
+  { id: 'lemon-tea', nut: [2, 0, 0, 0.7, 0.2, 0, 3], nombre: 'LEMON TEA', sabor: 'Té negro y limón', icono: 'limon', tinta: CREMA, liquido: '#AD5E13',
     desc: 'Cítrico, brillante y helado.',
     ing: 'agua, té negro, jugo de limón, edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)' },
-  { id: 'chai', nut: [1, 0, 0, 0.3, 0, 0], nombre: 'CHAI', sabor: 'Especiado y aromático', icono: 'anis', tinta: CREMA, liquido: '#772612',
+  { id: 'chai', nut: [1, 0, 0, 0.3, 0, 0, 3], nombre: 'CHAI', sabor: 'Especiado y aromático', icono: 'anis', tinta: CREMA, liquido: '#772612',
     desc: 'Especiado, aromático y helado.',
     ing: 'agua, chai (té negro, canela, jengibre, saborizante natural de vainilla, clavo de olor, cardamomo, pimienta negra, vainilla en polvo), edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)',
     // la caja Nature's Heart dice «saborizante natural vainilla»: el CHAI no lleva «Sabor 100% natural» (§17)
     sello: 'TÉ NEGRO Y ESPECIAS' },
-  { id: 'cold-brew', nut: [1, 0, 0, 0.3, 0, 0], nombre: 'COLD BREW TEA', sabor: 'Té negro', icono: 'brote', tinta: CREMA, liquido: '#441C0B',
+  { id: 'cold-brew', nut: [1, 0, 0, 0.3, 0, 0, 3], nombre: 'COLD BREW TEA', sabor: 'Té negro', icono: 'brote', tinta: CREMA, liquido: '#441C0B',
     desc: 'Suave como terciopelo.',
     ing: 'agua, té negro, edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)' },
 ];
-const LEGAL = { razonSocial: '[razón social]', ruc: '[RUC]', direccion: 'Av. Prolongación César Vallejo 2670, Trujillo', registro: null };  // dirección: dueño, 2026-11-02. R.S.: solo si DIGESA lo pide
+const LEGAL = { razonSocial: '[nombre del titular del RUC] (SNDWCH)', ruc: '10736044523',  // dueño, 2026-11-02: «SNDWCH», RUC 10…: persona natural, va su nombre
+  direccion: 'Av. Prolongación César Vallejo 2670, Trujillo', registro: null };  // dirección: dueño, 2026-11-02. R.S.: solo si DIGESA lo pide
 const URL_LATA = 'https://sndwch.app/?src=lata';
 
 // Íconos de línea (viewBox 100), el mismo trazo que la flor y la hoja de las latas aprobadas.
@@ -193,7 +194,7 @@ for (const L of LATAS) {
       const tabla = '<table style="width:100%;border-collapse:collapse;margin:0.9mm 0 0.8mm;font:500 1.75mm/1.22 Archivo">'
         + '<tr style="font-weight:800;border-bottom:0.25mm solid ' + t + '"><td>Información nutricional</td><td ' + der + '>100 ml</td><td ' + der + '>355 ml</td></tr>'
         + ['Energía (kcal)', 'Grasa total (g)', '&nbsp;&nbsp;Grasa saturada (g)', 'Carbohidratos (g)', '&nbsp;&nbsp;Azúcares (g)', 'Proteína (g)', 'Sodio (mg)']
-          .map((n, i) => { const v = i < 6 ? L.nut[i] : null; const f = (x) => (x === null ? '[sal]' : (Number.isInteger(x) ? String(x) : x.toFixed(1)).replace('.', ','));
+          .map((n, i) => { const v = L.nut[i]; const f = (x) => (x === null ? '[sal]' : (Number.isInteger(x) ? String(x) : x.toFixed(1)).replace('.', ','));
             const lata = v === null ? null : (i === 0 ? Math.round(v * 3.55) : Math.round(v * 3.55 * 10) / 10);
             return '<tr><td>' + n + '</td><td ' + der + '>' + f(v) + '</td><td ' + der + '>' + f(lata) + '</td></tr>'; }).join('') + '</table>'
           + '<div style="font-size:1.4mm;margin:-0.3mm 0 0.8mm">Valores estimados [se confirman con laboratorio].</div>';

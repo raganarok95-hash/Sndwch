@@ -84,3 +84,13 @@ Fuentes: USDA FoodData Central (té negro, infusión de hierbas y jugo de limón
 - **Atrás ya no repite la línea de sabor** (está en el frente): deja lugar a los ingredientes del CHAI.
 - **Siguen faltando:** razón social y RUC; los gramos de sal por litro (sodio) y de limón en COOL. Las cantidades de la v6
   se entregaron aparte y **no están en el repo** (es público): solo el limón de LEMON TEA.
+
+## Más datos del dueño (2026-11-02, noche)
+
+- **Sal:** «la receta no lo lleva». Sin sal en los ingredientes; el sodio estimado sale del agua y la infusión: BLOOM 4,
+  COOL 2, LEMON TEA, CHAI y COLD BREW TEA 3 mg por 100 ml.
+- **Limón de COOL:** «no lo he medido». Queda el supuesto alto (50 g por litro): 2 kcal, 0.6 g de carbohidratos, 0.2 g de
+  azúcares. Se mide en la próxima tanda o lo da el laboratorio.
+- **Razón social: «SNDWCH», RUC 10736044523.** Un RUC que empieza con 10 es de **persona natural**: la razón social es el
+  nombre completo del titular tal como figura en SUNAT, y SNDWCH es el nombre comercial. En la etiqueta va
+  «[nombre del titular] (SNDWCH)» hasta que el dueño lo confirme.
