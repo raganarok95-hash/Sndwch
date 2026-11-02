@@ -71,3 +71,16 @@ limón hasta 100 g por litro en LEMON TEA y hasta 50 g en COOL. Se tomó el extr
 Fuentes: USDA FoodData Central (té negro, infusión de hierbas y jugo de limón);
 [kom.pe, vender comida por internet en el Perú](https://kom.pe/vender-comida-por-internet-peru/);
 [ficha de Nature's Heart Té Chai](https://www.fitatu.com/catalog/mx/natures-heart-infusion-herbal-te-chai--120822618).
+
+## Datos que dio el dueño (2026-11-02, tarde)
+
+- **Dirección:** «Av. prolongación Cesar Vallejo 2670» → en la etiqueta, «Av. Prolongación César Vallejo 2670, Trujillo».
+- **Caja del chai (Nature's Heart), foto del dueño:** «Té negro, canela, jengibre, saborizante natural vainilla, clavo de
+  olor, cardamomo, pimienta negra, vainilla en polvo». Va como ingrediente compuesto: «chai (té negro, canela, …)».
+  **Trae saborizante:** el frente del CHAI cambia «SABOR 100% NATURAL» por «TÉ NEGRO Y ESPECIAS» (§17).
+- **Brillo:** el del repo, mica perlada con dióxido de titanio (§10), en las cinco.
+- **Limón de LEMON TEA:** 60 ml por litro (§18). La tabla pasa a 2 kcal, 0.7 g de carbohidratos y 0.2 g de azúcares.
+- **R.S.:** sale de la etiqueta mientras sea solo app; entra si DIGESA lo pide.
+- **Atrás ya no repite la línea de sabor** (está en el frente): deja lugar a los ingredientes del CHAI.
+- **Siguen faltando:** razón social y RUC; los gramos de sal por litro (sodio) y de limón en COOL. Las cantidades de la v6
+  se entregaron aparte y **no están en el repo** (es público): solo el limón de LEMON TEA.
