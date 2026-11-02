@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Pedido simple</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@500;700&family=EB+Garamond:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{background:#F2F0EB;font-family:'EB Garamond',serif;color:#1E3932}
+.lam{width:max-content;max-width:1900px;padding:48px 56px 56px;display:none}
+.lam.on{display:block}
+.k{font-family:Archivo,sans-serif;font-weight:700;font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:#CBA258}
+h1{font-family:Anton,sans-serif;font-weight:400;font-size:56px;line-height:1;margin:8px 0 6px;text-transform:uppercase;color:#1E3932}
+.sub{font-size:22px;max-width:1150px;line-height:1.35}
+.fila{display:flex;gap:28px;margin-top:34px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:10px}
+.grupo{display:flex;gap:16px;padding:18px;border-radius:12px}
+.grupo.hoy{background:#E4E0D6}
+.grupo.nuevo{background:#1E3932}
+.et{font-family:Archivo,sans-serif;font-weight:700;font-size:13px;letter-spacing:.2em;text-transform:uppercase}
+.hoy .et,.et.hoy{color:#7a7468}.et.nuevo{color:#CBA258}
+.tel{width:300px}
+.tel img{width:300px;height:649px;object-fit:cover;object-position:top;border-radius:20px;display:block;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.hoy .tel img{width:240px;height:519px;filter:saturate(.75)}
+.hoy .tel{width:240px}
+.wa .msg{font-size:12.5px}
+.pie{font-size:16px;line-height:1.3;margin-top:8px;color:#3a3a3a}
+.nuevo .pie{color:#F2F0EB}
+.wa{width:300px;height:649px;border-radius:20px;background:#0B141A;padding:18px 14px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;flex-direction:column}
+.wa .cab{color:#E9EDEF;font-family:Archivo,sans-serif;font-size:15px;border-bottom:1px solid #222D34;padding-bottom:12px;margin-bottom:auto}
+.wa .cab small{display:block;color:#8696A0;font-size:12px}
+.wa .msg{background:#005C4B;color:#E9EDEF;border-radius:10px 10px 2px 10px;padding:10px 12px;font-family:Archivo,sans-serif;font-size:13.5px;line-height:1.45;white-space:pre-wrap;align-self:flex-end;max-width:92%}
+.wa .bar{margin-top:12px;background:#1F2C34;border-radius:20px;color:#8696A0;font-family:Archivo,sans-serif;font-size:13px;padding:10px 14px}
+.cifra{display:flex;gap:40px;margin-top:30px;font-family:Archivo,sans-serif}
+.cifra div{font-size:16px}.cifra b{font-family:Anton,sans-serif;font-weight:400;font-size:44px;display:block;color:#1E3932}
+.nota{margin-top:26px;font-size:17px;max-width:1200px;line-height:1.4;color:#3a3a3a}
+.m{display:inline-block;width:.1em;height:.8em;background:#CBA258;transform:skewX(-16deg);margin:0 .03em}
+</style></head><body>
+
+<section class="lam" id="l1">
+  <div class="k">Pedido simple · 1 de 3</div>
+  <h1>Sin callejón antes de abrir</h1>
+  <p class="sub">Hoy la puerta dice «Aún no abrimos» en chico, el cliente arma todo y recién al tocar Pagar lee «Todavía no abrimos». La propuesta lo dice arriba desde el inicio y cambia Pagar por un botón que manda el pedido armado a tu WhatsApp.</p>
+  <div class="fila">
+    <div class="col"><div class="et hoy">Hoy</div>
+      <div class="grupo hoy">
+        <div class="tel"><img src="pedido-simple/hoy-puerta.png"><div class="pie">El aviso va abajo, en letra chica.</div></div>
+        <div class="tel"><img src="pedido-simple/hoy-carrito-listo.png"><div class="pie">Llega a Pagar y recién ahí se entera.</div></div>
+      </div></div>
+    <div class="col"><div class="et nuevo">Propuesta</div>
+      <div class="grupo nuevo">
+        <div class="tel"><img src="pedido-simple/p1-puerta.png"><div class="pie">Arriba, en grande: abrimos en noviembre y ya puedes pedir.</div></div>
+        <div class="tel"><img src="pedido-simple/p4-carrito.png"><div class="pie">Mismo resumen. «Pídelo por WhatsApp» en lugar de Pagar.</div></div>
+        <div class="tel"><div class="wa"><div class="cab">SND//WCH<small>lo que te llega</small></div>
+<div class="msg" id="wa-msg"></div><div class="bar">Mensaje</div></div><div class="pie">Te llega listo, con la línea del combo.</div></div>
+      </div></div>
+  </div>
+</section>
+
+<section class="lam" id="l2">
+  <div class="k">Pedido simple · 2 de 3</div>
+  <h1>Un toque para agregar</h1>
+  <p class="sub">Hoy, para pedir un sándwich se toca «Lo quiero», se elige el tamaño en la ficha y se toca «Lo quiero» otra vez. La propuesta pone los dos tamaños como botones en el mismo plato: un toque y pasa a las bebidas. El de 30 cm se ve igual de grande que el de 15.</p>
+  <div class="fila">
+    <div class="col"><div class="et hoy">Hoy · 3 toques</div>
+      <div class="grupo hoy">
+        <div class="tel"><img src="pedido-simple/hoy-plato.png"><div class="pie">El 30 cm aparece en letra chica bajo el precio.</div></div>
+        <div class="tel"><img src="pedido-simple/hoy-ficha.png"><div class="pie">La ficha: tamaño y de nuevo «Lo quiero».</div></div>
+      </div></div>
+    <div class="col"><div class="et nuevo">Propuesta · 1 toque</div>
+      <div class="grupo nuevo">
+        <div class="tel"><img src="pedido-simple/p2-plato.png"><div class="pie">15 cm o 30 cm, cada uno agrega directo. Quitar algo o pedirlo doble sigue en la ficha, tocando la foto.</div></div>
+      </div></div>
+  </div>
+  <p class="nota">La bebida se queda como está (es el combo: S/1 menos por cada par). Los precios salen de la carta de la app, que coinciden con la base: S/19.90 y S/30.90.</p>
+</section>
+
+<section class="lam" id="l3">
+  <div class="k">Pedido simple · 3 de 3</div>
+  <h1>Tus datos en una sola hoja</h1>
+  <p class="sub">Hoy el nombre y el celular van en una hoja, y la dirección en otra pantalla con el mapa. La propuesta junta todo: nombre, celular, dirección con su punto en el mapa y una referencia. Un solo «Listo».</p>
+  <div class="fila">
+    <div class="col"><div class="et hoy">Hoy · 2 pantallas</div>
+      <div class="grupo hoy">
+        <div class="tel"><img src="pedido-simple/hoy-recibe.png"><div class="pie">Nombre y celular.</div></div>
+        <div class="tel"><img src="pedido-simple/hoy-donde.png"><div class="pie">Aparte, la dirección y el mapa.</div></div>
+      </div></div>
+    <div class="col"><div class="et nuevo">Propuesta · 1 hoja</div>
+      <div class="grupo nuevo">
+        <div class="tel"><img src="pedido-simple/p3-hoja.png"><div class="pie">El envío sale del punto en el mapa, con la misma cuenta de hoy.</div></div>
+      </div></div>
+  </div>
+  <div class="cifra"><div><b>~13</b>toques hoy, primer pedido con Yape</div><div><b>~8</b>con las tres propuestas</div></div>
+</section>
+
+<script>
+const P = {"lines":["1) 1x Philly Cheesesteak // Signature 15CM — S/19.90","2) 1x The Bloom // Hibiscus — S/6"],"tot":"S/33.90","fee":9,"km":4.26};
+const lin = ['*PEDIDO SND//WCH*','Ref: (la pone la app)','','👤 Ana Torres','📱 987 654 321','📍 Av. España 123, Trujillo','   Portón negro, 2.º piso',''].concat(P.lines);
+lin.push('🥤 Combo: −S/1');
+lin.push('','🛵 Delivery ('+P.km.toFixed(1)+' km): S/'+P.fee);
+lin.push('*TOTAL: '+P.tot+'*');
+document.getElementById('wa-msg').textContent = lin.join('\n');
+const q = new URLSearchParams(location.search).get('l') || 'l1';
+document.getElementById(q).classList.add('on');
+</script>
+</body></html>
