@@ -29,17 +29,20 @@ const LATAS = [
   { id: 'cool', nut: [2, 0, 0, 0.6, 0.2, 0], nombre: 'COOL', sabor: 'Hierba luisa y menta', icono: 'rama', tinta: OSCURA, liquido: '#BFB662',
     desc: 'Un respiro de menta helada.',
     ing: 'agua, hierba luisa, menta, jugo de limón, edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)' },
-  { id: 'lemon-tea', nut: [3, 0, 0, 1.0, 0.3, 0], nombre: 'LEMON TEA', sabor: 'Té negro y limón', icono: 'limon', tinta: CREMA, liquido: '#AD5E13',
+  // LEMON TEA: con 60 ml de limón por litro (BEBIDAS_PRODUCTO §18)
+  { id: 'lemon-tea', nut: [2, 0, 0, 0.7, 0.2, 0], nombre: 'LEMON TEA', sabor: 'Té negro y limón', icono: 'limon', tinta: CREMA, liquido: '#AD5E13',
     desc: 'Cítrico, brillante y helado.',
     ing: 'agua, té negro, jugo de limón, edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)' },
   { id: 'chai', nut: [1, 0, 0, 0.3, 0, 0], nombre: 'CHAI', sabor: 'Especiado y aromático', icono: 'anis', tinta: CREMA, liquido: '#772612',
     desc: 'Especiado, aromático y helado.',
-    ing: 'agua, té negro y especias [la lista de la caja de filtrantes], edulcorante (sucralosa, INS 955), colorantes [los de la ficha del brillo dorado, con su INS]' },
+    ing: 'agua, chai (té negro, canela, jengibre, saborizante natural de vainilla, clavo de olor, cardamomo, pimienta negra, vainilla en polvo), edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)',
+    // la caja Nature's Heart dice «saborizante natural vainilla»: el CHAI no lleva «Sabor 100% natural» (§17)
+    sello: 'TÉ NEGRO Y ESPECIAS' },
   { id: 'cold-brew', nut: [1, 0, 0, 0.3, 0, 0], nombre: 'COLD BREW TEA', sabor: 'Té negro', icono: 'brote', tinta: CREMA, liquido: '#441C0B',
     desc: 'Suave como terciopelo.',
-    ing: 'agua, té negro, edulcorante (sucralosa, INS 955), colorantes [los de la ficha del brillo dorado, con su INS]' },
+    ing: 'agua, té negro, edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)' },
 ];
-const LEGAL = { razonSocial: '[razón social]', ruc: '[RUC]', direccion: '[dirección]', registro: '[pendiente]' };
+const LEGAL = { razonSocial: '[razón social]', ruc: '[RUC]', direccion: 'Av. Prolongación César Vallejo 2670, Trujillo', registro: null };  // dirección: dueño, 2026-11-02. R.S.: solo si DIGESA lo pide
 const URL_LATA = 'https://sndwch.app/?src=lata';
 
 // Íconos de línea (viewBox 100), el mismo trazo que la flor y la hoja de las latas aprobadas.
@@ -127,7 +130,7 @@ function frente(L, ICONO){
   // v2: el contenido neto en la cara principal con cifras de 4 mm (NMP 001 / OIML R79, de 200 a 1000 ml)
   // y el // de la marca en vez del punto medio
   o+=regla(15.8, 50.2, 89.6, t);
-  o+=lineaH('SABOR 100% NATURAL','mono',33,93.8,1.6,34.3,t);
+  o+=lineaH(L.sello||'SABOR 100% NATURAL','mono',33,93.8,1.6,34.3,t);
   o+=regla(15.8, 50.2, 96.3, t);
   o+=lineaH('REPOSADA EN FRÍO //','mono',33,100.4,1.5,34.3,t);
   o+=lineaH('355 ML','mono',33,106.4,4.0,0,t);
@@ -177,8 +180,8 @@ for (const L of LATAS) {
       const t = L.tinta, clara = t !== CREMA;
       let s = marca(25, 6.4, 2.8, t) + regla(7, 43, 9.2, t, 0.18);
       s += lineaH(L.nombre, 'anton', 25, 16.4, 5.4, 0, t);
-      s += lineaH(L.sabor, 'serif', 25, 21.0, 2.4, 0, t);
-      s += regla(7, 43, 23.2, t, 0.18);
+      // sin la línea de sabor (ya está en el frente): deja lugar a los ingredientes largos del CHAI
+      s += regla(7, 43, 18.8, t, 0.18);
       // el QR: en la lata clara, impreso en oscuro; en las oscuras, una placa chica con los módulos calados (se lee igual)
       const lado = 11.5, q = lado / QR.n, qx = 4.6, qy = 76.6;
       if (clara) s += '<g transform="translate(' + qx + ' ' + qy + ') scale(' + q + ')"><path d="' + QR.d + '" stroke="' + t + '" fill="none"/></g>';
@@ -194,10 +197,10 @@ for (const L of LATAS) {
             const lata = v === null ? null : (i === 0 ? Math.round(v * 3.55) : Math.round(v * 3.55 * 10) / 10);
             return '<tr><td>' + n + '</td><td ' + der + '>' + f(v) + '</td><td ' + der + '>' + f(lata) + '</td></tr>'; }).join('') + '</table>'
           + '<div style="font-size:1.4mm;margin:-0.3mm 0 0.8mm">Valores estimados [se confirman con laboratorio].</div>';
-      const legal = '<div style="position:absolute;left:4mm;top:24.8mm;width:42mm;font:500 1.8mm/1.3 Archivo,sans-serif;color:' + t + '">'
+      const legal = '<div style="position:absolute;left:4mm;top:20.2mm;width:42mm;font:500 1.8mm/1.3 Archivo,sans-serif;color:' + t + '">'
         + '<b style="font-weight:800">Ingredientes:</b> ' + esc(L.ing) + '.' + tabla
         + '<b style="font-weight:800">Contenido neto: 355 ml.</b> Mantener refrigerada a 4&nbsp;°C o menos. Agítala antes de abrir.<br>'
-        + 'R.S. N.° ' + esc(LEGAL.registro) + ' · Elaborado por ' + esc(LEGAL.razonSocial) + ', RUC ' + esc(LEGAL.ruc) + ', ' + esc(LEGAL.direccion) + '. Hecho en Perú.</div>';
+        + (LEGAL.registro ? 'R.S. N.° ' + esc(LEGAL.registro) + ' · ' : '') + 'Elaborado por ' + esc(LEGAL.razonSocial) + ', RUC ' + esc(LEGAL.ruc) + ', ' + esc(LEGAL.direccion) + '. Hecho en Perú.</div>';
       const fecha = '<div style="position:absolute;left:4mm;top:66.4mm;width:22mm;font:500 1.55mm/1.25 IBM Plex Mono;letter-spacing:.04em;color:' + t + '">HECHA · VENCE · LOTE<br><span style="font-family:Archivo;letter-spacing:0">en el recuadro →</span></div>';
       const pide = '<div style="position:absolute;left:19.4mm;top:76.4mm;width:28mm;color:' + t + '">'
         + '<div style="font-family:Anton;font-size:3.4mm;line-height:1;letter-spacing:.02em">¿OTRA?</div>'
