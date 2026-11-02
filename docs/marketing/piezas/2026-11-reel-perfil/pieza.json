@@ -4,14 +4,26 @@
  "formato": "reel 9:16, 15-20 s, con portada 9:16 (la cuadrícula la recorta a 3:4)",
  "canal": "instagram (orgánico, perfil)",
  "src": "perfil-5-reel",
- "estado": "brief",
- "puertas": {"concepto": null, "arte": null, "calidad": null},
+ "estado": "conceptos",
+ "puertas": {
+  "concepto": null,
+  "arte": null,
+  "calidad": null
+ },
  "concepto_elegido": null,
  "contexto": {
   "objetivo": "ganar público: que lo vea y lo comparta gente que todavía no sigue la cuenta",
   "rechazado": "el Reel actual (fotos de los seis una tras otra con su nombre); propuestas A/B/C de la sesión (ruleta «pausa el video», «se arma solo», «de 11 a 22») — el dueño no eligió ninguna y pidió que lo haga la agencia",
   "no_hay": "clips reales (el local no abre hasta noviembre, día por confirmar). Regla de video-sndwch: no se reemplaza el clip real con un video generado del sándwich",
-  "hay": ["fotos de los 6 Signatures (docs/marketing/anuncios/fotos/foto-*-30.jpg)", "fotos de Arma el tuyo (foto-arma-*.jpg)", "latas en alta (docs/marketing/instagram-perfil/final/latas/)", "SANDO y WICHO (img/sando2_*, img/wicho*)", "la app real (scripts/guia-pedir, capturas)", "Flow en la laptop del dueño (docs/marketing/estudio/)", "el motor de video por cuadros (reel.cjs: Playwright + ffmpeg)"],
+  "hay": [
+   "fotos de los 6 Signatures (docs/marketing/anuncios/fotos/foto-*-30.jpg)",
+   "fotos de Arma el tuyo (foto-arma-*.jpg)",
+   "latas en alta (docs/marketing/instagram-perfil/final/latas/)",
+   "SANDO y WICHO (img/sando2_*, img/wicho*)",
+   "la app real (scripts/guia-pedir, capturas)",
+   "Flow en la laptop del dueño (docs/marketing/estudio/)",
+   "el motor de video por cuadros (reel.cjs: Playwright + ffmpeg)"
+  ],
   "el_perfil": "docs/marketing/instagram-perfil/final/LEEME.md",
   "este_set_invita_a_pedir": "sí, por WhatsApp (dueño, 2026-10-30)"
  }
