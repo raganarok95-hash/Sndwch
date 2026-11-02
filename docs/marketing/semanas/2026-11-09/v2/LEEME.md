@@ -11,3 +11,10 @@ Dueño: «Primero 3 de prueba». Se generaron 3 imágenes en Figma (archivo `4zw
 
 Lo que falta si el dueño aprueba: rehacer el despiece de costado y producir las otras 6. Esas son 3 macros del
 proceso del Philly y 3 objetos de «Cómo se dice»: los embutidos, el queso estirándose y los cuencos de «Arma el tuyo».
+
+## Producción completa (2026-11-02, tarde)
+Dueño: «Se pararon por uso de límite, ya todo aprobado, reinícialas». Se generaron 7 imágenes más: el despiece de
+costado (ahora sí se ve el pan largo), la res en la plancha, la cebolla con el pimiento, el cheddar fundiéndose, los tres
+embutidos, el Tuna Melt estirándose y los cuencos de «Arma el tuyo». Las 10 láminas finales están en `final/`, y
+`todas-las-laminas.jpg` las muestra juntas. «Cómo se dice» ya no abre con la foto de «Arma el tuyo» del feed: abre con
+las tres palabras. Los textos para pegar son los mismos de `../TEXTOS.md`.
