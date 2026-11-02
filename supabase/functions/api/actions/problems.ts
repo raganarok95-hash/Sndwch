@@ -17,6 +17,7 @@ import { ApiError } from "../types.ts";
 import { requireSession, requireAdmin, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { sendPushToAdmins, sendPushToPhone } from "../push.ts";
+import { sendOrderProblemResolvedEmail } from "../email.ts";
 import * as R from "../../_shared/reglas.ts";
 
 export const REPORTE_PLAZO_HORAS = R.REPORTE_PLAZO_HORAS;
@@ -145,7 +146,18 @@ export async function actAdminResolveOrderProblem(b: Entrada<"admin-resolve-orde
   } catch {
     // sin suscripción push: la respuesta queda en la app igual
   }
-  return { success: true };
+  // También por correo, si el pedido lo tiene: casi nadie activa el push, y el panel le dice
+  // al dueño «Le avisamos al cliente». `avisadoPorCorreo` le deja saber si de verdad salió.
+  let avisadoPorCorreo = false;
+  try {
+    const o = await sbGet("orders", `id=eq.${encodeURIComponent(String(p.order_id))}&select=customer_email,customer_name`);
+    if (o[0]?.customer_email) {
+      avisadoPorCorreo = await sendOrderProblemResolvedEmail(o[0].customer_email, o[0].customer_name || "", p.ref, SOLUCIONES[solucion], nota);
+    }
+  } catch {
+    // el reporte ya quedó resuelto; el cliente lo ve igual en la app
+  }
+  return { success: true, avisadoPorCorreo };
 }
 
 // Cron: los reportes a los que se les está por pasar la hora prometida sin respuesta. Una

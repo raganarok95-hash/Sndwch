@@ -222,6 +222,8 @@ export const BUSINESS_LEGAL_NAME = "Ezra Kemish Vertiz Labarrera";
 export const BUSINESS_RUC = "10736044523";
 export const BUSINESS_CITY = "Trujillo, Perú";
 export const CONTACT_EMAIL = "contacto@sndwch.com";
+// El mismo WhatsApp que muestra el cliente en el bloque del proveedor (06-cuenta-y-pedidos.ts).
+export const BUSINESS_WHATSAPP = "+51 930 957 640";
 
 // Horario de atención — debe reflejar EXACTAMENTE el mismo horario que STORE_HOURS en
 // index.html (usado ahí solo para el badge visual; aquí se usa para rechazar pedidos

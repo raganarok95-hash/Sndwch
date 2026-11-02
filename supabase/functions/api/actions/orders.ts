@@ -19,7 +19,7 @@ import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText 
 import { sendPurchaseEvent } from "../meta-capi.ts";
 import { storePausedUntil, promosKilled, pedidoCabeEnPausa } from "./hours.ts";
 import { horaLimaHHMM } from "../franja.ts";
-import { sendOrderConfirmationEmail, sendOrderStatusEmail } from "../email.ts";
+import { sendOrderConfirmationEmail, sendOrderStatusEmail, sendOrderCancelledEmail } from "../email.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 import { cargasPorHora, horaLlena, fijoPropio } from "../capacidad.ts";
 import { ID_SECRETO } from "../../_shared/carta.ts";
@@ -2703,7 +2703,7 @@ export async function actAdminCancelOrder(b: Entrada<"admin-cancel-order"> & { _
   if (!orderId) throw new ApiError("Falta el pedido.");
   const orderRows = await sbGet(
     "orders",
-    `id=eq.${encodeURIComponent(orderId)}&select=id,status,payment_status,payment_method,total,delivery_fee,items,customer_phone,redeemed_reward_pts`,
+    `id=eq.${encodeURIComponent(orderId)}&select=id,ref,status,payment_status,payment_method,total,delivery_fee,items,customer_phone,customer_email,customer_name,redeemed_reward_pts`,
   );
   const order = orderRows[0];
   if (!order) throw new ApiError("Pedido no encontrado.", 404);
@@ -2755,6 +2755,12 @@ export async function actAdminCancelOrder(b: Entrada<"admin-cancel-order"> & { _
     } catch {
       // un push fallido no puede tumbar una cancelación que ya se ejecutó en la base
     }
+  }
+  // Y por correo: casi nadie tiene el push activado (ver sendOrderCancelledEmail).
+  if (order.customer_email) {
+    try {
+      await sendOrderCancelledEmail(order.customer_email, order.customer_name || "", order.ref, "admin", order.payment_status === "paid");
+    } catch { /* un correo fallido no deshace la cancelación */ }
   }
   await logAdminAction(s.phone, "cancel-order", orderId, { hadPayment: order.payment_status === "paid", reason });
   return { success: true, order: cancelado };
@@ -2841,7 +2847,7 @@ export async function actExpireStaleManualPayments(b: Entrada<"expire-stale-manu
   const cutoff = new Date(Date.now() - STALE_MANUAL_PAYMENT_HOURS * 3600000).toISOString();
   const stale = await sbGet(
     "orders",
-    `payment_method=in.(yape,plin)&payment_status=neq.paid&status=eq.RECIBIDO&created_at=lt.${encodeURIComponent(cutoff)}&select=id,items,ref,customer_phone&limit=500`,
+    `payment_method=in.(yape,plin)&payment_status=neq.paid&status=eq.RECIBIDO&created_at=lt.${encodeURIComponent(cutoff)}&select=id,items,ref,customer_phone,customer_email,customer_name&limit=500`,
   );
   let cancelled = 0;
   for (const order of stale) {
@@ -2872,6 +2878,11 @@ export async function actExpireStaleManualPayments(b: Entrada<"expire-stale-manu
               renotify: true,
             });
           } catch { /* un push fallido no revierte la expiración */ }
+        }
+        if (order.customer_email) {
+          try {
+            await sendOrderCancelledEmail(order.customer_email, order.customer_name || "", order.ref, "pago-no-confirmado", false);
+          } catch { /* un correo fallido no revierte la expiración */ }
         }
       }
     } catch (e) {
