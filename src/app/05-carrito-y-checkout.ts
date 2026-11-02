@@ -261,6 +261,19 @@ async function uploadReceiptBase64(base64){
   render();
   leerMiCaptura(base64);
 }
+// Por qué no entró solo (motivoParaElCliente, orders.ts): dicho con lo que el cliente ya sabe, y con
+// la salida a mano: subir la captura correcta (dueño, 2026-11-02).
+var capturaMotivo:any=null;
+function textoDelMotivo(m:any):string{
+  if(!m)return'Captura recibida. La revisamos y te avisamos.';
+  if(m.codigo==='repetida')return'Esa captura ya se usó en otro pedido. Sube la de este pago.';
+  if(m.codigo==='ilegible')return'No pudimos leer tu captura. Sube la pantalla completa de «¡Yapeaste!», sin recortar.';
+  if(m.codigo==='monto')return'Tu Yape fue de '+SOLES_TXT+pz(m.leido)+' y el pedido es de '+SOLES_TXT+pz(m.pedido)+'. Si te equivocaste de captura, sube la correcta; si no, lo revisamos y te escribimos.';
+  if(m.codigo==='otro-numero')return'Ese Yape fue a otro número. El nuestro es '+YAPE_PLIN_PHONE+'.';
+  if(m.codigo==='vieja')return'Esa captura no es de hoy. Sube la de este pago.';
+  return'Captura recibida. La confirmamos nosotros y te avisamos.';
+}
+function puedeSubirOtra(m:any):boolean{return!!m&&m.codigo!=='revision';}
 // El celular del cliente lee su propia captura apenas la sube (dueño, 2026-10-02: «sí hazlo, es
 // mejor»): el servidor decide con las mismas reglas que el panel y, si cuadra, el pedido entra
 // solo. Si el lector no carga o tarda, no pasa nada malo: queda para el panel, como antes.
@@ -273,8 +286,9 @@ async function leerMiCaptura(base64:string){
     var texto=(res&&res.data&&res.data.text)||'';
     var r=await api('cliente-lee-captura',{ref:ref,text:texto});
     receiptUploadState=r&&r.confirmado?'confirmado':'revisamos';
+    capturaMotivo=r&&!r.confirmado&&r.motivo?r.motivo:null;
   }catch(e){
-    receiptUploadState='revisamos';
+    receiptUploadState='revisamos';capturaMotivo=null;
   }
   if(window._lRef===ref)render();
 }
@@ -676,7 +690,7 @@ function sOPagar(){
       +'<div class="mt"><b>'+montoPartido(t)+'</b><s>'+(envio>0?'Envío '+SOLES_TXT+pz(envio)+' incluido<br>':'')+'No se suma nada más</s></div>'
       +'<div class="visor"><img src="img/yape-qr.png" alt="Código QR de Yape para pagar a '+esc(YAPE_PLIN_HOLDER||'')+'"><b class="a"></b><b class="b"></b><b class="c"></b><b class="d"></b></div>'
       +'<button class="esc" data-accion="copiar-yape" onclick="copiarNumeroYape()">Escanea o yapea al<b>'+esc(YAPE_PLIN_PHONE.replace(/(\d{3})(?=\d)/g,'$1 '))+'</b><u id="yape-copiado">Tocar para copiar</u></button>'
-      +'<button class="alt" onclick="selectPayMethod(\'culqi\');render()"><n>Prefiero tarjeta</n><s>Son '+SOLES_TXT+pz(money(conTarjeta-t))+' más</s></button>'
+      +'<button class="alt" data-accion="pagar-con-tarjeta" onclick="pagarConTarjetaYa()"><n>Prefiero tarjeta</n><s>Son '+SOLES_TXT+pz(money(conTarjeta-t))+' más</s></button>'
       +'<div class="fr">Yapea, toma la captura y súbela aquí.<br>Si cuadra, entra a la cocina solo.</div>'
       +'<img class="h" style="left:-14px;bottom:68px;width:112px" src="'+broPose('sando','cuerpo')+'" alt="" aria-hidden="true">'
       +'<img class="h" style="right:-16px;bottom:68px;width:124px" src="'+broPose('wicho','cuerpo')+'" alt="" aria-hidden="true">'
@@ -704,6 +718,10 @@ function sOPagar(){
     +'<div class="m30-go sw-barra"><button class="oro" onclick="confirmarPago()">Ir a pagar</button><button class="cel" onclick="confirmarPago()">'+SOLES_TXT+pz(t)+'</button></div>';
 }
 function confirmarPago(){pagarErr='';doOrder(true);}
+// «Prefiero tarjeta» abre Culqi en el mismo toque (dueño, 2026-11-02: «Pagar con tarjeta debe abrir
+// directo el pago con tarjeta y proceder»). La pantalla de tarjeta queda detrás: si Culqi no abre o
+// falla, ahí se lee el motivo y está «Ir a pagar» para reintentar.
+function pagarConTarjetaYa(){selectPayMethod('culqi');render();confirmarPago();}
 
 var _pendingOrder=null;
 // Lo que impide pagar, o null. Lee el ESTADO del pedido (confNom, addrText, schedSlot…), no
@@ -742,7 +760,11 @@ function problemaDelPedido():string|null{
 }
 // `desdePagar`: viene de la 31, que ES la confirmación (se ve el monto y el QR); no se vuelve a
 // preguntar «¿ya transferiste?».
+var _pagandoDesde=0;
 async function doOrder(desdePagar?){
+  // Un intento que quedó colgado (la ventana de Culqi se cerró sin avisar, la red se cortó) no puede
+  // dejar el botón muerto: antes «Ir a pagar» no hacía NADA y no decía nada (dueño, 2026-11-02).
+  if(_payingInProgress&&!busy&&Date.now()-_pagandoDesde>20000)_payingInProgress=false;
   if(_payingInProgress)return;
   if(!cart.length)return;
   if(appliedReward&&findRewardTargetIndex(appliedReward)<0)appliedReward=null;
@@ -792,7 +814,7 @@ async function doOrder(desdePagar?){
       if(it.doubleProt)ingredients.push(protCode);
     }
   });
-  _payingInProgress=true;
+  _payingInProgress=true;_pagandoDesde=Date.now();
   _pendingOrder={ref:ref,nom:nom,phone:phone,addr:addr,email:email,notes:notes,summary:summary,total:t,waLines:lines,items:cart.map(function(it){return Object.assign({},it);}),ingredients:ingredients,scheduledFor:schedIso,rewardId:appliedReward,deliveryZone:deliveryZone,deliveryFee:deliveryFeeAmount(),promoCode:appliedPromo?appliedPromo.code:null,
     // Coordenadas del pin que el cliente confirmó en el mapa (confirmMap()). Hasta ahora
     // se guardaban solo en window._mLat/_mLon y se usaban únicamente para pintarle a él
@@ -1033,7 +1055,7 @@ function finalizeOrderSuccess(res,po,chargeId){
   if(po.promoCode){try{localStorage.removeItem('sw_codigo');}catch(e){}}
   // La hora que el servidor dejó prometida al crear el pedido (ventanaPrometida en env.ts).
   window._lVentana=ventanaDelPedido(res.order);
-  receiptUploadState=null;
+  receiptUploadState=null;capturaMotivo=null;
   cart=[];
   pendingGroupCode=null;pendingRecurringId=null;miHoraApartada=null;
   resetBuilder();mode=null;
@@ -1125,6 +1147,8 @@ function arribaDelPedido(manualWaiting:boolean):string{
     ?{ok:manualWaiting?'Pago confirmado':'Pedido recibido',h:'YA ESTÁ<br>EN LA<br>COCINA',q:'“Ya prendí<br>la plancha.”',e:'en-la-cocina'}
     :st==='uploading'||st==='reading'||st==='done'
       ?{ok:'Captura recibida',h:'COMPRO&shy;BANDO<br>TU PAGO',q:'“Un segundo,<br>ya la miro.”',e:'comprobando'}
+      :st==='revisamos'&&puedeSubirOtra(capturaMotivo)
+        ?{ok:'Tu captura no cuadra',h:'REVISA<br>TU<br>CAPTURA',q:'“Te digo abajo<br>qué pasó.”',e:'captura-no-cuadra'}
       :st==='revisamos'
         ?{ok:'Captura recibida',h:'LA ESTAMOS<br>REVISANDO',q:'“Un momento,<br>ya la miro.”',e:'revisando'}
         :{ok:'Pedido recibido',h:'FALTA TU<br>CAPTURA',q:'“Súbela y<br>prendo la plancha.”',e:'falta-captura'};
@@ -1172,7 +1196,8 @@ function sOSent(){
       +(manualWaiting?'<div class="nota">'+(receiptUploadState==='confirmado'?'':'Confirmamos tu '+methodLabel+' contra la cuenta'
         +(deadlineLabel?'; si no lo hacemos antes de las '+esc(deadlineLabel)+', el pedido se cancela solo':'')+'.<br>')
         +(receiptUploadState==='confirmado'?'<b data-captura="confirmado">✓ ¡Pago confirmado! Tu pedido ya entró a la cocina.</b>'
-          :receiptUploadState==='revisamos'?'✓ Captura recibida. La revisamos y te avisamos.'
+          :receiptUploadState==='revisamos'?'<span data-motivo-captura="'+esc(capturaMotivo?capturaMotivo.codigo:'')+'">'+esc(textoDelMotivo(capturaMotivo))+'</span>'
+            +(puedeSubirOtra(capturaMotivo)?'<br><label class="otra-captura" data-accion="subir-otra-captura">Subir otra captura →<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>':'')
           :receiptUploadState==='reading'?'✓ Captura recibida. Comprobando tu pago…'
           :receiptUploadState==='done'?'✓ Comprobante recibido.'
           :receiptUploadState==='uploading'?'Subiendo el comprobante…'

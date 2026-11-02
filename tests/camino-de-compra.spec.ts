@@ -46,9 +46,8 @@ test('con tarjeta, sin distrito: prepare-order lleva el envío con la comisión'
   await ponerRecibe(page);
   await page.locator('.m30-go .oro').click();
   await page.locator('.m31.y').waitFor();
-  await page.locator('[onclick*="selectPayMethod(\'culqi\')"]').click();
-  await page.locator('.m31.t').waitFor();
-  await page.locator('.m30-go .oro').click();
+  // Desde el 2026-11-02 «Prefiero tarjeta» abre Culqi en el mismo toque (sin «Ir a pagar»).
+  await page.locator('[data-accion="pagar-con-tarjeta"]').click();
 
   await expect.poll(() => calls.find((x) => x.action === 'prepare-order'), { timeout: 10000 }).toBeTruthy();
   const c = await cartaDeLaApp(page);

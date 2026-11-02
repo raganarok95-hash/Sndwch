@@ -8,12 +8,12 @@ import { gotoApp, mockBackend, stubWindowOpen, pedirUnSignature, ponerRecibe, po
 // que nadie lo note y se cancela solo; si se dice «en la cocina» sin pago, el cliente espera algo
 // que nadie está cocinando.
 
-async function hastaLa31(page: any, confirmado: boolean) {
+async function hastaLa31(page: any, confirmado: boolean, motivo: any = null) {
   await page.addInitScript(() => { (window as any).Tesseract = { recognize: async () => ({ data: { text: 'Yapeaste S/ 27.90' } }) }; });
   const calls = await gotoApp(page, {
     'place-order': (body: any) => ({ success: true, order: { id: '55555555-5555-4555-8555-555555555555', ref: body.ref, status: 'RECIBIDO', payment_status: 'pending', payment_method: 'yape', total: body.total } }),
     'upload-receipt': { success: true },
-    'cliente-lee-captura': { success: true, confirmado },
+    'cliente-lee-captura': { success: true, confirmado, motivo },
     '*': { success: true },
   });
   await pedirUnSignature(page, { size: '15' });
@@ -41,6 +41,20 @@ test('si la captura no cuadra, no dice «en la cocina»: queda en revisión', as
   await subirCapturaAlPagar(page);
   await expect(page.locator('.m06 [data-estado-pago="revisando"]')).toBeVisible();
   await expect(page.locator('.m06 [data-estado-pago="en-la-cocina"]')).toHaveCount(0);
+});
+
+// Promesa (dueño, 2026-11-02: yapeó S/23.90 por un pedido de S/24.90 y la app solo decía «la
+// revisamos»): si la captura no cuadra por algo que el cliente puede corregir, se le dice qué y puede
+// subir la correcta ahí mismo. Fallo silencioso: el pedido espera horas y se cancela solo.
+test('si la captura no cuadra por el monto, lo dice y deja subir otra', async ({ page }) => {
+  const calls = await hastaLa31(page, false, { codigo: 'monto', leido: 23.9, pedido: 24.9 });
+  await subirCapturaAlPagar(page);
+  await expect(page.locator('.m06 [data-estado-pago="captura-no-cuadra"]')).toBeVisible();
+  await expect(page.locator('.m06 [data-motivo-captura="monto"]')).toBeVisible();
+  const antes = calls.filter((c) => c.action === 'upload-receipt').length;
+  const { CAPTURA_PNG } = await import('./helpers');
+  await page.locator('[data-accion="subir-otra-captura"] input').setInputFiles({ name: 'otra.png', mimeType: 'image/png', buffer: CAPTURA_PNG });
+  await expect.poll(() => calls.filter((c) => c.action === 'upload-receipt').length).toBe(antes + 1);
 });
 
 test('un toque: el botón de 30CM agrega el de 30 sin pasar por la ficha', async ({ page }) => {
