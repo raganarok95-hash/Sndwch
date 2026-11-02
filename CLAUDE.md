@@ -60,6 +60,7 @@ relatos están en `docs/MANUAL_DETALLADO.md`** (copia íntegra del archivo anter
   de una pieza o informe va a `aprendizajes/<rol>.md` con sus palabras y la fecha.
   **Agentes solo cuando hace falta** (dueño, 2026-10-16): lo calculable va en código o GitHub Actions;
   las skills se cargan en la sesión; un subagente solo para revisar de forma independiente lo que se paga.
+  **Excepción (dueño, 2026-11-02): las piezas creativas del feed van por `/pieza` con los subagentes** («úsala y reactívala»).
 
 ## ⚠ Precios
 
