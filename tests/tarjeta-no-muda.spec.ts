@@ -83,3 +83,20 @@ test('un invitado paga con tarjeta con el correo que dio en Culqi', async ({ pag
   expect(cobros[0].token).toBe('tkn_prueba');
   await expect.poll(() => calls.some((c) => c.action === 'place-order')).toBe(true);
 });
+
+// Promesa (dueño, 2026-11-02: «Pago con tarjeta no redirige a nada ni sirve»): un intento anterior
+// que quedó colgado no deja «Ir a pagar» muerto. Modo de fallo: el silencio — el botón no hacía nada
+// y no decía nada, porque doOrder() salía en cuanto veía un pago «en curso».
+test('un intento colgado no deja muerto «Ir a pagar»', async ({ page }) => {
+  await page.addInitScript(() => { (window as any).Culqi = { settings() {}, options() {}, open() {} }; });
+  const calls = await gotoApp(page, { 'prepare-order': () => ({ success: true }), '*': { success: true } });
+  await pedirUnSignature(page);
+  await ponerDireccion(page);
+  await ponerRecibe(page);
+  await page.locator('.m30-go .oro').click();
+  await page.locator('.m31').waitFor();
+  await page.evaluate(() => { const w = window as any; w.selectPayMethod('culqi'); w.render(); w._payingInProgress = true; w._pagandoDesde = Date.now() - 60000; });
+  await page.locator('.m31.t').waitFor();
+  await page.locator('.m30-go .oro').click();
+  await expect.poll(() => calls.some((c) => c.action === 'prepare-order')).toBe(true);
+});

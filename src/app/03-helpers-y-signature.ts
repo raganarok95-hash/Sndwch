@@ -1509,7 +1509,7 @@ function recordarPagosGrupo(){
 function pagarParteGrupo(ref:string,total:number){
   window._lRef=ref;window._lTot=total;window._lPayMethod='yape';window._lPendingPayment=true;
   window._lOrderCreatedAt=Date.now();window._lPoints=0;window._lVentana='';
-  receiptUploadState=null;
+  receiptUploadState=null;capturaMotivo=null;
   stopGroupPoll();sndScreen='o_sent';render();
 }
 

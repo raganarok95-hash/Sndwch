@@ -977,7 +977,8 @@ body.kb-open #app{padding-bottom:0}
 .m06 .dr.espera{border-bottom:0;padding-bottom:10px}
 .m06 .dr.espera span{color:#B3651A}
 .m06 .nota{font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.7;color:#6C7C64;padding:12px 0;border-bottom:1px solid rgba(30,43,34,.16)}
-.m06 .nota label{cursor:pointer;color:#B3651A;text-decoration:underline;text-underline-offset:3px}
+.m06 .nota label{cursor:pointer;color:#B3651A;text-decoration:underline;text-underline-offset:3px;position:relative}
+.m06 .nota label.otra-captura{display:inline-block;margin-top:8px;padding:6px 0;font-weight:700}
 .m06 .guardar{display:flex;gap:8px;align-items:stretch}
 .m06 .guardar .g{flex:1;min-height:44px;background:#241B12;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .m06 .guardar .c{all:unset;cursor:pointer;box-sizing:border-box;flex:0 0 auto;min-height:44px;display:flex;align-items:center;padding:0 12px;border:1px solid rgba(30,43,34,.35);font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#241B12;text-transform:uppercase}
@@ -4381,7 +4382,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'e04c14f150';
+var APP_BUILD = 'f13344be5b';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -7322,6 +7323,7 @@ function pagarParteGrupo(ref, total) {
     window._lPoints = 0;
     window._lVentana = '';
     receiptUploadState = null;
+    capturaMotivo = null;
     stopGroupPoll();
     sndScreen = 'o_sent';
     render();
@@ -8611,6 +8613,25 @@ async function uploadReceiptBase64(base64) {
     render();
     leerMiCaptura(base64);
 }
+// Por qué no entró solo (motivoParaElCliente, orders.ts): dicho con lo que el cliente ya sabe, y con
+// la salida a mano: subir la captura correcta (dueño, 2026-11-02).
+var capturaMotivo = null;
+function textoDelMotivo(m) {
+    if (!m)
+        return 'Captura recibida. La revisamos y te avisamos.';
+    if (m.codigo === 'repetida')
+        return 'Esa captura ya se usó en otro pedido. Sube la de este pago.';
+    if (m.codigo === 'ilegible')
+        return 'No pudimos leer tu captura. Sube la pantalla completa de «¡Yapeaste!», sin recortar.';
+    if (m.codigo === 'monto')
+        return 'Tu Yape fue de ' + SOLES_TXT + pz(m.leido) + ' y el pedido es de ' + SOLES_TXT + pz(m.pedido) + '. Si te equivocaste de captura, sube la correcta; si no, lo revisamos y te escribimos.';
+    if (m.codigo === 'otro-numero')
+        return 'Ese Yape fue a otro número. El nuestro es ' + YAPE_PLIN_PHONE + '.';
+    if (m.codigo === 'vieja')
+        return 'Esa captura no es de hoy. Sube la de este pago.';
+    return 'Captura recibida. La confirmamos nosotros y te avisamos.';
+}
+function puedeSubirOtra(m) { return !!m && m.codigo !== 'revision'; }
 // El celular del cliente lee su propia captura apenas la sube (dueño, 2026-10-02: «sí hazlo, es
 // mejor»): el servidor decide con las mismas reglas que el panel y, si cuadra, el pedido entra
 // solo. Si el lector no carga o tarda, no pasa nada malo: queda para el panel, como antes.
@@ -8624,9 +8645,11 @@ async function leerMiCaptura(base64) {
         var texto = (res && res.data && res.data.text) || '';
         var r = await api('cliente-lee-captura', { ref: ref, text: texto });
         receiptUploadState = r && r.confirmado ? 'confirmado' : 'revisamos';
+        capturaMotivo = r && !r.confirmado && r.motivo ? r.motivo : null;
     }
     catch (e) {
         receiptUploadState = 'revisamos';
+        capturaMotivo = null;
     }
     if (window._lRef === ref)
         render();
@@ -9176,7 +9199,7 @@ function sOPagar() {
             + '<div class="mt"><b>' + montoPartido(t) + '</b><s>' + (envio > 0 ? 'Envío ' + SOLES_TXT + pz(envio) + ' incluido<br>' : '') + 'No se suma nada más</s></div>'
             + '<div class="visor"><img src="img/yape-qr.png" alt="Código QR de Yape para pagar a ' + esc(YAPE_PLIN_HOLDER || '') + '"><b class="a"></b><b class="b"></b><b class="c"></b><b class="d"></b></div>'
             + '<button class="esc" data-accion="copiar-yape" onclick="copiarNumeroYape()">Escanea o yapea al<b>' + esc(YAPE_PLIN_PHONE.replace(/(\d{3})(?=\d)/g, '$1 ')) + '</b><u id="yape-copiado">Tocar para copiar</u></button>'
-            + '<button class="alt" onclick="selectPayMethod(\'culqi\');render()"><n>Prefiero tarjeta</n><s>Son ' + SOLES_TXT + pz(money(conTarjeta - t)) + ' más</s></button>'
+            + '<button class="alt" data-accion="pagar-con-tarjeta" onclick="pagarConTarjetaYa()"><n>Prefiero tarjeta</n><s>Son ' + SOLES_TXT + pz(money(conTarjeta - t)) + ' más</s></button>'
             + '<div class="fr">Yapea, toma la captura y súbela aquí.<br>Si cuadra, entra a la cocina solo.</div>'
             + '<img class="h" style="left:-14px;bottom:68px;width:112px" src="' + broPose('sando', 'cuerpo') + '" alt="" aria-hidden="true">'
             + '<img class="h" style="right:-16px;bottom:68px;width:124px" src="' + broPose('wicho', 'cuerpo') + '" alt="" aria-hidden="true">'
@@ -9204,6 +9227,10 @@ function sOPagar() {
         + '<div class="m30-go sw-barra"><button class="oro" onclick="confirmarPago()">Ir a pagar</button><button class="cel" onclick="confirmarPago()">' + SOLES_TXT + pz(t) + '</button></div>';
 }
 function confirmarPago() { pagarErr = ''; doOrder(true); }
+// «Prefiero tarjeta» abre Culqi en el mismo toque (dueño, 2026-11-02: «Pagar con tarjeta debe abrir
+// directo el pago con tarjeta y proceder»). La pantalla de tarjeta queda detrás: si Culqi no abre o
+// falla, ahí se lee el motivo y está «Ir a pagar» para reintentar.
+function pagarConTarjetaYa() { selectPayMethod('culqi'); render(); confirmarPago(); }
 var _pendingOrder = null;
 // Lo que impide pagar, o null. Lee el ESTADO del pedido (confNom, addrText, schedSlot…), no
 // campos de un formulario: la 30G guarda cada dato en su renglón. El servidor vuelve a validar.
@@ -9256,7 +9283,12 @@ function problemaDelPedido() {
 }
 // `desdePagar`: viene de la 31, que ES la confirmación (se ve el monto y el QR); no se vuelve a
 // preguntar «¿ya transferiste?».
+var _pagandoDesde = 0;
 async function doOrder(desdePagar) {
+    // Un intento que quedó colgado (la ventana de Culqi se cerró sin avisar, la red se cortó) no puede
+    // dejar el botón muerto: antes «Ir a pagar» no hacía NADA y no decía nada (dueño, 2026-11-02).
+    if (_payingInProgress && !busy && Date.now() - _pagandoDesde > 20000)
+        _payingInProgress = false;
     if (_payingInProgress)
         return;
     if (!cart.length)
@@ -9324,6 +9356,7 @@ async function doOrder(desdePagar) {
         }
     });
     _payingInProgress = true;
+    _pagandoDesde = Date.now();
     _pendingOrder = { ref: ref, nom: nom, phone: phone, addr: addr, email: email, notes: notes, summary: summary, total: t, waLines: lines, items: cart.map(function (it) { return Object.assign({}, it); }), ingredients: ingredients, scheduledFor: schedIso, rewardId: appliedReward, deliveryZone: deliveryZone, deliveryFee: deliveryFeeAmount(), promoCode: appliedPromo ? appliedPromo.code : null,
         // Coordenadas del pin que el cliente confirmó en el mapa (confirmMap()). Hasta ahora
         // se guardaban solo en window._mLat/_mLon y se usaban únicamente para pintarle a él
@@ -9627,6 +9660,7 @@ function finalizeOrderSuccess(res, po, chargeId) {
     // La hora que el servidor dejó prometida al crear el pedido (ventanaPrometida en env.ts).
     window._lVentana = ventanaDelPedido(res.order);
     receiptUploadState = null;
+    capturaMotivo = null;
     cart = [];
     pendingGroupCode = null;
     pendingRecurringId = null;
@@ -9749,9 +9783,11 @@ function arribaDelPedido(manualWaiting) {
         ? { ok: manualWaiting ? 'Pago confirmado' : 'Pedido recibido', h: 'YA ESTÁ<br>EN LA<br>COCINA', q: '“Ya prendí<br>la plancha.”', e: 'en-la-cocina' }
         : st === 'uploading' || st === 'reading' || st === 'done'
             ? { ok: 'Captura recibida', h: 'COMPRO&shy;BANDO<br>TU PAGO', q: '“Un segundo,<br>ya la miro.”', e: 'comprobando' }
-            : st === 'revisamos'
-                ? { ok: 'Captura recibida', h: 'LA ESTAMOS<br>REVISANDO', q: '“Un momento,<br>ya la miro.”', e: 'revisando' }
-                : { ok: 'Pedido recibido', h: 'FALTA TU<br>CAPTURA', q: '“Súbela y<br>prendo la plancha.”', e: 'falta-captura' };
+            : st === 'revisamos' && puedeSubirOtra(capturaMotivo)
+                ? { ok: 'Tu captura no cuadra', h: 'REVISA<br>TU<br>CAPTURA', q: '“Te digo abajo<br>qué pasó.”', e: 'captura-no-cuadra' }
+                : st === 'revisamos'
+                    ? { ok: 'Captura recibida', h: 'LA ESTAMOS<br>REVISANDO', q: '“Un momento,<br>ya la miro.”', e: 'revisando' }
+                    : { ok: 'Pedido recibido', h: 'FALTA TU<br>CAPTURA', q: '“Súbela y<br>prendo la plancha.”', e: 'falta-captura' };
     return '<div class="arriba" data-estado-pago="' + t.e + '"><div class="ok">' + t.ok + '</div><h1>' + t.h + '</h1>'
         + '<div class="sub">' + t.q + '<u>Sando</u></div></div>';
 }
@@ -9798,7 +9834,8 @@ function sOSent() {
             + (manualWaiting ? '<div class="nota">' + (receiptUploadState === 'confirmado' ? '' : 'Confirmamos tu ' + methodLabel + ' contra la cuenta'
                 + (deadlineLabel ? '; si no lo hacemos antes de las ' + esc(deadlineLabel) + ', el pedido se cancela solo' : '') + '.<br>')
                 + (receiptUploadState === 'confirmado' ? '<b data-captura="confirmado">✓ ¡Pago confirmado! Tu pedido ya entró a la cocina.</b>'
-                    : receiptUploadState === 'revisamos' ? '✓ Captura recibida. La revisamos y te avisamos.'
+                    : receiptUploadState === 'revisamos' ? '<span data-motivo-captura="' + esc(capturaMotivo ? capturaMotivo.codigo : '') + '">' + esc(textoDelMotivo(capturaMotivo)) + '</span>'
+                        + (puedeSubirOtra(capturaMotivo) ? '<br><label class="otra-captura" data-accion="subir-otra-captura">Subir otra captura →<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>' : '')
                         : receiptUploadState === 'reading' ? '✓ Captura recibida. Comprobando tu pago…'
                             : receiptUploadState === 'done' ? '✓ Comprobante recibido.'
                                 : receiptUploadState === 'uploading' ? 'Subiendo el comprobante…'

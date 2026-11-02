@@ -1977,9 +1977,30 @@ export async function actClienteLeeCaptura(b: Entrada<"cliente-lee-captura"> & {
   if (!rows[0].receipt_path) throw new ApiError("Primero sube la captura.", 400);
   if (rows[0].payment_status === "paid") return { success: true, confirmado: true };
   const r = await procesarCaptura(ref, texto, "cliente", "cliente");
-  // Al cliente solo se le dice si quedó confirmado: el motivo exacto ayudaría a quien quiera
-  // fabricar una captura que pase.
-  return { success: true, confirmado: !!r.auto.confirmado };
+  return { success: true, confirmado: !!r.auto.confirmado, motivo: r.auto.confirmado ? null : motivoParaElCliente(r.checks, r.fields) };
+}
+
+// Por qué no entró solo, dicho al cliente (dueño, 2026-11-02: subió una captura de S/23.90 para un
+// pedido de S/24.90, y otra ya usada, y la app solo decía «la revisamos»). Antes no se le decía nada
+// para no ayudar a fabricar una captura; pero cada motivo de acá es algo que el cliente ya sabe
+// (cuánto pagó, a quién, cuándo) y con él puede subir la correcta en vez de esperar.
+// Lo que no se dice: el texto leído, ni a qué otro pedido respaldó esa operación.
+export type MotivoCliente =
+  | { codigo: "repetida" }
+  | { codigo: "ilegible" }
+  | { codigo: "monto"; leido: number; pedido: number }
+  | { codigo: "otro-numero" }
+  | { codigo: "vieja" }
+  | { codigo: "revision" };
+export function motivoParaElCliente(checks: ReceiptChecks, fields: ReceiptFields): MotivoCliente {
+  if (checks.duplicateOpRefs.length) return { codigo: "repetida" };
+  if (checks.amountMatches === null || !fields.opNumber || !fields.celularFinal) return { codigo: "ilegible" };
+  if (!checks.amountMatches && checks.amountRead != null) return { codigo: "monto", leido: Number(checks.amountRead), pedido: Number(checks.expected) };
+  if (fields.celularFinal !== String(YAPE_NUMERO_COBRO).slice(-3)) return { codigo: "otro-numero" };
+  const fecha = fechaDelComprobante(fields.dateText);
+  const hoyLima = new Date().toLocaleDateString("en-CA", { timeZone: "America/Lima" });
+  if (fecha && fecha !== hoyLima) return { codigo: "vieja" };
+  return { codigo: "revision" };
 }
 
 // ── #19: CONFIRMACIÓN DE ENTREGA POR LINK ──────────────────────────────────────────────
