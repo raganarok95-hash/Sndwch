@@ -1517,6 +1517,19 @@ const WEEKLY_PLAN_TTL_MINUTES = 15;
 const WAITLIST_RATE_LIMIT = 3;
 const WAITLIST_RATE_WINDOW_MINUTES = 60;
 
+// «Avísame» de la puerta antes de abrir (dueño, 2026-11-02, «Sí a todo»; aprobadas/
+// pedido-simple-puerta-antes-de-abrir.png). Un celular peruano de 9 dígitos que empieza en 9.
+// Repetido no es error: el cliente que se anota dos veces ya está anotado.
+export async function actWaitlistJoin(b: Entrada<"waitlist-join"> & { _ip?: string }) {
+  const phone = String(b.phone || "").replace(/\D/g, "").replace(/^51(?=9\d{8}$)/, "");
+  if (!/^9\d{8}$/.test(phone)) throw new ApiError("Escribe tu celular de 9 dígitos.", 400);
+  const permitido = await rpc("check_rate_limit", { p_key: "waitlist:" + (b._ip || phone), p_limit: WAITLIST_RATE_LIMIT, p_window_minutes: WAITLIST_RATE_WINDOW_MINUTES });
+  if (!permitido) throw new ApiError("Ya te anotaste. Te avisamos.", 429);
+  const ya = await sbGet("waitlist_signups", `phone=eq.${phone}&select=id&limit=1`);
+  if (!ya[0]) await sbInsert("waitlist_signups", { phone, name: String(b.name || "").trim().slice(0, 80) || null, source: "puerta" });
+  return { success: true };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PAGO ABANDONADO — quien llegó a la pantalla de Culqi y no terminó.
 //

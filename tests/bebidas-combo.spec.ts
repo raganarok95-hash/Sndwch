@@ -9,8 +9,7 @@ import { gotoApp } from './helpers';
 
 async function conSandwichEnBebidas(page: any) {
   await gotoApp(page, {});
-  await page.locator('.m15 .plato').first().locator('button.b').click();
-  await page.locator('.f01 .pie button').click();
+  await page.locator('.m15 .plato').first().locator('[data-accion="agregar-15"]').click();
   await page.getByRole('button', { name: /Sigo sin bebida/ }).waitFor();
 }
 

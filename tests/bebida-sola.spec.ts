@@ -39,6 +39,7 @@ test('sin sándwich y con menos bebidas que el mínimo, no se llega a pagar', as
   // Se queda en la 30G con el aviso: ni la 34 (dirección) ni la hoja de datos, ni un pedido.
   await expect.poll(() => avisoDeBebidas(page)).toBe(true);
   await expect(page.locator('.m34')).toHaveCount(0);
+  await expect(page.locator('.hoja')).toHaveCount(0);
   await expect(page.locator('.m31')).toHaveCount(0);
   expect(calls.find((c) => c.action === 'place-order' || c.action === 'prepare-order')).toBeFalsy();
 });
@@ -47,8 +48,8 @@ test('sin sándwich, con el mínimo de bebidas el carrito no frena', async ({ pa
   await gotoApp(page, {});
   await bebidasSolas(page, await MIN(page));
   await page.locator('.m30-go .oro').click();
-  // Pasa a pedir la dirección (la 34), sin el aviso de las bebidas.
-  await expect(page.locator('.m34')).toBeVisible();
+  // Pasa a pedir los datos y la dirección (la hoja única, 2026-11-02), sin el aviso de las bebidas.
+  await expect(page.locator('.hoja [data-accion="marcar-en-el-mapa"]')).toBeVisible();
   expect(await avisoDeBebidas(page)).toBe(false);
 });
 
@@ -57,6 +58,6 @@ test('con un sándwich, una sola bebida sí pasa', async ({ page }) => {
   await pedirUnSignature(page, { size: '15' });
   await page.evaluate((id) => (window as any).addSideToCart(id), BEBIDA);
   await page.locator('.m30-go .oro').click();
-  await expect(page.locator('.m34')).toBeVisible();
+  await expect(page.locator('.hoja [data-accion="marcar-en-el-mapa"]')).toBeVisible();
   expect(await avisoDeBebidas(page)).toBe(false);
 });
