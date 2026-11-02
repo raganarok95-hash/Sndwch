@@ -186,6 +186,10 @@ de esta carpeta. El Reel necesita `FFMPEG` (o `ffmpeg` en el PATH).
 Dueño: «se ven como que de poca calidad, hay que mejorarlo». Lo que se cambió:
 - **Las latas, en alta.** El sticker se renderiza al doble (24 px por mm) y la lata sale a 1042 × 2785 px; antes era
   de 521 px y la letra salía borrosa (`latas/`).
+- **Las cinco latas (2026-11-02).** Dueño: «dame de todas las bebidas». Lemon Tea y The Chai no estaban guardadas: se
+  rehicieron sobre la lata de Cold Brew Tea con `latas/hacer-lemon-chai.py`. El script cambia el color del líquido y
+  escribe el frente nuevo con la misma letra y la misma medida. `latas/las-cinco.jpg` las muestra juntas. Las dos nuevas
+  no salen al abrir: llegan con las latas.
 - **Las fotos de los sándwiches, más nítidas.** El generador entrega 1024 × 1280 como máximo (también al pedirle 2048),
   así que se les aplica un enfoque en dos escalas: el detalle fino y el contraste local, sin halos.
 - **La exportación.** Las piezas salen en PNG y se pasan a JPEG al 95 % sin submuestreo de color (4:4:4), para que el
