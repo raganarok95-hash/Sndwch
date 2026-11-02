@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20261102231454
+-- foto-tomada-tras-migracion: 20261102231552
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -248,6 +248,13 @@ create table public.ingredient_purchases (
   notes text,
   created_by text,
   created_at timestamp with time zone default now() not null
+);
+
+create table public.instagram_token (
+  id boolean default true not null,
+  token text not null,
+  expires_at timestamp with time zone,
+  refreshed_at timestamp with time zone default now() not null
 );
 
 create table public.inventory (
@@ -700,6 +707,10 @@ alter table public.ingredient_purchases add constraint ingredient_purchases_pkey
 alter table public.ingredient_purchases add constraint ingredient_purchases_qty_check CHECK ((qty > (0)::numeric));
 
 alter table public.ingredient_purchases add constraint ingredient_purchases_total_paid_check CHECK ((total_paid >= (0)::numeric));
+
+alter table public.instagram_token add constraint instagram_token_id_check CHECK (id);
+
+alter table public.instagram_token add constraint instagram_token_pkey PRIMARY KEY (id);
 
 alter table public.inventory add constraint inventory_pkey PRIMARY KEY (product_code);
 
@@ -2428,6 +2439,8 @@ alter table public.group_orders enable row level security;
 
 alter table public.ingredient_purchases enable row level security;
 
+alter table public.instagram_token enable row level security;
+
 alter table public.inventory enable row level security;
 
 alter table public.login_attempts enable row level security;
@@ -2519,6 +2532,8 @@ grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on
 grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.group_orders to service_role;
 
 grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.ingredient_purchases to service_role;
+
+grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.instagram_token to service_role;
 
 grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.inventory to service_role;
 

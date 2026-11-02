@@ -7,7 +7,7 @@
 // Regenerar después de cada migración (con la herramienta de Supabase generate_typescript_types)
 // y actualizar la línea de abajo con la versión de la última migración aplicada.
 // `npm run check:tipos-base` falla si hay una migración más nueva que esta.
-// generado-contra-migracion: 20261102005243
+// generado-contra-migracion: 20261102231552
 export type Json =
   | string
   | number
@@ -775,6 +775,27 @@ export type Database = {
           supplier?: string | null
           total_paid?: number
           unit?: string
+        }
+        Relationships: []
+      }
+      instagram_token: {
+        Row: {
+          expires_at: string | null
+          id: boolean
+          refreshed_at: string
+          token: string
+        }
+        Insert: {
+          expires_at?: string | null
+          id?: boolean
+          refreshed_at?: string
+          token: string
+        }
+        Update: {
+          expires_at?: string | null
+          id?: boolean
+          refreshed_at?: string
+          token?: string
         }
         Relationships: []
       }
