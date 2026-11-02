@@ -25,7 +25,7 @@ Quien entra entiende en segundos que puede elegir uno de la casa o armar el suyo
 | Botones | Mensaje y WhatsApp | El peruano compra más por WhatsApp que por otras redes (Ipsos Perú) |
 
 **Destacados** (actualizado el 2026-11-01). En el perfil quedan así, de izquierda a derecha:
-1. **Cómo pedir**: los 14 pasos con las pantallas reales de la app (ver abajo).
+1. **Cómo pedir**: 3 historias (elegir, tus datos y pagar), con las pantallas reales de la app (ver abajo).
 2. **Carta**: los seis Signatures.
 3. **Arma el tuyo**: el pan, la proteína y lo de encima. Es la otra mitad del concepto.
 4. **Bebidas**: las de la casa en su lata. Abre con una historia de «Próximamente» que se borra cuando llegue la lata.
@@ -262,4 +262,17 @@ Las láminas del carrusel y las historias del destacado:
 
 Son los ingredientes que la app deja elegir (`docs/hechos/CARTA.md`). Las fotos están en
 `docs/marketing/anuncios/fotos/foto-arma-*.jpg`, y sus prompts en el README de anuncios.
+
+## Cómo pedir en 3 historias, y el feed en 9 (2026-11-02)
+
+- **Cómo pedir, corto.** Dueño: «El arte de cómo pedir está hermoso, no quiero que cambies eso, pero sí resumirlo, hacerlo
+  ver súper simple, máximo 3 historias». Son `historias/historia-como-pedir-corto-1..3.jpg`, con el mismo arte:
+  1. **Elige tu sándwich:** el aro en «Lo quiero».
+  2. **Dinos quién y dónde:** la lupa en las filas Llega · Dónde · Recibe y el aro en «Pagar».
+  3. **Yapea y listo:** el aro en el número de Yape, que sale de `reglas.ts`.
+
+  Las 14 de la guía larga quedan en el repo, pero no se suben (`scripts/guia-pedir/componer.cjs` hace las dos).
+- **El feed queda en 9, sin el Reel.** Dueño: «Las ideas de videos son súper buenos, pero necesitamos primero llenar el
+  feed, luego vamos por esas ideas a futuro». El Reel «Los seis de la casa» no se sube («no es nada creativo»). El nuevo se
+  hace con la agencia en `docs/marketing/piezas/2026-11-reel-perfil`, que queda en pausa con su brief y sus conceptos.
 

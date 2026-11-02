@@ -195,3 +195,9 @@ tinta, al estilo de un catálogo, recibió: «No me gusta para nada la direcció
 los seis Signatures, que ya aprobó: la foto arriba en la misma mesa de kraft y madera, y abajo el panel, celeste con las
 curvas de WICHO. Lección: una pieza nueva del feed se hace con el molde que el dueño ya aprobó y se cambia solo el mundo
 del hermano. Un estilo nuevo en medio del feed se ve como de otra marca.
+
+## 2026-11-02 · Cómo pedir: el arte se queda, los pasos se resumen
+Dueño: «El arte de cómo pedir está hermoso, no quiero que cambies eso, pero sí resumirlo, hacerlo ver súper simple,
+máximo 3 historias». De 14 historias se pasó a 3 (elegir, tus datos y pagar), con el mismo arte: las pantallas reales,
+el aro y la lupa. Lección: cuando el dueño aprueba el arte y pide menos, se recorta el contenido y el arte no se toca.
+Y en un destacado de ayuda, tres pasos se ven simples; catorce se ven difíciles.
