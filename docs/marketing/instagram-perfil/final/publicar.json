@@ -43,7 +43,8 @@
    "reel-portada.jpg"
   ],
   "texto": "Los seis de la casa. ¿Con cuál empiezas? Te leemos.\nPide por WhatsApp al 930 957 640 o en sndwch.app (enlace en el perfil).",
-  "cuando": "ya"
+  "cuando": "despues",
+  "nota": "En pausa (dueño, 2026-11-02: «necesitamos primero llenar el feed, luego vamos por esas ideas a futuro»). El Reel nuevo sale de docs/marketing/piezas/2026-11-reel-perfil."
  },
  {
   "src": "perfil-4-meatball",
@@ -106,140 +107,30 @@
   "cuando": "ya"
  },
  {
-  "src": "perfil-historia-como-pedir-paso-01",
-  "pieza": "historia-como-pedir-paso-01",
+  "src": "perfil-historia-como-pedir-corto-1",
+  "pieza": "historia-como-pedir-corto-1",
   "laminas": [
-   "historias/historia-como-pedir-paso-01.jpg"
+   "historias/historia-como-pedir-corto-1.jpg"
   ],
   "formato": "historia",
   "destacado": "Cómo pedir",
   "cuando": "ya"
  },
  {
-  "src": "perfil-historia-como-pedir-paso-02",
-  "pieza": "historia-como-pedir-paso-02",
+  "src": "perfil-historia-como-pedir-corto-2",
+  "pieza": "historia-como-pedir-corto-2",
   "laminas": [
-   "historias/historia-como-pedir-paso-02.jpg"
+   "historias/historia-como-pedir-corto-2.jpg"
   ],
   "formato": "historia",
   "destacado": "Cómo pedir",
   "cuando": "ya"
  },
  {
-  "src": "perfil-historia-como-pedir-paso-03",
-  "pieza": "historia-como-pedir-paso-03",
+  "src": "perfil-historia-como-pedir-corto-3",
+  "pieza": "historia-como-pedir-corto-3",
   "laminas": [
-   "historias/historia-como-pedir-paso-03.jpg"
-  ],
-  "formato": "historia",
-  "destacado": "Cómo pedir",
-  "cuando": "ya"
- },
- {
-  "src": "perfil-historia-como-pedir-paso-04",
-  "pieza": "historia-como-pedir-paso-04",
-  "laminas": [
-   "historias/historia-como-pedir-paso-04.jpg"
-  ],
-  "formato": "historia",
-  "destacado": "Cómo pedir",
-  "cuando": "ya"
- },
- {
-  "src": "perfil-historia-como-pedir-paso-05",
-  "pieza": "historia-como-pedir-paso-05",
-  "laminas": [
-   "historias/historia-como-pedir-paso-05.jpg"
-  ],
-  "formato": "historia",
-  "destacado": "Cómo pedir",
-  "cuando": "ya"
- },
- {
-  "src": "perfil-historia-como-pedir-paso-06",
-  "pieza": "historia-como-pedir-paso-06",
-  "laminas": [
-   "historias/historia-como-pedir-paso-06.jpg"
-  ],
-  "formato": "historia",
-  "destacado": "Cómo pedir",
-  "cuando": "ya"
- },
- {
-  "src": "perfil-historia-como-pedir-paso-07",
-  "pieza": "historia-como-pedir-paso-07",
-  "laminas": [
-   "historias/historia-como-pedir-paso-07.jpg"
-  ],
-  "formato": "historia",
-  "destacado": "Cómo pedir",
-  "cuando": "ya"
- },
- {
-  "src": "perfil-historia-como-pedir-paso-08",
-  "pieza": "historia-como-pedir-paso-08",
-  "laminas": [
-   "historias/historia-como-pedir-paso-08.jpg"
-  ],
-  "formato": "historia",
-  "destacado": "Cómo pedir",
-  "cuando": "ya"
- },
- {
-  "src": "perfil-historia-como-pedir-paso-09",
-  "pieza": "historia-como-pedir-paso-09",
-  "laminas": [
-   "historias/historia-como-pedir-paso-09.jpg"
-  ],
-  "formato": "historia",
-  "destacado": "Cómo pedir",
-  "cuando": "ya"
- },
- {
-  "src": "perfil-historia-como-pedir-paso-10",
-  "pieza": "historia-como-pedir-paso-10",
-  "laminas": [
-   "historias/historia-como-pedir-paso-10.jpg"
-  ],
-  "formato": "historia",
-  "destacado": "Cómo pedir",
-  "cuando": "ya"
- },
- {
-  "src": "perfil-historia-como-pedir-paso-11",
-  "pieza": "historia-como-pedir-paso-11",
-  "laminas": [
-   "historias/historia-como-pedir-paso-11.jpg"
-  ],
-  "formato": "historia",
-  "destacado": "Cómo pedir",
-  "cuando": "ya"
- },
- {
-  "src": "perfil-historia-como-pedir-paso-12",
-  "pieza": "historia-como-pedir-paso-12",
-  "laminas": [
-   "historias/historia-como-pedir-paso-12.jpg"
-  ],
-  "formato": "historia",
-  "destacado": "Cómo pedir",
-  "cuando": "ya"
- },
- {
-  "src": "perfil-historia-como-pedir-paso-13",
-  "pieza": "historia-como-pedir-paso-13",
-  "laminas": [
-   "historias/historia-como-pedir-paso-13.jpg"
-  ],
-  "formato": "historia",
-  "destacado": "Cómo pedir",
-  "cuando": "ya"
- },
- {
-  "src": "perfil-historia-como-pedir-paso-14",
-  "pieza": "historia-como-pedir-paso-14",
-  "laminas": [
-   "historias/historia-como-pedir-paso-14.jpg"
+   "historias/historia-como-pedir-corto-3.jpg"
   ],
   "formato": "historia",
   "destacado": "Cómo pedir",

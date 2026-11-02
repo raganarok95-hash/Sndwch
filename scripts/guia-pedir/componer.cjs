@@ -39,6 +39,16 @@ const TEXTO = {
   '12-ya-pague': ['Toca «Ya pagué»', 'Cuando confirmamos tu Yape, tu pedido entra a la cocina.'],
   '13-listo': ['¡Listo, ya está en la cocina!', 'Toca «Seguir el pedido» para ver cuándo llega.'],
 };
+// La versión corta, la que se sube (dueño, 2026-11-02: «el arte de cómo pedir está hermoso, no quiero que cambies eso,
+// pero sí resumirlo, hacerlo ver súper simple, máximo 3 historias»). El mismo arte, en tres pantallas: elegir, tus datos
+// y pagar. Sale en docs/marketing/instagram-perfil/final/historias/historia-como-pedir-corto-1..3.jpg.
+const CORTO = {
+  '03-platos': ['Elige tu sándwich', 'Entra a sndwch.app, elige uno de la casa o arma el tuyo, y toca «Lo quiero».'],
+  // En el paso 2 la lupa amplía las filas «Llega · Dónde · Recibe» del ticket (en px de la captura de 390 × 844; si la
+  // pantalla cambia, se vuelve a medir) y el aro queda en «Pagar».
+  '10-pagar': ['Dinos quién y dónde', 'Tu nombre, tu celular y dónde te lo dejamos. Ves el total con el envío y tocas «Pagar».', { x: 36, y: 318, width: 328, height: 100 }],
+  '11-yape': ['Yapea y listo', `Yapea al ${yape} o paga con tarjeta. Toca «Ya pagué» y tu pedido entra a la cocina.`],
+};
 
 // Las curvas de nivel de WICHO (las mismas de los destacados), tono sobre tono.
 function curvas(w, h, cx, cy, color, n = 22, paso = 70, sem = 2) {
@@ -54,9 +64,9 @@ function curvas(w, h, cx, cy, color, n = 22, paso = 70, sem = 2) {
 // El celular: la captura a escala K, con su marco.
 const VW = 390, VH = 844, K = 1.13, PX = 64, PY = 690;
 const TELW = VW * K, TELH = VH * K;
-function historia(p, i, total) {
+function historia(p, i, total, textos = TEXTO) {
   // Anton no trae «»: en el titular el nombre del botón va sin comillas.
-  const [titulo0, frase] = TEXTO[p.n];
+  const [titulo0, frase] = textos[p.n];
   const titulo = titulo0.replace(/[«»]/g, '');
   const png = 'file://' + path.join(CAP, p.n + '.png');
   const c = p.caja;
@@ -114,6 +124,17 @@ function historia(p, i, total) {
     await pg.screenshot({ path: png });
     execFileSync(PY_PIL, ['-c', "import sys;from PIL import Image;Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2],quality=95,subsampling=0)", png, path.join(FINAL, `historia-como-pedir-paso-${nn}.jpg`)]);
   }
+  // La versión corta: las mismas historias, solo tres pasos.
+  const corto = pasos.filter((p) => CORTO[p.n]);
+  for (const [i, p] of corto.entries()) {
+    const zona = CORTO[p.n][2];
+    fs.writeFileSync(tmp, historia(zona ? { ...p, zona } : p, i, corto.length, CORTO));
+    await pg.goto('file://' + tmp, { waitUntil: 'load' });
+    await pg.evaluate(async () => { await Promise.all(['400 40px "Anton"', '600 40px "IBM Plex Mono"', 'italic 400 40px "Instrument Serif"'].map((f) => document.fonts.load(f))); });
+    const png = path.join(OUT, `corto-${i + 1}.png`);
+    await pg.screenshot({ path: png });
+    execFileSync(PY_PIL, ['-c', "import sys;from PIL import Image;Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2],quality=95,subsampling=0)", png, path.join(FINAL, `historia-como-pedir-corto-${i + 1}.jpg`)]);
+  }
   fs.rmSync(tmp, { force: true }); await b.close();
-  console.log('historias', pasos.length);
+  console.log('historias', pasos.length, '+ corto', corto.length);
 })();

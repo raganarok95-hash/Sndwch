@@ -265,7 +265,9 @@ const POSTS = [
   { n: '3-arma-el-tuyo', html: arma, fijada: true, por: 'Fijada 3: el lado de WICHO, armar el tuyo.' },
   { n: '10-bebidas', html: '', img: 'carrusel-bebidas-proximamente.jpg', por: 'El carrusel de las bebidas: se sube al final y queda justo debajo de las fijadas. Abre con «Próximamente», que se borra cuando llegue la lata.' },
   { n: '4-meatball', html: sig(F['4-meatball']), por: 'La cena.' },
-  { n: '5-reel', html: reel, reel: true, por: 'El Reel «Los seis de la casa», al centro: lo que más alcance trae entre gente que no te sigue.' },
+  // El Reel queda fuera de la cuadrícula por ahora (dueño, 2026-11-02: «necesitamos primero llenar el feed, luego vamos
+  // por esas ideas a futuro»): el feed queda en 9, tres filas justas.
+  // { n: '5-reel', html: reel, reel: true, por: 'El Reel «Los seis de la casa», al centro: lo que más alcance trae entre gente que no te sigue.' },
   { n: '6-turkey', html: sig(F['5-turkey']), por: 'El almuerzo.' },
   { n: '7-tuna-melt', html: sig(F['6-tuna-melt']), por: 'El antojo de la noche.' },
   { n: '8-italian-hoagie', html: sig(F['7-italian-hoagie']), por: 'El de todo.' },
