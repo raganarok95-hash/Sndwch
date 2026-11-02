@@ -183,7 +183,7 @@ const DEST = [
   // sombra. Los objetos están en objetos/ (generados en Figma y recortados; ver LEEME). El celular lleva la pantalla real
   // de la puerta (scripts/guia-pedir) y la bolsa, el logo oficial como etiqueta.
   ['pedir', 'Cómo pedir', portada(W.pelaje, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(30,47,58,.16)', 22)}${celularReal(-8)}`)],
-  ['carta', 'Carta', portada(S.verde, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(201,168,124,.30)', 22)}${objeto('philly.png', 'width:860px', -6)}`)],
+  ['carta', 'Signatures', portada(S.verde, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(201,168,124,.30)', 22)}${objeto('philly.png', 'width:860px', -6)}`)],
   ['arma', 'Arma el tuyo', portada(W.tinta, `${svgEsp(1080, 1920, 540, 960, 520, 'rgba(144,204,240,.24)', 22)}${objeto('capas.png', 'width:800px', -4)}`)],
   // Bebidas va antes de Delivery y Horario: esos dos ya están subidos, e Instagram pone a la izquierda el destacado que
   // recibió una historia al último (se crean Bebidas, Arma el tuyo, Carta y al final Cómo pedir).
@@ -207,7 +207,7 @@ const icoWa = (c, t) => `<svg width="${t}" height="${t}" viewBox="0 0 24 24" fil
 const sello = (t) => `<div style="width:${t}px;height:${t}px;border-radius:999px;background:${papel};display:flex;align-items:center;justify-content:center;flex:none"><img src="${LOGO}" style="width:${t * 0.92}px;height:${t * 0.92}px"></div>`;
 // Encuadre de cada foto con el acercamiento: que el pan no toque el borde.
 // Las 6 fotos son del de 30 cm partido en dos (4:5): entran casi enteras, con el par de mitades al centro.
-const ENCUADRE = { '1-philly': 'center 47%/104%', '4-meatball': 'center 30%/100%', '5-turkey': 'center 50%/100%', '6-tuna-melt': 'center 52%/100%', '7-italian-hoagie': 'center 50%/100%', '8-classic-tuna': 'center 50%/100%' };
+const ENCUADRE = { '1-philly': 'center 47%/104%', '4-meatball': 'center 50%/104%', '5-turkey': 'center 50%/100%', '6-tuna-melt': 'center 52%/100%', '7-italian-hoagie': 'center 50%/100%', '8-classic-tuna': 'center 50%/100%' };
 const sig = (d) => caja(1080, 1350, `background:${S.oliva}`, `
   <div class="full" style="bottom:430px;background:url('${img(`${FOTOS}/${d.f}`)}') ${ENCUADRE[d.n] || 'center 64%/128%'} auto no-repeat;background-color:#2a2018"></div>
   <div class="abs rib" style="left:0;right:0;bottom:0;height:430px;background-color:${S.oliva}"></div>
@@ -276,15 +276,16 @@ const POSTS = [
 // La biografía como la escribió el dueño en su perfil (captura del 2026-11-01).
 const BIO = ['Sándwiches de pan largo, al estilo americano de 15 o 30 cm.', 'Elige uno de la casa o arma el tuyo.', 'A domicilio en todo Trujillo.'];
 
-const ui = `body{background:#fff;font-family:Archivo,sans-serif;color:#0B0B0B}
+// En modo oscuro, como se ve en el celular del dueño (captura del 2026-11-02).
+const ui = `body{background:#0C1014;font-family:Archivo,sans-serif;color:#F5F5F5}
   .t{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 6px;font:800 19px Archivo}
   .cab{display:flex;align-items:center;gap:22px;padding:8px 16px}.av{width:86px;height:86px;border-radius:50%;background:url('${img(path.join(OUT, 'foto-de-perfil.jpg'))}') center/cover;flex:none}
-  .num{display:flex;flex:1;justify-content:space-around;text-align:center;font:700 16px Archivo}.num span{display:block;font:400 13px Archivo;color:#333}
-  .bio{padding:4px 16px 0;font:400 14px/1.35 Archivo}.bio b{font-weight:800}.bio .cat{color:#737373}.bio a{color:#00376B;font-weight:600}
-  .bt{display:flex;gap:6px;padding:12px 16px}.bt div{flex:1;height:32px;border-radius:8px;background:#EFEFEF;display:flex;align-items:center;justify-content:center;font:700 13px Archivo}.bt .az{background:#0095F6;color:#fff}
+  .num{display:flex;flex:1;justify-content:space-around;text-align:center;font:700 16px Archivo}.num span{display:block;font:400 13px Archivo;color:#A8A8A8}
+  .bio{padding:4px 16px 0;font:400 14px/1.35 Archivo}.bio b{font-weight:800}.bio .cat{color:#A8A8A8}.bio a{color:#A8C7FA;font-weight:600}
+  .bt{display:flex;gap:6px;padding:12px 16px}.bt div{flex:1;height:32px;border-radius:8px;background:#25292E;display:flex;align-items:center;justify-content:center;font:700 13px Archivo}.bt .az{background:#0095F6;color:#fff}
   .hl{display:flex;gap:16px;padding:4px 16px 12px}.h{width:66px;text-align:center;font:400 12px Archivo}
-  .h i{display:block;width:66px;height:66px;border-radius:50%;border:1px solid #DBDBDB;padding:3px;margin-bottom:5px}.h i b{display:block;width:100%;height:100%;border-radius:50%;background-size:cover;background-position:center}
-  .tabs{display:flex;border-top:1px solid #DBDBDB}.tabs div{flex:1;height:44px;display:flex;align-items:center;justify-content:center}.tabs div:first-child{border-bottom:1.5px solid #0B0B0B}
+  .h i{display:block;width:66px;height:66px;border-radius:50%;border:1px solid #363636;padding:3px;margin-bottom:5px}.h i b{display:block;width:100%;height:100%;border-radius:50%;background-size:cover;background-position:center}
+  .tabs{display:flex;border-top:1px solid #262626}.tabs div{flex:1;height:44px;display:flex;align-items:center;justify-content:center}.tabs div:first-child{border-bottom:1.5px solid #F5F5F5}
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px}.g{position:relative;aspect-ratio:3/4;background-size:cover;background-position:center}
   .g svg{position:absolute;top:7px;right:7px;filter:drop-shadow(0 0 2px rgba(0,0,0,.6))}`;
 const pin = '<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M15 3l6 6-3 1-4 4 1 4-2 2-4-4-5 5-1-1 5-5-4-4 2-2 4 1 4-4z"/></svg>';
@@ -312,7 +313,7 @@ const rl = '<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d=
     <div class="bio"><b>SND//WCH · Sándwiches a domicilio</b><br><span class="cat">Restaurante de sándwiches</span><br>${BIO.join('<br>')}<br><a>sndwch.app</a></div>
     <div class="bt"><div class="az">Seguir</div><div>Mensaje</div><div>WhatsApp</div></div>
     <div class="hl">${DEST.map(([k, t]) => `<div class="h"><i><b style="background-image:url('${img(path.join(OUT, `destacado-${k}.jpg`))}')"></b></i>${t}</div>`).join('')}</div>
-    <div class="tabs"><div><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0B0B0B" stroke-width="1.8"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></div><div>${rl.replace('#fff', '#737373')}</div><div></div></div>
+    <div class="tabs"><div><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F5F5F5" stroke-width="1.8"><rect x="3" y="3" width="18" height="18"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg></div><div>${rl.replace('#fff', '#737373')}</div><div></div></div>
     <div class="grid">${POSTS.map((p) => `<div class="g" style="background-image:url('${img(p.jpg)}')">${p.fijada ? pin : p.reel ? rl : ''}</div>`).join('')}</div></div>`;
   const tmp = path.join(OUT, '.tmp.html'); fs.writeFileSync(tmp, pagina(390, 1200, cuerpo, ui).replace('html,body{width:390px;height:1200px;overflow:hidden}', 'html,body{width:390px}'));
   await pg.setViewportSize({ width: 390, height: 1200 }); await pg.goto('file://' + tmp, { waitUntil: 'load' });
