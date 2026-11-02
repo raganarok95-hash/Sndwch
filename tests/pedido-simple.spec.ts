@@ -103,6 +103,32 @@ test('si el pago se aprueba a mano, la pantalla del cliente se entera sola', asy
   await expect(page.locator('.m06 [data-estado-pago="en-la-cocina"]')).toBeVisible();
 });
 
+// TU PEDIDO, EN VIVO (dueño, 2026-11-02: «Dale, hazlo como propones»; aprobadas/pedido-en-vivo.png).
+// Promesa: la pantalla del pedido avanza sola por los cuatro pasos y la barra de abajo es lo que toca
+// hacer ahora; en camino, «Ya me llegó» cierra el pedido. Fallo silencioso: el cliente ve un estado
+// viejo, no sabe que ya salió y no puede decir que llegó.
+test('la pantalla del pedido avanza sola hasta «Ya me llegó»', async ({ page }) => {
+  await page.clock.install();
+  let st = 'PREPARANDO';
+  const calls = await hastaLa31(page, true);
+  await page.route('**/functions/v1/api', async (route) => {
+    const b = route.request().postDataJSON();
+    if (b && b.action === 'my-orders') {
+      const ref = calls.find((c) => c.action === 'place-order')!.body.ref;
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ orders: [{ id: '55555555-5555-4555-8555-555555555555', ref, status: st, payment_status: 'paid', payment_method: 'yape' }] }) });
+    }
+    return route.fallback();
+  });
+  await subirCapturaAlPagar(page);
+  await expect(page.locator('.m06 .pasos[data-etapa="cocina"]')).toBeVisible();
+  st = 'EN CAMINO';
+  await page.clock.runFor(16000);
+  await expect(page.locator('.m06 .pasos[data-etapa="camino"]')).toBeVisible();
+  await page.locator('[data-accion="ya-me-llego"]').click();
+  await expect.poll(() => calls.filter((c) => c.action === 'confirm-my-delivery').length).toBe(1);
+  await expect(page.locator('.m06 .pasos[data-etapa="llego"]')).toBeVisible();
+});
+
 test('un toque: el botón de 30CM agrega el de 30 sin pasar por la ficha', async ({ page }) => {
   await gotoApp(page, { '*': { success: true } });
   await page.locator('.m15 .plato').first().locator('[data-accion="agregar-30"]').click();
