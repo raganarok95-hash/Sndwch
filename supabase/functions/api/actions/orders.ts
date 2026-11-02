@@ -988,12 +988,25 @@ export async function actPrepareOrder(b: Entrada<"prepare-order"> & { _ip?: stri
     // que sirve como identidad estable en ambos casos.
     {
       const nowIso = new Date().toISOString();
+      // «Ya abrió Culqi; antes de culminar volví a la pantalla anterior, le di pagar y dejó de abrir»
+      // (dueño, 2026-11-02): el segundo intento chocaba con la reserva del primero y el cliente se
+      // quedaba 15 minutos sin poder pagar. Una reserva que solo está 'pending' todavía no cobró
+      // nada: se da por abandonada y se libera (mismo camino que al vencer). Si la ventana vieja
+      // intentara cobrar después, create-charge ya no la encuentra 'pending' y no cobra.
+      // Lo que SIGUE bloqueando es una reserva 'charging': ahí hay un cobro en vuelo.
       const existing = await sbGet(
         "pending_charges",
-        `contact_phone=eq.${encodeURIComponent(contactPhone)}&status=eq.pending&expires_at=gt.${encodeURIComponent(nowIso)}&select=id`,
+        `contact_phone=eq.${encodeURIComponent(contactPhone)}&status=in.(pending,charging)&expires_at=gt.${encodeURIComponent(nowIso)}&select=id,status,reserved_codes,reserved_qtys,promo_code_id,customer_phone,contact_phone,ref`,
       );
-      if (existing.length) {
+      if (reintentoDePago(existing) === "bloquear") {
         throw new ApiError("Ya tienes un pedido en proceso de pago con este número. Espera un momento o revisa la otra pestaña antes de intentar de nuevo.", 409);
+      }
+      for (const pc of existing) {
+        const libre = await liberarReservaSinCobrar(pc);
+        if (!libre) {
+          // Otro proceso la tomó entre la lectura y el reclamo (empezó a cobrar): se respeta.
+          throw new ApiError("Ya tienes un pedido en proceso de pago con este número. Espera un momento o revisa la otra pestaña antes de intentar de nuevo.", 409);
+        }
       }
     }
 
@@ -3017,6 +3030,32 @@ export function etaMissed(
 // dejarla 'pending' para siempre — eso también es lo que le permite a actPrepareOrder
 // bloquear una segunda reserva concurrente sin quedar bloqueado para siempre si el
 // cliente simplemente abandonó el pago.
+// Libera una reserva que no cobró: la reclama a 'expired' (solo si sigue en su estado), repone el
+// inventario y suelta el código promocional. La usan el barrido de vencidas y prepare-order cuando
+// el cliente reintenta. Devuelve false si otro proceso la tomó antes.
+type ReservaSinCobrar = { id: string; status: string; reserved_codes?: string[] | null; reserved_qtys?: number[] | null; promo_code_id?: string | null; customer_phone?: string | null; contact_phone?: string | null; ref: string };
+// Un reintento de pago con reservas vivas del mismo número: si alguna está cobrando ('charging'),
+// hay plata en vuelo y se bloquea; si todas están 'pending', ninguna cobró y se liberan.
+export function reintentoDePago(reservas: { status: string }[]): "seguir" | "liberar" | "bloquear" {
+  if (!reservas.length) return "seguir";
+  return reservas.some((r) => r.status !== "pending") ? "bloquear" : "liberar";
+}
+export async function liberarReservaSinCobrar(pc: ReservaSinCobrar): Promise<boolean> {
+  // Reclamar PRIMERO, reponer DESPUÉS. Antes era al revés: si la confirmación reclamaba la
+  // fila entre la reposición y este UPDATE, el pedido se creaba con un inventario que ya
+  // se había devuelto al stock — contado dos veces. Ahora solo repone quien ganó.
+  const claimed = await sbUpdate("pending_charges", `id=eq.${pc.id}&status=eq.${pc.status}`, { status: "expired" });
+  if (!claimed.length) return false;
+  const codes: string[] = pc.reserved_codes || [];
+  const qtys: number[] = pc.reserved_qtys || [];
+  if (codes.length) await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
+  // Mismo criterio que el inventario: una reserva que nunca se pagó debe liberar también el
+  // código promocional que claimPromoDiscount reclamó de forma atómica en actPrepareOrder — si
+  // no, el código queda "gastado" para un pedido que nunca ocurrió (hallazgo de la re-auditoría
+  // de 10 agentes, MEDIO/ALTO). Misma identidad usada al reclamar: cuenta si había sesión, si no contactPhone.
+  if (pc.promo_code_id) await rpc("release_promo_redemption", { p_promo_id: pc.promo_code_id, p_phone: pc.customer_phone || pc.contact_phone, p_order_ref: pc.ref });
+  return true;
+}
 export async function actExpirePendingCharges(b: Entrada<"expire-pending-charges"> & { _ip?: string }) {
   if (!(await verifyCronSecret(b.cronSecret))) throw new ApiError("No autorizado.", 401);
   const nowIso = new Date().toISOString();
@@ -3035,17 +3074,7 @@ export async function actExpirePendingCharges(b: Entrada<"expire-pending-charges
       // Reclamar PRIMERO, reponer DESPUÉS. Antes era al revés: si la confirmación reclamaba la
       // fila entre la reposición y este UPDATE, el pedido se creaba con un inventario que ya
       // se había devuelto al stock — contado dos veces. Ahora solo repone quien ganó.
-      const claimed = await sbUpdate("pending_charges", `id=eq.${pc.id}&status=eq.${pc.status}`, { status: "expired" });
-      if (!claimed.length) continue;
-      const codes: string[] = pc.reserved_codes || [];
-      const qtys: number[] = pc.reserved_qtys || [];
-      if (codes.length) await rpc("restock_inventory", { p_codes: codes, p_qtys: qtys });
-      // Mismo criterio que el inventario: una reserva que nunca se pagó y expira debe
-      // liberar también el código promocional que claimPromoDiscount reclamó de forma
-      // atómica en actPrepareOrder — si no, el código queda "gastado" para un pedido que
-      // nunca ocurrió (hallazgo de la re-auditoría de 10 agentes, MEDIO/ALTO). Misma
-      // identidad usada al reclamar: cuenta si había sesión, si no contactPhone.
-      if (pc.promo_code_id) await rpc("release_promo_redemption", { p_promo_id: pc.promo_code_id, p_phone: pc.customer_phone || pc.contact_phone, p_order_ref: pc.ref });
+      if (!(await liberarReservaSinCobrar(pc))) continue;
       expired++;
     } catch (e) {
       console.error("expire-pending-charges failed for", pc.id, e);
