@@ -100,3 +100,30 @@ test('un intento colgado no deja muerto «Ir a pagar»', async ({ page }) => {
   await page.locator('.m30-go .oro').click();
   await expect.poll(() => calls.some((c) => c.action === 'prepare-order')).toBe(true);
 });
+
+// Promesa (dueño, 2026-11-02: «Ya abrió Culqi; antes de culminar volví a la pantalla anterior, le di
+// pagar y dejó de abrir»): si la ventana de Culqi ya no está a la vista, «Ir a pagar» la vuelve a
+// abrir en seguida, sin esperar. Modo de fallo: el silencio — el segundo toque no hacía nada.
+test('volver de Culqi sin pagar y tocar «Ir a pagar» la vuelve a abrir', async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as any;
+    w._abiertas = 0; w._cerradas = 0;
+    w.Culqi = { settings() {}, options() {}, open() { w._abiertas++; }, close() { w._cerradas++; } };
+  });
+  const calls = await gotoApp(page, { 'prepare-order': () => ({ success: true }), '*': { success: true } });
+  await pedirUnSignature(page);
+  await ponerDireccion(page);
+  await ponerRecibe(page);
+  await page.locator('.m30-go .oro').click();
+  await page.locator('.m31').waitFor();
+  await page.evaluate(() => { const w = window as any; w.selectPayMethod('culqi'); w.render(); });
+  await page.locator('.m31.t').waitFor();
+  await page.locator('.m30-go .oro').click();
+  await expect.poll(() => page.evaluate(() => (window as any)._abiertas)).toBe(1);
+  // El cliente vuelve (la ventana ya no está) y toca de nuevo a los ~2 s, mucho antes de los 20 s.
+  await page.evaluate(() => { (window as any)._pagandoDesde = Date.now() - 2000; });
+  await page.locator('.m30-go .oro').click();
+  await expect.poll(() => page.evaluate(() => (window as any)._abiertas)).toBe(2);
+  expect(calls.filter((c) => c.action === 'prepare-order').length).toBe(2);
+  expect(await page.evaluate(() => (window as any)._cerradas)).toBeGreaterThanOrEqual(1);
+});
