@@ -204,8 +204,8 @@ def queso_porcion(ficha: Insumo):
     """(15CM, 30CM) en soles: tajadas × gramos × precio del kilo."""
     return tuple(round(n * TAJADA_G / 1000 * ficha.valor, 4) for n in TAJADAS_POR_SANDWICH)
 
-# ── LA ALBÓNDIGA SE COSTEA DESDE SU RECETA (production_recipes id 3, la del panel) ──────────
-# Tanda de 2 kg de carne → 90 albóndigas de 25 g → 30 porciones de 15CM (3 albóndigas), con su
+# ── LA ALBÓNDIGA SE COSTEA DESDE SU RECETA (production_recipes id 9, la del panel desde el 2026-11-02) ──────────
+# Tanda de 2 kg de carne → 90 albóndigas de 30 g (eran 25 g hasta el 2026-11-02) → 30 porciones de 15CM (3 albóndigas), con su
 # marinara. Cada ingrediente con su estado; el que pesa y no está cotizado es la lata de tomate.
 ALBONDIGA_TANDA = [
     ("carne molida 15-20% grasa", 2.0,  PROTEINA_KG["P06"][0]),
