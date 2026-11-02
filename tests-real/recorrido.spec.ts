@@ -23,6 +23,9 @@ const IGNORAR = [
   // El botón de Google (Entrar): en un navegador sin cuenta de Google iniciada, su ventana dice
   // que no hay cuentas y su registro se corta al cambiar de página. Visto el 2026-10-07; no es la app.
   /Provider's accounts list is empty|accounts\.google\.com\/gsi\/button|play\.google\.com\/log/i,
+  // El mismo botón de Google pide un token por FedCM y, en un navegador sin sesión de Google, falla con NetworkError.
+  // Visto todos los días desde el 2026-10-25 en el paso «entrar»; no es la app.
+  /\[GSI_LOGGER\]: FedCM get\(\) rejects with NetworkError/i,
 ];
 
 function vigilar(page: Page) {
@@ -97,6 +100,10 @@ test('un cliente nuevo recorre la app real sin errores', async ({ page }) => {
     }
     if (!llego) {
       const aviso = (await page.locator('[role="alert"]').allInnerTexts()).join(' ').trim();
+      // Antes de abrir, Pagar avisa «Todavía no abrimos» (05-carrito-y-checkout.ts) y no cobra: es lo esperado mientras
+      // el negocio no abre (businessLaunched). Se anota en el registro y no cuenta como hallazgo, para que el vigía
+      // vuelva a avisar de los errores de verdad (estuvo en rojo todos los días del 2026-10-25 al 2026-11-01 por esto).
+      if (/Todavía no abrimos/.test(aviso)) { console.log('antes de abrir: Pagar avisa «Todavía no abrimos» (esperado)'); return; }
       hallazgos.push({ paso: pasoActual, que: 'Pagar no llevó a ninguna pantalla' + (aviso ? ': ' + aviso.slice(0, 160) : '') });
     }
     if (llego === 'yape') {
