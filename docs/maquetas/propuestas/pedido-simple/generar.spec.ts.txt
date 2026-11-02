@@ -127,3 +127,104 @@ test('3 datos y 4 carrito', async ({ page }) => {
   await page.waitForTimeout(200);
   await page.screenshot({ path: D + 'p4-carrito.png' });
 });
+import { test } from '@playwright/test';
+import { gotoApp, pedirUnSignature, ponerRecibe, ponerDireccion, mockBackend, stubWindowOpen } from './helpers';
+const D = '/tmp/claude-0/auto/';
+test('auto', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => { (window as any).Tesseract = { recognize: async () => ({ data: { text: '¡Yapeaste!\nS/ 28.90\nNro. de celular *** *** 640\nNro. de operación 12345678' } }) }; });
+  await gotoApp(page, {
+    'place-order': (body: any) => ({ success: true, order: { id: 'ord-1', ref: body.ref, status: 'RECIBIDO', payment_status: 'pending', payment_method: 'yape', total: body.total } }),
+    'upload-receipt': { success: true },
+    'cliente-lee-captura': { success: true, confirmado: true },
+    '*': { success: true },
+  });
+  await pedirUnSignature(page, { size: '15' });
+  await ponerRecibe(page, 'Ana Torres', '987654321');
+  await ponerDireccion(page);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: D + 'a1-carrito.png' });
+  await page.locator('.m30-go .oro').click();
+  await page.locator('.m31.y').waitFor(); await page.waitForTimeout(400);
+  await page.screenshot({ path: D + 'a2-yape.png' });
+  require('fs').writeFileSync(D+'m31.html', await page.locator('#app').innerHTML());
+  await page.locator('.m30-go .oro').click();
+  await page.waitForTimeout(1200);
+  await page.screenshot({ path: D + 'a3-despues.png', fullPage: true });
+  require('fs').writeFileSync(D+'m06.html', await page.locator('#app').innerHTML());
+  const wa = await page.evaluate(() => (window as any)._lWaText || null);
+  require('fs').writeFileSync(D + 'wa.json', JSON.stringify({ wa }));
+  await page.evaluate(() => { const w = window as any; w.uploadReceiptBase64('AAAA'); });
+  await page.waitForFunction(() => (window as any).receiptUploadState === 'confirmado');
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: D + 'a4-confirmado.png', fullPage: true });
+});
+
+const CSS = `
+.mq-aviso{position:absolute;left:16px;right:16px;top:64px;z-index:5;background:#1E3932;border:1px solid #CBA258;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.mq-aviso b{display:block;font-family:Archivo,sans-serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#CBA258;font-weight:700}
+.mq-aviso span{display:block;font-family:'EB Garamond',serif;font-size:15px;color:#F2F0EB;line-height:1.3;margin-top:3px}
+.mq-aviso button{all:unset;flex:0 0 auto;background:#CBA258;color:#17130E;font-family:Archivo,sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:9px 10px}
+.mq-ok{color:#2F6B54;font-weight:700}
+`;
+async function base(page: any, launched: boolean) {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => { (window as any).Tesseract = { recognize: async () => ({ data: { text: 'x' } }) }; });
+}
+test('propuesta', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => { (window as any).Tesseract = { recognize: async () => ({ data: { text: 'x' } }) }; });
+  await gotoApp(page, {
+    'place-order': (body: any) => ({ success: true, order: { id: 'ord-1', ref: body.ref, status: 'RECIBIDO', payment_status: 'pending', payment_method: 'yape', total: body.total } }),
+    '*': { success: true },
+  });
+  await pedirUnSignature(page, { size: '15' });
+  await ponerRecibe(page, 'Ana Torres', '987654321');
+  await ponerDireccion(page);
+  await page.locator('.m30-go .oro').click();
+  await page.locator('.m31.y').waitFor(); await page.waitForTimeout(400);
+  await page.addStyleTag({ content: CSS });
+  await page.evaluate(() => {
+    (document.querySelector('.m31 .fr') as HTMLElement).innerHTML = 'Yapea, toma la captura y súbela aquí.<br>Si cuadra, entra a la cocina solo.';
+    (document.querySelector('.m30-go .oro') as HTMLElement).textContent = 'Subir mi captura';
+  });
+  await page.screenshot({ path: D + 'b1-yape.png' });
+  await page.evaluate(() => { const w = window as any; w.confirmarPago(); });
+  await page.locator('.m06').waitFor(); await page.waitForTimeout(500);
+  const html06 = await page.locator('#app').innerHTML();
+  // confirmado
+  await page.evaluate(() => {
+    (document.querySelector('.m06 .ok') as HTMLElement).textContent = 'Pago confirmado';
+    (document.querySelector('.m06 .nota') as HTMLElement).innerHTML = '<span class="mq-ok">✓ Tu Yape cuadró. Tu pedido ya entró a la cocina.</span>';
+    document.querySelectorAll('.m06 .extra button').forEach((b: any) => { if (/WhatsApp/.test(b.textContent)) b.remove(); });
+  });
+  await page.screenshot({ path: D + 'b2-confirmado.png' });
+  // no cuadra o pasa el tope
+  await page.evaluate((h) => { document.querySelector('#app')!.innerHTML = h.replace(/ fi"/g, '"'); }, html06);
+  await page.waitForTimeout(800);
+  await page.evaluate(() => {
+    (document.querySelector('.m06 .ok') as HTMLElement).textContent = 'Captura recibida';
+    (document.querySelector('.m06 h1') as HTMLElement).innerHTML = 'LA ESTAMOS<br>REVISANDO';
+    (document.querySelector('.m06 .sub') as HTMLElement).innerHTML = '“Un momento,<br>ya la miro.”<u>Sando</u>';
+    const dr = document.querySelector('.m06 .dr span') as HTMLElement; dr.textContent = 'Por confirmar';
+    const n = document.querySelector('.m06 .nota') as HTMLElement;
+    n.innerHTML = n.innerHTML.split('<br>')[0] + '<br>Te avisamos apenas la confirmemos.';
+    document.querySelectorAll('.m06 .extra button').forEach((b: any) => { if (/WhatsApp/.test(b.textContent)) b.remove(); });
+  });
+  await page.screenshot({ path: D + 'b3-revisando.png' });
+});
+test('puerta', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockBackend(page, { 'get-store-hours': { hours: {}, businessLaunched: false } } as any);
+  await stubWindowOpen(page);
+  await page.goto('file://' + process.cwd() + '/index.html');
+  await page.locator('.pta').waitFor(); await page.waitForTimeout(600);
+  await page.addStyleTag({ content: CSS });
+  await page.evaluate(() => {
+    const a = document.createElement('div'); a.className = 'mq-aviso';
+    a.innerHTML = '<div><b>Abrimos en noviembre //</b><span>Ya puedes ver la carta. Te avisamos el día que abramos.</span></div><button>Avísame</button>';
+    document.querySelector('.pta')!.appendChild(a);
+    document.querySelector('.pta .pie')!.innerHTML = '<span>Abrimos en noviembre</span><em>delivery desde S/5</em>';
+  });
+  await page.screenshot({ path: D + 'b0-puerta.png' });
+});
