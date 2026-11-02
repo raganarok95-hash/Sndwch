@@ -989,7 +989,9 @@ function sOEleccion(){
     +yo
     // ANTES DE ABRIR, ARRIBA (dueño, 2026-11-02, «Sí a todo»; aprobadas/pedido-simple-puerta-
     // antes-de-abrir.png): el aviso iba abajo en chico y el cliente se enteraba recién al pagar.
-    +(businessLaunched?'':'<div class="aviso-abre" data-accion="aviso-antes-de-abrir"><div><b>'+esc(MES_DE_APERTURA)+' //</b>'
+    // Un pedido en curso manda sobre todo lo demás: es lo que el cliente vino a ver.
+    +(pedidoVivoEnPuerta?'<button class="aviso-abre vivo" data-accion="volver-al-pedido" onclick="abrirPedidoVivo()"><div><b>#'+esc(pedidoVivoEnPuerta.ref)+' //</b><span>'+esc(textoPedidoEnPuerta(pedidoVivoEnPuerta))+'</span></div><u>Ver →</u></button>'
+    :businessLaunched?'':'<div class="aviso-abre" data-accion="aviso-antes-de-abrir"><div><b>'+esc(MES_DE_APERTURA)+' //</b>'
       +'<span>'+(avisameListo?'Listo: te escribimos el día que abramos.':'Ya puedes ver la carta. Te avisamos el día que abramos.')+'</span></div>'
       +(avisameListo?'':'<button data-accion="avisame-al-abrir" onclick="avisameAlAbrir()">Avísame</button>')+'</div>')
     +'<div class="mitades">'

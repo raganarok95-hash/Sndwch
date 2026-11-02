@@ -1052,6 +1052,7 @@ function finalizeOrderSuccess(res,po,chargeId){
   window._lRef=po.ref;avisoPaso='aviso';aErr='';
   window._lStatus=(res.order&&res.order.status)||'RECIBIDO';window._lSalio=0;window._lLlego=0;
   window._lAddr=po.addr||'';window._lNom=po.nom||'';window._lPhone=po.phone||'';window._lSummary=po.summary||'';
+  window._lItems=(po.items||[]).map(function(it:any){return Object.assign({},it);});
   window._lOrderId=res.order&&res.order.id?String(res.order.id):'';
   // El código del QR ya se usó (vale una vez por celular): no se vuelve a ofrecer escrito.
   if(po.promoCode){try{localStorage.removeItem('sw_codigo');}catch(e){}}
@@ -1069,6 +1070,7 @@ function finalizeOrderSuccess(res,po,chargeId){
   busy=false;sndScreen='o_sent';render();
   // La captura elegida en la 31 («Subir mi captura») se sube apenas existe el pedido, y se lee sola.
   if(_capturaAlPagar){var cap=_capturaAlPagar;_capturaAlPagar=null;receiptUploadState='uploading';render();uploadReceiptBase64(cap);}
+  guardarPedidoVivo();
   vigilarElPedido(window._lRef);
   // eventID = referencia del pedido: el servidor manda esta MISMA compra por Conversions
   // API con el mismo id, y Meta descarta el duplicado en vez de contar la venta dos veces.
@@ -1114,9 +1116,68 @@ function vigilarElPedido(ref:string){
         if(o.status==='EN CAMINO')window._lSalio=o.status_changed_at?Date.parse(o.status_changed_at):Date.now();
         if(o.status==='ENTREGADO')window._lLlego=o.delivered_at?Date.parse(o.delivered_at):Date.now();
       }
-      if(cambio)render();
+      if(cambio){guardarPedidoVivo();render();}
     }catch(e){}
   },15000);
+}
+// ── EL PEDIDO EN VIVO SOBREVIVE A CERRAR LA APP (dueño, 2026-11-02: «¿Qué más podemos mejorar?»).
+// El cliente sale a Yape y vuelve, o cierra la app: antes perdía el seguimiento y caía en la puerta
+// sin rastro de su pedido. Se guarda lo que la pantalla necesita y la puerta ofrece volver.
+var PEDIDO_VIVO_HORAS=12;
+var pedidoVivoEnPuerta:any=null;
+function guardarPedidoVivo(){
+  try{
+    if(!window._lRef)return;
+    if(window._lStatus==='ENTREGADO'||window._lStatus==='CANCELADO'){localStorage.removeItem('sw_pedido_vivo');return;}
+    localStorage.setItem('sw_pedido_vivo',JSON.stringify({ref:window._lRef,id:window._lOrderId,tot:window._lTot,pts:window._lPoints,
+      metodo:window._lPayMethod,pendiente:window._lPendingPayment,creado:window._lOrderCreatedAt,ventana:window._lVentana,
+      addr:window._lAddr,nom:window._lNom,phone:window._lPhone,summary:window._lSummary,items:window._lItems||[],
+      status:window._lStatus,confirmado:receiptUploadState==='confirmado'}));
+  }catch(e){}
+}
+async function revisarPedidoVivo(){
+  var g:any=null;
+  try{g=JSON.parse(localStorage.getItem('sw_pedido_vivo')||'null');}catch(e){}
+  if(!g||!g.ref)return;
+  if(!g.creado||Date.now()-g.creado>PEDIDO_VIVO_HORAS*3600000){try{localStorage.removeItem('sw_pedido_vivo');}catch(e){}return;}
+  try{
+    var r=cust&&token?await api('my-orders',{token:token}):await api('my-orders',{ref:g.ref});
+    var o=((r&&r.orders)||[]).find(function(x:any){return x.ref===g.ref;});
+    if(!o||o.status==='ENTREGADO'||o.status==='CANCELADO'){try{localStorage.removeItem('sw_pedido_vivo');}catch(e){}return;}
+    g.status=o.status;g.pagado=o.payment_status==='paid';
+    pedidoVivoEnPuerta=g;render();
+  }catch(e){}
+}
+function textoPedidoEnPuerta(g:any):string{
+  if(g.status==='EN CAMINO')return'Tu pedido va en camino';
+  if(g.pendiente&&!g.pagado)return'Tu pedido espera tu pago';
+  return'Tu pedido está en la cocina';
+}
+function abrirPedidoVivo(){
+  var g=pedidoVivoEnPuerta;if(!g)return;
+  window._lRef=g.ref;window._lOrderId=g.id;window._lTot=g.tot;window._lPoints=g.pts;window._lPayMethod=g.metodo;
+  window._lPendingPayment=g.pendiente;window._lOrderCreatedAt=g.creado;window._lVentana=g.ventana;
+  window._lAddr=g.addr;window._lNom=g.nom;window._lPhone=g.phone;window._lSummary=g.summary;window._lItems=g.items||[];
+  window._lStatus=g.status;window._lSalio=0;window._lLlego=0;window._lRankUp=null;window._lSecretUnlock=false;window._lFijo=null;window._lRewardLabel=null;
+  receiptUploadState=g.pendiente&&(g.pagado||g.confirmado)?'confirmado':null;capturaMotivo=null;avisoPaso='aviso';
+  pedidoVivoEnPuerta=null;sndScreen='o_sent';render();
+  vigilarElPedido(g.ref);
+}
+function pedirLoMismoDelPedido(){
+  var its=window._lItems||[];
+  if(!its.length){volverALaPuerta();return;}
+  loadCart(its);
+}
+var _cancelandoDesdePedido=false;
+async function cancelarDesdeElPedido(){
+  if(_cancelandoDesdePedido||!window._lOrderId)return;
+  if(!(await showConfirm('¿Cancelar este pedido? Como la cocina aún no empezó a prepararlo, no tiene costo.')))return;
+  _cancelandoDesdePedido=true;
+  try{
+    await api('cancel-my-order',{token:token||undefined,orderId:window._lOrderId,ref:window._lRef});
+    window._lStatus='CANCELADO';guardarPedidoVivo();showToast('Pedido cancelado.','success');
+  }catch(e){showToast(e.message);}
+  _cancelandoDesdePedido=false;render();
 }
 function reopenWhatsAppConfirm(){
   if(!window._lWaText)return;
@@ -1322,12 +1383,16 @@ function sOSent(){
         :(invitado?'<button data-accion="invitar" onclick="avisoPaso=\'correo\';aErr=\'Guarda tu cuenta y te damos tu link: cuando tu amigo pida, ganas un sándwich.\';render()">Invita a alguien y gana un sándwich <span>→</span></button>':''))
       +'</div>'
       // Si algo sale mal con este pedido, es acá donde el cliente lo va a buscar.
+      // 2) Calificar en el mismo momento en que llegó (antes estaba en el detalle, a dos pantallas).
+      +(et==='llego'&&window._lRef?'<div class="califica">'+ratingHTML({ref:window._lRef,status:'ENTREGADO',delivered_at:new Date(window._lLlego||Date.now()).toISOString()})+'</div>':'')
+      // 3) Cancelar sin salir del seguimiento, mientras la cocina no empezó (el servidor lo exige igual).
+      +((et==='pago'||et==='cocina')&&window._lStatus==='RECIBIDO'&&window._lOrderId?'<button class="cancela" data-accion="cancelar-pedido" onclick="cancelarDesdeElPedido()">Cancelar el pedido</button>':'')
       +legalLinksHTML('o_sent');
     // La barra de abajo es lo que toca hacer AHORA, no «Seguir el pedido»: ya estás en el seguimiento.
     var subir=et==='pago'&&(!stR||errSubida||(stR==='revisamos'&&puedeSubirOtra(capturaMotivo)));
     pie=subir?'<label class="oro" data-accion="subir-captura-abajo">Subir mi captura<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label><span class="cel">'+SOLES_TXT+pz(window._lTot||0)+'</span>'
       :et==='camino'?'<button class="oro" data-accion="ya-me-llego" onclick="yaMeLlegoDesdeElPedido()">Ya me llegó</button><span class="cel">'+ref+'</span>'
-      :et==='llego'||et==='cancelado'?'<button class="oro" data-accion="pedir-otra-vez" onclick="volverALaPuerta()">Pedir otra vez</button><button class="cel" onclick="volverALaPuerta()" aria-label="Pedir otra vez">→</button>'
+      :et==='llego'||et==='cancelado'?'<button class="oro" data-accion="pedir-otra-vez" onclick="pedirLoMismoDelPedido()">Pedir lo mismo</button><button class="cel" onclick="volverALaPuerta()">Otra cosa</button>'
       :'<button class="oro" data-accion="escribirnos" onclick="escribirnosDelPedido()">Escribirnos</button><button class="cel" onclick="escribirnosDelPedido()">WhatsApp</button>';
   }
   var pose=sube?'asoma':POSE_DEL_PEDIDO[etapaDelPedido(manualWaiting)]||'asoma';

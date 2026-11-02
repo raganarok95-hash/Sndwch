@@ -127,6 +127,41 @@ test('la pantalla del pedido avanza sola hasta «Ya me llegó»', async ({ page 
   await page.locator('[data-accion="ya-me-llego"]').click();
   await expect.poll(() => calls.filter((c) => c.action === 'confirm-my-delivery').length).toBe(1);
   await expect(page.locator('.m06 .pasos[data-etapa="llego"]')).toBeVisible();
+  await expect(page.locator('.m06 .califica')).toBeVisible();
+  await page.locator('[data-accion="pedir-otra-vez"]').click();
+  await expect.poll(() => page.evaluate(() => (window as any).cart.length)).toBe(1);
+});
+
+// Promesa (2026-11-02, «¿Qué más podemos mejorar?»): si el cliente cierra o recarga la app con un pedido
+// en curso, la puerta le ofrece volver a su seguimiento. Fallo silencioso: sale a Yape, vuelve, y no
+// encuentra su pedido; lo vuelve a pedir o escribe angustiado.
+test('con un pedido en curso, al volver a abrir la app la puerta lleva a su seguimiento', async ({ page }) => {
+  const calls = await hastaLa31(page, true);
+  await page.route('**/functions/v1/api', async (route) => {
+    const b = route.request().postDataJSON();
+    if (b && b.action === 'my-orders') {
+      const ref = calls.find((c) => c.action === 'place-order')!.body.ref;
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ orders: [{ id: '55555555-5555-4555-8555-555555555555', ref, status: 'EN CAMINO', payment_status: 'paid', payment_method: 'yape' }] }) });
+    }
+    return route.fallback();
+  });
+  await subirCapturaAlPagar(page);
+  await expect(page.locator('.m06 .pasos')).toBeVisible();
+  await page.reload();
+  await page.locator('[data-accion="volver-al-pedido"]').click();
+  await expect(page.locator('.m06 .pasos[data-etapa="camino"]')).toBeVisible();
+  await expect(page.locator('[data-accion="ya-me-llego"]')).toBeVisible();
+});
+
+// Promesa: mientras la cocina no empezó, el cliente cancela desde el mismo seguimiento.
+// Fallo silencioso: no encuentra cómo cancelar, el pedido se cocina y se pierde la venta y el insumo.
+test('mientras la cocina no empieza, se cancela desde el seguimiento', async ({ page }) => {
+  const calls = await hastaLa31(page, false, { codigo: 'ilegible' });
+  await subirCapturaAlPagar(page);
+  await page.locator('[data-accion="cancelar-pedido"]').click();
+  await page.locator('.ov-barra .si').click();
+  await expect.poll(() => calls.filter((c) => c.action === 'cancel-my-order').length).toBe(1);
+  await expect(page.locator('.m06 [data-estado-pago="cancelado"]')).toBeVisible();
 });
 
 test('un toque: el botón de 30CM agrega el de 30 sin pasar por la ficha', async ({ page }) => {

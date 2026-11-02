@@ -657,6 +657,8 @@ body.kb-open #app{padding-bottom:0}
 .pta .aviso-abre span{display:block;font-family:'EB Garamond',serif;font-size:15px;color:#EFE6D4;line-height:1.3;margin-top:3px}
 .pta .aviso-abre button{all:unset;cursor:pointer;flex:0 0 auto;background:#CBA258;color:#17130E;font-family:Archivo,sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:9px 10px}
 .pta .aviso-abre button:focus-visible{outline:2px solid #EFE6D4;outline-offset:2px}
+.pta button.aviso-abre.vivo{all:unset;box-sizing:border-box;cursor:pointer;position:absolute;left:16px;right:16px;top:64px;z-index:5;background:#1E4636;border:1px solid #CBA258;padding:12px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;text-align:left}
+.pta .aviso-abre.vivo u{text-decoration:none;flex:0 0 auto;background:#CBA258;color:#17130E;font-family:Archivo,sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:10px 12px}
 .pta .pie{background:#110F0C;padding:15px 12px calc(20px + env(safe-area-inset-bottom,0px));text-align:center}
 .pta .pie span{font-size:10px;letter-spacing:.22em;font-weight:600;text-transform:uppercase;color:#CBA258}
 .pta .pie em{font-style:italic;font-size:13px;color:#8E8A80;margin-left:10px}
@@ -1028,6 +1030,7 @@ body.kb-open #app{padding-bottom:0}
 .m06 .alerta label[data-accion="subir-captura"]{font:400 15px/1.45 Archivo,sans-serif;margin-top:0;letter-spacing:0}
 .m06 .bien{font:400 15px/1.45 Archivo,sans-serif;background:rgba(95,115,88,.12);border-radius:8px;padding:10px 12px;color:#33230F;margin-bottom:4px}
 .m06 .bien.mal{background:rgba(154,42,18,.1)}
+.m06 .cancela{all:unset;cursor:pointer;display:block;margin:16px 0 4px;padding:8px 0;font:600 11px/1 'IBM Plex Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#9A2A12;text-decoration:underline;text-underline-offset:3px}
 
 /* ═══ MUNDO WICHO · el armador (maqueta M22 + el puente, aprobada 2026-09-24) ═══════════════
    docs/maquetas/aprobadas/mundo-wicho-M22-con-puente.png y su fuente m22-con-puente.html.
@@ -4416,7 +4419,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '529db0a304';
+var APP_BUILD = '5a8334ce89';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6678,9 +6681,11 @@ function sOEleccion() {
         + yo
         // ANTES DE ABRIR, ARRIBA (dueño, 2026-11-02, «Sí a todo»; aprobadas/pedido-simple-puerta-
         // antes-de-abrir.png): el aviso iba abajo en chico y el cliente se enteraba recién al pagar.
-        + (businessLaunched ? '' : '<div class="aviso-abre" data-accion="aviso-antes-de-abrir"><div><b>' + esc(MES_DE_APERTURA) + ' //</b>'
-            + '<span>' + (avisameListo ? 'Listo: te escribimos el día que abramos.' : 'Ya puedes ver la carta. Te avisamos el día que abramos.') + '</span></div>'
-            + (avisameListo ? '' : '<button data-accion="avisame-al-abrir" onclick="avisameAlAbrir()">Avísame</button>') + '</div>')
+        // Un pedido en curso manda sobre todo lo demás: es lo que el cliente vino a ver.
+        + (pedidoVivoEnPuerta ? '<button class="aviso-abre vivo" data-accion="volver-al-pedido" onclick="abrirPedidoVivo()"><div><b>#' + esc(pedidoVivoEnPuerta.ref) + ' //</b><span>' + esc(textoPedidoEnPuerta(pedidoVivoEnPuerta)) + '</span></div><u>Ver →</u></button>'
+            : businessLaunched ? '' : '<div class="aviso-abre" data-accion="aviso-antes-de-abrir"><div><b>' + esc(MES_DE_APERTURA) + ' //</b>'
+                + '<span>' + (avisameListo ? 'Listo: te escribimos el día que abramos.' : 'Ya puedes ver la carta. Te avisamos el día que abramos.') + '</span></div>'
+                + (avisameListo ? '' : '<button data-accion="avisame-al-abrir" onclick="avisameAlAbrir()">Avísame</button>') + '</div>')
         + '<div class="mitades">'
         // ⚠ EL NUMERO SE CUENTA, NUNCA SE ESCRIBE (ver cuantosSignatures).
         + mitad('sig', 'hs', 'SND', 'Ya está resuelto', cuantosSignatures(), 'sando.webp')
@@ -9690,6 +9695,7 @@ function finalizeOrderSuccess(res, po, chargeId) {
     window._lNom = po.nom || '';
     window._lPhone = po.phone || '';
     window._lSummary = po.summary || '';
+    window._lItems = (po.items || []).map(function (it) { return Object.assign({}, it); });
     window._lOrderId = res.order && res.order.id ? String(res.order.id) : '';
     // El código del QR ya se usó (vale una vez por celular): no se vuelve a ofrecer escrito.
     if (po.promoCode) {
@@ -9736,6 +9742,7 @@ function finalizeOrderSuccess(res, po, chargeId) {
         render();
         uploadReceiptBase64(cap);
     }
+    guardarPedidoVivo();
     vigilarElPedido(window._lRef);
     // eventID = referencia del pedido: el servidor manda esta MISMA compra por Conversions
     // API con el mismo id, y Meta descarta el duplicado en vez de contar la venta dos veces.
@@ -9794,11 +9801,131 @@ function vigilarElPedido(ref) {
                 if (o.status === 'ENTREGADO')
                     window._lLlego = o.delivered_at ? Date.parse(o.delivered_at) : Date.now();
             }
-            if (cambio)
+            if (cambio) {
+                guardarPedidoVivo();
                 render();
+            }
         }
         catch (e) { }
     }, 15000);
+}
+// ── EL PEDIDO EN VIVO SOBREVIVE A CERRAR LA APP (dueño, 2026-11-02: «¿Qué más podemos mejorar?»).
+// El cliente sale a Yape y vuelve, o cierra la app: antes perdía el seguimiento y caía en la puerta
+// sin rastro de su pedido. Se guarda lo que la pantalla necesita y la puerta ofrece volver.
+var PEDIDO_VIVO_HORAS = 12;
+var pedidoVivoEnPuerta = null;
+function guardarPedidoVivo() {
+    try {
+        if (!window._lRef)
+            return;
+        if (window._lStatus === 'ENTREGADO' || window._lStatus === 'CANCELADO') {
+            localStorage.removeItem('sw_pedido_vivo');
+            return;
+        }
+        localStorage.setItem('sw_pedido_vivo', JSON.stringify({ ref: window._lRef, id: window._lOrderId, tot: window._lTot, pts: window._lPoints,
+            metodo: window._lPayMethod, pendiente: window._lPendingPayment, creado: window._lOrderCreatedAt, ventana: window._lVentana,
+            addr: window._lAddr, nom: window._lNom, phone: window._lPhone, summary: window._lSummary, items: window._lItems || [],
+            status: window._lStatus, confirmado: receiptUploadState === 'confirmado' }));
+    }
+    catch (e) { }
+}
+async function revisarPedidoVivo() {
+    var g = null;
+    try {
+        g = JSON.parse(localStorage.getItem('sw_pedido_vivo') || 'null');
+    }
+    catch (e) { }
+    if (!g || !g.ref)
+        return;
+    if (!g.creado || Date.now() - g.creado > PEDIDO_VIVO_HORAS * 3600000) {
+        try {
+            localStorage.removeItem('sw_pedido_vivo');
+        }
+        catch (e) { }
+        return;
+    }
+    try {
+        var r = cust && token ? await api('my-orders', { token: token }) : await api('my-orders', { ref: g.ref });
+        var o = ((r && r.orders) || []).find(function (x) { return x.ref === g.ref; });
+        if (!o || o.status === 'ENTREGADO' || o.status === 'CANCELADO') {
+            try {
+                localStorage.removeItem('sw_pedido_vivo');
+            }
+            catch (e) { }
+            return;
+        }
+        g.status = o.status;
+        g.pagado = o.payment_status === 'paid';
+        pedidoVivoEnPuerta = g;
+        render();
+    }
+    catch (e) { }
+}
+function textoPedidoEnPuerta(g) {
+    if (g.status === 'EN CAMINO')
+        return 'Tu pedido va en camino';
+    if (g.pendiente && !g.pagado)
+        return 'Tu pedido espera tu pago';
+    return 'Tu pedido está en la cocina';
+}
+function abrirPedidoVivo() {
+    var g = pedidoVivoEnPuerta;
+    if (!g)
+        return;
+    window._lRef = g.ref;
+    window._lOrderId = g.id;
+    window._lTot = g.tot;
+    window._lPoints = g.pts;
+    window._lPayMethod = g.metodo;
+    window._lPendingPayment = g.pendiente;
+    window._lOrderCreatedAt = g.creado;
+    window._lVentana = g.ventana;
+    window._lAddr = g.addr;
+    window._lNom = g.nom;
+    window._lPhone = g.phone;
+    window._lSummary = g.summary;
+    window._lItems = g.items || [];
+    window._lStatus = g.status;
+    window._lSalio = 0;
+    window._lLlego = 0;
+    window._lRankUp = null;
+    window._lSecretUnlock = false;
+    window._lFijo = null;
+    window._lRewardLabel = null;
+    receiptUploadState = g.pendiente && (g.pagado || g.confirmado) ? 'confirmado' : null;
+    capturaMotivo = null;
+    avisoPaso = 'aviso';
+    pedidoVivoEnPuerta = null;
+    sndScreen = 'o_sent';
+    render();
+    vigilarElPedido(g.ref);
+}
+function pedirLoMismoDelPedido() {
+    var its = window._lItems || [];
+    if (!its.length) {
+        volverALaPuerta();
+        return;
+    }
+    loadCart(its);
+}
+var _cancelandoDesdePedido = false;
+async function cancelarDesdeElPedido() {
+    if (_cancelandoDesdePedido || !window._lOrderId)
+        return;
+    if (!(await showConfirm('¿Cancelar este pedido? Como la cocina aún no empezó a prepararlo, no tiene costo.')))
+        return;
+    _cancelandoDesdePedido = true;
+    try {
+        await api('cancel-my-order', { token: token || undefined, orderId: window._lOrderId, ref: window._lRef });
+        window._lStatus = 'CANCELADO';
+        guardarPedidoVivo();
+        showToast('Pedido cancelado.', 'success');
+    }
+    catch (e) {
+        showToast(e.message);
+    }
+    _cancelandoDesdePedido = false;
+    render();
 }
 function reopenWhatsAppConfirm() {
     if (!window._lWaText)
@@ -10021,12 +10148,16 @@ function sOSent() {
                     : (invitado ? '<button data-accion="invitar" onclick="avisoPaso=\'correo\';aErr=\'Guarda tu cuenta y te damos tu link: cuando tu amigo pida, ganas un sándwich.\';render()">Invita a alguien y gana un sándwich <span>→</span></button>' : ''))
             + '</div>'
             // Si algo sale mal con este pedido, es acá donde el cliente lo va a buscar.
+            // 2) Calificar en el mismo momento en que llegó (antes estaba en el detalle, a dos pantallas).
+            + (et === 'llego' && window._lRef ? '<div class="califica">' + ratingHTML({ ref: window._lRef, status: 'ENTREGADO', delivered_at: new Date(window._lLlego || Date.now()).toISOString() }) + '</div>' : '')
+            // 3) Cancelar sin salir del seguimiento, mientras la cocina no empezó (el servidor lo exige igual).
+            + ((et === 'pago' || et === 'cocina') && window._lStatus === 'RECIBIDO' && window._lOrderId ? '<button class="cancela" data-accion="cancelar-pedido" onclick="cancelarDesdeElPedido()">Cancelar el pedido</button>' : '')
             + legalLinksHTML('o_sent');
         // La barra de abajo es lo que toca hacer AHORA, no «Seguir el pedido»: ya estás en el seguimiento.
         var subir = et === 'pago' && (!stR || errSubida || (stR === 'revisamos' && puedeSubirOtra(capturaMotivo)));
         pie = subir ? '<label class="oro" data-accion="subir-captura-abajo">Subir mi captura<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label><span class="cel">' + SOLES_TXT + pz(window._lTot || 0) + '</span>'
             : et === 'camino' ? '<button class="oro" data-accion="ya-me-llego" onclick="yaMeLlegoDesdeElPedido()">Ya me llegó</button><span class="cel">' + ref + '</span>'
-                : et === 'llego' || et === 'cancelado' ? '<button class="oro" data-accion="pedir-otra-vez" onclick="volverALaPuerta()">Pedir otra vez</button><button class="cel" onclick="volverALaPuerta()" aria-label="Pedir otra vez">→</button>'
+                : et === 'llego' || et === 'cancelado' ? '<button class="oro" data-accion="pedir-otra-vez" onclick="pedirLoMismoDelPedido()">Pedir lo mismo</button><button class="cel" onclick="volverALaPuerta()">Otra cosa</button>'
                     : '<button class="oro" data-accion="escribirnos" onclick="escribirnosDelPedido()">Escribirnos</button><button class="cel" onclick="escribirnosDelPedido()">WhatsApp</button>';
     }
     var pose = sube ? 'asoma' : POSE_DEL_PEDIDO[etapaDelPedido(manualWaiting)] || 'asoma';
@@ -13698,6 +13829,9 @@ window.addEventListener('load', function () { sndRestoreOwnedFns(); });
         }
     }
     // ?pedido=REF — el aviso de «va en camino» lleva directo a ese pedido (y a «Ya me llegó»).
+    // Un pedido en curso de esta visita o de una anterior: la puerta ofrece volver a su seguimiento.
+    if (!pedidoFromUrl && !deliveryTokenFromUrl)
+        revisarPedidoVivo();
     if (pedidoFromUrl && !deliveryTokenFromUrl)
         abrirPedidoDelEnlace(pedidoFromUrl);
     // ?entrega=TOKEN — el link del motorizado (#19). Va al final a propósito: si está, es lo
