@@ -142,11 +142,10 @@ BEBIDA = {b["id"]: (f'{b["nombre"]} // {b["sabor"]}', float(b["precio"])) for b 
 #
 # Se costea POR BEBIDA y no con un porcentaje plano: The Bloom cuesta 2.5x lo que The Cool y se
 # vende al mismo precio, así que un promedio esconde justo la que peor rinde.
-# 2026-11-02: LATA de 355 ml (antes botella de 500). El insumo bajó con el volumen; el envase de la
-# lata aún no está cotizado y se sigue usando el de la botella (ver modelo/costo_bebidas.py).
-ENVASE_BEBIDA = 0.69     # [PENDIENTE] precio de la botella; la lata sin cotizar
-BEBIDA_INSUMO = {        # por lata de 355 ml, sin el envase — ver modelo/costo_bebidas.py
-    "D06": 0.85, "D07": 0.51, "D08": 0.34,
+# 2026-11-02, dueño: al abrir se vende la botella de 500 ml; la lata espera a la selladora.
+ENVASE_BEBIDA = 0.69     # [COTIZADO] S/138 / 200 unidades
+BEBIDA_INSUMO = {        # por botella de 500 ml, sin el envase — ver modelo/costo_bebidas.py
+    "D06": 1.20, "D07": 0.72, "D08": 0.48,
 }
 def costo_bebida(code):
     return BEBIDA_INSUMO[code] + ENVASE_BEBIDA

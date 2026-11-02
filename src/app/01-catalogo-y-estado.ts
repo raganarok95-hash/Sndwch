@@ -209,8 +209,9 @@ var PROT_IMG:Record<string,string>=CARTA_VIEJA.PROT_IMG;
 // sándwich) y la palanca de attach que el modelo mide, así que se ganan una foto igual
 // que una proteína. Un id sin fila acá vuelve al ícono — nunca a un hueco.
 var DRINK_IMG:Record<string,string>=CARTA_VIEJA.DRINK_IMG;
-// Lo que trae cada lata (dueño, 2026-11-02: «355 ml, como la lata»). Antes la app decía 500 ml.
-var BEBIDA_ML=355;
+// Lo que trae cada bebida. Dueño, 2026-11-02: «primero entregaríamos en botellas de 500 ml pero más
+// sencillos». La lata de 355 ml vuelve cuando llegue la selladora (rama claude/precio-latas).
+var BEBIDA_ML=500;
 // Reestructurado esta sesión — ver el comentario espejo en REWARDS (catalog.ts) para el
 // porqué completo. R01 se retiró (topping extra ya es gratis para todos, sin nada real
 // que canjear). R02/R03/R05 quedan repreciadas contra el mismo "tipo de cambio" real que
