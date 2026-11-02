@@ -10,10 +10,10 @@ import { precio } from './produccion.mjs';
 // todavía sin día. Mientras APERTURA_CONFIRMADA sea false, APERTURA es solo el tope (el último
 // día de noviembre) para que nada salga antes, y lo que NOMBRA el día se niega a correr
 // (lanzamiento.mjs, subir.mjs, la historia con {dia_abre}). Al fijar el día:
-// se escribe acá y se pone en true.
+// se escribe acá y se pone en true. Fijado el 2026-11-02 (dueño: «Abrimos el 20 de noviembre»).
 // Todo texto que nombra el día de apertura la lee de aquí (lanzamiento.mjs, historias.mjs).
-export const APERTURA = '2026-11-30';
-export const APERTURA_CONFIRMADA = false;
+export const APERTURA = '2026-11-20';
+export const APERTURA_CONFIRMADA = true;
 
 // PREAPERTURA (dueño, 2026-10-22: «eso sí»). Mientras no se abre, el sistema publica solo lo que NO
 // invita a pedir (la carta, la cocina, «abrimos en noviembre»); lo que dice «pide» espera a abrir.
