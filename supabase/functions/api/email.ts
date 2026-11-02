@@ -1,6 +1,6 @@
 // SND//WCH — api / email
 // Envío del PIN de recuperación de cuenta por correo (Resend).
-import { RESEND_API_KEY, FROM_EMAIL, CONTACT_EMAIL, BUSINESS_LEGAL_NAME, SITE_URL } from "./env.ts";
+import { RESEND_API_KEY, FROM_EMAIL, CONTACT_EMAIL, BUSINESS_LEGAL_NAME, SITE_URL, BUSINESS_WHATSAPP } from "./env.ts";
 import { emailShell, escHtml } from "../_shared/email-shell.ts";
 import { PALETA as C } from "../_shared/paleta.ts";
 export function maskEmail(email: string): string {
@@ -57,7 +57,7 @@ export async function sendOrderConfirmationEmail(to: string, name: string, ref: 
   const html = emailShell("TU PEDIDO FUE RECIBIDO //", `
     <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">Hola ${escHtml(name)},</p>
     <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Recibimos tu pedido <b style="color:${C.text}">${escHtml(ref)}</b> por un total de <b style="color:${C.oro}">S/${total.toFixed(2)}</b>.</p>
-    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">Te avisaremos por correo cuando pasemos a prepararlo. Puedes seguir el estado de tu pedido en la app, sección PUNTOS → MIS PEDIDOS.</p>
+    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">Te avisaremos por correo cuando pasemos a prepararlo. Sigue tu pedido en <a href="${SITE_URL}/?pedido=${encodeURIComponent(ref)}" style="color:${C.oro}">sndwch.app</a>.</p>
   `);
   return sendResend([to], `SND//WCH — Recibimos tu pedido (${ref})`, html);
 }
@@ -91,6 +91,44 @@ export async function sendOrderStatusEmail(to: string, name: string, ref: string
     <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">Tu pedido está en <a href="${SITE_URL}/?pedido=${encodeURIComponent(ref)}" style="color:${C.oro}">sndwch.app</a>.</p>
   `);
   return sendResend([to], `SND//WCH — ${title} (${ref})`, html);
+}
+
+// CANCELADO, también por correo (2026-11-02). Cancelar solo mandaba push, y casi nadie tiene
+// el push activado (a la fecha, 0 de 7 pedidos de prueba; 6 de 7 dejaron correo): un invitado
+// cuyo pedido se cancelaba se quedaba esperando comida que no iba a llegar, y si había pagado,
+// sin saber que se le devuelve. `pagado` = el pedido ya estaba pagado al cancelarse (el panel
+// exige confirmar el reembolso antes de dejar cancelar uno así).
+export async function sendOrderCancelledEmail(
+  to: string, name: string, ref: string, motivo: "admin" | "pago-no-confirmado", pagado: boolean,
+): Promise<boolean> {
+  const porque = motivo === "pago-no-confirmado"
+    ? "No pudimos confirmar tu pago a tiempo, así que el pedido se canceló solo. Si sí pagaste, mándanos la captura por WhatsApp y lo vemos."
+    : "Tuvimos que cancelarlo de nuestro lado. Lo sentimos.";
+  const plata = pagado
+    ? `<p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Como ya estaba pagado, te devolvemos el dinero por el mismo medio. Te escribimos para coordinarlo.</p>`
+    : "";
+  const html = emailShell("TU PEDIDO FUE CANCELADO //", `
+    <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">Hola ${escHtml(name)},</p>
+    <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Tu pedido <b style="color:${C.text}">${escHtml(ref)}</b> fue cancelado. ${escHtml(porque)}</p>
+    ${plata}
+    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">¿Dudas? Escríbenos por WhatsApp al ${escHtml(BUSINESS_WHATSAPP)}.</p>
+  `);
+  return sendResend([to], `SND//WCH — Tu pedido fue cancelado (${ref})`, html);
+}
+
+// La respuesta a «Algo salió mal», también por correo (2026-11-02): antes solo iba por push,
+// y el panel decía «Le avisamos al cliente» aunque nadie lo recibiera.
+export async function sendOrderProblemResolvedEmail(
+  to: string, name: string, ref: string, solucion: string, nota: string,
+): Promise<boolean> {
+  const html = emailShell("SOBRE TU PEDIDO //", `
+    <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">Hola ${escHtml(name)},</p>
+    <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Revisamos lo que nos contaste de tu pedido <b style="color:${C.text}">${escHtml(ref)}</b>.</p>
+    <p style="font-size:16px;font-weight:800;color:${C.oro};margin:16px 0">${escHtml(solucion)}.</p>
+    ${nota ? `<p style="font-size:14px;color:${C["text-body"]};line-height:1.6;white-space:pre-wrap">${escHtml(nota)}</p>` : ""}
+    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">Gracias por avisarnos. Así mejoramos el siguiente.</p>
+  `);
+  return sendResend([to], `SND//WCH — Sobre tu pedido (${ref})`, html);
 }
 
 // Copia del reclamo/queja para el consumidor — exigido por el Código de Protección y
