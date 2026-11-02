@@ -61,7 +61,7 @@ function NAV(){
 }
 function legalLinksHTML(backTo){
   function lnk(label,screen,extra?){
-    return'<button type="button" onclick="bkTo=\''+backTo+'\';sndScreen=\''+screen+'\';'+(extra||'')+'render()" style="all:unset;cursor:pointer;font-family:Archivo,sans-serif;font-weight:700;font-size:11px;color:inherit;text-decoration:underline;text-underline-offset:3px;padding:6px 0">'+label+' <span class="cut-sep" style="color:'+GOLD+'">//</span></button>';
+    return'<button type="button" class="toque" onclick="bkTo=\''+backTo+'\';sndScreen=\''+screen+'\';'+(extra||'')+'render()" style="all:unset;position:relative;cursor:pointer;font-family:Archivo,sans-serif;font-weight:700;font-size:11px;color:inherit;text-decoration:underline;text-underline-offset:3px;padding:6px 0">'+label+' <span class="cut-sep" style="color:'+GOLD+'">//</span></button>';
   }
   // Color heredado del fondo donde se pinta (losa clara, kraft, lado WICHO): un gris fijo
   // pensado para fondo oscuro dejaba el Libro de Reclamaciones a 2:1 sobre la losa (2026-10-01).

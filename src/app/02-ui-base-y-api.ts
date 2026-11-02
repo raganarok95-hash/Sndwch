@@ -780,7 +780,7 @@ function VACIO(titulo,texto,cta?,estado?){
   var quien=ladoActual();
   // Del lado WICHO el fondo es celeste: el dorado y el gris de fondo oscuro quedaban a 1.3:1.
   var tinta=quien==='wicho'?'#0E2430':ACC(),suave=quien==='wicho'?'#2E4A58':'var(--sw-text-muted,#9DA096)';
-  return'<div style="text-align:center;padding:34px 10px 10px">'
+  return'<div class="vac" style="text-align:center;padding:34px 10px 10px">'
     +'<img src="'+broPose(quien,estado)+'" alt="" aria-hidden="true" loading="lazy" style="height:150px;width:auto;opacity:.85;margin-bottom:14px">'
     +'<div class="vacio-t" style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:11px;color:'+tinta+';letter-spacing:.2em">'+esc(titulo)+' //</div>'
     +'<p class="vacio-p" style="font-family:\'EB Garamond\',serif;font-size:13px;color:'+suave+';margin:10px auto 0;max-width:280px;line-height:1.55">'+texto+'</p>'

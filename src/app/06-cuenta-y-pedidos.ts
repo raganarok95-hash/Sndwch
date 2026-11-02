@@ -99,10 +99,10 @@ async function loadMyOrders(){
   var timer=setTimeout(function(){if(!done){done=true;listLoading=false;render();}},8000);
   try{
     if(cust){
-      myOrders=(await api('my-orders',{token:token})).orders;
+      myOrders=(await api('my-orders',{token:token})).orders||[];
     }else{
       var lr=localStorage.getItem('sw_last_ref');
-      myOrders=lr?(await api('my-orders',{ref:lr})).orders:[];
+      myOrders=lr?((await api('my-orders',{ref:lr})).orders||[]):[];
     }
   }catch(e){myOrders=[];}
   if(!done){done=true;clearTimeout(timer);listLoading=false;render();}
@@ -273,7 +273,7 @@ async function abrirPedidoDelEnlace(ref){
   if(!cust){try{localStorage.setItem('sw_last_ref',ref);}catch(e){}}
   sndScreen='p_orders';listLoading=true;render();
   try{
-    myOrders=cust?(await api('my-orders',{token:token})).orders:(await api('my-orders',{ref:ref})).orders;
+    myOrders=(cust?(await api('my-orders',{token:token})).orders:(await api('my-orders',{ref:ref})).orders)||[];
   }catch(e){myOrders=[];}
   listLoading=false;
   var o=(myOrders||[]).find(function(x:any){return x.ref===ref;});

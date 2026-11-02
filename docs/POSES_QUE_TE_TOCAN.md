@@ -227,7 +227,7 @@ costado, con el total en el medio. Si llega solo uno, la pantalla queda coja.
 
 ## 5 · SANDO EN LA PLANCHA — «ya está en la cocina» (pedida 2026-09-23)
 
-Referencia a subir: **`img/sando2_frente.png`** *(el SANDO nuevo, no el viejo)*
+Referencia a subir: **`img/fuente/personajes/sando2_frente.png`** *(el SANDO nuevo, no el viejo)*
 
 > **Por qué se pide:** la pantalla de pedido confirmado dice «ya está en la cocina» y hoy se
 > ilustra con SANDO **parado, sin hacer nada**, porque era la pose que había. La pantalla
