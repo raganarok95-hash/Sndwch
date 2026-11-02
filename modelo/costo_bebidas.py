@@ -12,11 +12,11 @@ etiquetados uno por uno: [COTIZADO] = dato real, [WEB] = precio publicado en Per
 [ESTIMADO] = supuesto de trabajo sin fuente. Ningún número entra sin etiqueta.
 """
 
-# 2026-11-02: la bebida se vende en LATA de 355 ml (dueño eligió «355 ml, como la lata»; la app lo
-# dice con BEBIDA_ML). El insumo se escala solo. El envase NO: S/0.69 era la botella de medio litro
-# y la lata (con su sticker) aún no tiene precio. Se deja el de la botella, marcado, hasta cotizarla.
-ENVASE = 0.69          # [PENDIENTE] precio de la botella (dueño 2026-09-05: S/138 / 200); la lata sin cotizar.
-ML_BOTELLA = 355       # lata de 355 ml (antes 500 ml)
+# 2026-11-02, dueño: «primero entregaríamos en botellas de 500 ml pero más sencillos». Al abrir se
+# vende la BOTELLA de medio litro; la lata de 355 ml (S/1.38, a S/8.50) espera a la selladora y está
+# lista en la rama claude/precio-latas.
+ENVASE = 0.69          # [COTIZADO] dueño 2026-09-05: S/138 / 200 unidades (la botella).
+ML_BOTELLA = 500       # medio litro
 
 # precio por kilo (o por litro, la leche) del insumo tal como se compra
 P = {
@@ -56,7 +56,7 @@ def costo_tanda(receta):
     return sum(P[k][0] * g / 1000.0 for k, g in receta.items())
 
 print("=" * 78)
-print(f"COSTO POR LATA DE {ML_BOTELLA} ML — envase S/{ENVASE:.2f} [PENDIENTE: precio de la botella, la lata sin cotizar]")
+print(f"COSTO POR BOTELLA DE {ML_BOTELLA} ML — envase S/{ENVASE:.2f} [COTIZADO]")
 print("=" * 78)
 print(f"{'bebida':<30}{'precio':>8}{'insumo':>9}{'envase':>8}{'costo':>8}{'deja':>8}{'costo%':>8}")
 print("-" * 78)
@@ -81,17 +81,17 @@ for n, pr, ins, co, deja, pct in filas:
 
 print("-" * 78)
 print("\nEL MISMO CÁLCULO A 350 ML (el vaso que asumía el recetario), para comparar:")
-print(f"{'bebida':<30}{'costo':>9}{'costo%':>9}   diferencia con la lata")
+print(f"{'bebida':<30}{'costo':>9}{'costo%':>9}   diferencia con 500 ml")
 print("-" * 78)
 for (nombre, precio, litros, receta), fila in zip(BEBIDAS, filas):
     c350 = costo_tanda(receta) / litros * 0.350 + ENVASE
-    print(f"{nombre:<30}{c350:>9.2f}{c350/precio*100:>8.1f}%   +{fila[5]-c350/precio*100:.1f} pts al pasar a la lata")
+    print(f"{nombre:<30}{c350:>9.2f}{c350/precio*100:>8.1f}%   +{fila[5]-c350/precio*100:.1f} pts al pasar a 500 ml")
 c350_chai = conc_por_litro * 0.175 / 1.0 * 1 + P["leche"][0] * 0.175 + ENVASE
 c350_chai = conc_por_litro * 0.175 + P["leche"][0] * 0.175 + ENVASE
-print(f"{'D09  The Spice // Chai':<30}{c350_chai:>9.2f}{c350_chai/9*100:>8.1f}%   +{filas[3][5]-c350_chai/9*100:.1f} pts al pasar a la lata")
+print(f"{'D09  The Spice // Chai':<30}{c350_chai:>9.2f}{c350_chai/9*100:>8.1f}%   +{filas[3][5]-c350_chai/9*100:.1f} pts al pasar a 500 ml")
 
 print("\n" + "=" * 78)
-print("¿QUÉ PRECIO NECESITA CADA LATA PARA QUEDAR EN EL TECHO DE 45%?")
+print("¿QUÉ PRECIO NECESITA CADA BOTELLA DE 500 ML PARA QUEDAR EN EL TECHO DE 45%?")
 print("(y para quedar donde están hoy las bebidas, ~22% de costo)")
 print("=" * 78)
 for n, pr, ins, co, deja, pct in filas:

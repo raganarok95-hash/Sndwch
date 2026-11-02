@@ -358,10 +358,10 @@ de margen hecho sin esto usa el precio del insumo crudo y sale ~1.85x optimista.
 
 ## Las bebidas se costean POR MEDIO LITRO, y el envase es la mitad del costo (2026-09-06)
 
-> **Actualización 2026-11-02:** la bebida se vende en **lata de 355 ml** (dueño eligió «355 ml, como la lata»).
-> `modelo/costo_bebidas.py` y `rentabilidad_por_parte.py` ya costean 355 ml: el insumo bajó con el volumen.
-> **El envase de la lata (con su sticker) no está cotizado**: se sigue usando el S/0.69 de la botella,
-> marcado `[PENDIENTE]`. La tabla de abajo es la de medio litro y queda como historia.
+> **Actualización 2026-11-02:** al abrir se vende la **botella de 500 ml** (dueño: «primero entregaríamos en
+> botellas de 500 ml pero más sencillos»): esta tabla sigue vigente. La **lata PET de 355 ml** (S/415 la caja
+> de 300 = S/1.38, vendida a S/8.50, bebida gratis 170 pts con tope S/8.50) entra cuando llegue la selladora;
+> el cambio completo está en la rama `claude/precio-latas`.
 
 El tamaño del vaso era la decisión pendiente que bloqueaba el costeo, y la resolvió el envase
 comprado: **medio litro**. Con eso y los S/0.69 de la botella, `modelo/costo_bebidas.py` deriva
