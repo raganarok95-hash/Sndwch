@@ -20,8 +20,8 @@ const ORDEN = (body: any) => ({
 
 async function pagarComoInvitado(page: Page) {
   await pedirUnSignature(page, { size: '15' });
-  await ponerRecibe(page, 'Cliente Invitado', '987654321');
   await ponerDireccion(page, 'Av. España 123, Trujillo', '');
+  await ponerRecibe(page, 'Cliente Invitado', '987654321');
   await pagarConYape(page);
   await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 }
@@ -66,8 +66,8 @@ test('antes de pagar no se ofrece ninguna cuenta', async ({ page }) => {
     await expect(page.locator('text=Crea tu cuenta')).toHaveCount(0);
   };
   await sinCuenta();                                   // la 30G
-  await ponerRecibe(page);
   await ponerDireccion(page, 'Av. España 123, Trujillo', '');
+  await ponerRecibe(page);
   await page.locator('.m30-go .oro').click();
   await page.locator('.m31.y').waitFor();
   await sinCuenta();                                   // la 31, donde se paga

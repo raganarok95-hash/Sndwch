@@ -1624,14 +1624,11 @@ function abrirPlato(idx:number){
     if(s&&pistas)pistas.scrollTop=s.offsetTop;
   },0);
 }
-// Primer toque: levanta la carta y marca su fila en la lista de abajo. Segundo toque: abre su
-// plato. Se hace sin render() para que el abanico no vuelva a abrirse desde cero en cada toque.
-// En la fila (2026-10-01): la carta del centro es la elegida. Tocarla abre su plato; tocar una del
-// costado la trae al centro.
+// La carta que tocas es la que se abre (dueño, 2026-11-02, «menos toques», lámina
+// docs/maquetas/aprobadas/menos-toques-tarot.png): antes, tocar una del costado solo la traía al
+// centro y había que tocarla otra vez. Deslizar sigue volteando las cartas (girarCartas).
 function tocarCarta(btn:HTMLElement){
-  if(btn.classList.contains('sel')){abrirPlato(Number(btn.getAttribute('data-plato')));return;}
-  var mano=btn.parentElement as HTMLElement|null;
-  if(mano)mano.scrollTo({left:btn.offsetLeft-(mano.clientWidth-btn.offsetWidth)/2,behavior:'smooth'});
+  abrirPlato(Number(btn.getAttribute('data-plato')));
 }
 // Cada carta gira según su distancia al centro: al pasar de una a otra se ve voltearse. La del
 // centro queda elegida y marca su fila en la lista. Se guarda dónde quedó la mano para que un
@@ -1726,7 +1723,7 @@ function sCartaTarot(visibles:any[],secreto:any){
     +'</div>'
     +'<div class="cab"><h1>Elige tu carta</h1><p>'+cuantas+' a la vista.'+(secreto?' La '+(total===7?'séptima':'última')+', boca abajo.':'')+'</p></div>'
     +'<div class="mano" onscroll="girarCartas(this)">'+cartas+'</div>'
-    +'<p class="pista">Desliza para pasar de carta. Toca la del centro y es tuya.</p>'
+    +'<p class="pista">Desliza para pasar de carta. Toca la que quieras y es tuya.</p>'
     +'<div class="lista"><h2>Lo que dice cada carta</h2>'+filas+'</div>'
     +'</div>';
 }

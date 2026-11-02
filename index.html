@@ -4381,7 +4381,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '125a7291e0';
+var APP_BUILD = '6c758dac12';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -7443,18 +7443,11 @@ function abrirPlato(idx) {
             pistas.scrollTop = s.offsetTop;
     }, 0);
 }
-// Primer toque: levanta la carta y marca su fila en la lista de abajo. Segundo toque: abre su
-// plato. Se hace sin render() para que el abanico no vuelva a abrirse desde cero en cada toque.
-// En la fila (2026-10-01): la carta del centro es la elegida. Tocarla abre su plato; tocar una del
-// costado la trae al centro.
+// La carta que tocas es la que se abre (dueño, 2026-11-02, «menos toques», lámina
+// docs/maquetas/aprobadas/menos-toques-tarot.png): antes, tocar una del costado solo la traía al
+// centro y había que tocarla otra vez. Deslizar sigue volteando las cartas (girarCartas).
 function tocarCarta(btn) {
-    if (btn.classList.contains('sel')) {
-        abrirPlato(Number(btn.getAttribute('data-plato')));
-        return;
-    }
-    var mano = btn.parentElement;
-    if (mano)
-        mano.scrollTo({ left: btn.offsetLeft - (mano.clientWidth - btn.offsetWidth) / 2, behavior: 'smooth' });
+    abrirPlato(Number(btn.getAttribute('data-plato')));
 }
 // Cada carta gira según su distancia al centro: al pasar de una a otra se ve voltearse. La del
 // centro queda elegida y marca su fila en la lista. Se guarda dónde quedó la mano para que un
@@ -7559,7 +7552,7 @@ function sCartaTarot(visibles, secreto) {
         + '</div>'
         + '<div class="cab"><h1>Elige tu carta</h1><p>' + cuantas + ' a la vista.' + (secreto ? ' La ' + (total === 7 ? 'séptima' : 'última') + ', boca abajo.' : '') + '</p></div>'
         + '<div class="mano" onscroll="girarCartas(this)">' + cartas + '</div>'
-        + '<p class="pista">Desliza para pasar de carta. Toca la del centro y es tuya.</p>'
+        + '<p class="pista">Desliza para pasar de carta. Toca la que quieras y es tuya.</p>'
         + '<div class="lista"><h2>Lo que dice cada carta</h2>' + filas + '</div>'
         + '</div>';
 }
@@ -8951,6 +8944,13 @@ async function hojaListo() {
             render();
             return;
         }
+        // Sin el punto del mapa, «Listo» lleva al mapa (dueño, 2026-11-02, «menos toques»,
+        // docs/maquetas/aprobadas/menos-toques-mapa.png): antes cerraba la hoja y Pagar la volvía a abrir.
+        if (!direccionLista()) {
+            hojaAlMapa();
+            alMapaDesdeListo = true;
+            return;
+        }
         hoja30 = null;
         hojaErr = '';
         render();
@@ -9098,7 +9098,7 @@ function usarDireccion() {
         return;
     pickAddr(dirElegida);
     dirElegida = null;
-    volverALaHoja();
+    volverALaHoja(true);
     go('o_cart');
 }
 // La hoja de datos manda al mapa (o a las guardadas) y, al volver, se abre otra vez con lo escrito.
@@ -9112,13 +9112,26 @@ function hojaAlMapa() {
         go('o_dir');
         return;
     }
+    render();
     otraDireccion();
 }
-function volverALaHoja() { if (volverAHojaDatos) {
+// confirmado: se eligió un punto. Si se llegó al mapa con «Listo» y ya está todo, se vuelve al
+// pedido listo para pagar; si no (o se volvió sin elegir), se abre otra vez la hoja con lo escrito.
+var alMapaDesdeListo = false;
+function volverALaHoja(confirmado) {
+    var desdeListo = alMapaDesdeListo;
+    alMapaDesdeListo = false;
+    if (!volverAHojaDatos)
+        return;
     volverAHojaDatos = false;
+    if (confirmado && desdeListo && direccionLista() && recibeListo()) {
+        hoja30 = null;
+        hojaErr = '';
+        return;
+    }
     hoja30 = 'recibe';
     hojaErr = '';
-} }
+}
 // El mapa de siempre (openMap/confirmMap): al confirmarlo deja dirección, distrito y
 // coordenadas, y se vuelve a la 30G.
 var volverDelMapa = false;
@@ -11039,7 +11052,7 @@ function confirmMap() {
     if (volverDelMapa) {
         volverDelMapa = false;
         pickedAddrId = null;
-        volverALaHoja();
+        volverALaHoja(true);
         go('o_cart');
         return;
     }

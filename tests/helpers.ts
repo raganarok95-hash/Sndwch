@@ -169,7 +169,8 @@ export async function pedirUnSignature(page: Page, opts: { i?: number; size?: '1
   if (await sin.isVisible()) await sin.click();
   await page.locator('.m30').waitFor();
 }
-// La hoja RECIBE de la 30G.
+// La hoja RECIBE de la 30G. Desde el 2026-11-02 («menos toques») su «Listo» sin el punto del mapa
+// lleva al mapa: la dirección (ponerDireccion) va ANTES.
 export async function ponerRecibe(page: Page, nombre = 'Cliente Invitado', celular = '987654321') {
   await page.locator('.m30 .en', { hasText: 'Recibe' }).click();
   await page.locator('#o-nom').fill(nombre);

@@ -512,6 +512,9 @@ async function hojaListo(){
     if(no)confNotes=no.value;
     if(!confNom.trim()){hojaErr='Escribe a nombre de quién va.';render();return;}
     if(confPhone.replace(/\D/g,'').length<6){hojaErr='Escribe un celular válido.';render();return;}
+    // Sin el punto del mapa, «Listo» lleva al mapa (dueño, 2026-11-02, «menos toques»,
+    // docs/maquetas/aprobadas/menos-toques-mapa.png): antes cerraba la hoja y Pagar la volvía a abrir.
+    if(!direccionLista()){hojaAlMapa();alMapaDesdeListo=true;return;}
     hoja30=null;hojaErr='';render();return;
   }
   if(hoja30==='codigo'){
@@ -607,7 +610,7 @@ function usarDireccion(){
   if(dirElegida==null)return;
   pickAddr(dirElegida);
   dirElegida=null;
-  volverALaHoja();
+  volverALaHoja(true);
   go('o_cart');
 }
 // La hoja de datos manda al mapa (o a las guardadas) y, al volver, se abre otra vez con lo escrito.
@@ -616,9 +619,19 @@ function hojaAlMapa(){
   syncConfirmFields();
   volverAHojaDatos=true;hoja30=null;hojaErr='';
   if(cust&&myAddresses.length){go('o_dir');return;}
+  render();
   otraDireccion();
 }
-function volverALaHoja(){if(volverAHojaDatos){volverAHojaDatos=false;hoja30='recibe';hojaErr='';}}
+// confirmado: se eligió un punto. Si se llegó al mapa con «Listo» y ya está todo, se vuelve al
+// pedido listo para pagar; si no (o se volvió sin elegir), se abre otra vez la hoja con lo escrito.
+var alMapaDesdeListo=false;
+function volverALaHoja(confirmado?:boolean){
+  var desdeListo=alMapaDesdeListo;alMapaDesdeListo=false;
+  if(!volverAHojaDatos)return;
+  volverAHojaDatos=false;
+  if(confirmado&&desdeListo&&direccionLista()&&recibeListo()){hoja30=null;hojaErr='';return;}
+  hoja30='recibe';hojaErr='';
+}
 // El mapa de siempre (openMap/confirmMap): al confirmarlo deja dirección, distrito y
 // coordenadas, y se vuelve a la 30G.
 var volverDelMapa=false;
@@ -2061,7 +2074,7 @@ function confirmMap(){
   // pantalla que lo abrió con el texto y el pin (despuesDelMapa, 07-*).
   if(mapaVuelveA){var vuelve=mapaVuelveA;mapaVuelveA=null;despuesDelMapa(vuelve,a);return;}
   // Desde «Otra dirección» de la 34: la dirección queda elegida y se vuelve al recibo.
-  if(volverDelMapa){volverDelMapa=false;pickedAddrId=null;volverALaHoja();go('o_cart');return;}
+  if(volverDelMapa){volverDelMapa=false;pickedAddrId=null;volverALaHoja(true);go('o_cart');return;}
   render();
   var el=(document.getElementById('o-addr') as HTMLInputElement | null);
   // El resaltado usa el ACENTO del lado, no el azul de "pedido en preparación". Ese azul es

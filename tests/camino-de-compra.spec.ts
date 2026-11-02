@@ -21,8 +21,8 @@ test('con Yape, sin distrito: el pedido sale con el total de la carta más el en
   const calls = await gotoApp(page, { 'place-order': ORDEN });
   await elegirSando(page);
   await pedirUnSignature(page, { size: '15' });
-  await ponerRecibe(page, 'Cliente Camino', '987654321');
   await ponerDireccion(page, 'Calle Los Cedros 500', '');
+  await ponerRecibe(page, 'Cliente Camino', '987654321');
   await pagarConYape(page);
   await expect(page.locator('.m06')).toBeVisible({ timeout: 10000 });
 
@@ -42,8 +42,8 @@ test('con tarjeta, sin distrito: prepare-order lleva el envío con la comisión'
   const calls = await gotoApp(page, { 'prepare-order': () => ({ success: true }) });
   await elegirSando(page);
   await pedirUnSignature(page, { size: '15' });
-  await ponerRecibe(page);
   await ponerDireccion(page, 'Calle Los Cedros 500', '');
+  await ponerRecibe(page);
   await page.locator('.m30-go .oro').click();
   await page.locator('.m31.y').waitFor();
   await page.locator('[onclick*="selectPayMethod(\'culqi\')"]').click();

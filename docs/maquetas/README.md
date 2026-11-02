@@ -123,3 +123,5 @@ la forma, no en los datos.
 | Pedido simple · Yape, subir la captura | `pedido-simple-yape-subir-captura.png` | `../propuestas/pedido-simple.html` lámina 4 | «Sí a todo» (2026-11-02): «Subir mi captura» reemplaza a «Ya pagué»; sin WhatsApp |
 | Pedido simple · pago confirmado | `pedido-simple-pago-confirmado.png` | `../propuestas/pedido-simple.html` lámina 4 | «Sí a todo» (2026-11-02): «en la cocina» solo cuando el pago cuadró |
 | Pedido simple · la estamos revisando | `pedido-simple-la-estamos-revisando.png` | `../propuestas/pedido-simple.html` lámina 4 | «Sí a todo» (2026-11-02): si la captura no cuadra o pasa del tope, queda para el dueño |
+| Menos toques · el tarot | `menos-toques-tarot.png` | `../propuestas/menos-toques.html` lámina 1 | «Losyo continua» (2026-11-02, a las dos láminas): la carta que tocas abre su plato al primer toque; deslizar sigue volteando |
+| Menos toques · Listo al mapa | `menos-toques-mapa.png` | `../propuestas/menos-toques.html` lámina 2 | ídem: en la hoja «¿Quién y dónde?», «Listo» sin el punto del mapa lleva al mapa y, al marcar, vuelve al pedido listo para pagar |

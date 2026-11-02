@@ -83,8 +83,8 @@ test('abrir un Signature y empezar a pagar llegan al píxel, una vez cada uno', 
   await page.evaluate(() => { const w = window as any; w._eventos = []; w.fbq = (_m: string, ev: string) => { w._eventos.push(ev); }; });
   await elegirSando(page);
   await pedirUnSignature(page);
-  await ponerRecibe(page);
   await ponerDireccion(page);
+  await ponerRecibe(page);
   await page.locator('.m30-go .oro').click();
   await page.locator('.m31').waitFor();
   await page.locator('.m31 .sal').click();

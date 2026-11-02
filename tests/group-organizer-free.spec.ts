@@ -125,8 +125,8 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   expect(perdonado, 'el 15CM más barato del grupo tiene que ir gratis').toBeCloseTo(c.p15[barato]!, 2);
   await expect(page.locator('text=/Sándwich del organizador/')).toBeVisible();
 
-  await ponerRecibe(page, 'Ana Cliente', '900000001');
   await ponerDireccion(page, 'Av. España 123, Trujillo', '');
+  await ponerRecibe(page, 'Ana Cliente', '900000001');
   await pagarConYape(page);
   await expect(page.locator('.m06 .ok', { hasText: 'Pedido recibido' })).toBeVisible({ timeout: 10000 });
 

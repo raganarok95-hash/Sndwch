@@ -17,8 +17,8 @@ async function hastaLa31(page: any, confirmado: boolean) {
     '*': { success: true },
   });
   await pedirUnSignature(page, { size: '15' });
-  await ponerRecibe(page);
   await ponerDireccion(page);
+  await ponerRecibe(page);
   await page.locator('.m30-go .oro').click();
   await page.locator('.m31.y').waitFor();
   return calls;

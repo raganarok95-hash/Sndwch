@@ -15,8 +15,8 @@ test('si prepare-order falla, el motivo se queda en Pagar y se reporta', async (
     '*': { success: true },
   });
   await pedirUnSignature(page);
-  await ponerRecibe(page);
   await ponerDireccion(page);
+  await ponerRecibe(page);
   await page.locator('.m30-go .oro').click();
   await page.locator('.m31').waitFor();
   await page.evaluate(() => { (window as any).selectPayMethod('culqi'); (window as any).render(); });
@@ -35,8 +35,8 @@ test('si la ventana de Culqi no aparece, Pagar lo dice y se reporta', async ({ p
   await page.addInitScript(() => { (window as any).Culqi = { settings() {}, options() {}, open() {} }; });
   const calls = await gotoApp(page, { '*': { success: true } });
   await pedirUnSignature(page);
-  await ponerRecibe(page);
   await ponerDireccion(page);
+  await ponerRecibe(page);
   await page.locator('.m30-go .oro').click();
   await page.locator('.m31').waitFor();
   await page.evaluate(() => { (window as any).selectPayMethod('culqi'); (window as any).render(); });
@@ -70,8 +70,8 @@ test('un invitado paga con tarjeta con el correo que dio en Culqi', async ({ pag
     '*': { success: true },
   });
   await pedirUnSignature(page);
-  await ponerRecibe(page);
   await ponerDireccion(page);
+  await ponerRecibe(page);
   await page.locator('.m30-go .oro').click();
   await page.locator('.m31').waitFor();
   await page.evaluate(() => { (window as any).selectPayMethod('culqi'); (window as any).render(); });
