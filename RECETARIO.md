@@ -2,6 +2,10 @@
 
 **Versión 4 · 2026-09-24 · carta v4, los clásicos de USA**
 
+> **2026-11-02 · Para cocinar la carta de hoy, usa `recetas/COCINA_CARTA_V4.md`** (versión 5,
+> corta, paso a paso, revisada para la apertura). Este documento queda como referencia: el porqué
+> de cada técnica y las recetas retiradas. Donde los dos chocan, manda el nuevo.
+
 > **Cambio de la v4 (2026-09-24): carta nueva y NO HAY PLANCHA.**
 > - La carta vigente es la de `supabase/functions/_shared/carta.ts` (la misma que cobra el
 >   servidor): **Philly Cheesesteak, Meatball Marinara, Turkey, Tuna Melt, Italian Hoagie y
@@ -60,7 +64,7 @@ En hora de servicio no se cocina: solo se **arma**.
 **PRIMERA VERSIÓN (2026-09-24).** La misma receta está cargada en el panel (Admin → Recetas),
 que es la que manda: si cambia allá, esta sección queda vieja.
 
-**Tanda de 5 kg de res limpia (el corte cotizado a ~S/20/kg) → 40 porciones.** Sal 50 g,
+**Tanda de 5 kg de aguja de res comprada (S/25/kg, dueño 2026-09-30) → ~4.6 kg limpios → 40 porciones.** Sal 50 g,
 pimienta negra molida 10 g, y ~100 ml de aceite para la sartén a lo largo del servicio.
 
 1. Limpiar grasa dura y nervio; cortar en bloques de 1 kg (20 min).
@@ -325,8 +329,9 @@ gratis y recupera ~12% de peso cocido.
 **No se cocina. Se mezcla.** Ratio **4:1 atún escurrido : mayonesa.**
 
 **Tanda de 2 kg de ensalada:**
-- Atún escurrido 1.6 kg · mayonesa 400 g · sal 12 g · pimienta blanca 3 g · mostaza amarilla 40 g
-  (emulsiona y le da filo sin dulzor).
+- Atún escurrido 1.6 kg · mayonesa 400 g · pimienta blanca 3 g · sal solo si hace falta (la lata ya
+  trae). *(2026-11-02: sale la mostaza: la receta es la original de USA, atún, mayonesa y pimienta,
+  decisión del dueño del 2026-09-05, y es lo que dice la carta.)*
 - **Escurre de verdad**, prensando con la tapa de la lata. Atún mal escurrido = ensalada aguada que
   empapa el pan.
 - Desmenuza con tenedor, **no lo hagas pasta**. Quieres lascas visibles.
@@ -336,8 +341,7 @@ acidez ni sal. **Refrigerado, 3 días máximo. Se hace domingo y miércoles y no
 Señales para botar: olor agrio o metálico fuerte, líquido separado en el fondo, color apagado.
 **No se congela** (la mayonesa se corta al descongelar).
 
-**El apio (T08) va aparte, al armar**, no mezclado en la tanda: si lo mezclas el domingo, para el
-martes ya no cruje y perdiste justo lo que fuiste a buscar.
+**Sin apio** desde el 2026-09-05 (salió de la receta).
 
 ---
 
@@ -397,8 +401,10 @@ gomosa. Es el paso que más se salta la gente y el que más se nota.
 
 1. Remoja el pan en la leche 10 min, aplasta hasta pasta.
 2. Mezcla todo **con la mano y poco** — amasar de más da textura de salchicha.
-3. **Bolas de 25 g** (usa la balanza las primeras veces hasta que te salga a ojo).
-   → **15CM: 3 albóndigas (75 g) + 10 g de salsa adherida = 85 g. 30CM: 6 albóndigas.**
+3. **Bolas de 30 g** (usa la balanza las primeras veces hasta que te salga a ojo). *(2026-11-02:
+   antes decía 25 g, pero la mezcla pesa ~2.7 kg y con 25 g salen ~108 bolas, no las 90 del panel
+   y del costeo; 30 g cuadra con las 90 y acerca el 15CM a los 85 g que se prometen.)*
+   → **15CM: 3 albóndigas + 10 g de salsa adherida. 30CM: 6 albóndigas.**
    Tres de 25 g se muerden mejor que dos grandes: en dos, la primera mordida saca una entera y se
    cae del pan.
 4. **Hornea a 200°C, 15-18 min** — se hacen todas a la vez sin que tengas que estar volteando, que
@@ -422,7 +428,9 @@ un meatball sub en delivery.**
 Salsa caliente + queso derretido + vinagreta + viaje en moto. Cuatro cosas concretas:
 1. **Tuesta la cara interna del pan** en sartén, 30-40 s. Una capa seca y dorada es una
    barrera física real.
-2. **La mozzarella va DEBAJO de las albóndigas, sobre el pan**, no encima. Además de derretir con
+2. *(2026-11-02: hoy es queso americano y va ENCIMA, porque la carta promete «derretido hasta el
+   borde»; la barrera la hace el pan tostado. Lo de abajo era la versión con mozzarella.)*
+   **La mozzarella va DEBAJO de las albóndigas, sobre el pan**, no encima. Además de derretir con
    el calor de la salsa, hace de segunda barrera. (Si va arriba se ve mejor en foto, pero el pan se
    moja: elige.)
 3. **Escurre las albóndigas antes de ponerlas.** Máximo **10 g de salsa por porción de 15CM**. La
@@ -643,10 +651,11 @@ stockear** (pierde textura en 1-2 días), así que tendrías que hornear casi a 
 ## Quesos
 | id | Queso | Va en | Gramaje 15CM / 30CM |
 |---|---|---|---|
-| C01 | Mozzarella | **SIG02, fijo** | 11 g / 22 g |
-| C02 | Cheddar | **SIG03, fijo** | 11 g / 22 g |
-| C03 | Edam | opcional en BYO | 11 g / 22 g |
-En láminas, **debajo de la proteína caliente** para que derrita con su calor (y haga de barrera).
+| C01 | Americano (tajado) | **MEATBALL MARINARA e ITALIAN HOAGIE, fijo** | 1 tajada (17 g) / 2 tajadas |
+| C02 | Cheddar (tajado) | **PHILLY CHEESESTEAK y TUNA MELT, fijo** | 1 tajada (17 g) / 2 tajadas |
+*(2026-11-02: la tabla decía mozzarella, cheddar y edam a 11/22 g; el dueño pasó a americano y
+cheddar en tajadas, 1 por 15CM y 2 por 30CM, el 2026-09-30, y así se costea en `modelo/insumos.py`.)*
+En los calientes el queso va **encima** y se funde en la sartén tapada (`recetas/COCINA_CARTA_V4.md`).
 
 ## Toppings — corte, gramaje y qué se compra vs. qué se hace
 
@@ -665,7 +674,7 @@ justo los que vienen en frasco.
 | T03 | Cebolla morada | Juliana **fina, 2 mm** | **7 g** | 12 g | 7 g | Comprar. Ver nota ⬇ |
 | T04 | Jalapeño *(menú secreto)* | Rodajas de 3 mm | **7 g** | 12 g | — | **Comprar** en frasco |
 | T05 | Aceituna negra | Rodajas de 3 mm | **3 g** | 12 g | 3 g | **Comprar** ya deshuesada |
-| T06 | Pimiento curado | Tiras de 1 cm | **7 g** | 18 g | 7 g | Comprar en frasco, o asar y pelar tú |
+| T06 | Pimiento verde fresco | Tiras finas | **7 g** | 18 g | 7 g | Comprar fresco (la carta dice «Pimiento // Verde», fresco; antes era curado en frasco) |
 | T08 | Apio | Picado de 3-4 mm | **7 g** | 12 g | no lo tiene* | Comprar fresco. **Se pica al día**, no antes |
 
 *Subway no tiene apio; se lleva al nivel de sus vegetales menores (7 g), que es el criterio
@@ -689,6 +698,10 @@ vinagre. Pierde el filo y gana crocancia. Escúrrela bien.
 ---
 
 # PARTE 4 — BEBIDAS
+
+> **2026-11-02 · Estas recetas con azúcar ya no se usan.** Al abrir van en botella de 500 ml con
+> las fórmulas cero azúcar v6 (dueño, 2026-10-24), que están fuera del repo. Ver
+> `docs/BEBIDAS_PRODUCTO.md` §17-§26.
 
 La parte más rentable del catálogo, y ya no es una estimación: **19-32% de costo por botella**,
 menos de la mitad del techo de 45%. **Cada bebida vendida mueve más la caja que subir el precio de
