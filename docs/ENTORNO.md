@@ -806,3 +806,10 @@ con la sesión del dueño: no hay navegador con su sesión y `list_computer_fold
 Windows y Remote Control no sirve carpetas de Windows). La vía es **Claude in Chrome en su laptop**, con
 `scripts/meta/INSTAGRAM_EN_CHROME.md`. El token nuevo se verifica con `estado-apertura.yml` («Publicar probado
 contra Meta»).
+
+## La CLI de Supabase pide confirmar el deploy (2026-11-02)
+
+Desde la versión `latest` de hoy, `supabase functions deploy` pide «Confirmation required … Re-run with --yes»
+y, sin terminal, sale con error sin desplegar nada. `deploy-api.yml` lleva `--yes` en cada función. Lo
+delató el deploy de las 12:36 (run 41446058806), que falló en silencio para la app: el servidor quedó en la
+versión anterior.
