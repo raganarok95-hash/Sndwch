@@ -21,6 +21,12 @@ Si un subagente no aparece en la lista, usa `general-purpose` y dile: «Lee
 `.claude/agents/<nombre>.md` y las skills que lista en `skills:` (`.claude/skills/<skill>/SKILL.md`)
 y trabaja como ese especialista».
 
+
+> **Ejecución (dueño, 2026-11-02: «el marketing está repitiendo lo que ya tenemos como imagen… mejoremos mucho más»).**
+> Ninguna pieza sale con una foto que ya está publicada (`estilo-sndwch` reglas 7 y 8, criterio **Novedad**). El
+> dueño ve la maqueta de cada pieza antes de producirla. Si hacen falta imágenes nuevas, el resumen dice cuántas y
+> cuántos créditos de Figma cuestan, y se generan solo con su sí.
+
 ## 0 · La carpeta
 `docs/marketing/piezas/<id>/` con `pieza.json`:
 ```json
