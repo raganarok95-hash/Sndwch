@@ -730,6 +730,7 @@ body.kb-open #app{padding-bottom:0}
 /* Las bebidas son LATAS (dueño, 2026-11-02): se ven enteras, nunca recortadas. El PNG/WebP trae su halo
    de color y fondo transparente: arriba del nombre en SANDO, a la derecha de la fila en WICHO. */
 .b3 .fo{background:#17130E}
+.b3 .fo .sinfoto{position:absolute;top:13%;left:0;width:100%;height:40%;display:flex;align-items:center;justify-content:center;opacity:.55}
 .b3 .fo img[src*="drink_"]{position:absolute;top:13%;left:0;width:100%;height:40%;object-fit:contain;object-position:50% 0}
 .b3 .fo .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,12,6,.62) 0 18%,rgba(8,12,6,.1) 42%,rgba(8,12,6,.88) 88%)}
 .b3 .arr{position:absolute;left:26px;right:26px;top:84px;z-index:6;display:flex;justify-content:space-between;align-items:baseline}
@@ -3456,10 +3457,14 @@ var PROT_IMG = CARTA_VIEJA.PROT_IMG;
 // qué es ninguna. Son lo más rentable del catálogo (19-32% de costo contra ~45% de un
 // sándwich) y la palanca de attach que el modelo mide, así que se ganan una foto igual
 // que una proteína. Un id sin fila acá vuelve al ícono — nunca a un hueco.
-var DRINK_IMG = CARTA_VIEJA.DRINK_IMG;
 // Lo que trae cada bebida. Dueño, 2026-11-02: «primero entregaríamos en botellas de 500 ml pero más
 // sencillos». La lata de 355 ml vuelve cuando llegue la selladora (rama claude/precio-latas).
 var BEBIDA_ML = 500;
+// Las fotos de img/drink_* son LATAS de 355 ml (lo dicen en la etiqueta). Mostrarlas mientras se
+// entrega botella de 500 ml promete otro envase (dueño, 2026-11-02: «No tengo foto de las
+// botellas por ahora»). Sin foto, cada bebida se pinta con su nombre y su sabor; las fotos vuelven
+// solas cuando BEBIDA_ML pase a 355 con la rama de las latas.
+var DRINK_IMG = BEBIDA_ML === 355 ? CARTA_VIEJA.DRINK_IMG : {};
 // Reestructurado esta sesión — ver el comentario espejo en REWARDS (catalog.ts) para el
 // porqué completo. R01 se retiró (topping extra ya es gratis para todos, sin nada real
 // que canjear). R02/R03/R05 quedan repreciadas contra el mismo "tipo de cambio" real que
@@ -4420,7 +4425,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '3f28c3c2e5';
+var APP_BUILD = 'faa07d01a7';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6648,7 +6653,7 @@ function sMundoBebidas() {
     return '<div class="b3 fi"><button class="sal" onclick="salirDeBebidas()" aria-label="Volver">←</button>'
         + '<div class="pistas" onscroll="bebidaDeslizada(this)">'
         + lista.map(function (x, i) {
-            return '<section class="vaso" aria-label="' + esc(x.l) + '"><div class="fo">' + (DRINK_IMG[x.id] ? '<img src="' + DRINK_IMG[x.id] + '" alt="" ' + (i ? 'loading="lazy"' : '') + '>' : '') + '<div class="v"></div></div>'
+            return '<section class="vaso" aria-label="' + esc(x.l) + '"><div class="fo">' + (DRINK_IMG[x.id] ? '<img src="' + DRINK_IMG[x.id] + '" alt="" ' + (i ? 'loading="lazy"' : '') + '>' : '<span class="sinfoto" aria-hidden="true">' + icon(x.icon || 'hoja', 112) + '</span>') + '<div class="v"></div></div>'
                 + '<div class="arr"><em>Algo para tomar</em><u>' + (lista.length > 1 ? 'Desliza →' : '') + '</u></div>'
                 + '<div class="nom"><b>' + esc(x.l) + '</b><s>' + esc(x.s) + ' · ' + BEBIDA_ML + ' ml</s><p>' + esc(x.d || '') + '</p></div>'
                 + '<div class="pz">' + precioBebidaHTML(x) + '</div>'

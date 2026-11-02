@@ -948,7 +948,7 @@ function sMundoBebidas(){
   return'<div class="b3 fi"><button class="sal" onclick="salirDeBebidas()" aria-label="Volver">←</button>'
     +'<div class="pistas" onscroll="bebidaDeslizada(this)">'
     +lista.map(function(x,i){
-      return'<section class="vaso" aria-label="'+esc(x.l)+'"><div class="fo">'+(DRINK_IMG[x.id]?'<img src="'+DRINK_IMG[x.id]+'" alt="" '+(i?'loading="lazy"':'')+'>':'')+'<div class="v"></div></div>'
+      return'<section class="vaso" aria-label="'+esc(x.l)+'"><div class="fo">'+(DRINK_IMG[x.id]?'<img src="'+DRINK_IMG[x.id]+'" alt="" '+(i?'loading="lazy"':'')+'>':'<span class="sinfoto" aria-hidden="true">'+icon((x as any).icon||'hoja',112)+'</span>')+'<div class="v"></div></div>'
         +'<div class="arr"><em>Algo para tomar</em><u>'+(lista.length>1?'Desliza →':'')+'</u></div>'
         +'<div class="nom"><b>'+esc(x.l)+'</b><s>'+esc(x.s)+' · '+BEBIDA_ML+' ml</s><p>'+esc(x.d||'')+'</p></div>'
         +'<div class="pz">'+precioBebidaHTML(x)+'</div>'
