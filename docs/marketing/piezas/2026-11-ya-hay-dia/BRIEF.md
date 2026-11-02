@@ -2,7 +2,7 @@
 
 - **Qué pasó:** el dueño fijó la apertura: viernes 20 de noviembre, 11:00 (`scripts/video-auto/reglas-del-revisor.mjs`).
   El feed y la biografía todavía dicen «abrimos en noviembre».
-- **Para qué:** que quien ya nos sigue anote el día y toque «Avísame cuando abran» en la app. Se mide en anotados y en
+- **Para qué:** que quien ya nos sigue se guarde el día y lo comparta (no hay lista de espera). Se mide en guardados, compartidos y en
   visitas con `?src=ig-post-ya-hay-dia`.
 - **A quién:** quien almuerza en oficina o estudia cerca de El Golf (Víctor Larco) y ya nos sigue o le llega por un amigo.
 - **Lo que tiene que quedar:** el día y la hora. Nada más compite con eso.

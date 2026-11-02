@@ -15,8 +15,9 @@ concreta hace que la gente lo anote y lo planee (Gollwitzer, *American Psycholog
 dónde» se cumple bastante más que la intención suelta; estudio de laboratorio, sin estudio peruano). Por eso el mes se
 cuenta en tres tiempos:
 
-1. **Antes (3–19 nov): que te conozcan y te anotes.** Se explica la carta («nadie conoce qué es un Philly») y se invita a
-   tocar «Avísame cuando abran» en la app. Todavía no se dice «pide».
+1. **Antes (3–19 nov): que te conozcan y se guarden la fecha.** Se explica la carta («nadie conoce qué es un Philly») y
+   cada pieza repite el día. Todavía no se dice «pide». Sin lista de espera (dueño, 2026-11-02: «no hay lista de espera en
+   sí y no creo que la haya»): lo que se busca es que sigan la cuenta, guarden y compartan.
 2. **La semana de abrir (16–22 nov): la cuenta y el día.** Cuenta regresiva corta (3 piezas) y el viernes, «hoy abrimos».
 3. **Después (23 nov–6 dic): que vuelvan y traigan a otro.** El almuerzo de oficina en grupo, el 30CM, los referidos y,
    con diciembre, el almuerzo de fin de año.
@@ -27,9 +28,9 @@ El plan de plata pone **5 pedidos al día al 19 de diciembre** como primera meta
 
 | semana | qué se mide | meta |
 |---|---|---|
-| 3–8 nov | anotados en «Avísame» · seguidores | primera lectura: se fija la base el domingo 8 |
-| 9–15 nov | anotados · guardados y compartidos del feed | el doble de anotados que la semana anterior |
-| 16–22 nov | anotados al jueves 19 · pedidos del 20 al 22 | 3 pedidos al día del viernes al domingo |
+| 3–8 nov | seguidores · guardados y compartidos | primera lectura: se fija la base el domingo 8 |
+| 9–15 nov | seguidores · guardados y compartidos · visitas a la app con `src=` | más guardados y compartidos que la semana anterior |
+| 16–22 nov | visitas a la app con `src=` al jueves 19 · pedidos del 20 al 22 | 3 pedidos al día del viernes al domingo |
 | 23–29 nov | pedidos al día · cuántos con `src=` | 3 al día, y al menos 1 pedido en grupo |
 | 30 nov–6 dic | pedidos al día · cuántos vuelven | 4 al día, y 1 oficina con almuerzo semanal |
 
@@ -51,7 +52,7 @@ pausa hasta que digas.
 | hoy o mañana (tú, 5 min) | **Biografía**: «Abrimos el viernes 20 de noviembre, 11:00.» en lugar de «Abrimos en noviembre». Enlace igual (`?src=ig-bio`) | listo para pegar |
 | hoy o mañana (tú) | Resubir en 4:5 el Reel y los cuadrados que quedaron mal recortados | pendiente de antes |
 | jue 5 o vie 6, 12:30 | **Publicación «Ya hay día»** (pieza nueva, `piezas/2026-11-ya-hay-dia/`) | **eliges el concepto** |
-| vie 6 a dom 8 | 2 historias con la lámina de la fecha y «Avísame cuando abran» (enlace `?src=ig-hist-avisame`) | salen de la pieza |
+| vie 6 a dom 8 | 2 historias con la lámina de la fecha (enlace `?src=ig-hist-fecha`) | salen de la pieza |
 
 Las 6 historias de esta semana con los hermanos (14 encargos a Flow) se dan por perdidas: no tienen imagen y su tema
 («abrimos este mes») ya lo cubre la fecha.
@@ -68,7 +69,7 @@ quién se lo mandas: 10 personas que almuerzan en oficina o en la universidad.
 | sáb 14 | 12:30 | Cómo se dice: Sub, Hoagie, Melt (carrusel de 5) |
 
 Está en `semanas/2026-11-09/`. **Espera tu sí** a las 9 imágenes nuevas en Figma (versión 2, con los créditos de tu plan);
-si no, sale la versión 1, hecha con las fotos aprobadas. Cada publicación va también en historia, con «Avísame».
+si no, sale la versión 1, hecha con las fotos aprobadas. Cada publicación va también en historia, con la fecha.
 
 **Crecer:** con los embajadores que dijeron sí, se les da su enlace (`emb-…`) para que lo pasen desde el 20.
 
@@ -86,9 +87,8 @@ La agencia del lunes 16 produce estas piezas. Los temas ya están fijados; las i
 
 Desde el viernes 20, por primera vez, **se puede decir «pide»**: el sistema ya tiene la fecha y lo deja pasar desde ese día.
 
-**El mensaje a los anotados.** El viernes 20 a las 10:45, un WhatsApp a cada persona que tocó «Avísame»: «Abrimos hoy a
-las 11:00. Tu enlace: sndwch.app/?src=avisame». **Es un envío masivo: necesita tu sí.** Marketing define el texto y la
-hora; el envío automático lo construye el hilo de la app («Maquetas del pedido simple»).
+**Tus contactos.** No hay lista de espera. Si quieres, el viernes 20 a las 10:45 tú mismo pones un estado de WhatsApp o
+les escribes a tus contactos: «Abrimos hoy a las 11:00. sndwch.app/?src=wa-estado». Nada se manda solo.
 
 ### Semana 3 · 23 al 29 de noviembre: que vuelvan
 
@@ -117,7 +117,7 @@ El domingo 6 se compara contra la meta (4 pedidos al día) y se decide la semana
 
 1. **El concepto de «Ya hay día»** (tarjeta en el hilo).
 2. **Las imágenes nuevas en Figma**: las 9 de la semana del 9 y 1 o 2 de «Ya hay día», con los créditos de tu plan.
-3. **El WhatsApp del 20 a los anotados** (envío masivo).
+3. **Tu estado de WhatsApp del 20** (lo pones tú, si quieres).
 4. **El video del día**: con la fecha fijada, el sistema lo deja salir desde el 20 (antes, desde el 30). Hoy no se
    publica solo porque Instagram no está unido a la página. Si quieres que siga en pausa aunque se una, dímelo.
 

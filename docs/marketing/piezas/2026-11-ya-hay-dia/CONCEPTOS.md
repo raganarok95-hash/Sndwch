@@ -7,7 +7,7 @@ no tiene (`estilo-sndwch` regla 8). Ninguna dice «pide».
 - **Lo que se ve:** sobre el papel `#EFE6D4`, la fecha gigante en Anton, «20», las dos barras de la marca y «11». Debajo,
   un pan de sub de 30 cm, entero y sin abrir, con una sola línea de corte en el centro que cae justo bajo las barras.
 - **Ejecución:** tipografía gigante con un objeto.
-- **Titular:** VIERNES 20, 11:00 · **Frase:** *El pan ya tiene fecha de corte.* · **Dato:** sndwch.app · Avísame cuando abran
+- **Titular:** VIERNES 20, 11:00 · **Frase:** *El pan ya tiene fecha de corte.* · **Dato:** sndwch.app
 - **Por qué:** el `//` siempre fue el corte del pan; acá además separa el día del mes, y suma en vez de adornar. La
   fecha a ese tamaño se lee en un segundo sin la foto (fluidez: Reber, Schwarz y Winkielman, 2004).
 - **Imagen nueva:** 1 (el pan entero, cenital, sobre papel).
