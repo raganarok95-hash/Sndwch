@@ -46,6 +46,8 @@ CULQI = 0.055              # comisión de tarjeta (Culqi), solo en la web
 PUNTOS = 0.015             # los puntos de la web devuelven ~1.5% de lo gastado (recompensas de la carta)
 FIJOS = 500.0              # dato del dueño: opera desde casa (gas, internet, varios)
 PAN_ENVIO = 65.0           # S/15 por envío del pan, una vez por semana
+CAPACIDAD = 35             # pedidos al día que arma él solo trabajando en el banco [dueño: 40 por persona; se baja por el horario]
+AYUDANTE = 1400.0          # sueldo mínimo S/1,130 + EsSalud y vacaciones [confirmar]; con ayudante, capacidad 70
 
 # ─── 2. LO QUE SE SORTEA (rango bajo, probable, alto; distribución triangular) ────────────────
 R = {
@@ -81,18 +83,18 @@ def tri(t):
     return random.triangular(lo, hi, mo)
 
 
-def impuesto(ventas, compras, util):
+def impuesto(ventas, compras, util, anio=2026):
     """Nuevo RUS hasta S/8,000 de ventas al mes (cuota S/20 o S/50). Por encima, Régimen MYPE:
     IGV de restaurante MYPE 10.5% en 2026 y 15% en 2027 (Ley 31556 y prórrogas; confirmar con el
     contador), crédito por compras con factura (~80%), renta 10% y contador S/200."""
     if ventas <= 8000:
         return 20.0 if ventas <= 5000 else 50.0
-    tasa = 0.105
+    tasa = 0.105 if anio <= 2026 else 0.15
     igv = max(0.0, tasa / (1 + tasa) * ventas - 0.18 / 1.18 * 0.8 * compras)
     return igv + 0.10 * max(0.0, util - igv) + 200.0
 
 
-def corrida(meta_mes=0.0, embaj_mes=0, rappi_ads=0.0):
+def corrida(meta_mes=0.0, embaj_mes=0, rappi_ads=0.0, H=3, capacidad=CAPACIDAD, ayudante=False):
     x = {k: tri(v) for k, v in R.items()}
     cac_meta = tri(R_META["cpm"]) / (1000 * tri(R_META["ctr"]) * tri(R_META["cvr"]))
     # Ticket y costo de UN pedido
@@ -102,14 +104,19 @@ def corrida(meta_mes=0.0, embaj_mes=0, rappi_ads=0.0):
     ticket = sand * p_s + x["pct_bebida"] * (P_BEB - COMBO)
     costo = sand * c_s - (sand - 1) * 2.50 + x["pct_bebida"] * C_BEB   # el empaque (S/2.50) va una vez por pedido
     activos, meses = 0.0, []
-    for m in range(3):
-        nuevos = x["nuevos_dia_m1"] * x["crec_mes"] ** m * DIAS_ABIERTO
+    crec_acum = 1.0
+    for m in range(H):
+        # El boca a boca crece, pero se frena: el crecimiento de cada mes se achica 20% (Trujillo es chico).
+        if m:
+            crec_acum *= 1 + (x["crec_mes"] - 1) * 0.8 ** (m - 1)
+        nuevos = x["nuevos_dia_m1"] * crec_acum * DIAS_ABIERTO
         nuevos += (meta_mes / cac_meta if m >= 1 else 0.0)        # Meta desde el mes 2, tras la prueba
         nuevos += embaj_mes * (min(m, 2) / 2)                      # embajadores: arrancan de a poco
         nuevos += rappi_ads / 25.0 if rappi_ads else 0.0          # [SIN DATO] ~S/25 por cliente
         # Los que vuelven este mes: los nuevos de este mes (45% de su vuelta cae en 30 días) y la base fiel
         vuelven = nuevos * x["vuelve_90"] * 0.45
         ped = nuevos + activos * x["ped_mes_fiel"] + vuelven
+        ped = min(ped, capacidad * DIAS_ABIERTO)                  # no se arma más de lo que cabe
         activos = activos * (1 - x["fuga_mes"]) + nuevos * x["vuelve_90"]
         apps = x["pct_apps"] * (0.9 ** m)                          # cada mes, más pedidos por la web
         rappi_desc = 0.30 if m == 0 else 0.0                       # Rappi: 30% de descuento obligatorio el mes 1
@@ -120,8 +127,8 @@ def corrida(meta_mes=0.0, embaj_mes=0, rappi_ads=0.0):
         ventas = ped * ((1 - apps) * ticket + apps * t_app)
         contrib = ped * ((1 - apps) * deja_web + apps * deja_app)
         gasto_pub = meta_mes * (m >= 1) + embaj_mes * (min(m, 2) / 2) * 8.0 + rappi_ads + (700 if meta_mes and m == 0 else 0)
-        util = contrib - FIJOS - PAN_ENVIO - gasto_pub
-        liquido = util - impuesto(ventas, ped * costo, util)
+        util = contrib - FIJOS - PAN_ENVIO - gasto_pub - (AYUDANTE if ayudante else 0.0)
+        liquido = util - impuesto(ventas, ped * costo, util, 2026 if m == 0 else 2027)
         meses.append(dict(liquido=liquido, ped_dia=ped / DIAS_ABIERTO, ventas=ventas, nuevos=nuevos,
                           deja_web=deja_web, deja_app=deja_app, ticket=ticket))
     return meses, cac_meta
@@ -138,6 +145,34 @@ def resumen(nombre, **kw):
         print(f"  mes {m+1}: líquido p10 {liq[N//10]:>7,.0f} · mediana {liq[N//2]:>7,.0f} · p90 {liq[9*N//10]:>7,.0f}"
               f" · {ped:4.1f} pedidos/día · ventas {ven:>7,.0f} · llega a 5,000: {p:.0%}")
     return runs
+
+
+def sostenido(H=24):
+    """¿Desde qué mes se SOSTIENE la meta? Una corrida «sostiene» desde el mes M si deja 5,000 o más
+    en M y en todos los meses siguientes hasta el 24. Se reporta la mediana de la ganancia por mes y
+    el % de corridas que ya sostienen en el mes 6, 12, 18 y 24."""
+    print(f"\n¿DESDE CUÁNDO SE SOSTIENEN 5,000 AL MES? (24 meses, {N} corridas)")
+    planes = [
+        ("A. Sin publicidad", dict()),
+        ("B. Embajadores", dict(embaj_mes=30)),
+        ("C. Embajadores + anuncios en Rappi/PedidosYa", dict(embaj_mes=30, rappi_ads=300)),
+        ("D. C + Meta S/1,500", dict(embaj_mes=30, rappi_ads=300, meta_mes=1500)),
+        ("C con ayudante (capacidad 70)", dict(embaj_mes=30, rappi_ads=300, capacidad=70, ayudante=True)),
+    ]
+    for nombre, kw in planes:
+        runs = [corrida(H=H, **kw)[0] for _ in range(N)]
+        med = [st.median(r[m]["liquido"] for r in runs) for m in range(H)]
+        ped = [st.median(r[m]["ped_dia"] for r in runs) for m in range(H)]
+        desde = []
+        for r in runs:
+            d = next((k for k in range(H) if all(r[j]["liquido"] >= META for j in range(k, H))), None)
+            desde.append(d)
+        pct = {k: sum(1 for d in desde if d is not None and d < k) / N for k in (6, 12, 18, 24)}
+        llega_med = next((k + 1 for k in range(H) if all(v >= META for v in med[k:])), None)
+        print(nombre)
+        print("  mediana: " + " · ".join(f"m{k+1} {med[k]:,.0f} ({ped[k]:.0f}/día)" for k in (2, 5, 8, 11, 17, 23)))
+        print(f"  sostiene 5,000 (mediana) desde el mes: {llega_med or 'no en 24'} · corridas que ya sostienen: "
+              + " · ".join(f"mes {k}: {v:.0%}" for k, v in pct.items()))
 
 
 if __name__ == "__main__":
@@ -160,3 +195,4 @@ if __name__ == "__main__":
         liq = sorted(r["liquido"] for r in rr)
         print(f"  {n:>2} nuevos/día en el mes 1 → mes 3 mediana {liq[750]:>7,.0f} · {st.median(r['ped_dia'] for r in rr):.1f} pedidos/día · ventas {st.median(r['ventas'] for r in rr):,.0f}")
     R["nuevos_dia_m1"] = orig
+    sostenido()
