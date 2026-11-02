@@ -71,3 +71,29 @@ test('una captura pendiente leída con el lector anterior se relee sola una vez'
   await expect.poll(() => ocr.length, { message: 'la captura vieja no se releyó' }).toBe(1);
   expect(ocr[0].ref).toBe('R-4444');
 });
+
+// Promesa (dueño, 2026-11-02: «me gustaría desde wsp poder aprobarlo manualmente»): el enlace del pedido
+// que el cliente manda por WhatsApp, abierto en el celular del dueño con sesión, cae en el panel sobre
+// ESE pedido, con «Pago recibido · armar →» a un toque. Fallo: el dueño abre el enlace y ve la pantalla
+// de cliente («no encontramos tu pedido»), y tiene que buscarlo a mano mientras el cliente espera.
+test('el enlace del pedido abierto por el dueño lleva al panel sobre ese pedido, listo para aprobar', async ({ page }) => {
+  const confirmados: any[] = [];
+  await page.addInitScript(() => { (window as any).Tesseract = { recognize: async () => ({ data: { text: 'x' } }) }; });
+  await gotoApp(page, {
+    login: { customer: { phone: '900000001', name: 'Dueño', points: 0 }, isAdmin: true, token: 't' },
+    'admin-orders': { orders: [PEDIDO], truncated: false },
+    'admin-receipt-url': { url: 'https://ejemplo.invalid/c.jpg' },
+    'admin-receipt-ocr': { success: true, fields: {}, checks: {}, auto: { confirmar: false, confirmado: false, motivo: 'no se leyó' } },
+    'admin-confirm-payment': (b: any) => { confirmados.push(b); return { success: true, order: { ...PEDIDO, payment_status: 'paid' } }; },
+    'admin-update-status': { success: true, order: { ...PEDIDO, payment_status: 'paid', status: 'PREPARANDO' } },
+    '*': { success: true },
+  });
+  await entrarConTelefono(page);
+  await page.waitForFunction(() => (window as any).cust);
+  await page.evaluate((ref) => { try { localStorage.setItem('sw_abro_con', new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' })); } catch (e) {} (window as any).abrirPedidoDelEnlace(ref); }, PEDIDO.ref);
+  const tarjeta = page.locator(`.coc-p.revisar[data-pedido="${PEDIDO.id}"]`);
+  await expect(tarjeta).toBeVisible();
+  await tarjeta.locator('[data-accion="confirmar-pago"]').click();
+  await expect.poll(() => confirmados.length).toBe(1);
+  expect(confirmados[0].orderId).toBe(PEDIDO.id);
+});

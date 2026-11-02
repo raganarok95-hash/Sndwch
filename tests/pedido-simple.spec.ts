@@ -57,6 +57,52 @@ test('si la captura no cuadra por el monto, lo dice y deja subir otra', async ({
   await expect.poll(() => calls.filter((c) => c.action === 'upload-receipt').length).toBe(antes + 1);
 });
 
+// Promesa (dueño, 2026-11-02: «si la captura no la lee debe darle la opción de enviar pedido y captura
+// por whatsapp»): cuando la captura no se confirma, el cliente puede mandar su pedido por WhatsApp al
+// número del negocio, con el enlace a ESE pedido. Fallo silencioso: el cliente pagó, no sabe qué hacer y
+// el pedido se cancela solo.
+test('si la captura no se confirma, deja mandar el pedido por WhatsApp con el enlace a ese pedido', async ({ page }) => {
+  // Espía con defineProperty: el stub de gotoApp y el blindaje del router reemplazarían una asignación.
+  await page.addInitScript(() => {
+    const w = window as any; w.__abiertos = [];
+    const espia = (u: string) => { w.__abiertos.push(u); return null; };
+    Object.defineProperty(window, 'open', { get: () => espia, set: () => {}, configurable: true });
+  });
+  const calls = await hastaLa31(page, false, { codigo: 'ilegible' });
+  await subirCapturaAlPagar(page);
+  await page.locator('[data-accion="mandar-por-whatsapp"]').click();
+  const ref = calls.find((c) => c.action === 'place-order')!.body.ref;
+  const abiertos: string[] = await page.evaluate(() => (window as any).__abiertos);
+  const wa = abiertos.find((u) => u.startsWith('https://wa.me/'));
+  expect(wa, 'no abrió WhatsApp').toBeTruthy();
+  expect(wa).toContain('wa.me/51930957640');
+  expect(new URL(wa!).searchParams.get('text')).toContain('?pedido=' + encodeURIComponent(ref));
+});
+
+// Promesa: si el dueño aprueba el pago a mano (panel o WhatsApp), la pantalla del cliente pasa sola a
+// «en la cocina». Fallo silencioso: el cliente ve «la estamos revisando» con su pedido ya cocinándose,
+// y escribe o lo cancela.
+test('si el pago se aprueba a mano, la pantalla del cliente se entera sola', async ({ page }) => {
+  await page.clock.install();
+  let pagado = false;
+  const calls = await hastaLa31(page, false, { codigo: 'ilegible' });
+  await page.route('**/functions/v1/api', async (route) => {
+    const b = route.request().postDataJSON();
+    if (b && b.action === 'my-orders') {
+      const ref = calls.find((c) => c.action === 'place-order')!.body.ref;
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ orders: [{ id: '55555555-5555-4555-8555-555555555555', ref, status: pagado ? 'PREPARANDO' : 'RECIBIDO', payment_status: pagado ? 'paid' : 'pending', payment_method: 'yape' }] }) });
+    }
+    return route.fallback();
+  });
+  await subirCapturaAlPagar(page);
+  await expect(page.locator('.m06 [data-estado-pago="captura-no-cuadra"]')).toBeVisible();
+  await page.clock.runFor(16000);
+  await expect(page.locator('.m06 [data-estado-pago="captura-no-cuadra"]')).toBeVisible();
+  pagado = true;
+  await page.clock.runFor(16000);
+  await expect(page.locator('.m06 [data-estado-pago="en-la-cocina"]')).toBeVisible();
+});
+
 test('un toque: el botón de 30CM agrega el de 30 sin pasar por la ficha', async ({ page }) => {
   await gotoApp(page, { '*': { success: true } });
   await page.locator('.m15 .plato').first().locator('[data-accion="agregar-30"]').click();

@@ -467,6 +467,7 @@ body.kb-open #app{padding-bottom:0}
 .coc-p.pago{border-left-color:var(--sw-danger,#ff8888)}.coc-p.cola{border-left-color:var(--sw-warn,#ffa500)}
 .coc-p.armando{border-left-color:#3A86FF}.coc-p.camino{border-left-color:#9b6fff}
 .coc-p.tarde{box-shadow:0 0 0 2px var(--sw-danger,#ff8888) inset}
+.coc-p.revisar{box-shadow:0 0 0 3px var(--sw-gold,#CBA258)}
 .coc-p .h{display:flex;align-items:baseline;gap:8px}
 .coc-p .h b{font-size:18px;font-weight:800}
 .coc-p .tag{font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px;background:var(--sw-border)}
@@ -724,6 +725,10 @@ body.kb-open #app{padding-bottom:0}
 .b3 .vaso{position:relative;flex:0 0 100%;height:100%;scroll-snap-align:start;overflow:hidden}
 .b3 .fo{position:absolute;inset:0;z-index:1}
 .b3 .fo img{width:100%;height:100%;object-fit:cover;object-position:50% 40%}
+/* Las bebidas son LATAS (dueño, 2026-11-02): se ven enteras, nunca recortadas. El PNG/WebP trae su halo
+   de color y fondo transparente: arriba del nombre en SANDO, a la derecha de la fila en WICHO. */
+.b3 .fo{background:#17130E}
+.b3 .fo img[src*="drink_"]{position:absolute;top:13%;left:0;width:100%;height:40%;object-fit:contain;object-position:50% 0}
 .b3 .fo .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,12,6,.62) 0 18%,rgba(8,12,6,.1) 42%,rgba(8,12,6,.88) 88%)}
 .b3 .arr{position:absolute;left:26px;right:26px;top:84px;z-index:6;display:flex;justify-content:space-between;align-items:baseline}
 .b3 .arr em{font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.28em;color:#E8D08A;text-transform:uppercase}
@@ -746,6 +751,7 @@ body.kb-open #app{padding-bottom:0}
 .bw .cab u{text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E90A4;text-transform:uppercase}
 .bw .bd{all:unset;box-sizing:border-box;cursor:pointer;position:relative;display:flex;align-items:center;gap:14px;width:100%;min-height:228px;padding:26px 24px;overflow:hidden;margin-bottom:2px}
 .bw .bd img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.bw .bd img[src*="drink_"]{z-index:1;top:92px;bottom:6px;left:auto;right:6px;width:110px;height:auto;object-fit:contain;object-position:50% 100%}
 .bw .bd .v{position:absolute;inset:0;background:linear-gradient(90deg,rgba(9,22,31,.9) 0%,rgba(9,22,31,.44) 52%,rgba(9,22,31,.78) 100%)}
 .bw .bd .tx{position:relative;z-index:2;flex:1;min-width:0}
 .bw .bd .tx b{display:block;font-family:Anton,sans-serif;font-weight:700;font-size:34px;line-height:.9;color:#fff;letter-spacing:-.015em;text-transform:uppercase}
@@ -978,7 +984,8 @@ body.kb-open #app{padding-bottom:0}
 .m06 .dr.espera span{color:#B3651A}
 .m06 .nota{font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.7;color:#6C7C64;padding:12px 0;border-bottom:1px solid rgba(30,43,34,.16)}
 .m06 .nota label{cursor:pointer;color:#B3651A;text-decoration:underline;text-underline-offset:3px;position:relative}
-.m06 .nota label.otra-captura{display:inline-block;margin-top:8px;padding:6px 0;font-weight:700}
+.m06 .nota label.otra-captura,.m06 .nota button.otra-captura{display:inline-block;margin-top:8px;padding:6px 0;font-weight:700}
+.m06 .nota button.otra-captura{all:unset;display:inline-block;margin-top:4px;padding:6px 0;cursor:pointer;color:#B3651A;text-decoration:underline;text-underline-offset:3px;font-weight:700;font:inherit;font-weight:700}
 .m06 .guardar{display:flex;gap:8px;align-items:stretch}
 .m06 .guardar .g{flex:1;min-height:44px;background:#241B12;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .m06 .guardar .c{all:unset;cursor:pointer;box-sizing:border-box;flex:0 0 auto;min-height:44px;display:flex;align-items:center;padding:0 12px;border:1px solid rgba(30,43,34,.35);font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#241B12;text-transform:uppercase}
@@ -1279,6 +1286,7 @@ body.kb-open #app{padding-bottom:0}
 .mgr .tam button.on{background:#4A3218;border-color:#4A3218;color:#F0E2CA}
 .mgr .it{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px dashed rgba(74,50,24,.4)}
 .mgr .it img{width:64px;height:64px;object-fit:cover;flex:none;border:1px solid rgba(74,50,24,.35)}
+.mgr .it img[src*="drink_"],.ya-k .beb img[src*="drink_"]{object-fit:contain}
 .mgr .it .t{flex:1;min-width:0}
 .mgr .it .t b{display:block;font:800 15px/1.2 Archivo,sans-serif;color:#2A1D0E}
 .mgr .it .t s{display:block;text-decoration:none;font:400 13px/1.4 Archivo,sans-serif;color:#4A3218;margin-top:3px}

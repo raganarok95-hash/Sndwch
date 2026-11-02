@@ -467,6 +467,7 @@ body.kb-open #app{padding-bottom:0}
 .coc-p.pago{border-left-color:var(--sw-danger,#ff8888)}.coc-p.cola{border-left-color:var(--sw-warn,#ffa500)}
 .coc-p.armando{border-left-color:#3A86FF}.coc-p.camino{border-left-color:#9b6fff}
 .coc-p.tarde{box-shadow:0 0 0 2px var(--sw-danger,#ff8888) inset}
+.coc-p.revisar{box-shadow:0 0 0 3px var(--sw-gold,#CBA258)}
 .coc-p .h{display:flex;align-items:baseline;gap:8px}
 .coc-p .h b{font-size:18px;font-weight:800}
 .coc-p .tag{font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px;background:var(--sw-border)}
@@ -724,6 +725,10 @@ body.kb-open #app{padding-bottom:0}
 .b3 .vaso{position:relative;flex:0 0 100%;height:100%;scroll-snap-align:start;overflow:hidden}
 .b3 .fo{position:absolute;inset:0;z-index:1}
 .b3 .fo img{width:100%;height:100%;object-fit:cover;object-position:50% 40%}
+/* Las bebidas son LATAS (dueño, 2026-11-02): se ven enteras, nunca recortadas. El PNG/WebP trae su halo
+   de color y fondo transparente: arriba del nombre en SANDO, a la derecha de la fila en WICHO. */
+.b3 .fo{background:#17130E}
+.b3 .fo img[src*="drink_"]{position:absolute;top:13%;left:0;width:100%;height:40%;object-fit:contain;object-position:50% 0}
 .b3 .fo .v{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,12,6,.62) 0 18%,rgba(8,12,6,.1) 42%,rgba(8,12,6,.88) 88%)}
 .b3 .arr{position:absolute;left:26px;right:26px;top:84px;z-index:6;display:flex;justify-content:space-between;align-items:baseline}
 .b3 .arr em{font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.28em;color:#E8D08A;text-transform:uppercase}
@@ -746,6 +751,7 @@ body.kb-open #app{padding-bottom:0}
 .bw .cab u{text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:10px;color:#6E90A4;text-transform:uppercase}
 .bw .bd{all:unset;box-sizing:border-box;cursor:pointer;position:relative;display:flex;align-items:center;gap:14px;width:100%;min-height:228px;padding:26px 24px;overflow:hidden;margin-bottom:2px}
 .bw .bd img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.bw .bd img[src*="drink_"]{z-index:1;top:92px;bottom:6px;left:auto;right:6px;width:110px;height:auto;object-fit:contain;object-position:50% 100%}
 .bw .bd .v{position:absolute;inset:0;background:linear-gradient(90deg,rgba(9,22,31,.9) 0%,rgba(9,22,31,.44) 52%,rgba(9,22,31,.78) 100%)}
 .bw .bd .tx{position:relative;z-index:2;flex:1;min-width:0}
 .bw .bd .tx b{display:block;font-family:Anton,sans-serif;font-weight:700;font-size:34px;line-height:.9;color:#fff;letter-spacing:-.015em;text-transform:uppercase}
@@ -978,7 +984,8 @@ body.kb-open #app{padding-bottom:0}
 .m06 .dr.espera span{color:#B3651A}
 .m06 .nota{font-family:'IBM Plex Mono',monospace;font-size:11px;line-height:1.7;color:#6C7C64;padding:12px 0;border-bottom:1px solid rgba(30,43,34,.16)}
 .m06 .nota label{cursor:pointer;color:#B3651A;text-decoration:underline;text-underline-offset:3px;position:relative}
-.m06 .nota label.otra-captura{display:inline-block;margin-top:8px;padding:6px 0;font-weight:700}
+.m06 .nota label.otra-captura,.m06 .nota button.otra-captura{display:inline-block;margin-top:8px;padding:6px 0;font-weight:700}
+.m06 .nota button.otra-captura{all:unset;display:inline-block;margin-top:4px;padding:6px 0;cursor:pointer;color:#B3651A;text-decoration:underline;text-underline-offset:3px;font-weight:700;font:inherit;font-weight:700}
 .m06 .guardar{display:flex;gap:8px;align-items:stretch}
 .m06 .guardar .g{flex:1;min-height:44px;background:#241B12;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .m06 .guardar .c{all:unset;cursor:pointer;box-sizing:border-box;flex:0 0 auto;min-height:44px;display:flex;align-items:center;padding:0 12px;border:1px solid rgba(30,43,34,.35);font:600 10px/1 'IBM Plex Mono',monospace;letter-spacing:.12em;color:#241B12;text-transform:uppercase}
@@ -1279,6 +1286,7 @@ body.kb-open #app{padding-bottom:0}
 .mgr .tam button.on{background:#4A3218;border-color:#4A3218;color:#F0E2CA}
 .mgr .it{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px dashed rgba(74,50,24,.4)}
 .mgr .it img{width:64px;height:64px;object-fit:cover;flex:none;border:1px solid rgba(74,50,24,.35)}
+.mgr .it img[src*="drink_"],.ya-k .beb img[src*="drink_"]{object-fit:contain}
 .mgr .it .t{flex:1;min-width:0}
 .mgr .it .t b{display:block;font:800 15px/1.2 Archivo,sans-serif;color:#2A1D0E}
 .mgr .it .t s{display:block;text-decoration:none;font:400 13px/1.4 Archivo,sans-serif;color:#4A3218;margin-top:3px}
@@ -2032,9 +2040,9 @@ body.kb-open #app{padding-bottom:0}
     // D07 se llamaba «The Midnight»: el nombre venía del concepto de las horas, que el dueño
     // descartó. 2026-10-24: «Cold Brew // Tea», a prueba 4 semanas (docs/BEBIDAS_PRODUCTO.md §19).
     bebidas: [
-      { id: "D06", nombre: "The Bloom", sabor: "Hibiscus", precio: 6, desc: "Flor de jamaica en infusión con un toque de canela, bien helada. Ácida y floral: limpia el paladar entre bocado y bocado, así el último sabe como el primero. La pareja de los sándwiches calientes.", icono: "flor", foto: "img/drink_d06.jpg" },
-      { id: "D07", nombre: "Cold Brew", sabor: "Tea", precio: 5, desc: "Té negro de hoja entera, reposado doce horas en frío. Sale suave y redondo, bien helado y con el punto justo de cafeína para seguir con el día.", icono: "hielo", foto: "img/drink_d07.jpg" },
-      { id: "D08", nombre: "The Cool", sabor: "Mint", precio: 6, desc: "Hierba luisa y menta fresca en infusión helada. Ligera y aromática: refresca sin empalagar y deja la boca lista para el siguiente bocado. La que más pide un día de calor.", icono: "hoja", foto: "img/drink_d08.jpg" }
+      { id: "D06", nombre: "The Bloom", sabor: "Hibiscus", precio: 6, desc: "Flor de jamaica en infusión con un toque de canela, bien helada. Ácida y floral: limpia el paladar entre bocado y bocado, así el último sabe como el primero. La pareja de los sándwiches calientes.", icono: "flor", foto: "img/drink_d06.webp" },
+      { id: "D07", nombre: "Cold Brew", sabor: "Tea", precio: 5, desc: "Té negro de hoja entera, reposado doce horas en frío. Sale suave y redondo, bien helado y con el punto justo de cafeína para seguir con el día.", icono: "hielo", foto: "img/drink_d07.webp" },
+      { id: "D08", nombre: "The Cool", sabor: "Mint", precio: 6, desc: "Hierba luisa y menta fresca en infusión helada. Ligera y aromática: refresca sin empalagar y deja la boca lista para el siguiente bocado. La que más pide un día de calor.", icono: "hoja", foto: "img/drink_d08.webp" }
     ],
     // Orden de la carta v4: la estrella primero (Philly, la mayor contribución por unidad), y
     // después alternando lo caliente y lo frío para que la carta no se lea como dos bloques.
@@ -3425,6 +3433,8 @@ var PROT_IMG = CARTA_VIEJA.PROT_IMG;
 // sándwich) y la palanca de attach que el modelo mide, así que se ganan una foto igual
 // que una proteína. Un id sin fila acá vuelve al ícono — nunca a un hueco.
 var DRINK_IMG = CARTA_VIEJA.DRINK_IMG;
+// Lo que trae cada lata (dueño, 2026-11-02: «355 ml, como la lata»). Antes la app decía 500 ml.
+var BEBIDA_ML = 355;
 // Reestructurado esta sesión — ver el comentario espejo en REWARDS (catalog.ts) para el
 // porqué completo. R01 se retiró (topping extra ya es gratis para todos, sin nada real
 // que canjear). R02/R03/R05 quedan repreciadas contra el mismo "tipo de cambio" real que
@@ -4366,6 +4376,9 @@ var adminAddressFlags = null;
 var deliveryTokenFromUrl = null, deliveryConfirmState = null;
 // ?pedido=REF: el enlace del aviso «va en camino» (abrirPedidoDelEnlace, 06-*).
 var pedidoFromUrl = null;
+// El pedido que el dueño abrió desde el WhatsApp de un cliente cuya captura no se leyó
+// (dueño, 2026-11-02: «desde wsp poder aprobarlo manualmente»): el panel lo resalta.
+var pedidoARevisar = null;
 // Guard contra doble-tap en las acciones que mutan un pedido desde la cola admin —
 // updateStatus/confirmOrderPayment/confirmAndAdvance no tenían ninguna protección (a
 // diferencia de doOrder(), que sí usa _payingInProgress), así que dos taps rápidos en
@@ -4382,7 +4395,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'f13344be5b';
+var APP_BUILD = '43084d6959';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6552,7 +6565,7 @@ function sMundoBebidas() {
                 return '<button class="bd' + (on ? ' on' : '') + '" aria-pressed="' + on + '" onclick="bebidaSel=\'' + x.id + '\';render()">'
                     + (DRINK_IMG[x.id] ? '<img src="' + DRINK_IMG[x.id] + '" alt="" loading="lazy">' : '') + '<div class="v"></div>'
                     + (on ? '<i class="ok">✓ Elegida</i>' : '')
-                    + '<div class="tx"><b>' + esc(x.l) + '</b><s>' + esc(x.s) + ' · 500 ml</s><p>' + esc(x.d || '') + '</p></div>'
+                    + '<div class="tx"><b>' + esc(x.l) + '</b><s>' + esc(x.s) + ' · ' + BEBIDA_ML + ' ml</s><p>' + esc(x.d || '') + '</p></div>'
                     + '<div class="pz">' + precioBebidaHTML(x) + '</div></button>';
             }).join('')
             + '<div class="pie">Con cualquier sándwich, la bebida baja ' + SOLES_TXT + pz(COMBO_DISCOUNT_PER_PAIR) + '.<br>Se aplica sola en el carrito.'
@@ -6564,7 +6577,7 @@ function sMundoBebidas() {
         + lista.map(function (x, i) {
             return '<section class="vaso" aria-label="' + esc(x.l) + '"><div class="fo">' + (DRINK_IMG[x.id] ? '<img src="' + DRINK_IMG[x.id] + '" alt="" ' + (i ? 'loading="lazy"' : '') + '>' : '') + '<div class="v"></div></div>'
                 + '<div class="arr"><em>Algo para tomar</em><u>' + (lista.length > 1 ? 'Desliza →' : '') + '</u></div>'
-                + '<div class="nom"><b>' + esc(x.l) + '</b><s>' + esc(x.s) + ' · 500 ml</s><p>' + esc(x.d || '') + '</p></div>'
+                + '<div class="nom"><b>' + esc(x.l) + '</b><s>' + esc(x.s) + ' · ' + BEBIDA_ML + ' ml</s><p>' + esc(x.d || '') + '</p></div>'
                 + '<div class="pz">' + precioBebidaHTML(x) + '</div>'
                 + '<div class="cn" aria-hidden="true">' + lista.map(function (_y, k) { return '<i class="' + (k === i ? 'on' : '') + '"></i>'; }).join('') + '</div>'
                 + '</section>';
@@ -7109,7 +7122,7 @@ function sumarAlGrupoHTML(g) {
     h += '<h3>Para tomar</h3>' + SIDES.filter(function (d) { return isAvail(d.id); }).map(function (d) {
         var foto = DRINK_IMG[d.id];
         return '<div class="it">' + (foto ? '<img src="' + foto + '" alt="" loading="lazy">' : '')
-            + '<div class="t"><b>' + esc(d.l) + '</b><s>' + esc(primeraFraseCorta(d.d || '')) + '</s><i>' + SOLES_TXT + pz(d.p) + ' · 500 ml</i></div>'
+            + '<div class="t"><b>' + esc(d.l) + '</b><s>' + esc(primeraFraseCorta(d.d || '')) + '</s><i>' + SOLES_TXT + pz(d.p) + ' · ' + BEBIDA_ML + ' ml</i></div>'
             + '<button onclick="doAddGroupSide(\'' + d.id + '\')">Agregar</button></div>';
     }).join('');
     return h + '<div class="msg" role="status">' + esc(groupMsg) + '</div></div>';
@@ -9695,6 +9708,8 @@ function finalizeOrderSuccess(res, po, chargeId) {
         render();
         uploadReceiptBase64(cap);
     }
+    if (window._lPendingPayment)
+        vigilarElPago(window._lRef);
     // eventID = referencia del pedido: el servidor manda esta MISMA compra por Conversions
     // API con el mismo id, y Meta descarta el duplicado en vez de contar la venta dos veces.
     // Solo se reporta si el pedido ya quedó pagado — un Yape pendiente todavía no es venta,
@@ -9703,6 +9718,45 @@ function finalizeOrderSuccess(res, po, chargeId) {
         fbTrack('Purchase', { currency: 'PEN', value: money(po.total - (po.deliveryFee || 0)) }, po.ref);
     if (cust)
         loadUserExtras();
+}
+// Si la captura no se lee o no cuadra, el cliente no se queda colgado (dueño, 2026-11-02: «debe darle
+// la opción de enviar pedido y captura por whatsapp y me gustaría desde wsp poder aprobarlo
+// manualmente»). WhatsApp no deja adjuntar desde un enlace: el texto le pide pegar la captura, y lleva
+// el enlace al pedido, que en el celular del dueño (con sesión de admin) abre el panel en ESE pedido.
+function textoParaWhatsApp() {
+    var ref = window._lRef || '';
+    var metodo = window._lPayMethod === 'plin' ? 'Plin' : 'Yape';
+    return ['Hola, pagué con ' + metodo + ' y la app no pudo comprobar mi captura. Te la adjunto aquí.', '',
+        window._lWaText || ('Pedido #' + ref), '',
+        'Pedido: ' + location.origin + '/?pedido=' + encodeURIComponent(ref)].join('\n');
+}
+function mandarPorWhatsApp() {
+    window.open('https://wa.me/' + WA + '?text=' + encodeURIComponent(textoParaWhatsApp()), '_blank');
+}
+// Si el pago se aprueba A MANO (desde el panel o desde el WhatsApp del cliente), la pantalla del
+// cliente se entera sola: antes seguía diciendo «la estamos revisando» hasta que recargaba.
+// Pregunta cada 15 s solo mientras esta pantalla está abierta y el pago sigue pendiente.
+var _vigiaPago = null;
+function vigilarElPago(ref) {
+    if (_vigiaPago)
+        clearInterval(_vigiaPago);
+    _vigiaPago = setInterval(async function () {
+        if (sndScreen !== 'o_sent' || window._lRef !== ref || receiptUploadState === 'confirmado' || !window._lPendingPayment) {
+            clearInterval(_vigiaPago);
+            _vigiaPago = null;
+            return;
+        }
+        try {
+            var r = cust && token ? await api('my-orders', { token: token }) : await api('my-orders', { ref: ref });
+            var o = ((r && r.orders) || []).find(function (x) { return x.ref === ref; });
+            if (o && o.payment_status === 'paid' && sndScreen === 'o_sent' && window._lRef === ref) {
+                receiptUploadState = 'confirmado';
+                capturaMotivo = null;
+                render();
+            }
+        }
+        catch (e) { }
+    }, 15000);
 }
 function reopenWhatsAppConfirm() {
     if (!window._lWaText)
@@ -9836,11 +9890,13 @@ function sOSent() {
                 + (receiptUploadState === 'confirmado' ? '<b data-captura="confirmado">✓ ¡Pago confirmado! Tu pedido ya entró a la cocina.</b>'
                     : receiptUploadState === 'revisamos' ? '<span data-motivo-captura="' + esc(capturaMotivo ? capturaMotivo.codigo : '') + '">' + esc(textoDelMotivo(capturaMotivo)) + '</span>'
                         + (puedeSubirOtra(capturaMotivo) ? '<br><label class="otra-captura" data-accion="subir-otra-captura">Subir otra captura →<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>' : '')
+                        + '<br><button class="otra-captura" data-accion="mandar-por-whatsapp" onclick="mandarPorWhatsApp()">O mándanos el pedido y la captura por WhatsApp →</button>'
                         : receiptUploadState === 'reading' ? '✓ Captura recibida. Comprobando tu pago…'
                             : receiptUploadState === 'done' ? '✓ Comprobante recibido.'
                                 : receiptUploadState === 'uploading' ? 'Subiendo el comprobante…'
                                     : '<label data-accion="subir-captura">Sube la captura de tu ' + methodLabel + ': si cuadra, tu pedido entra a la cocina solo, sin esperar a que lo revisemos<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>')
-                + (typeof receiptUploadState === 'string' && receiptUploadState.indexOf('error:') === 0 ? '<br>' + esc(receiptUploadState.slice(6)) : '')
+                + (typeof receiptUploadState === 'string' && receiptUploadState.indexOf('error:') === 0 ? '<br>' + esc(receiptUploadState.slice(6))
+                    + '<br><button class="otra-captura" data-accion="mandar-por-whatsapp" onclick="mandarPorWhatsApp()">O mándanos el pedido y la captura por WhatsApp →</button>' : '')
                 + '</div>' : '')
             + (window._lRankUp ? '<div class="dr"><span>Subiste a</span><b class="pt">' + esc(window._lRankUp) + '</b></div>' : '')
             + (rankPerk ? '<div class="dr"><span>Menú secreto</span><b class="pt">' + rankPerk + '</b></div>' : '')
@@ -11429,6 +11485,15 @@ function puedeDecirQueLlego(o) { return !!o && o.status === 'EN CAMINO' && !(o.p
 // ?pedido=REF — el enlace del aviso «va en camino» (push y correo). Abre ESE pedido aunque quien
 // lo hizo sea invitado y haya cerrado la app: el ref es la misma llave con la que ya lo veía.
 async function abrirPedidoDelEnlace(ref) {
+    // El mismo enlace que manda el cliente por WhatsApp, abierto por el dueño: va al panel, a ESE
+    // pedido, con su captura y «Pago recibido · armar →» a un toque.
+    if (isAdmin && token) {
+        pedidoARevisar = ref;
+        panelModo = 'cocina';
+        await loadAdmin();
+        llevarAlPedidoARevisar(0);
+        return;
+    }
     if (!cust) {
         try {
             localStorage.setItem('sw_last_ref', ref);
@@ -11453,6 +11518,26 @@ async function abrirPedidoDelEnlace(ref) {
         sndScreen = 'p_ord_detail';
     }
     render();
+}
+function llevarAlPedidoARevisar(intento) {
+    var ref = pedidoARevisar;
+    if (!ref)
+        return;
+    var o = (adminOrders || []).find(function (x) { return x.ref === ref; });
+    if (!o) {
+        pedidoARevisar = null;
+        showToast('El pedido #' + ref + ' ya no está pendiente en la cocina.');
+        render();
+        return;
+    }
+    // El panel se descarga aparte (admin.js): se espera a que la tarjeta exista para llevarla al centro.
+    var el = document.querySelector('.coc-p[data-ref="' + ref + '"]');
+    if (el) {
+        el.scrollIntoView({ block: 'center' });
+        return;
+    }
+    if (intento < 40)
+        setTimeout(function () { llevarAlPedidoARevisar(intento + 1); }, 150);
 }
 var _yaMeLlegoEnCurso = false;
 async function doYaMeLlego(ordId, ref) {

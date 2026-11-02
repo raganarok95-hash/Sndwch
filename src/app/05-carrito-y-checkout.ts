@@ -1067,6 +1067,7 @@ function finalizeOrderSuccess(res,po,chargeId){
   busy=false;sndScreen='o_sent';render();
   // La captura elegida en la 31 («Subir mi captura») se sube apenas existe el pedido, y se lee sola.
   if(_capturaAlPagar){var cap=_capturaAlPagar;_capturaAlPagar=null;receiptUploadState='uploading';render();uploadReceiptBase64(cap);}
+  if(window._lPendingPayment)vigilarElPago(window._lRef);
   // eventID = referencia del pedido: el servidor manda esta MISMA compra por Conversions
   // API con el mismo id, y Meta descarta el duplicado en vez de contar la venta dos veces.
   // Solo se reporta si el pedido ya quedó pagado — un Yape pendiente todavía no es venta,
@@ -1076,6 +1077,35 @@ function finalizeOrderSuccess(res,po,chargeId){
 }
 
 
+// Si la captura no se lee o no cuadra, el cliente no se queda colgado (dueño, 2026-11-02: «debe darle
+// la opción de enviar pedido y captura por whatsapp y me gustaría desde wsp poder aprobarlo
+// manualmente»). WhatsApp no deja adjuntar desde un enlace: el texto le pide pegar la captura, y lleva
+// el enlace al pedido, que en el celular del dueño (con sesión de admin) abre el panel en ESE pedido.
+function textoParaWhatsApp():string{
+  var ref=window._lRef||'';
+  var metodo=window._lPayMethod==='plin'?'Plin':'Yape';
+  return['Hola, pagué con '+metodo+' y la app no pudo comprobar mi captura. Te la adjunto aquí.','',
+    window._lWaText||('Pedido #'+ref),'',
+    'Pedido: '+location.origin+'/?pedido='+encodeURIComponent(ref)].join('\n');
+}
+function mandarPorWhatsApp(){
+  window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(textoParaWhatsApp()),'_blank');
+}
+// Si el pago se aprueba A MANO (desde el panel o desde el WhatsApp del cliente), la pantalla del
+// cliente se entera sola: antes seguía diciendo «la estamos revisando» hasta que recargaba.
+// Pregunta cada 15 s solo mientras esta pantalla está abierta y el pago sigue pendiente.
+var _vigiaPago:any=null;
+function vigilarElPago(ref:string){
+  if(_vigiaPago)clearInterval(_vigiaPago);
+  _vigiaPago=setInterval(async function(){
+    if(sndScreen!=='o_sent'||window._lRef!==ref||receiptUploadState==='confirmado'||!window._lPendingPayment){clearInterval(_vigiaPago);_vigiaPago=null;return;}
+    try{
+      var r=cust&&token?await api('my-orders',{token:token}):await api('my-orders',{ref:ref});
+      var o=((r&&r.orders)||[]).find(function(x:any){return x.ref===ref;});
+      if(o&&o.payment_status==='paid'&&sndScreen==='o_sent'&&window._lRef===ref){receiptUploadState='confirmado';capturaMotivo=null;render();}
+    }catch(e){}
+  },15000);
+}
 function reopenWhatsAppConfirm(){
   if(!window._lWaText)return;
   window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(window._lWaText),'_blank');
@@ -1198,11 +1228,13 @@ function sOSent(){
         +(receiptUploadState==='confirmado'?'<b data-captura="confirmado">✓ ¡Pago confirmado! Tu pedido ya entró a la cocina.</b>'
           :receiptUploadState==='revisamos'?'<span data-motivo-captura="'+esc(capturaMotivo?capturaMotivo.codigo:'')+'">'+esc(textoDelMotivo(capturaMotivo))+'</span>'
             +(puedeSubirOtra(capturaMotivo)?'<br><label class="otra-captura" data-accion="subir-otra-captura">Subir otra captura →<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>':'')
+            +'<br><button class="otra-captura" data-accion="mandar-por-whatsapp" onclick="mandarPorWhatsApp()">O mándanos el pedido y la captura por WhatsApp →</button>'
           :receiptUploadState==='reading'?'✓ Captura recibida. Comprobando tu pago…'
           :receiptUploadState==='done'?'✓ Comprobante recibido.'
           :receiptUploadState==='uploading'?'Subiendo el comprobante…'
           :'<label data-accion="subir-captura">Sube la captura de tu '+methodLabel+': si cuadra, tu pedido entra a la cocina solo, sin esperar a que lo revisemos<input type="file" accept="image/*" onchange="handleReceiptFile(event)" style="position:absolute;width:1px;height:1px;opacity:0"></label>')
-        +(typeof receiptUploadState==='string'&&receiptUploadState.indexOf('error:')===0?'<br>'+esc(receiptUploadState.slice(6)):'')
+        +(typeof receiptUploadState==='string'&&receiptUploadState.indexOf('error:')===0?'<br>'+esc(receiptUploadState.slice(6))
+          +'<br><button class="otra-captura" data-accion="mandar-por-whatsapp" onclick="mandarPorWhatsApp()">O mándanos el pedido y la captura por WhatsApp →</button>':'')
         +'</div>':'')
       +(window._lRankUp?'<div class="dr"><span>Subiste a</span><b class="pt">'+esc(window._lRankUp)+'</b></div>':'')
       +(rankPerk?'<div class="dr"><span>Menú secreto</span><b class="pt">'+rankPerk+'</b></div>':'')
