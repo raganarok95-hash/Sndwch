@@ -392,6 +392,7 @@ window.addEventListener('load',function(){sndRestoreOwnedFns();});
   }
   // ?pedido=REF — el aviso de «va en camino» lleva directo a ese pedido (y a «Ya me llegó»).
   // Un pedido en curso de esta visita o de una anterior: la puerta ofrece volver a su seguimiento.
+  armarBotonAtras();
   if(!pedidoFromUrl&&!deliveryTokenFromUrl)revisarPedidoVivo();
   if(pedidoFromUrl&&!deliveryTokenFromUrl)abrirPedidoDelEnlace(pedidoFromUrl);
   // ?entrega=TOKEN — el link del motorizado (#19). Va al final a propósito: si está, es lo
@@ -679,4 +680,47 @@ function renderScreen(){
   // inválido perdió su borde rojo y su mensaje. repaintFields() los vuelve a pintar
   // revalidando el valor actual — es no-op mientras no haya ningún campo marcado.
   repaintFields();
+}
+
+// ── EL BOTÓN «ATRÁS» DEL CELULAR (dueño, 2026-11-02: «Sí, arregla todo») ─────────────────────
+// La app es una sola página: sin esto, el «atrás» de Android sacaba al cliente de la app a mitad
+// de su pedido (así se cortó una prueba con Culqi). Ahora hace lo mismo que el ← de la pantalla,
+// en este orden: cierra la ventana de Culqi, el diálogo, la hoja, y si no hay nada de eso, toca el
+// botón de volver que el cliente ve. Solo en la puerta, sin nada abierto, deja salir.
+var _atrasArmado=false;
+function armarBotonAtras(){
+  if(_atrasArmado||!window.history||!history.pushState)return;
+  _atrasArmado=true;
+  try{history.pushState({sw:1},'');}catch(e){return;}
+  window.addEventListener('popstate',function(){
+    if(atrasDentroDeLaApp()){try{history.pushState({sw:1},'');}catch(e){}return;}
+    // Nada que cerrar ni a dónde volver: se deja salir (el estado de arriba ya se consumió).
+    try{history.back();}catch(e){}
+  });
+}
+function visibleParaAtras(el:any):boolean{
+  if(!el||!el.isConnected)return false;
+  var r=el.getBoundingClientRect();var st=getComputedStyle(el);
+  return r.width>0&&r.height>0&&st.display!=='none'&&st.visibility!=='hidden';
+}
+function atrasDentroDeLaApp():boolean{
+  if(typeof Culqi!=='undefined'&&typeof ventanaDeCulqiVisible==='function'&&ventanaDeCulqiVisible()){
+    try{if(typeof Culqi.close==='function')Culqi.close();}catch(e){}
+    busy=false;_payingInProgress=false;render();return true;
+  }
+  if(promptState){resolvePrompt(null);return true;}
+  if(confirmState){resolveConfirm(false);return true;}
+  if(adminToolsDrawerOpen){toggleAdminToolsDrawer();return true;}
+  if(busy)return true; // a mitad de una llamada no se navega: el atrás se ignora
+  var app=document.getElementById('app');
+  if(!app)return false;
+  // Hojas abiertas (su velo las cierra), después el ← o la ✕ de la pantalla. Se toma el último
+  // visible: lo que está encima se dibuja después.
+  var sel='.hvelo,.hoja-velo,[data-atras],button.sal,button.x[aria-label^="Volver"],button.fl[aria-label="Volver"],button[aria-label="Volver"],button[aria-label^="Volver a"]';
+  var velos=[].slice.call(app.querySelectorAll('.hvelo,.hoja-velo')).filter(visibleParaAtras);
+  var candidatos=velos.length?velos:[].slice.call(app.querySelectorAll(sel)).filter(visibleParaAtras);
+  if(candidatos.length){(candidatos[candidatos.length-1] as HTMLElement).click();return true;}
+  // Sin ← a la vista: fuera de la puerta, se vuelve a la puerta; en la puerta, se sale.
+  if(sndScreen!=='o_home'||homeTab!==null){volverALaPuerta();return true;}
+  return false;
 }
