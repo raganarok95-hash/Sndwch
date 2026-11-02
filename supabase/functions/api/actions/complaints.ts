@@ -72,6 +72,20 @@ export async function actSubmitComplaint(b: Entrada<"submit-complaint"> & { _ip?
     sendComplaintConfirmation(consumerEmail, consumerName, claimCode, kind),
     sendComplaintNotification(claimCode, kind, consumerName, consumerEmail, consumerPhone, detail, consumerRequest),
   ]);
+  // Aviso al dueño por push (o, sin celular suscrito, al correo de las cuentas admin; ver
+  // sendPushToAdmins). Antes el reclamo nuevo solo iba a CONTACT_EMAIL: si esa bandeja no se
+  // lee, el dueño se enteraba recién con el aviso de «quedan 4 días hábiles». Sin datos del
+  // consumidor en el aviso: solo el código y el tipo.
+  try {
+    await sendPushToAdmins({
+      title: kind === "queja" ? "Queja nueva 📕" : "Reclamo nuevo 📕",
+      body: `${claimCode} — tienes ${COMPLAINT_DEADLINE_BUSINESS_DAYS} días hábiles para responder. Míralo en el panel, Reclamaciones.`,
+      url: "./index.html",
+      tag: "sndwch-complaint-new-" + row.id,
+    });
+  } catch (e) {
+    console.error("push de reclamo nuevo falló", claimCode, e);
+  }
 
   return { success: true, claimCode };
 }
@@ -99,7 +113,7 @@ export async function actAdminRespondComplaint(b: Entrada<"admin-respond-complai
   // en ese momento —una caída, un rate limit— el reclamo quedaba cerrado sin que el
   // consumidor recibiera nada, Y desaparecía para siempre de actAlertComplaintDeadlines,
   // que filtra `status=neq.atendido`. O sea: nadie volvía a enterarse de que faltaba
-  // responder, con un plazo legal de 30 días corriendo. El único rastro era el campo
+  // responder, con el plazo legal de 15 días hábiles corriendo. El único rastro era el campo
   // `emailed` de la respuesta HTTP, que nadie está obligado a mirar.
   const baseUpdate: Record<string, unknown> = {
     provider_response: response.slice(0, 2000),

@@ -3511,8 +3511,9 @@ async function loadOrderProblems() {
 async function resolveOrderProblem(id, solucion) {
     var nota = document.getElementById('op-nota-' + id);
     try {
-        await api('admin-resolve-order-problem', { token: token, id: id, solucion: solucion, nota: nota ? nota.value : '' });
-        showToast('Listo. Le avisamos al cliente.', 'success');
+        var r = await api('admin-resolve-order-problem', { token: token, id: id, solucion: solucion, nota: nota ? nota.value : '' });
+        // Solo se dice «le avisamos» si el correo salió; si no, el aviso queda en la app (y el push, si lo tiene).
+        showToast(r && r.avisadoPorCorreo ? 'Listo. Le avisamos al cliente por correo.' : 'Listo. Lo verá en la app; si no tiene la app abierta, avísale por WhatsApp.', 'success');
     }
     catch (e) {
         showToast(e.message);
