@@ -549,8 +549,9 @@ export const MODELO_OBJETIVOS = {
 export const CAC_TECHO = {
   // [DERIVADO] `proyeccion.pedido()["propio"] + GASTO_PEDIDO` — lo que deja un pedido propio
   // con la carta de hoy (ticket menos insumos, tarjeta y recompensas), antes del gasto fijo
-  // por pedido. Con el 15CM a S/19.90: 13.06 (antes del 2026-10-16, 14.13 con el modelo viejo).
-  contribPedido: 13.06,
+  // por pedido. Con el 15CM a S/19.90: 13.12 desde el 2026-11-02 (la bebida pasó a lata de 355 ml y
+  // gasta menos insumo; antes 13.06, y 14.13 con el modelo viejo antes del 2026-10-16).
+  contribPedido: 13.12,
   // [MÉTODO] `GASTO_PEDIDO` de proyeccion.py — gas, frío y coordinación, aparte del insumo.
   overheadPedido: 0.5,
   // [MEDIDO] `COSTO_REFERIDO` — el insumo del 15CM de R06 + la bebida de R05. Es el canal
