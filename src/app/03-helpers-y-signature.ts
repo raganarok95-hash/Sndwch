@@ -983,9 +983,10 @@ function horaDoce(h:number):string{
   var m=h%24,suf=m<12?'a.m.':'p.m.',x=m%12===0?12:m%12;
   return x+':00 '+suf;
 }
-// El mes de apertura se dice, el día no: aún no está confirmado (CLAUDE.md). Al abrir, el panel
+// La fecha de apertura (CLAUDE.md). Al abrir, el panel
 // prende businessLaunched y este aviso desaparece solo.
-var MES_DE_APERTURA='Abrimos en noviembre';
+// Dueño, 2026-11-02: «Abrimos el 20 de noviembre».
+var MES_DE_APERTURA='Abrimos el 20 de noviembre';
 var avisameListo=false;
 async function avisameAlAbrir(){
   var cel=await showPrompt('Tu celular y te escribimos el día que abramos.','','tel');

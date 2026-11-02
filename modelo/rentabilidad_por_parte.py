@@ -142,9 +142,9 @@ BEBIDA = {b["id"]: (f'{b["nombre"]} // {b["sabor"]}', float(b["precio"])) for b 
 #
 # Se costea POR BEBIDA y no con un porcentaje plano: The Bloom cuesta 2.5x lo que The Cool y se
 # vende al mismo precio, así que un promedio esconde justo la que peor rinde.
-# 2026-11-02: LATA de 355 ml (antes botella de 500). El insumo bajó con el volumen; el envase de la
-# lata aún no está cotizado y se sigue usando el de la botella (ver modelo/costo_bebidas.py).
-ENVASE_BEBIDA = 0.69     # [PENDIENTE] precio de la botella; la lata sin cotizar
+# 2026-11-02: LATA PET de 355 ml (antes botella de 500). El insumo bajó con el volumen; la lata cuesta
+# S/1.38 (el doble que la botella) y se vende a S/8.50 (ver modelo/costo_bebidas.py).
+ENVASE_BEBIDA = 415 / 300  # [COTIZADO] dueño 2026-11-02: lata PET 355 ml, S/415 la caja de 300
 BEBIDA_INSUMO = {        # por lata de 355 ml, sin el envase — ver modelo/costo_bebidas.py
     "D06": 0.85, "D07": 0.51, "D08": 0.34,
 }
@@ -157,7 +157,7 @@ RECOMPENSA = {  # catalog_prices, category='reward' — recalibradas el 2026-09-
     "R02": (20,  "4ta salsa gratis"),
     "R03": (320, "sube a 30CM gratis (tope S/8)"),
     "R04": (160, "doble proteína gratis"),
-    "R05": (160, "bebida gratis (tope S/6)"),
+    "R05": (170, "bebida gratis (tope S/8.50, la lata)"),
     "R06": (400, "sándwich 15CM gratis"),
 }
 
@@ -169,7 +169,7 @@ MIX15 = 0.80               # [HIPÓTESIS del dueño] 80% de los pedidos en 15CM
 CULQI = 0.055
 COMBO = 1.00               # descuento sándwich+bebida
 OFFPEAK_CAP = 6.00         # tope de la bebida gratis de hora valle
-R05_CAP, R03_CAP = 6.00, 8.00
+R05_CAP, R03_CAP = 8.50, 8.00  # R05: la lata, 2026-11-02
 GIFT_PTS_POR_SOL = 40
 PLAN_PAGA, PLAN_RECIBE = 95.0, 100.0
 COSTO_REFERIDO = 7.65
@@ -177,7 +177,7 @@ COSTO_REFERIDO = 7.65
 # de 120 a 160 en la recalibración del 2026-09-05 sin que este número la siguiera.
 # COSTO_REFERIDO no cambia — el premio siempre fue la misma bebida, lo que cambió fue su
 # etiqueta en puntos.
-REF_INVITA, REF_INVITADO = 400, 160
+REF_INVITA, REF_INVITADO = 400, 170  # 170 desde el 2026-11-02: R05 subió con la lata a S/8.50
 
 
 def veg(gramos, i):

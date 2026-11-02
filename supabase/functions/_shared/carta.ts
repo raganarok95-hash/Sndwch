@@ -135,7 +135,7 @@ export const CARTA: Carta = {
   recompensas: [
     { id: "R02", tipo: "salsa", pts: 20, nombre: "Salsa", sabor: "Extra", desc: "Perdona el cargo de la salsa extra" },
     { id: "R04", tipo: "doble", pts: 160, nombre: "Doble", sabor: "Proteína", desc: "Doble proteína gratis", tope: 6 },
-    { id: "R05", tipo: "bebida", pts: 160, nombre: "Bebida", sabor: "Gratis", desc: "Bebida a elección", tope: 6 },
+    { id: "R05", tipo: "bebida", pts: 170, nombre: "Bebida", sabor: "Gratis", desc: "Bebida a elección", tope: 8.5 },
     { id: "R03", tipo: "subir30", pts: 320, nombre: "Tamaño", sabor: "30CM", desc: "Tu sándwich 15CM sube a 30CM gratis", tope: 8 },
     { id: "R06", tipo: "sandwich", pts: 400, nombre: "Sándwich", sabor: "Gratis", desc: "Sándwich 15CM gratis — no aplica al menú secreto" },
   ],
@@ -179,12 +179,14 @@ export const CARTA: Carta = {
     { id: "S09", nombre: "Chimichurri", sabor: "Piña y Ají", desc: "Piña asada y ají. Dulce y ahumada de entrada, con picor al final.", picante: true },
     { id: "S12", nombre: "Picante", sabor: "Miel", desc: "Primero la miel. Después el golpe.", picante: true, soloSecreto: true },
   ],
+  // 2026-11-02, dueño: «en lata sí serán vendidas a 8.5 soles» (lata PET de 355 ml, S/1.38 la unidad).
+  // R05 sube con ellas (tope S/8.50, 170 pts): si no, «Bebida gratis» dejaría de cubrir la lata.
   // D07 se llamaba «The Midnight»: el nombre venía del concepto de las horas, que el dueño
   // descartó. 2026-10-24: «Cold Brew // Tea», a prueba 4 semanas (docs/BEBIDAS_PRODUCTO.md §19).
   bebidas: [
-    { id: "D06", nombre: "The Bloom", sabor: "Hibiscus", precio: 6, desc: "Flor de jamaica en infusión con un toque de canela, bien helada. Ácida y floral: limpia el paladar entre bocado y bocado, así el último sabe como el primero. La pareja de los sándwiches calientes.", icono: "flor", foto: "img/drink_d06.webp" },
-    { id: "D07", nombre: "Cold Brew", sabor: "Tea", precio: 5, desc: "Té negro de hoja entera, reposado doce horas en frío. Sale suave y redondo, bien helado y con el punto justo de cafeína para seguir con el día.", icono: "hielo", foto: "img/drink_d07.webp" },
-    { id: "D08", nombre: "The Cool", sabor: "Mint", precio: 6, desc: "Hierba luisa y menta fresca en infusión helada. Ligera y aromática: refresca sin empalagar y deja la boca lista para el siguiente bocado. La que más pide un día de calor.", icono: "hoja", foto: "img/drink_d08.webp" },
+    { id: "D06", nombre: "The Bloom", sabor: "Hibiscus", precio: 8.5, desc: "Flor de jamaica en infusión con un toque de canela, bien helada. Ácida y floral: limpia el paladar entre bocado y bocado, así el último sabe como el primero. La pareja de los sándwiches calientes.", icono: "flor", foto: "img/drink_d06.webp" },
+    { id: "D07", nombre: "Cold Brew", sabor: "Tea", precio: 8.5, desc: "Té negro de hoja entera, reposado doce horas en frío. Sale suave y redondo, bien helado y con el punto justo de cafeína para seguir con el día.", icono: "hielo", foto: "img/drink_d07.webp" },
+    { id: "D08", nombre: "The Cool", sabor: "Mint", precio: 8.5, desc: "Hierba luisa y menta fresca en infusión helada. Ligera y aromática: refresca sin empalagar y deja la boca lista para el siguiente bocado. La que más pide un día de calor.", icono: "hoja", foto: "img/drink_d08.webp" },
   ],
   // Orden de la carta v4: la estrella primero (Philly, la mayor contribución por unidad), y
   // después alternando lo caliente y lo frío para que la carta no se lea como dos bloques.

@@ -90,9 +90,9 @@ Proteínas que existen pero NO se eligen acá: Pollo // Cajun (solo menú secret
 
 Por cada par sándwich + bebida el pedido cuesta S/1 menos (el combo).
 
-- **The Bloom // Hibiscus** — S/6 sola · en combo el par ahorra S/1. Flor de jamaica en infusión con un toque de canela, bien helada. Ácida y floral: limpia el paladar entre bocado y bocado, así el último sabe como el primero. La pareja de los sándwiches calientes.
-- **Cold Brew // Tea** — S/5 sola · en combo el par ahorra S/1. Té negro de hoja entera, reposado doce horas en frío. Sale suave y redondo, bien helado y con el punto justo de cafeína para seguir con el día.
-- **The Cool // Mint** — S/6 sola · en combo el par ahorra S/1. Hierba luisa y menta fresca en infusión helada. Ligera y aromática: refresca sin empalagar y deja la boca lista para el siguiente bocado. La que más pide un día de calor.
+- **The Bloom // Hibiscus** — S/8.50 sola · en combo el par ahorra S/1. Flor de jamaica en infusión con un toque de canela, bien helada. Ácida y floral: limpia el paladar entre bocado y bocado, así el último sabe como el primero. La pareja de los sándwiches calientes.
+- **Cold Brew // Tea** — S/8.50 sola · en combo el par ahorra S/1. Té negro de hoja entera, reposado doce horas en frío. Sale suave y redondo, bien helado y con el punto justo de cafeína para seguir con el día.
+- **The Cool // Mint** — S/8.50 sola · en combo el par ahorra S/1. Hierba luisa y menta fresca en infusión helada. Ligera y aromática: refresca sin empalagar y deja la boca lista para el siguiente bocado. La que más pide un día de calor.
 
 ## Recompensas (se canjean con puntos)
 
@@ -100,7 +100,7 @@ Por cada par sándwich + bebida el pedido cuesta S/1 menos (el combo).
 |---|---|---|---|
 | Salsa Extra | 20 | Perdona el cargo de la salsa extra | el monto entero |
 | Doble Proteína | 160 | Doble proteína gratis | S/6 |
-| Bebida Gratis | 160 | Bebida a elección | S/6 |
+| Bebida Gratis | 170 | Bebida a elección | S/8.50 |
 | Tamaño 30CM | 320 | Tu sándwich 15CM sube a 30CM gratis | S/8 |
 | Sándwich Gratis | 400 | Sándwich 15CM gratis — no aplica al menú secreto | el monto entero |
 
@@ -129,8 +129,8 @@ frase de «Cómo se vende». Si en el portal redondeas, se anota en `docs/PENDIE
 - Rangos por pedidos: NUEVO (0) → REGULAR (1) → INICIADO (5) → CÍRCULO INTERNO (15) → MESA FUNDADORA (30). El menú secreto se explica en PEDIDOS, nunca por rango.
 
 ## Referidos
-- El invitado recibe **160 puntos** (lo que cuesta una bebida) y quien invita **400** (lo que cuesta un 15CM). Se derivan de la carta: si cambia el precio en puntos, cambia el bono.
-- Escalera de quien invita: 3 referidos → una bebida de la casa gratis (160 pts) · 5 referidos → otro sándwich 15CM gratis (400 pts) · 10 referidos → dos sándwiches 15CM gratis (800 pts).
+- El invitado recibe **170 puntos** (lo que cuesta una bebida) y quien invita **400** (lo que cuesta un 15CM). Se derivan de la carta: si cambia el precio en puntos, cambia el bono.
+- Escalera de quien invita: 3 referidos → una bebida de la casa gratis (170 pts) · 5 referidos → otro sándwich 15CM gratis (400 pts) · 10 referidos → dos sándwiches 15CM gratis (800 pts).
 
 ## Horario y cocina
 - Abre: domingo 11–22 h · lunes cerrado · martes 11–22 h · miércoles 11–22 h · jueves 11–22 h · viernes 11–22 h · sábado 11–22 h (hora de Lima).
@@ -244,9 +244,9 @@ Proteínas que existen pero NO se eligen acá: Pollo // Cajun (solo menú secret
 
 Por cada par sándwich + bebida el pedido cuesta S/1 menos (el combo).
 
-- **The Bloom // Hibiscus** — S/6 sola · en combo el par ahorra S/1. Flor de jamaica en infusión con un toque de canela, bien helada. Ácida y floral: limpia el paladar entre bocado y bocado, así el último sabe como el primero. La pareja de los sándwiches calientes.
-- **Cold Brew // Tea** — S/5 sola · en combo el par ahorra S/1. Té negro de hoja entera, reposado doce horas en frío. Sale suave y redondo, bien helado y con el punto justo de cafeína para seguir con el día.
-- **The Cool // Mint** — S/6 sola · en combo el par ahorra S/1. Hierba luisa y menta fresca en infusión helada. Ligera y aromática: refresca sin empalagar y deja la boca lista para el siguiente bocado. La que más pide un día de calor.
+- **The Bloom // Hibiscus** — S/8.50 sola · en combo el par ahorra S/1. Flor de jamaica en infusión con un toque de canela, bien helada. Ácida y floral: limpia el paladar entre bocado y bocado, así el último sabe como el primero. La pareja de los sándwiches calientes.
+- **Cold Brew // Tea** — S/8.50 sola · en combo el par ahorra S/1. Té negro de hoja entera, reposado doce horas en frío. Sale suave y redondo, bien helado y con el punto justo de cafeína para seguir con el día.
+- **The Cool // Mint** — S/8.50 sola · en combo el par ahorra S/1. Hierba luisa y menta fresca en infusión helada. Ligera y aromática: refresca sin empalagar y deja la boca lista para el siguiente bocado. La que más pide un día de calor.
 
 ## Recompensas (se canjean con puntos)
 
@@ -254,7 +254,7 @@ Por cada par sándwich + bebida el pedido cuesta S/1 menos (el combo).
 |---|---|---|---|
 | Salsa Extra | 20 | Perdona el cargo de la salsa extra | el monto entero |
 | Doble Proteína | 160 | Doble proteína gratis | S/6 |
-| Bebida Gratis | 160 | Bebida a elección | S/6 |
+| Bebida Gratis | 170 | Bebida a elección | S/8.50 |
 | Tamaño 30CM | 320 | Tu sándwich 15CM sube a 30CM gratis | S/8 |
 | Sándwich Gratis | 400 | Sándwich 15CM gratis — no aplica al menú secreto | el monto entero |
 
@@ -310,7 +310,7 @@ Fuente única: `resolverCarrito()` en `_shared/dinero.ts`. El cliente muestra co
 ## Conseguir clientes
 - **CAC = CPM ÷ (1000 × CTR × CVR) × 1.18** (IGV). El CAC baja en proporción a lo que suben CTR y CVR;
   la conversión de la app es la única de las tres que controla el negocio.
-- El referido cuesta lo que se regala en puntos (160 + 400); mezclarlo con el pagado baja el CAC combinado.
+- El referido cuesta lo que se regala en puntos (170 + 400); mezclarlo con el pagado baja el CAC combinado.
 - Techo de CAC por valor de vida del cliente, no por primer pedido: `docs/CAMPANA_DE_ANUNCIOS.md`.
 
 ## Proyección
@@ -325,8 +325,8 @@ abierto, no hay un solo pedido real. Supuestos y resultados: `PREDICCION_V14.md`
 - Rangos por pedidos: NUEVO (0) → REGULAR (1) → INICIADO (5) → CÍRCULO INTERNO (15) → MESA FUNDADORA (30). El menú secreto se explica en PEDIDOS, nunca por rango.
 
 ## Referidos
-- El invitado recibe **160 puntos** (lo que cuesta una bebida) y quien invita **400** (lo que cuesta un 15CM). Se derivan de la carta: si cambia el precio en puntos, cambia el bono.
-- Escalera de quien invita: 3 referidos → una bebida de la casa gratis (160 pts) · 5 referidos → otro sándwich 15CM gratis (400 pts) · 10 referidos → dos sándwiches 15CM gratis (800 pts).
+- El invitado recibe **170 puntos** (lo que cuesta una bebida) y quien invita **400** (lo que cuesta un 15CM). Se derivan de la carta: si cambia el precio en puntos, cambia el bono.
+- Escalera de quien invita: 3 referidos → una bebida de la casa gratis (170 pts) · 5 referidos → otro sándwich 15CM gratis (400 pts) · 10 referidos → dos sándwiches 15CM gratis (800 pts).
 
 ## Horario y cocina
 - Abre: domingo 11–22 h · lunes cerrado · martes 11–22 h · miércoles 11–22 h · jueves 11–22 h · viernes 11–22 h · sábado 11–22 h (hora de Lima).
@@ -437,7 +437,7 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
   la botella, y el tamano ya esta decidido: MEDIO LITRO. Con los dos datos, el insumo se
   deriva de las tandas del RECETARIO.md en modelo/costo_bebidas.py, que trae el origen de
   cada precio por kilo. Lo que sigue [ESTIMADO] es el precio de las hierbas, que pesa mucho
-  menos que el envase. Promedio ponderado: 26.3% de costo.
+  menos que el envase. Promedio ponderado: 22.9% de costo.
 
   El envase es la MITAD del costo de una infusion y NO escala con el volumen: por eso pasar
   de 350 ml a 500 ml sube el costo mucho menos de lo que parece (The Cool: +2.4 puntos por
@@ -447,17 +447,17 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
   a precio de carta
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
-  The Bloom // Hibiscus                 6.00    1.89     4.11    31.5%
-  Cold Brew // Tea                      5.00    1.41     3.59    28.2%
-  The Cool // Mint                      6.00    1.17     4.83    19.5%
+  The Bloom // Hibiscus                 8.50    2.23     6.27    26.3%
+  Cold Brew // Tea                      8.50    1.89     6.61    22.3%
+  The Cool // Mint                      8.50    1.72     6.78    20.3%
 
   si el combo (-S/1) se le carga ENTERO a la bebida
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
   (atribucion, no hecho: el descuento sale del TOTAL del pedido. Ver nota abajo.)
-  The Bloom // Hibiscus                 5.00    1.89     3.11    37.8%
-  Cold Brew // Tea                      4.00    1.41     2.59    35.2%
-  The Cool // Mint                      5.00    1.17     3.83    23.4%
+  The Bloom // Hibiscus                 7.50    2.23     5.27    29.8%
+  Cold Brew // Tea                      7.50    1.89     5.61    25.2%
+  The Cool // Mint                      7.50    1.72     5.78    23.0%
 
   Por que se muestra igual: es el PEOR caso contable de la bebida, y sirve para saber si el
   combo puede llegar a comerse lo que deja. A S/2 si pasaba — THE MIDNIGHT en combo dejaba
@@ -480,7 +480,7 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
   4ta salsa gratis                        20        0.27        1.33%      75.2
   sube a 30CM gratis (tope S/8)          320        6.91        2.16%      46.3
   doble proteína gratis                  160        3.76        2.35%      42.6
-  bebida gratis (tope S/6)               160        1.89        1.18%      84.7
+  bebida gratis (tope S/8.50, la lata)     170        2.23        1.31%      76.1
   sándwich 15CM gratis                   400        8.22        2.06%      48.6
 
   La ultima columna es la "tasa de cambio" del programa: cuantos puntos cuesta cada sol de
@@ -510,7 +510,7 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
 
   CREDITO REGALADO — mueve saldo entre clientes, sin costo extra. Neutro.
 
-  REFERIDO — 400 pts a quien invita + 160 al invitado = S/7.65 de costo real.
+  REFERIDO — 400 pts a quien invita + 170 al invitado = S/7.65 de costo real.
      Contra un CAC pagado de ~S/17.87, el referido cuesta 43% de lo que cuesta comprar el
      mismo cliente en Meta. Es el canal mas barato que tiene el negocio.
 

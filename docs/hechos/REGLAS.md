@@ -10,8 +10,8 @@
 - Rangos por pedidos: NUEVO (0) → REGULAR (1) → INICIADO (5) → CÍRCULO INTERNO (15) → MESA FUNDADORA (30). El menú secreto se explica en PEDIDOS, nunca por rango.
 
 ## Referidos
-- El invitado recibe **160 puntos** (lo que cuesta una bebida) y quien invita **400** (lo que cuesta un 15CM). Se derivan de la carta: si cambia el precio en puntos, cambia el bono.
-- Escalera de quien invita: 3 referidos → una bebida de la casa gratis (160 pts) · 5 referidos → otro sándwich 15CM gratis (400 pts) · 10 referidos → dos sándwiches 15CM gratis (800 pts).
+- El invitado recibe **170 puntos** (lo que cuesta una bebida) y quien invita **400** (lo que cuesta un 15CM). Se derivan de la carta: si cambia el precio en puntos, cambia el bono.
+- Escalera de quien invita: 3 referidos → una bebida de la casa gratis (170 pts) · 5 referidos → otro sándwich 15CM gratis (400 pts) · 10 referidos → dos sándwiches 15CM gratis (800 pts).
 
 ## Horario y cocina
 - Abre: domingo 11–22 h · lunes cerrado · martes 11–22 h · miércoles 11–22 h · jueves 11–22 h · viernes 11–22 h · sábado 11–22 h (hora de Lima).

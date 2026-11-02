@@ -27,7 +27,7 @@ Fuente única: `resolverCarrito()` en `_shared/dinero.ts`. El cliente muestra co
 ## Conseguir clientes
 - **CAC = CPM ÷ (1000 × CTR × CVR) × 1.18** (IGV). El CAC baja en proporción a lo que suben CTR y CVR;
   la conversión de la app es la única de las tres que controla el negocio.
-- El referido cuesta lo que se regala en puntos (160 + 400); mezclarlo con el pagado baja el CAC combinado.
+- El referido cuesta lo que se regala en puntos (170 + 400); mezclarlo con el pagado baja el CAC combinado.
 - Techo de CAC por valor de vida del cliente, no por primer pedido: `docs/CAMPANA_DE_ANUNCIOS.md`.
 
 ## Proyección

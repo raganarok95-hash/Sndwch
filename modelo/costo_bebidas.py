@@ -13,9 +13,9 @@ etiquetados uno por uno: [COTIZADO] = dato real, [WEB] = precio publicado en Per
 """
 
 # 2026-11-02: la bebida se vende en LATA de 355 ml (dueño eligió «355 ml, como la lata»; la app lo
-# dice con BEBIDA_ML). El insumo se escala solo. El envase NO: S/0.69 era la botella de medio litro
-# y la lata (con su sticker) aún no tiene precio. Se deja el de la botella, marcado, hasta cotizarla.
-ENVASE = 0.69          # [PENDIENTE] precio de la botella (dueño 2026-09-05: S/138 / 200); la lata sin cotizar.
+# dice con BEBIDA_ML). El insumo se escala solo. El envase es la lata cotizada (S/1.38, el doble que
+# la botella de S/0.69) y la lata se vende a S/8.50 (dueño: «en lata sí serán vendidas a 8.5 soles»).
+ENVASE = 415 / 300    # [COTIZADO] dueño 2026-11-02: lata PET 355 ml con tapa, S/415 la caja de 300 (S/1.38).
 ML_BOTELLA = 355       # lata de 355 ml (antes 500 ml)
 
 # precio por kilo (o por litro, la leche) del insumo tal como se compra
@@ -36,13 +36,13 @@ P = {
 # (nombre, precio de venta hoy, litros que rinde la tanda, {insumo: gramos})
 BEBIDAS = [
     # RECETARIO.md PARTE 4. Tanda 3 L.
-    ("D06  The Bloom // Hibiscus", 6.0, 3.0,
+    ("D06  The Bloom // Hibiscus", 8.5, 3.0,
      {"jamaica": 60, "canela": 4, "azucar": 250}),
     # Azúcar "aparte, al gusto": se costean 100 g por tanda, no 0 — asumir cero sería
     # costear una bebida que en la práctica sale endulzada.
-    ("D07  The Midnight // Brew",  5.0, 3.0,
+    ("D07  Cold Brew // Tea",       8.5, 3.0,
      {"te_negro": 40, "azucar": 100}),
-    ("D08  The Cool // Mint",      6.0, 3.0,
+    ("D08  The Cool // Mint",      8.5, 3.0,
      {"hierba_luisa": 40, "menta": 30, "azucar": 200}),
 ]
 
@@ -56,7 +56,7 @@ def costo_tanda(receta):
     return sum(P[k][0] * g / 1000.0 for k, g in receta.items())
 
 print("=" * 78)
-print(f"COSTO POR LATA DE {ML_BOTELLA} ML — envase S/{ENVASE:.2f} [PENDIENTE: precio de la botella, la lata sin cotizar]")
+print(f"COSTO POR LATA DE {ML_BOTELLA} ML — envase S/{ENVASE:.2f} [COTIZADO]")
 print("=" * 78)
 print(f"{'bebida':<30}{'precio':>8}{'insumo':>9}{'envase':>8}{'costo':>8}{'deja':>8}{'costo%':>8}")
 print("-" * 78)

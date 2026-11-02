@@ -1,7 +1,7 @@
 # SND//WCH — guía para trabajar en este repo
 
 Sandwichería con pedidos online (Trujillo, Perú). Cliente de una sola página + backend en edge
-functions de Supabase. **Aún no ha abierto** (abre en **noviembre de 2026, día por confirmar**; movida del 20-oct el 2026-10-21 porque no
+functions de Supabase. **Aún no ha abierto** (abre el **20 de noviembre de 2026** (dueño, 2026-11-02); movida del 20-oct el 2026-10-21 porque no
 llegaron los sellos ni la kraft; la app está en «Aún no abrimos» y los anuncios, en pausa):
 todo lo que hay en `orders`/`customers` es data de prueba y toda proyección es simulación.
 
