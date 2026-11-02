@@ -336,3 +336,11 @@ en `supabase/functions/api/index.ts` (`ACTIONS`) y los cron jobs en Supabase
   `api/catalog.ts`), igual en la reserva, la devolución al cancelar, la lista de preparación y el
   plan. El armador y el plato del Signature no ofrecen un 30CM ni una doble que no alcanzan
   (`porcionesQueGasta`, `alcanzanPorciones` en `01-catalogo-y-estado.ts`).
+
+## Agregado 2026-11-02 · el pedido simple
+
+- **Antes de abrir**, la puerta lo dice arriba y «Avísame» anota el celular en la lista de espera (`waitlist-join`).
+- **Un toque**: 15CM y 30CM agregan directo desde el plato; la ficha, tocando la foto.
+- **Tus datos en una hoja**: nombre, celular, dirección (punto del mapa y envío) y referencia.
+- **Yape sin WhatsApp**: «Subir mi captura» crea el pedido y la lee sola; «en la cocina» solo si cuadró.
+

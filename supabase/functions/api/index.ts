@@ -39,6 +39,7 @@ import {
   actRemindSecondOrder, actRemindHighRankWinback, actRemindNeverOrdered,
   actBounceBackFirstOrder, actRemindLapsedCustomers,
   actRemindAbandonedPayment, actRemindUnusedCredit, actRemindAfterCancel,
+  actWaitlistJoin,
 } from "./actions/customer.ts";
 import {
   actAdminManualPoints, actAdminManualCredit, actAdminAccountsList, actAdminAccountsAdd, actAdminAccountsDelete,
@@ -135,6 +136,7 @@ const ACTIONS: ConContrato & SinContrato = {
   "confirm-my-delivery": actConfirmMyDelivery,
   "admin-receipt-ocr": actAdminReceiptOcr,
   "cliente-lee-captura": actClienteLeeCaptura,
+  "waitlist-join": actWaitlistJoin,
   "admin-update-status": actAdminUpdateStatus,
   "admin-confirm-payment": actAdminConfirmPayment,
   "admin-cancel-order": actAdminCancelOrder,

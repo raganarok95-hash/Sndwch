@@ -214,6 +214,21 @@ function handleReceiptFile(ev){
   if(!file)return;
   if(!/^image\//.test(file.type)){receiptUploadState='error:Selecciona una imagen (foto o captura de pantalla).';render();return;}
   receiptUploadState='uploading';render();
+  comprimirCaptura(file,uploadReceiptBase64,function(msg){receiptUploadState='error:'+msg;render();});
+}
+// «SUBIR MI CAPTURA» (31, dueño, 2026-11-02): elegir la captura ES confirmar el pago. Se comprime,
+// se crea el pedido con el mismo doOrder de siempre y, apenas existe, se sube y se lee sola.
+var _capturaAlPagar:string|null=null;
+function capturaAlPagar(ev){
+  var input=ev&&ev.target;
+  var file=input&&input.files&&input.files[0];
+  if(input)input.value='';
+  if(!file)return;
+  if(!/^image\//.test(file.type)){pagarErr='Elige una imagen: la captura de tu Yape.';render();return;}
+  _capturaAlPagar=null;
+  comprimirCaptura(file,function(b64){_capturaAlPagar=b64;confirmarPago();},function(msg){pagarErr=msg;render();});
+}
+function comprimirCaptura(file,listo,falla){
   var reader=new FileReader();
   reader.onload=function(){
     var img=new Image();
@@ -224,15 +239,15 @@ function handleReceiptFile(ev){
       var canvas=document.createElement('canvas');
       canvas.width=w;canvas.height=h;
       var ctx=canvas.getContext('2d');
-      if(!ctx){receiptUploadState='error:No se pudo procesar la imagen.';render();return;}
+      if(!ctx){falla('No se pudo procesar la imagen.');return;}
       ctx.drawImage(img,0,0,w,h);
       var base64=canvas.toDataURL('image/jpeg',.7).split(',')[1]||'';
-      uploadReceiptBase64(base64);
+      listo(base64);
     };
-    img.onerror=function(){receiptUploadState='error:No se pudo leer la imagen.';render();};
+    img.onerror=function(){falla('No se pudo leer la imagen.');};
     img.src=String(reader.result||'');
   };
-  reader.onerror=function(){receiptUploadState='error:No se pudo leer el archivo.';render();};
+  reader.onerror=function(){falla('No se pudo leer el archivo.');};
   reader.readAsDataURL(file);
 }
 async function uploadReceiptBase64(base64){
@@ -363,7 +378,8 @@ function sOCart(){
     :'<div class="ex"><span>Envío</span><span>Al elegir dónde</span></div>';
   var rw2=!appliedPromo?recompensaUsable():null;
   var renglones=en30('Llega',llegaTexto(),'Programar',"hoja30='programar';hojaErr='';initSchedDefault();render()")
-    +en30('Dónde',dirOk?addrText:'¿Dónde te lo dejamos?',dirOk?'Cambiar':'Elegir',"go('o_dir')",!dirOk)
+    // Dónde y Recibe abren la MISMA hoja (dueño, 2026-11-02, «Sí a todo»; aprobadas/pedido-simple-hoja-de-datos.png).
+    +en30('Dónde',dirOk?addrText:'¿Dónde te lo dejamos?',dirOk?'Cambiar':'Elegir',"hoja30='recibe';hojaErr='';render()",!dirOk)
     +en30('Recibe',recOk?confNom.trim()+' · '+confPhone:'¿A nombre de quién?',recOk?'Cambiar':'Poner',"hoja30='recibe';hojaErr='';render()",!recOk)
     +(cust&&!appliedPromo&&(appliedReward||rw2)
       ?(appliedReward
@@ -380,6 +396,8 @@ function sOCart(){
   var sinEnvio=!dirOk||envio===0;
   var h='<div class="m30 kraft fi"><button class="sal" onclick="go(\'o_home\')" aria-label="Seguir pidiendo">←</button>'
     +'<div class="tit"><em>Va saliendo</em><b>'+esc(cuantasCosas(cart.length)).replace(' ','<br>')+'</b></div>'
+    // Antes de abrir se dice ARRIBA, no recién al tocar Pagar (dueño, 2026-11-02, «Sí a todo»).
+    +(businessLaunched?'':'<div class="aviso-abre30" data-accion="aviso-antes-de-abrir"><b>'+esc(MES_DE_APERTURA)+'</b>Todavía no tomamos pedidos. '+(avisameListo?'Ya estás anotado: te escribimos el día que abramos.':'<button onclick="avisameAlAbrir()">Avísame cuando abran →</button>')+'</div>')
     +'<div class="papel"><div class="cinta c1"></div><div class="cinta c2"></div><div class="sello">'
     +'<div class="hd"><span>SND//WCH · TRUJILLO</span><span></span></div>'
     +lineas+ex+renglones
@@ -410,9 +428,17 @@ function hoja30HTML(){
   if(!hoja30)return'';
   var cuerpo='';
   if(hoja30==='recibe'){
-    cuerpo='<em>Para el motorizado</em><h3>¿Quién lo<br>recibe?</h3>'
+    // TUS DATOS EN UNA HOJA: nombre, celular, dónde (el punto del mapa manda el envío, con la misma
+    // cuenta de siempre) y la referencia, que viaja como nota del pedido igual que la de una guardada.
+    var dirOk2=direccionLista(),km2=deliveryKmNow();
+    cuerpo='<em>Para el motorizado</em><h3>¿Quién y<br>dónde?</h3>'
       +'<label class="campo"><s>Nombre</s><input id="o-nom" type="text" autocomplete="name" value="'+esc(confNom)+'"></label>'
       +'<label class="campo"><s>Celular</s><input id="o-phone" type="tel" inputmode="tel" autocomplete="tel" value="'+esc(confPhone)+'"></label>'
+      +(dirOk2
+        ?'<label class="campo"><s>Dirección</s><input id="o-addr" type="text" autocomplete="street-address" value="'+esc(addrText)+'"></label>'
+          +'<button class="mapa30" data-accion="mover-pin" onclick="hojaAlMapa()"><span>📍 Marcado en el mapa · '+(km2!=null?km2.toFixed(1)+' km · ':'')+'envío '+SOLES_TXT+pz(deliveryFeeAmount())+'</span><u>Mover</u></button>'
+        :'<button class="mapa30 falta" data-accion="marcar-en-el-mapa" onclick="hojaAlMapa()"><span>📍 Dirección · márcala en el mapa y te decimos el envío</span><u>'+(cust&&myAddresses.length?'Elegir':'Marcar')+'</u></button>')
+      +'<label class="campo"><s>Referencia (opcional)</s><input id="o-notes" type="text" value="'+esc(confNotes)+'"></label>'
       +'<div class="err" role="alert">'+esc(hojaErr)+'</div>'
       +'<div class="nota">Solo para avisarte y para que el motorizado te ubique.<br>No te creamos ninguna cuenta.</div>';
   }else if(hoja30==='programar'){
@@ -481,6 +507,9 @@ async function hojaListo(){
   if(hoja30==='recibe'){
     var n=(document.getElementById('o-nom') as HTMLInputElement|null),p=(document.getElementById('o-phone') as HTMLInputElement|null);
     confNom=n?n.value:confNom;confPhone=p?p.value:confPhone;
+    var ad=(document.getElementById('o-addr') as HTMLInputElement|null),no=(document.getElementById('o-notes') as HTMLInputElement|null);
+    if(ad&&ad.value.trim())addrText=ad.value.trim();
+    if(no)confNotes=no.value;
     if(!confNom.trim()){hojaErr='Escribe a nombre de quién va.';render();return;}
     if(confPhone.replace(/\D/g,'').length<6){hojaErr='Escribe un celular válido.';render();return;}
     hoja30=null;hojaErr='';render();return;
@@ -523,8 +552,7 @@ function irAPagar(){
   // Meta: «empezó a pagar», una vez por carrito (volver atrás y avanzar no lo infla).
   var firma=cart.length+':'+cartFinalTotal();
   if((window as any)._sndCheckoutVisto!==firma){(window as any)._sndCheckoutVisto=firma;fbTrack('InitiateCheckout',{currency:'PEN',value:money(cartFinalTotal()),num_items:cart.reduce(function(n,it){return n+(it.qty||1);},0)});}
-  if(!direccionLista()){go('o_dir');return;}
-  if(!recibeListo()){hoja30='recibe';hojaErr='';render();return;}
+  if(!direccionLista()||!recibeListo()){hoja30='recibe';hojaErr=!direccionLista()&&recibeListo()?'Falta marcar dónde te lo dejamos.':'';render();return;}
   var err=problemaDelPedido();
   // Si lo que falla es la hora, se abre donde se elige, no un aviso que manda a buscarla.
   if(err&&businessLaunched&&(scheduleMode==='later'||!storeStatus().open||pausaHasta()||hourIsFull(new Date()))){hoja30='programar';hojaErr=err;initSchedDefault();render();return;}
@@ -558,7 +586,7 @@ function sODir(){
   }).join('');
   var sel=lista.find(function(a){return dirElegida!=null&&mismoId(dirElegida,a.id);});
   var envSel=sel?envioADireccion(sel):null;
-  return'<div class="m34 kraft fi"><button class="sal" onclick="dirElegida=null;go(\'o_cart\')" aria-label="Volver">←</button>'
+  return'<div class="m34 kraft fi"><button class="sal" onclick="dirElegida=null;volverALaHoja();go(\'o_cart\')" aria-label="Volver">←</button>'
     +'<div class="tit"><em>'+(lista.length?'Tus direcciones':'Tu dirección')+'</em><b>Dónde te<br>lo dejamos</b></div>'
     +tarjetas
     +'<button class="et otra" onclick="otraDireccion()"><span class="hd"><span>Agregar</span><span>—</span></span>'
@@ -579,8 +607,18 @@ function usarDireccion(){
   if(dirElegida==null)return;
   pickAddr(dirElegida);
   dirElegida=null;
+  volverALaHoja();
   go('o_cart');
 }
+// La hoja de datos manda al mapa (o a las guardadas) y, al volver, se abre otra vez con lo escrito.
+var volverAHojaDatos=false;
+function hojaAlMapa(){
+  syncConfirmFields();
+  volverAHojaDatos=true;hoja30=null;hojaErr='';
+  if(cust&&myAddresses.length){go('o_dir');return;}
+  otraDireccion();
+}
+function volverALaHoja(){if(volverAHojaDatos){volverAHojaDatos=false;hoja30='recibe';hojaErr='';}}
 // El mapa de siempre (openMap/confirmMap): al confirmarlo deja dirección, distrito y
 // coordenadas, y se vuelve a la 30G.
 var volverDelMapa=false;
@@ -623,12 +661,15 @@ function sOPagar(){
       +'<div class="visor"><img src="img/yape-qr.png" alt="Código QR de Yape para pagar a '+esc(YAPE_PLIN_HOLDER||'')+'"><b class="a"></b><b class="b"></b><b class="c"></b><b class="d"></b></div>'
       +'<button class="esc" data-accion="copiar-yape" onclick="copiarNumeroYape()">Escanea o yapea al<b>'+esc(YAPE_PLIN_PHONE.replace(/(\d{3})(?=\d)/g,'$1 '))+'</b><u id="yape-copiado">Tocar para copiar</u></button>'
       +'<button class="alt" onclick="selectPayMethod(\'culqi\');render()"><n>Prefiero tarjeta</n><s>Son '+SOLES_TXT+pz(money(conTarjeta-t))+' más</s></button>'
-      +'<div class="fr">Apenas confirmes,<br>el pedido entra a la cocina</div>'
+      +'<div class="fr">Yapea, toma la captura y súbela aquí.<br>Si cuadra, entra a la cocina solo.</div>'
       +'<img class="h" style="left:-14px;bottom:68px;width:112px" src="'+broPose('sando','cuerpo')+'" alt="" aria-hidden="true">'
       +'<img class="h" style="right:-16px;bottom:68px;width:124px" src="'+broPose('wicho','cuerpo')+'" alt="" aria-hidden="true">'
       +'<div class="err" role="alert">'+esc(pagarErr)+'</div>'
       +'</div>'
-      +'<div class="m30-go sw-barra"><button class="oro" onclick="confirmarPago()">Ya pagué</button><button class="cel" onclick="confirmarPago()">'+SOLES_TXT+pz(t)+'</button></div>';
+      // El único botón es subir la captura (dueño, 2026-11-02, «Sí a todo»; aprobadas/pedido-simple-yape-
+      // subir-captura.png): elegirla crea el pedido y la lee sola. «Ya pagué» sin captura dejaba al
+      // cliente esperando a que alguien mirara la cuenta.
+      +'<div class="m30-go sw-barra"><label class="oro" data-accion="subir-captura-al-pagar">Subir mi captura<input type="file" accept="image/*" onchange="capturaAlPagar(event)"></label><label class="cel">'+SOLES_TXT+pz(t)+'<input type="file" accept="image/*" onchange="capturaAlPagar(event)"></label></div>';
   }
   var conYape=totalCon(false);
   return'<div class="m31 t fi"><button class="sal" onclick="go(\'o_cart\')" aria-label="Volver">←</button>'
@@ -954,7 +995,6 @@ function finalizeOrderSuccess(res,po,chargeId){
   // a quien pidió desde un fijo ni a quien no tiene cuenta (el fijo vive en la cuenta).
   window._lFijo=(cust&&prevTot===1&&!pendingRecurringId)?ofertaDeFijo(po):null;
   window._lWaText=po.waLines.join('\n');
-  window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(window._lWaText),'_blank');
   localStorage.setItem('sw_last_ref',po.ref);
   window._lTot=po.total;window._lChargeId=chargeId;
   // Los puntos NO se ganan sobre el delivery: el servidor otorga `total - delivery_fee`
@@ -985,6 +1025,8 @@ function finalizeOrderSuccess(res,po,chargeId){
   saveCart();
   _pendingOrder=null;
   busy=false;sndScreen='o_sent';render();
+  // La captura elegida en la 31 («Subir mi captura») se sube apenas existe el pedido, y se lee sola.
+  if(_capturaAlPagar){var cap=_capturaAlPagar;_capturaAlPagar=null;receiptUploadState='uploading';render();uploadReceiptBase64(cap);}
   // eventID = referencia del pedido: el servidor manda esta MISMA compra por Conversions
   // API con el mismo id, y Meta descarta el duplicado en vez de contar la venta dos veces.
   // Solo se reporta si el pedido ya quedó pagado — un Yape pendiente todavía no es venta,
@@ -1057,6 +1099,20 @@ async function dejarFijoDeEstePedido(){
     window._lFijo=null;render();
   }catch(e){showToast('No se pudo dejar fijo: '+e.message,'error');}
 }
+// «En la cocina» solo cuando el pago cuadró (dueño, 2026-11-02, «Sí a todo»; aprobadas/pedido-simple-
+// pago-confirmado.png y -la-estamos-revisando.png). Antes lo decía con el Yape aún sin confirmar.
+function arribaDelPedido(manualWaiting:boolean):string{
+  var st=receiptUploadState;
+  var t=!manualWaiting||st==='confirmado'
+    ?{ok:manualWaiting?'Pago confirmado':'Pedido recibido',h:'YA ESTÁ<br>EN LA<br>COCINA',q:'“Ya prendí<br>la plancha.”',e:'en-la-cocina'}
+    :st==='uploading'||st==='reading'||st==='done'
+      ?{ok:'Captura recibida',h:'COMPRO&shy;BANDO<br>TU PAGO',q:'“Un segundo,<br>ya la miro.”',e:'comprobando'}
+      :st==='revisamos'
+        ?{ok:'Captura recibida',h:'LA ESTAMOS<br>REVISANDO',q:'“Un momento,<br>ya la miro.”',e:'revisando'}
+        :{ok:'Pedido recibido',h:'FALTA TU<br>CAPTURA',q:'“Súbela y<br>prendo la plancha.”',e:'falta-captura'};
+  return'<div class="arriba" data-estado-pago="'+t.e+'"><div class="ok">'+t.ok+'</div><h1>'+t.h+'</h1>'
+    +'<div class="sub">'+t.q+'<u>Sando</u></div></div>';
+}
 function sOSent(){
   var pending=window._lPendingPayment;
   var methodLabel=window._lPayMethod==='yape'?'Yape':window._lPayMethod==='plin'?'Plin':'';
@@ -1095,8 +1151,8 @@ function sOSent(){
       +(window._lRewardLabel?'<div class="dr"><span>Canjeaste</span><b>'+esc(window._lRewardLabel)+'</b></div>':'')
       +(cust&&pts>0?'<div class="dr"><span>'+(pending?'Al confirmar':'Ganaste')+'</span><b class="pt">+'+pts+' puntos</b></div>':'')
       +(invitado?avisoDePuntosHTML(pts):'')
-      +(manualWaiting?'<div class="nota">Confirmamos tu '+methodLabel+' contra la cuenta'
-        +(deadlineLabel?'; si no lo hacemos antes de las '+esc(deadlineLabel)+', el pedido se cancela solo':'')+'.<br>'
+      +(manualWaiting?'<div class="nota">'+(receiptUploadState==='confirmado'?'':'Confirmamos tu '+methodLabel+' contra la cuenta'
+        +(deadlineLabel?'; si no lo hacemos antes de las '+esc(deadlineLabel)+', el pedido se cancela solo':'')+'.<br>')
         +(receiptUploadState==='confirmado'?'<b data-captura="confirmado">✓ ¡Pago confirmado! Tu pedido ya entró a la cocina.</b>'
           :receiptUploadState==='revisamos'?'✓ Captura recibida. La revisamos y te avisamos.'
           :receiptUploadState==='reading'?'✓ Captura recibida. Comprobando tu pago…'
@@ -1108,9 +1164,8 @@ function sOSent(){
       +(window._lRankUp?'<div class="dr"><span>Subiste a</span><b class="pt">'+esc(window._lRankUp)+'</b></div>':'')
       +(rankPerk?'<div class="dr"><span>Menú secreto</span><b class="pt">'+rankPerk+'</b></div>':'')
       +'<div class="extra">'
-      // Respaldo tappable del window.open automático: muchos navegadores móviles lo bloquean
-      // por no venir de un toque, y sin esto un pedido cobrado podía quedar sin aviso al negocio.
-      +(window._lWaText?'<button onclick="reopenWhatsAppConfirm()">Mandar el aviso por WhatsApp <span>→</span></button>':'')
+      // Sin WhatsApp (dueño, 2026-11-02: «automatizarlo sin tener que pasar por wsp»): el pedido llega
+      // al panel con su aviso («Nuevo pedido», push a los admins); el cliente no tiene que mandar nada.
       // Justo después del primer pedido pagado es el momento de mayor intención para activar
       // las notificaciones: quiere saber cuándo llega SU pedido.
       // Y también a quien pidió SIN cuenta (2026-10-09): sin esto, los avisos de recompra (el
@@ -1133,8 +1188,7 @@ function sOSent(){
   }
   return'<div class="m06 fi'+(sube?' sube':'')+'"><div class="forro"></div>'
     +'<div class="arr"><div class="col"><img src="'+broPose('sando','asoma')+'" alt="" aria-hidden="true"></div>'
-    +'<div class="arriba"><div class="ok">Pedido recibido</div><h1>YA ESTÁ<br>EN LA<br>COCINA</h1>'
-    +'<div class="sub">“Ya prendí<br>la plancha.”<u>Sando</u></div></div></div>'
+    +arribaDelPedido(manualWaiting)+'</div>'
     +'<div class="losa">'+losa+'</div>'
     +'</div>'
     +'<div class="m06-go sw-barra">'+pie+'</div>';
@@ -2007,7 +2061,7 @@ function confirmMap(){
   // pantalla que lo abrió con el texto y el pin (despuesDelMapa, 07-*).
   if(mapaVuelveA){var vuelve=mapaVuelveA;mapaVuelveA=null;despuesDelMapa(vuelve,a);return;}
   // Desde «Otra dirección» de la 34: la dirección queda elegida y se vuelve al recibo.
-  if(volverDelMapa){volverDelMapa=false;pickedAddrId=null;go('o_cart');return;}
+  if(volverDelMapa){volverDelMapa=false;pickedAddrId=null;volverALaHoja();go('o_cart');return;}
   render();
   var el=(document.getElementById('o-addr') as HTMLInputElement | null);
   // El resaltado usa el ACENTO del lado, no el azul de "pedido en preparación". Ese azul es

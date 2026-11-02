@@ -150,12 +150,19 @@ export async function elegirSando(page: Page) {
 
 // ── EL CAMINO DE COMPRA (2026-09-25): M15 → ficha 01 → bebidas → 30G → 31 ─────────────────
 // `i`: qué plato de la M15 (en el orden de la carta). Deja la prueba en la 30G.
+// Desde el 2026-11-02 (pedido simple) el plato agrega en UN toque con sus botones de 15CM y 30CM;
+// la ficha se abre tocando la foto y solo hace falta para cambiarle algo (aquí, la doble proteína).
 export async function pedirUnSignature(page: Page, opts: { i?: number; size?: '15' | '30'; dobleProteina?: boolean } = {}) {
-  await page.locator('.m15 .plato').nth(opts.i ?? 0).locator('button.b').click();
-  await page.locator('.f01').waitFor();
-  if (opts.size) await page.locator(`.f01 .tam button[onclick*="size='${opts.size}'"]`).click();
-  if (opts.dobleProteina) await page.locator('.f01 .dp').click();
-  await page.locator('.f01 .pie button').click();
+  const plato = page.locator('.m15 .plato').nth(opts.i ?? 0);
+  if (opts.dobleProteina) {
+    await plato.locator('.foto').click();
+    await page.locator('.f01').waitFor();
+    if (opts.size) await page.locator(`.f01 .tam button[onclick*="size='${opts.size}'"]`).click();
+    await page.locator('.f01 .dp').click();
+    await page.locator('.f01 .pie button').click();
+  } else {
+    await plato.locator(`[data-accion="agregar-${opts.size ?? '15'}"]`).click();
+  }
   // Si el pedido no trae bebida, se ofrecen las bebidas: se sigue sin ninguna.
   const sin = page.getByRole('button', { name: /Sigo sin bebida/ });
   await Promise.race([sin.waitFor(), page.locator('.m30').waitFor()]);
@@ -181,10 +188,15 @@ export async function ponerDireccion(page: Page, direccion = 'Av. España 123, T
   }, [direccion, distrito]);
 }
 // PAGAR en la 30G → la 31 (Yape por defecto) → «Ya pagué».
+// Desde el 2026-11-02 el único botón de la 31 es «Subir mi captura»: elegirla crea el pedido.
+export const CAPTURA_PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+export async function subirCapturaAlPagar(page: Page) {
+  await page.locator('[data-accion="subir-captura-al-pagar"] input').setInputFiles({ name: 'yape.png', mimeType: 'image/png', buffer: CAPTURA_PNG });
+}
 export async function pagarConYape(page: Page) {
   await page.locator('.m30-go .oro').click();
   await page.locator('.m31.y').waitFor();
-  await page.locator('.m30-go .oro').click();
+  await subirCapturaAlPagar(page);
 }
 
 export async function gotoApp(page: Page, handlers: ActionHandlers = {}) {

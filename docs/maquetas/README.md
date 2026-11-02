@@ -117,3 +117,9 @@ Nombres de clientes, direcciones, precios y el nombre del sándwich secreto de l
 son **de muestra**. Al construir, cada cifra y cada nombre sale del código o de la base
 (CLAUDE.md: un número escrito a mano es una promesa que se va a romper). La maqueta manda en
 la forma, no en los datos.
+| Pedido simple · puerta antes de abrir | `pedido-simple-puerta-antes-de-abrir.png` | `../propuestas/pedido-simple.html` lámina 4 | «Sí a todo» (2026-11-02): el aviso «Abrimos en noviembre» va arriba con «Avísame»; la versión con WhatsApp (lámina 1) quedó reemplazada |
+| Pedido simple · un toque | `pedido-simple-plato-un-toque.png` | `../propuestas/pedido-simple.html` lámina 2 | «Sí a todo» (2026-11-02): 15CM y 30CM como dos botones del mismo tamaño que agregan directo; la ficha se abre tocando la foto |
+| Pedido simple · tus datos en una hoja | `pedido-simple-hoja-de-datos.png` | `../propuestas/pedido-simple.html` lámina 3 | «Sí a todo» (2026-11-02): nombre, celular, dirección con su punto en el mapa y referencia, un solo «Listo» |
+| Pedido simple · Yape, subir la captura | `pedido-simple-yape-subir-captura.png` | `../propuestas/pedido-simple.html` lámina 4 | «Sí a todo» (2026-11-02): «Subir mi captura» reemplaza a «Ya pagué»; sin WhatsApp |
+| Pedido simple · pago confirmado | `pedido-simple-pago-confirmado.png` | `../propuestas/pedido-simple.html` lámina 4 | «Sí a todo» (2026-11-02): «en la cocina» solo cuando el pago cuadró |
+| Pedido simple · la estamos revisando | `pedido-simple-la-estamos-revisando.png` | `../propuestas/pedido-simple.html` lámina 4 | «Sí a todo» (2026-11-02): si la captura no cuadra o pasa del tope, queda para el dueño |

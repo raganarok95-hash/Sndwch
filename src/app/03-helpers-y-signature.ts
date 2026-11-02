@@ -952,9 +952,19 @@ function horaDoce(h:number):string{
   var m=h%24,suf=m<12?'a.m.':'p.m.',x=m%12===0?12:m%12;
   return x+':00 '+suf;
 }
+// El mes de apertura se dice, el día no: aún no está confirmado (CLAUDE.md). Al abrir, el panel
+// prende businessLaunched y este aviso desaparece solo.
+var MES_DE_APERTURA='Abrimos en noviembre';
+var avisameListo=false;
+async function avisameAlAbrir(){
+  var cel=await showPrompt('Tu celular y te escribimos el día que abramos.','','tel');
+  if(cel===null)return;
+  try{await api('waitlist-join',{phone:cel,name:cust&&cust.name?cust.name:''});avisameListo=true;render();}
+  catch(e){showToast(e.message||'No se pudo anotar. Intenta de nuevo.');}
+}
 function puertaEstado():{rotulo:string,detalle:string,cerrado:boolean}{
   var envio='delivery desde '+SOLES_TXT+(DELIVERY_MIN_FEE%1?pz(DELIVERY_MIN_FEE):String(DELIVERY_MIN_FEE));
-  if(!businessLaunched)return{rotulo:'Aún no abrimos',detalle:envio,cerrado:false};
+  if(!businessLaunched)return{rotulo:MES_DE_APERTURA,detalle:envio,cerrado:false};
   var lima=limaDayHour(new Date()),range=STORE_HOURS[lima.weekday];
   if(!range)return{rotulo:'Cerrado hoy',detalle:envio,cerrado:true};
   var abierto=lima.hour>=range[0]&&lima.hour<range[1];
@@ -977,6 +987,11 @@ function sOEleccion(){
   return'<div class="pta fi">'
     +'<div class="cab"><span class="wm"><span class="snd" data-fondo="#1E1B15">SND</span><span class="wm-mark" aria-hidden="true"><i></i><i></i></span><span class="wch" data-fondo="#CFE6F5">WCH</span></span></div>'
     +yo
+    // ANTES DE ABRIR, ARRIBA (dueño, 2026-11-02, «Sí a todo»; aprobadas/pedido-simple-puerta-
+    // antes-de-abrir.png): el aviso iba abajo en chico y el cliente se enteraba recién al pagar.
+    +(businessLaunched?'':'<div class="aviso-abre" data-accion="aviso-antes-de-abrir"><div><b>'+esc(MES_DE_APERTURA)+' //</b>'
+      +'<span>'+(avisameListo?'Listo: te escribimos el día que abramos.':'Ya puedes ver la carta. Te avisamos el día que abramos.')+'</span></div>'
+      +(avisameListo?'':'<button data-accion="avisame-al-abrir" onclick="avisameAlAbrir()">Avísame</button>')+'</div>')
     +'<div class="mitades">'
     // ⚠ EL NUMERO SE CUENTA, NUNCA SE ESCRIBE (ver cuantosSignatures).
     +mitad('sig','hs','SND','Ya está resuelto',cuantosSignatures(),'sando.webp')
@@ -1731,14 +1746,19 @@ function sMundoSando(){
     // 2026-09-30: «no estoy eligiendo color de todo el mundo pero sí de sus sándwiches… elegí
     // kraft»). El secreto conserva su noche morada.
     return'<section class="plato kraft" aria-label="'+esc(s.n)+'"><div class="forro"></div>'
-      +'<div class="foto">'+(fotoDelPlato(s.id)?'<img src="'+fotoDelPlato(s.id)+'" alt="" '+(i>0?'loading="lazy"':'')+(av?'':' style="filter:grayscale(1)"')+'>':'')+'<div class="baja"></div></div>'
+      // La foto abre la ficha (quitar algo, doble): los dos botones de abajo agregan directo.
+      +'<div class="foto"'+(av?' role="button" tabindex="0" aria-label="Ver '+esc(s.n)+' y cambiarle algo" onclick="startOrderWithSig(\''+s.id+'\')"':'')+'>'+(fotoDelPlato(s.id)?'<img src="'+fotoDelPlato(s.id)+'" alt="" '+(i>0?'loading="lazy"':'')+(av?'':' style="filter:grayscale(1)"')+'>':'')+'<div class="baja"></div></div>'
       +'<img class="sirve" src="'+sirve+'" alt="" aria-hidden="true">'
       +'<div class="ficha"><div class="num">'+romano(i+1)+' de '+romano(visibles.length)+(marca?'<b>'+esc(marca)+'</b>':'')+'</div>'
       +'<h1>'+esc(s.n)+'</h1><div class="pitch">'+esc(s.pitch||'')+'</div></div>'
-      +'<div class="pie"><div class="puno"></div><div class="cuenta">'
-      +'<div class="p">'+SOLES_TXT+pz(s.p15)+'<s>30CM · '+SOLES_TXT+pz(s.p30)+'</s></div>'
-      +(av?'<button class="b" onclick="startOrderWithSig(\''+s.id+'\')">Lo quiero</button>':'<button class="b" disabled>Agotado</button>')
-      +'</div></div>'
+      // UN TOQUE (dueño, 2026-11-02, «Sí a todo»; aprobadas/pedido-simple-plato-un-toque.png): los
+      // dos tamaños son dos botones del mismo peso que agregan directo y pasan a la bebida.
+      +'<div class="pie"><div class="puno"></div><div class="cuenta tam2">'
+      +(av
+        ?'<button class="t15" data-accion="agregar-15" onclick="agregarDirecto(\''+s.id+'\',\'15\')"><small>15CM</small><b>'+SOLES_TXT+pz(s.p15)+'</b><i>+ Agregar</i></button>'
+          +'<button class="t30" data-accion="agregar-30" onclick="agregarDirecto(\''+s.id+'\',\'30\')"><small>30CM</small><b>'+SOLES_TXT+pz(s.p30)+'</b><i>+ Agregar</i></button>'
+        :'<button class="b" disabled>Agotado</button>')
+      +'</div>'+(av?'<button class="cambiar" onclick="startOrderWithSig(\''+s.id+'\')">¿Le quitas algo o lo quieres doble? Toca la foto →</button>':'')+'</div>'
       +M15_PASAR(total,i===0?0:i+1,false,!!secreto)
       +'</section>'
       +(i===0?platoGrupo(total,!!secreto):'');
@@ -1863,6 +1883,15 @@ function sOSig(){
 // pasa por las bebidas (con «Sigo sin bebida»); si no, directo a la 30G. Lo usan la ficha y el
 // último paso del armador, así que los dos caminos llegan igual al pedido.
 var ofrecerBebida=false;
+// Agregar un Signature desde su plato, sin pasar por la ficha: es exactamente la ficha sin tocar
+// nada más que el tamaño (mismo item, mismo AddToCart, misma oferta de bebida).
+function agregarDirecto(id,tam){
+  var s=SIGS.find(function(x){return mismoId(x.id,id);});
+  if(!s||!sigInStock(s))return;
+  resetBuilder();mode='sig';sigId=s.id;size=tam;
+  if(!s.secret)fbTrack('ViewContent',{currency:'PEN',value:s.p15,content_ids:[s.id],content_type:'product',content_name:s.n});
+  loQuiero();
+}
 function loQuiero(){
   var editando=!!editingItemQty;
   var wasEmpty=cart.length===0;

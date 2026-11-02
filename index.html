@@ -648,6 +648,14 @@ body.kb-open #app{padding-bottom:0}
 .pta .yo{all:unset;cursor:pointer;position:absolute;top:10px;right:4px;z-index:5;padding:12px;display:flex;align-items:center;gap:7px;font-family:'EB Garamond',serif;font-size:10px;letter-spacing:.22em;font-weight:600;text-transform:uppercase;color:#241D38}
 .pta .yo:focus-visible{outline:2px solid #241D38;outline-offset:-2px}
 .pta .yo .pt{background:#241D38;color:#EAF4FB;border-radius:999px;padding:5px 9px;letter-spacing:.14em}
+.m30 .aviso-abre30{position:relative;z-index:3;background:#1E4636;color:#EFE6D4;margin:12px 0 14px;padding:10px 12px;font-family:'EB Garamond',serif;font-size:15px;line-height:1.35;border-left:3px solid #CBA258}
+.m30 .aviso-abre30 b{font-family:Archivo,sans-serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#CBA258;display:block}
+.m30 .aviso-abre30 button{all:unset;cursor:pointer;color:#CBA258;text-decoration:underline;text-underline-offset:3px}
+.pta .aviso-abre{position:absolute;left:16px;right:16px;top:64px;z-index:5;background:#1E4636;border:1px solid #CBA258;padding:12px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 6px 18px rgba(0,0,0,.35)}
+.pta .aviso-abre b{display:block;font-family:Archivo,sans-serif;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#CBA258;font-weight:700}
+.pta .aviso-abre span{display:block;font-family:'EB Garamond',serif;font-size:15px;color:#EFE6D4;line-height:1.3;margin-top:3px}
+.pta .aviso-abre button{all:unset;cursor:pointer;flex:0 0 auto;background:#CBA258;color:#17130E;font-family:Archivo,sans-serif;font-weight:700;font-size:11px;letter-spacing:.14em;text-transform:uppercase;padding:9px 10px}
+.pta .aviso-abre button:focus-visible{outline:2px solid #EFE6D4;outline-offset:2px}
 .pta .pie{background:#110F0C;padding:15px 12px calc(20px + env(safe-area-inset-bottom,0px));text-align:center}
 .pta .pie span{font-size:10px;letter-spacing:.22em;font-weight:600;text-transform:uppercase;color:#CBA258}
 .pta .pie em{font-style:italic;font-size:13px;color:#8E8A80;margin-left:10px}
@@ -833,6 +841,8 @@ body.kb-open #app{padding-bottom:0}
 .m30 .hermanos .w{right:-42px;width:122px;transform:rotate(6deg)}
 .m30-go{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:74px;display:flex;z-index:97}
 .m30-go button{all:unset;box-sizing:border-box;cursor:pointer;flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.m30-go label{box-sizing:border-box;cursor:pointer;flex:1;display:flex;align-items:center;font:700 13px/1 Archivo,sans-serif;letter-spacing:.2em;text-transform:uppercase;position:relative;overflow:hidden}
+.m30-go label input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .m30-go .oro{background:#CBA258;color:#2A2113;justify-content:flex-end;padding-right:16px}
 .m30-go .cel{background:#8CC8EC;color:#0E2430;justify-content:flex-start;padding-left:16px}
 .m30-go .oro.solo{justify-content:center;padding:0 16px;text-align:center;letter-spacing:.1em;line-height:1.3}
@@ -842,6 +852,9 @@ body.kb-open #app{padding-bottom:0}
 .hoja{position:fixed;left:50%;transform:translateX(-50%);width:100%;max-width:480px;bottom:74px;z-index:96;background:#F0EBDE;padding:22px 26px 24px;border-top:3px solid #33230F;box-sizing:border-box;max-height:calc(100dvh - 140px);overflow-y:auto}
 .hoja em{display:block;font:700 9px/1 'IBM Plex Mono',monospace;font-style:normal;letter-spacing:.26em;color:#4E3519;text-transform:uppercase}
 .hoja h3{font-family:Anton,sans-serif;font-weight:700;font-size:34px;line-height:.9;color:#33230F;margin:10px 0 20px;letter-spacing:-.02em;text-transform:uppercase}
+.hoja .mapa30{all:unset;box-sizing:border-box;cursor:pointer;display:flex;width:100%;justify-content:space-between;align-items:center;gap:10px;border:1px dashed rgba(51,35,15,.5);padding:10px 12px;margin:-8px 0 20px;font:500 11px/1.5 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:#33230F}
+.hoja .mapa30 u{text-decoration:none;font-weight:700;color:#7A4508;flex:0 0 auto}
+.hoja .mapa30.falta{margin-top:0;border-style:solid;border-color:#7A4508}
 .hoja .campo{display:block;border-bottom:2px solid #33230F;padding-bottom:10px;margin-bottom:20px}
 .hoja .campo s{display:block;text-decoration:none;font:700 8px/1 'IBM Plex Mono',monospace;letter-spacing:.24em;color:#4E3519;text-transform:uppercase}
 .hoja .campo input{all:unset;box-sizing:border-box;display:block;width:100%;margin-top:10px;font-family:'IBM Plex Mono',monospace;font-size:18px;color:#33230F !important;caret-color:#7A4508}
@@ -1632,6 +1645,15 @@ body.kb-open #app{padding-bottom:0}
 .m15 .plato.kraft .cuenta .p s{color:#4A3218}
 .m15 .plato.kraft .cuenta .b{background:#2A1D0E;color:#F2E4CA}
 .m15 .plato.kraft .cuenta .b:focus-visible{outline-color:#2A1D0E}
+.m15 .cuenta.tam2{gap:10px;align-items:stretch}
+.m15 .cuenta.tam2 button{all:unset;cursor:pointer;flex:1;text-align:center;padding:12px 8px 13px;font-family:'Bodoni Moda',serif;background:#CBA258;color:#17130E}
+.m15 .cuenta.tam2 button.t30{background:#2A1D0E;color:#CBA258}
+.m15 .cuenta.tam2 button:focus-visible{outline:2px solid #2A1D0E;outline-offset:3px}
+.m15 .cuenta.tam2 small{display:block;font-family:Archivo,sans-serif;font-size:11px;letter-spacing:.2em;font-weight:700}
+.m15 .cuenta.tam2 b{display:block;font-size:22px;font-weight:640;margin-top:3px}
+.m15 .cuenta.tam2 i{display:block;font-style:normal;font-family:Archivo,sans-serif;font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-top:4px;opacity:.85}
+.m15 .pie .cambiar{all:unset;cursor:pointer;display:block;margin-top:10px;font-family:'EB Garamond',serif;font-style:italic;font-size:13px;color:#4A3218}
+.m15 .plato .foto[role=button]{cursor:pointer}
 .m15 .plato.kraft .pasar i{background:#A88758}
 .m15 .plato.kraft .pasar i.on{background:#2A1D0E}
 .m15 .plato.kraft .pasar i.vlt{background:#6E5A86}
@@ -4345,7 +4367,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '1d15182c63';
+var APP_BUILD = '45a22afd7e';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6561,10 +6583,27 @@ function horaDoce(h) {
     var m = h % 24, suf = m < 12 ? 'a.m.' : 'p.m.', x = m % 12 === 0 ? 12 : m % 12;
     return x + ':00 ' + suf;
 }
+// El mes de apertura se dice, el día no: aún no está confirmado (CLAUDE.md). Al abrir, el panel
+// prende businessLaunched y este aviso desaparece solo.
+var MES_DE_APERTURA = 'Abrimos en noviembre';
+var avisameListo = false;
+async function avisameAlAbrir() {
+    var cel = await showPrompt('Tu celular y te escribimos el día que abramos.', '', 'tel');
+    if (cel === null)
+        return;
+    try {
+        await api('waitlist-join', { phone: cel, name: cust && cust.name ? cust.name : '' });
+        avisameListo = true;
+        render();
+    }
+    catch (e) {
+        showToast(e.message || 'No se pudo anotar. Intenta de nuevo.');
+    }
+}
 function puertaEstado() {
     var envio = 'delivery desde ' + SOLES_TXT + (DELIVERY_MIN_FEE % 1 ? pz(DELIVERY_MIN_FEE) : String(DELIVERY_MIN_FEE));
     if (!businessLaunched)
-        return { rotulo: 'Aún no abrimos', detalle: envio, cerrado: false };
+        return { rotulo: MES_DE_APERTURA, detalle: envio, cerrado: false };
     var lima = limaDayHour(new Date()), range = STORE_HOURS[lima.weekday];
     if (!range)
         return { rotulo: 'Cerrado hoy', detalle: envio, cerrado: true };
@@ -6588,6 +6627,11 @@ function sOEleccion() {
     return '<div class="pta fi">'
         + '<div class="cab"><span class="wm"><span class="snd" data-fondo="#1E1B15">SND</span><span class="wm-mark" aria-hidden="true"><i></i><i></i></span><span class="wch" data-fondo="#CFE6F5">WCH</span></span></div>'
         + yo
+        // ANTES DE ABRIR, ARRIBA (dueño, 2026-11-02, «Sí a todo»; aprobadas/pedido-simple-puerta-
+        // antes-de-abrir.png): el aviso iba abajo en chico y el cliente se enteraba recién al pagar.
+        + (businessLaunched ? '' : '<div class="aviso-abre" data-accion="aviso-antes-de-abrir"><div><b>' + esc(MES_DE_APERTURA) + ' //</b>'
+            + '<span>' + (avisameListo ? 'Listo: te escribimos el día que abramos.' : 'Ya puedes ver la carta. Te avisamos el día que abramos.') + '</span></div>'
+            + (avisameListo ? '' : '<button data-accion="avisame-al-abrir" onclick="avisameAlAbrir()">Avísame</button>') + '</div>')
         + '<div class="mitades">'
         // ⚠ EL NUMERO SE CUENTA, NUNCA SE ESCRIBE (ver cuantosSignatures).
         + mitad('sig', 'hs', 'SND', 'Ya está resuelto', cuantosSignatures(), 'sando.webp')
@@ -7523,14 +7567,19 @@ function sMundoSando() {
         // 2026-09-30: «no estoy eligiendo color de todo el mundo pero sí de sus sándwiches… elegí
         // kraft»). El secreto conserva su noche morada.
         return '<section class="plato kraft" aria-label="' + esc(s.n) + '"><div class="forro"></div>'
-            + '<div class="foto">' + (fotoDelPlato(s.id) ? '<img src="' + fotoDelPlato(s.id) + '" alt="" ' + (i > 0 ? 'loading="lazy"' : '') + (av ? '' : ' style="filter:grayscale(1)"') + '>' : '') + '<div class="baja"></div></div>'
+            // La foto abre la ficha (quitar algo, doble): los dos botones de abajo agregan directo.
+            + '<div class="foto"' + (av ? ' role="button" tabindex="0" aria-label="Ver ' + esc(s.n) + ' y cambiarle algo" onclick="startOrderWithSig(\'' + s.id + '\')"' : '') + '>' + (fotoDelPlato(s.id) ? '<img src="' + fotoDelPlato(s.id) + '" alt="" ' + (i > 0 ? 'loading="lazy"' : '') + (av ? '' : ' style="filter:grayscale(1)"') + '>' : '') + '<div class="baja"></div></div>'
             + '<img class="sirve" src="' + sirve + '" alt="" aria-hidden="true">'
             + '<div class="ficha"><div class="num">' + romano(i + 1) + ' de ' + romano(visibles.length) + (marca ? '<b>' + esc(marca) + '</b>' : '') + '</div>'
             + '<h1>' + esc(s.n) + '</h1><div class="pitch">' + esc(s.pitch || '') + '</div></div>'
-            + '<div class="pie"><div class="puno"></div><div class="cuenta">'
-            + '<div class="p">' + SOLES_TXT + pz(s.p15) + '<s>30CM · ' + SOLES_TXT + pz(s.p30) + '</s></div>'
-            + (av ? '<button class="b" onclick="startOrderWithSig(\'' + s.id + '\')">Lo quiero</button>' : '<button class="b" disabled>Agotado</button>')
-            + '</div></div>'
+            // UN TOQUE (dueño, 2026-11-02, «Sí a todo»; aprobadas/pedido-simple-plato-un-toque.png): los
+            // dos tamaños son dos botones del mismo peso que agregan directo y pasan a la bebida.
+            + '<div class="pie"><div class="puno"></div><div class="cuenta tam2">'
+            + (av
+                ? '<button class="t15" data-accion="agregar-15" onclick="agregarDirecto(\'' + s.id + '\',\'15\')"><small>15CM</small><b>' + SOLES_TXT + pz(s.p15) + '</b><i>+ Agregar</i></button>'
+                    + '<button class="t30" data-accion="agregar-30" onclick="agregarDirecto(\'' + s.id + '\',\'30\')"><small>30CM</small><b>' + SOLES_TXT + pz(s.p30) + '</b><i>+ Agregar</i></button>'
+                : '<button class="b" disabled>Agotado</button>')
+            + '</div>' + (av ? '<button class="cambiar" onclick="startOrderWithSig(\'' + s.id + '\')">¿Le quitas algo o lo quieres doble? Toca la foto →</button>' : '') + '</div>'
             + M15_PASAR(total, i === 0 ? 0 : i + 1, false, !!secreto)
             + '</section>'
             + (i === 0 ? platoGrupo(total, !!secreto) : '');
@@ -7670,6 +7719,20 @@ function sOSig() {
 // pasa por las bebidas (con «Sigo sin bebida»); si no, directo a la 30G. Lo usan la ficha y el
 // último paso del armador, así que los dos caminos llegan igual al pedido.
 var ofrecerBebida = false;
+// Agregar un Signature desde su plato, sin pasar por la ficha: es exactamente la ficha sin tocar
+// nada más que el tamaño (mismo item, mismo AddToCart, misma oferta de bebida).
+function agregarDirecto(id, tam) {
+    var s = SIGS.find(function (x) { return mismoId(x.id, id); });
+    if (!s || !sigInStock(s))
+        return;
+    resetBuilder();
+    mode = 'sig';
+    sigId = s.id;
+    size = tam;
+    if (!s.secret)
+        fbTrack('ViewContent', { currency: 'PEN', value: s.p15, content_ids: [s.id], content_type: 'product', content_name: s.n });
+    loQuiero();
+}
 function loQuiero() {
     var editando = !!editingItemQty;
     var wasEmpty = cart.length === 0;
@@ -8482,6 +8545,27 @@ function handleReceiptFile(ev) {
     }
     receiptUploadState = 'uploading';
     render();
+    comprimirCaptura(file, uploadReceiptBase64, function (msg) { receiptUploadState = 'error:' + msg; render(); });
+}
+// «SUBIR MI CAPTURA» (31, dueño, 2026-11-02): elegir la captura ES confirmar el pago. Se comprime,
+// se crea el pedido con el mismo doOrder de siempre y, apenas existe, se sube y se lee sola.
+var _capturaAlPagar = null;
+function capturaAlPagar(ev) {
+    var input = ev && ev.target;
+    var file = input && input.files && input.files[0];
+    if (input)
+        input.value = '';
+    if (!file)
+        return;
+    if (!/^image\//.test(file.type)) {
+        pagarErr = 'Elige una imagen: la captura de tu Yape.';
+        render();
+        return;
+    }
+    _capturaAlPagar = null;
+    comprimirCaptura(file, function (b64) { _capturaAlPagar = b64; confirmarPago(); }, function (msg) { pagarErr = msg; render(); });
+}
+function comprimirCaptura(file, listo, falla) {
     var reader = new FileReader();
     reader.onload = function () {
         var img = new Image();
@@ -8494,18 +8578,17 @@ function handleReceiptFile(ev) {
             canvas.height = h;
             var ctx = canvas.getContext('2d');
             if (!ctx) {
-                receiptUploadState = 'error:No se pudo procesar la imagen.';
-                render();
+                falla('No se pudo procesar la imagen.');
                 return;
             }
             ctx.drawImage(img, 0, 0, w, h);
             var base64 = canvas.toDataURL('image/jpeg', .7).split(',')[1] || '';
-            uploadReceiptBase64(base64);
+            listo(base64);
         };
-        img.onerror = function () { receiptUploadState = 'error:No se pudo leer la imagen.'; render(); };
+        img.onerror = function () { falla('No se pudo leer la imagen.'); };
         img.src = String(reader.result || '');
     };
-    reader.onerror = function () { receiptUploadState = 'error:No se pudo leer el archivo.'; render(); };
+    reader.onerror = function () { falla('No se pudo leer el archivo.'); };
     reader.readAsDataURL(file);
 }
 async function uploadReceiptBase64(base64) {
@@ -8681,7 +8764,8 @@ function sOCart() {
         : '<div class="ex"><span>Envío</span><span>Al elegir dónde</span></div>';
     var rw2 = !appliedPromo ? recompensaUsable() : null;
     var renglones = en30('Llega', llegaTexto(), 'Programar', "hoja30='programar';hojaErr='';initSchedDefault();render()")
-        + en30('Dónde', dirOk ? addrText : '¿Dónde te lo dejamos?', dirOk ? 'Cambiar' : 'Elegir', "go('o_dir')", !dirOk)
+        // Dónde y Recibe abren la MISMA hoja (dueño, 2026-11-02, «Sí a todo»; aprobadas/pedido-simple-hoja-de-datos.png).
+        + en30('Dónde', dirOk ? addrText : '¿Dónde te lo dejamos?', dirOk ? 'Cambiar' : 'Elegir', "hoja30='recibe';hojaErr='';render()", !dirOk)
         + en30('Recibe', recOk ? confNom.trim() + ' · ' + confPhone : '¿A nombre de quién?', recOk ? 'Cambiar' : 'Poner', "hoja30='recibe';hojaErr='';render()", !recOk)
         + (cust && !appliedPromo && (appliedReward || rw2)
             ? (appliedReward
@@ -8698,6 +8782,8 @@ function sOCart() {
     var sinEnvio = !dirOk || envio === 0;
     var h = '<div class="m30 kraft fi"><button class="sal" onclick="go(\'o_home\')" aria-label="Seguir pidiendo">←</button>'
         + '<div class="tit"><em>Va saliendo</em><b>' + esc(cuantasCosas(cart.length)).replace(' ', '<br>') + '</b></div>'
+        // Antes de abrir se dice ARRIBA, no recién al tocar Pagar (dueño, 2026-11-02, «Sí a todo»).
+        + (businessLaunched ? '' : '<div class="aviso-abre30" data-accion="aviso-antes-de-abrir"><b>' + esc(MES_DE_APERTURA) + '</b>Todavía no tomamos pedidos. ' + (avisameListo ? 'Ya estás anotado: te escribimos el día que abramos.' : '<button onclick="avisameAlAbrir()">Avísame cuando abran →</button>') + '</div>')
         + '<div class="papel"><div class="cinta c1"></div><div class="cinta c2"></div><div class="sello">'
         + '<div class="hd"><span>SND//WCH · TRUJILLO</span><span></span></div>'
         + lineas + ex + renglones
@@ -8729,9 +8815,17 @@ function hoja30HTML() {
         return '';
     var cuerpo = '';
     if (hoja30 === 'recibe') {
-        cuerpo = '<em>Para el motorizado</em><h3>¿Quién lo<br>recibe?</h3>'
+        // TUS DATOS EN UNA HOJA: nombre, celular, dónde (el punto del mapa manda el envío, con la misma
+        // cuenta de siempre) y la referencia, que viaja como nota del pedido igual que la de una guardada.
+        var dirOk2 = direccionLista(), km2 = deliveryKmNow();
+        cuerpo = '<em>Para el motorizado</em><h3>¿Quién y<br>dónde?</h3>'
             + '<label class="campo"><s>Nombre</s><input id="o-nom" type="text" autocomplete="name" value="' + esc(confNom) + '"></label>'
             + '<label class="campo"><s>Celular</s><input id="o-phone" type="tel" inputmode="tel" autocomplete="tel" value="' + esc(confPhone) + '"></label>'
+            + (dirOk2
+                ? '<label class="campo"><s>Dirección</s><input id="o-addr" type="text" autocomplete="street-address" value="' + esc(addrText) + '"></label>'
+                    + '<button class="mapa30" data-accion="mover-pin" onclick="hojaAlMapa()"><span>📍 Marcado en el mapa · ' + (km2 != null ? km2.toFixed(1) + ' km · ' : '') + 'envío ' + SOLES_TXT + pz(deliveryFeeAmount()) + '</span><u>Mover</u></button>'
+                : '<button class="mapa30 falta" data-accion="marcar-en-el-mapa" onclick="hojaAlMapa()"><span>📍 Dirección · márcala en el mapa y te decimos el envío</span><u>' + (cust && myAddresses.length ? 'Elegir' : 'Marcar') + '</u></button>')
+            + '<label class="campo"><s>Referencia (opcional)</s><input id="o-notes" type="text" value="' + esc(confNotes) + '"></label>'
             + '<div class="err" role="alert">' + esc(hojaErr) + '</div>'
             + '<div class="nota">Solo para avisarte y para que el motorizado te ubique.<br>No te creamos ninguna cuenta.</div>';
     }
@@ -8828,6 +8922,11 @@ async function hojaListo() {
         var n = document.getElementById('o-nom'), p = document.getElementById('o-phone');
         confNom = n ? n.value : confNom;
         confPhone = p ? p.value : confPhone;
+        var ad = document.getElementById('o-addr'), no = document.getElementById('o-notes');
+        if (ad && ad.value.trim())
+            addrText = ad.value.trim();
+        if (no)
+            confNotes = no.value;
         if (!confNom.trim()) {
             hojaErr = 'Escribe a nombre de quién va.';
             render();
@@ -8910,13 +9009,9 @@ function irAPagar() {
         window._sndCheckoutVisto = firma;
         fbTrack('InitiateCheckout', { currency: 'PEN', value: money(cartFinalTotal()), num_items: cart.reduce(function (n, it) { return n + (it.qty || 1); }, 0) });
     }
-    if (!direccionLista()) {
-        go('o_dir');
-        return;
-    }
-    if (!recibeListo()) {
+    if (!direccionLista() || !recibeListo()) {
         hoja30 = 'recibe';
-        hojaErr = '';
+        hojaErr = !direccionLista() && recibeListo() ? 'Falta marcar dónde te lo dejamos.' : '';
         render();
         return;
     }
@@ -8967,7 +9062,7 @@ function sODir() {
     }).join('');
     var sel = lista.find(function (a) { return dirElegida != null && mismoId(dirElegida, a.id); });
     var envSel = sel ? envioADireccion(sel) : null;
-    return '<div class="m34 kraft fi"><button class="sal" onclick="dirElegida=null;go(\'o_cart\')" aria-label="Volver">←</button>'
+    return '<div class="m34 kraft fi"><button class="sal" onclick="dirElegida=null;volverALaHoja();go(\'o_cart\')" aria-label="Volver">←</button>'
         + '<div class="tit"><em>' + (lista.length ? 'Tus direcciones' : 'Tu dirección') + '</em><b>Dónde te<br>lo dejamos</b></div>'
         + tarjetas
         + '<button class="et otra" onclick="otraDireccion()"><span class="hd"><span>Agregar</span><span>—</span></span>'
@@ -8989,8 +9084,27 @@ function usarDireccion() {
         return;
     pickAddr(dirElegida);
     dirElegida = null;
+    volverALaHoja();
     go('o_cart');
 }
+// La hoja de datos manda al mapa (o a las guardadas) y, al volver, se abre otra vez con lo escrito.
+var volverAHojaDatos = false;
+function hojaAlMapa() {
+    syncConfirmFields();
+    volverAHojaDatos = true;
+    hoja30 = null;
+    hojaErr = '';
+    if (cust && myAddresses.length) {
+        go('o_dir');
+        return;
+    }
+    otraDireccion();
+}
+function volverALaHoja() { if (volverAHojaDatos) {
+    volverAHojaDatos = false;
+    hoja30 = 'recibe';
+    hojaErr = '';
+} }
 // El mapa de siempre (openMap/confirmMap): al confirmarlo deja dirección, distrito y
 // coordenadas, y se vuelve a la 30G.
 var volverDelMapa = false;
@@ -9032,12 +9146,15 @@ function sOPagar() {
             + '<div class="visor"><img src="img/yape-qr.png" alt="Código QR de Yape para pagar a ' + esc(YAPE_PLIN_HOLDER || '') + '"><b class="a"></b><b class="b"></b><b class="c"></b><b class="d"></b></div>'
             + '<button class="esc" data-accion="copiar-yape" onclick="copiarNumeroYape()">Escanea o yapea al<b>' + esc(YAPE_PLIN_PHONE.replace(/(\d{3})(?=\d)/g, '$1 ')) + '</b><u id="yape-copiado">Tocar para copiar</u></button>'
             + '<button class="alt" onclick="selectPayMethod(\'culqi\');render()"><n>Prefiero tarjeta</n><s>Son ' + SOLES_TXT + pz(money(conTarjeta - t)) + ' más</s></button>'
-            + '<div class="fr">Apenas confirmes,<br>el pedido entra a la cocina</div>'
+            + '<div class="fr">Yapea, toma la captura y súbela aquí.<br>Si cuadra, entra a la cocina solo.</div>'
             + '<img class="h" style="left:-14px;bottom:68px;width:112px" src="' + broPose('sando', 'cuerpo') + '" alt="" aria-hidden="true">'
             + '<img class="h" style="right:-16px;bottom:68px;width:124px" src="' + broPose('wicho', 'cuerpo') + '" alt="" aria-hidden="true">'
             + '<div class="err" role="alert">' + esc(pagarErr) + '</div>'
             + '</div>'
-            + '<div class="m30-go sw-barra"><button class="oro" onclick="confirmarPago()">Ya pagué</button><button class="cel" onclick="confirmarPago()">' + SOLES_TXT + pz(t) + '</button></div>';
+            // El único botón es subir la captura (dueño, 2026-11-02, «Sí a todo»; aprobadas/pedido-simple-yape-
+            // subir-captura.png): elegirla crea el pedido y la lee sola. «Ya pagué» sin captura dejaba al
+            // cliente esperando a que alguien mirara la cuenta.
+            + '<div class="m30-go sw-barra"><label class="oro" data-accion="subir-captura-al-pagar">Subir mi captura<input type="file" accept="image/*" onchange="capturaAlPagar(event)"></label><label class="cel">' + SOLES_TXT + pz(t) + '<input type="file" accept="image/*" onchange="capturaAlPagar(event)"></label></div>';
     }
     var conYape = totalCon(false);
     return '<div class="m31 t fi"><button class="sal" onclick="go(\'o_cart\')" aria-label="Volver">←</button>'
@@ -9448,7 +9565,6 @@ function finalizeOrderSuccess(res, po, chargeId) {
     // a quien pidió desde un fijo ni a quien no tiene cuenta (el fijo vive en la cuenta).
     window._lFijo = (cust && prevTot === 1 && !pendingRecurringId) ? ofertaDeFijo(po) : null;
     window._lWaText = po.waLines.join('\n');
-    window.open('https://wa.me/' + WA + '?text=' + encodeURIComponent(window._lWaText), '_blank');
     localStorage.setItem('sw_last_ref', po.ref);
     window._lTot = po.total;
     window._lChargeId = chargeId;
@@ -9504,6 +9620,14 @@ function finalizeOrderSuccess(res, po, chargeId) {
     busy = false;
     sndScreen = 'o_sent';
     render();
+    // La captura elegida en la 31 («Subir mi captura») se sube apenas existe el pedido, y se lee sola.
+    if (_capturaAlPagar) {
+        var cap = _capturaAlPagar;
+        _capturaAlPagar = null;
+        receiptUploadState = 'uploading';
+        render();
+        uploadReceiptBase64(cap);
+    }
     // eventID = referencia del pedido: el servidor manda esta MISMA compra por Conversions
     // API con el mismo id, y Meta descarta el duplicado en vez de contar la venta dos veces.
     // Solo se reporta si el pedido ya quedó pagado — un Yape pendiente todavía no es venta,
@@ -9584,6 +9708,20 @@ async function dejarFijoDeEstePedido() {
         showToast('No se pudo dejar fijo: ' + e.message, 'error');
     }
 }
+// «En la cocina» solo cuando el pago cuadró (dueño, 2026-11-02, «Sí a todo»; aprobadas/pedido-simple-
+// pago-confirmado.png y -la-estamos-revisando.png). Antes lo decía con el Yape aún sin confirmar.
+function arribaDelPedido(manualWaiting) {
+    var st = receiptUploadState;
+    var t = !manualWaiting || st === 'confirmado'
+        ? { ok: manualWaiting ? 'Pago confirmado' : 'Pedido recibido', h: 'YA ESTÁ<br>EN LA<br>COCINA', q: '“Ya prendí<br>la plancha.”', e: 'en-la-cocina' }
+        : st === 'uploading' || st === 'reading' || st === 'done'
+            ? { ok: 'Captura recibida', h: 'COMPRO&shy;BANDO<br>TU PAGO', q: '“Un segundo,<br>ya la miro.”', e: 'comprobando' }
+            : st === 'revisamos'
+                ? { ok: 'Captura recibida', h: 'LA ESTAMOS<br>REVISANDO', q: '“Un momento,<br>ya la miro.”', e: 'revisando' }
+                : { ok: 'Pedido recibido', h: 'FALTA TU<br>CAPTURA', q: '“Súbela y<br>prendo la plancha.”', e: 'falta-captura' };
+    return '<div class="arriba" data-estado-pago="' + t.e + '"><div class="ok">' + t.ok + '</div><h1>' + t.h + '</h1>'
+        + '<div class="sub">' + t.q + '<u>Sando</u></div></div>';
+}
 function sOSent() {
     var pending = window._lPendingPayment;
     var methodLabel = window._lPayMethod === 'yape' ? 'Yape' : window._lPayMethod === 'plin' ? 'Plin' : '';
@@ -9624,8 +9762,8 @@ function sOSent() {
             + (window._lRewardLabel ? '<div class="dr"><span>Canjeaste</span><b>' + esc(window._lRewardLabel) + '</b></div>' : '')
             + (cust && pts > 0 ? '<div class="dr"><span>' + (pending ? 'Al confirmar' : 'Ganaste') + '</span><b class="pt">+' + pts + ' puntos</b></div>' : '')
             + (invitado ? avisoDePuntosHTML(pts) : '')
-            + (manualWaiting ? '<div class="nota">Confirmamos tu ' + methodLabel + ' contra la cuenta'
-                + (deadlineLabel ? '; si no lo hacemos antes de las ' + esc(deadlineLabel) + ', el pedido se cancela solo' : '') + '.<br>'
+            + (manualWaiting ? '<div class="nota">' + (receiptUploadState === 'confirmado' ? '' : 'Confirmamos tu ' + methodLabel + ' contra la cuenta'
+                + (deadlineLabel ? '; si no lo hacemos antes de las ' + esc(deadlineLabel) + ', el pedido se cancela solo' : '') + '.<br>')
                 + (receiptUploadState === 'confirmado' ? '<b data-captura="confirmado">✓ ¡Pago confirmado! Tu pedido ya entró a la cocina.</b>'
                     : receiptUploadState === 'revisamos' ? '✓ Captura recibida. La revisamos y te avisamos.'
                         : receiptUploadState === 'reading' ? '✓ Captura recibida. Comprobando tu pago…'
@@ -9637,9 +9775,8 @@ function sOSent() {
             + (window._lRankUp ? '<div class="dr"><span>Subiste a</span><b class="pt">' + esc(window._lRankUp) + '</b></div>' : '')
             + (rankPerk ? '<div class="dr"><span>Menú secreto</span><b class="pt">' + rankPerk + '</b></div>' : '')
             + '<div class="extra">'
-            // Respaldo tappable del window.open automático: muchos navegadores móviles lo bloquean
-            // por no venir de un toque, y sin esto un pedido cobrado podía quedar sin aviso al negocio.
-            + (window._lWaText ? '<button onclick="reopenWhatsAppConfirm()">Mandar el aviso por WhatsApp <span>→</span></button>' : '')
+            // Sin WhatsApp (dueño, 2026-11-02: «automatizarlo sin tener que pasar por wsp»): el pedido llega
+            // al panel con su aviso («Nuevo pedido», push a los admins); el cliente no tiene que mandar nada.
             // Justo después del primer pedido pagado es el momento de mayor intención para activar
             // las notificaciones: quiere saber cuándo llega SU pedido.
             // Y también a quien pidió SIN cuenta (2026-10-09): sin esto, los avisos de recompra (el
@@ -9662,8 +9799,7 @@ function sOSent() {
     }
     return '<div class="m06 fi' + (sube ? ' sube' : '') + '"><div class="forro"></div>'
         + '<div class="arr"><div class="col"><img src="' + broPose('sando', 'asoma') + '" alt="" aria-hidden="true"></div>'
-        + '<div class="arriba"><div class="ok">Pedido recibido</div><h1>YA ESTÁ<br>EN LA<br>COCINA</h1>'
-        + '<div class="sub">“Ya prendí<br>la plancha.”<u>Sando</u></div></div></div>'
+        + arribaDelPedido(manualWaiting) + '</div>'
         + '<div class="losa">' + losa + '</div>'
         + '</div>'
         + '<div class="m06-go sw-barra">' + pie + '</div>';
@@ -10889,6 +11025,7 @@ function confirmMap() {
     if (volverDelMapa) {
         volverDelMapa = false;
         pickedAddrId = null;
+        volverALaHoja();
         go('o_cart');
         return;
     }
