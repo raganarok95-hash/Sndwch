@@ -307,6 +307,9 @@ function llegaTexto():string{
   if(scheduleMode==='later'&&schedSlot){
     return(schedDay==='today'?'Hoy ':'Mañana ')+horaDoceMin(schedSlot);
   }
+  // Cerrado o en pausa, «lo antes posible» no existe: antes mostraba una hora de llegada
+  // (7:02 a.m.) con la tienda cerrada.
+  if(!storeStatus().open||pausaHasta())return'Elige la hora';
   return ventanaEstimadaTexto(null)||'Lo antes posible';
 }
 function horaDoceMin(hhmm:string):string{
@@ -715,6 +718,9 @@ function problemaDelPedido():string|null{
   if(!addrText.trim())return'Falta dónde te lo dejamos.';
   if(addressInExcludedZone(addressWithDistrict(addrText.trim(),deliveryDistrict)))return'Por ahora tu zona aún no está disponible para delivery, pero esperamos poder llegar pronto.';
   if(confPhone.replace(/\D/g,'').length<6)return'Ingresa un celular de contacto válido.';
+  // Antes de abrir, esto va ANTES que el horario: decía «Estamos cerrados, toca Programar» y
+  // programar tampoco dejaba pedir (dueño, 2026-11-02, captura del recibo a las 6:38 a.m.).
+  if(!businessLaunched)return'Todavía no abrimos. Te avisamos apenas arranquemos.';
   if(scheduleMode==='later'){
     var v=schedInputValue();
     if(!v)return'Elige una hora para tu pedido programado.';
@@ -731,7 +737,6 @@ function problemaDelPedido():string|null{
     return libre?'Esta hora ya está completa. La más cercana libre es '+libre.label+' a las '+libre.slot+': elígela en «Programar».'
       :'Esta hora ya está completa — la cocina no da abasto para más pedidos ahora mismo. Prueba con otro día.';
   }
-  if(!businessLaunched)return'Todavía no abrimos. Te avisamos apenas arranquemos.';
   if(deliveryKmNow()===null)return'Marca tu ubicación en el mapa para calcular el envío: se cobra por distancia real.';
   return null;
 }
