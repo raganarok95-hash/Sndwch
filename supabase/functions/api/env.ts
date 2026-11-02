@@ -184,6 +184,12 @@ export const META_PAGE_ACCESS_TOKEN = Deno.env.get("META_PAGE_ACCESS_TOKEN");
 export const META_PAGE_ID = Deno.env.get("META_PAGE_ID");
 export const META_IG_USER_ID = Deno.env.get("META_IG_USER_ID");
 export const META_GRAPH_VERSION = "v21.0";
+// INSTAGRAM SIN PÁGINA DE FACEBOOK (dueño, 2026-11-02: «He intentado todo para instagram y no funciona,
+// busca formas»). Meta tiene otra puerta, «Instagram API with Instagram Login» (graph.instagram.com):
+// el token se saca entrando con la cuenta de Instagram misma y publica sin ninguna página vinculada.
+// Si este secret está, Instagram se publica por ahí; Facebook sigue usando META_PAGE_ACCESS_TOKEN.
+// El token dura 60 días: se renueva con `refresh_access_token` (ver docs/ENTORNO.md).
+export const INSTAGRAM_LOGIN_TOKEN = Deno.env.get("INSTAGRAM_LOGIN_TOKEN");
 // Anuncios (Marketing API) para el botón de apagar/prender del panel. La cuenta publicitaria no
 // es un secreto (es el número que se ve en el Administrador de anuncios); el token sí. Si
 // META_ADS_TOKEN no está, se usa el de la página: si a ese le falta el permiso de anuncios,

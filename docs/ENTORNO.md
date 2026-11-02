@@ -813,3 +813,14 @@ Desde la versión `latest` de hoy, `supabase functions deploy` pide «Confirmati
 y, sin terminal, sale con error sin desplegar nada. `deploy-api.yml` lleva `--yes` en cada función. Lo
 delató el deploy de las 12:36 (run 41446058806), que falló en silencio para la app: el servidor quedó en la
 versión anterior.
+
+## Instagram sin página de Facebook (2026-11-02)
+
+Si la página de Facebook no muestra el Instagram vinculado (pasó desde el 2026-10-20 sin arreglo), existe otra
+puerta: «Instagram API with Instagram Login» (`graph.instagram.com`). Con el secret `INSTAGRAM_LOGIN_TOKEN`,
+`social.ts` publica Instagram por ahí (`publicarConInstagramLogin`) y «Estado para abrir» prueba esa puerta.
+Cómo se saca el token: developers.facebook.com → la app → agregar el producto «Instagram» → «Configuración de la
+API con inicio de sesión de Instagram» → «Generar tokens de acceso» → agregar la cuenta @snd__wch (profesional)
+→ «Generar token». Se pega en Supabase → Edge Functions → Secrets como `INSTAGRAM_LOGIN_TOKEN`. Dura 60 días;
+se renueva con `GET graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=…`.
+Facebook (la página) sigue con `META_PAGE_ACCESS_TOKEN`.
