@@ -13,6 +13,12 @@ automatizaciones nuevas, todo lo que sume a ganar más».
 > hace código: los correos diario y semanal, las alertas del panel, los vigías y `datos-semana.yml`)
 > y se corren **a pedido**. La revisión de arte pasó a una vez al día (20:10), sin subagentes y
 > terminando enseguida si no hay nada.
+>
+> **La agencia vuelve a trabajar con sus especialistas (2026-11-02).** Dueño, sobre el Reel: «deben ser creativos, ganar
+> público, basarse en la agencia de marketing que creamos, úsala y reactívala». Desde entonces, una pieza creativa del feed
+> (un Reel, un carrusel nuevo, un anuncio) se hace con `/pieza` y sus subagentes: Estratega → Creativo → Redactor →
+> Director de arte ‖ Calidad → el dueño elige → producción → arte y calidad. Lo calculable sigue en código y GitHub
+> Actions, y `/buenos-dias` y `/domingo` siguen apagadas hasta que el dueño las pida.
 
 Marketing tiene su plan propio (`docs/marketing/equipo/PLAN.md`). Este archivo es el resto del
 negocio y cómo se juntan los equipos. Esquema en una imagen: `esquema.png`.
