@@ -191,7 +191,7 @@ export const CARTA: Carta = {
   signatures: [
     { id: "SIG09", nombre: "Philly Cheesesteak", tipo: "Signature", orden: 1, estrella: true, pan: "B01", prot: "P09", vegetales: ["T10", "T06"], salsas: [], p15: 19.9, p30: 30.9, queso: "C02", foto: "img/sig09.jpg", fotoVertical: "img/sig09_v.webp",
       pitch: "El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. Tan jugoso que no lleva salsa. Es el que pides cuando el hambre va en serio." },
-    { id: "SIG02", nombre: "Meatball Marinara", tipo: "Signature", orden: 2, pan: "B01", prot: "P06", vegetales: ["T01", "T03"], salsas: ["S06"], p15: 19.9, p30: 30.9, queso: "C01", foto: "img/sig02.jpg", fotoVertical: "img/sig02_v.webp",
+    { id: "SIG02", nombre: "Meatball Marinara", tipo: "Signature", orden: 2, pan: "B01", prot: "P06", vegetales: [], salsas: [], p15: 19.9, p30: 30.9, queso: "C01", foto: "img/sig02.jpg", fotoVertical: "img/sig02_v.webp",
       pitch: "Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. Caliente, contundente, de los que se comen con las dos manos. Para la noche en que ya decidiste no cocinar." },
     { id: "SIG10", nombre: "Turkey", tipo: "Signature", orden: 3, pan: "B01", prot: "P08", vegetales: ["T09", "T01", "T03", "T06"], salsas: ["S06"], p15: 19.9, p30: 30.9, foto: "img/sig10.jpg", fotoVertical: "img/sig10_v.webp",
       pitch: "Pavo horneado en lonjas finas con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. Llena sin pesar: el almuerzo que no te tumba la tarde." },
