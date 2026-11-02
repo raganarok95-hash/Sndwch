@@ -792,7 +792,7 @@ queda vieja y manda la carta. Los gramajes de vegetales son los estándar de `mo
 | Signature | Pan | Queso | Proteína | Vegetales | Salsa |
 |---|---|---|---|---|---|
 | **SIG09** Philly Cheesesteak | B01 | **C02 Cheddar fijo** | P09 Res laminada | T10 Cebolla salteada · T06 Pimiento curado | ninguna |
-| **SIG02** Meatball Marinara | B01 | **C01 Mozzarella fijo** | P06 Albóndiga marinara | T01 Tomate fresco · T03 Cebolla morada juliana · T05 Aceituna negra en rodajas | S06 Oil & Vinegar classic |
+| **SIG02** Meatball Marinara | B01 | **C01 Mozzarella fijo** | P06 Albóndiga marinara | ninguno (dueño, 2026-11-02: sin tomate ni cebolla) | ninguna |
 | **SIG10** Turkey | B01 | — | P08 Pavo horneado | T09 Lechuga fresca · T01 Tomate fresco · T03 Cebolla morada juliana · T06 Pimiento curado | S06 Oil & Vinegar classic |
 | **SIG12** Tuna Melt | B01 | **C02 Cheddar fijo** | P04 Atún house | ninguno | ninguna |
 | **SIG11** Italian Hoagie | B01 | **C01 Mozzarella fijo** | P05 Embutido italiano | T09 Lechuga fresca · T01 Tomate fresco · T03 Cebolla morada juliana · T06 Pimiento curado | S06 Oil & Vinegar classic |
