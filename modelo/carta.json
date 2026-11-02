@@ -308,13 +308,8 @@
       "orden": 2,
       "pan": "B01",
       "prot": "P06",
-      "vegetales": [
-        "T01",
-        "T03"
-      ],
-      "salsas": [
-        "S06"
-      ],
+      "vegetales": [],
+      "salsas": [],
       "p15": 19.9,
       "p30": 30.9,
       "queso": "C01",

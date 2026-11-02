@@ -2026,8 +2026,8 @@ body.kb-open #app{padding-bottom:0}
         orden: 2,
         pan: "B01",
         prot: "P06",
-        vegetales: ["T01", "T03"],
-        salsas: ["S06"],
+        vegetales: [],
+        salsas: [],
         p15: 19.9,
         p30: 30.9,
         queso: "C01",
@@ -4345,7 +4345,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'c24023654e';
+var APP_BUILD = '1d15182c63';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por

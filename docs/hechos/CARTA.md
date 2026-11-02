@@ -14,7 +14,7 @@ Todo en soles. 15CM y 30CM son los dos tamaños. «Doble» es lo que suma pedir 
 
 ### Meatball Marinara
 - **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/6.90 / +S/13.90
-- **Receta:** pan Classic // White · Albóndiga // Marinara · vegetales: Tomate // Fresco, Cebolla // Morada juliana · salsas: Oil & Vinegar // Classic · queso: Americano
+- **Receta:** pan Classic // White · Albóndiga // Marinara · vegetales: — · salsas: — · queso: Americano
 - **Cómo se vende:** Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. Caliente, contundente, de los que se comen con las dos manos. Para la noche en que ya decidiste no cocinar.
 
 ### Turkey

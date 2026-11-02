@@ -35,7 +35,7 @@ Abre a más tardar la segunda semana de octubre de 2026: todavía no hay cliente
 
 ### Meatball Marinara
 - **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/6.90 / +S/13.90
-- **Receta:** pan Classic // White · Albóndiga // Marinara · vegetales: Tomate // Fresco, Cebolla // Morada juliana · salsas: Oil & Vinegar // Classic · queso: Americano
+- **Receta:** pan Classic // White · Albóndiga // Marinara · vegetales: — · salsas: — · queso: Americano
 - **Cómo se vende:** Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. Caliente, contundente, de los que se comen con las dos manos. Para la noche en que ya decidiste no cocinar.
 
 ### Turkey
@@ -189,7 +189,7 @@ Abre a más tardar la segunda semana de octubre de 2026: todavía no hay cliente
 
 ### Meatball Marinara
 - **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/6.90 / +S/13.90
-- **Receta:** pan Classic // White · Albóndiga // Marinara · vegetales: Tomate // Fresco, Cebolla // Morada juliana · salsas: Oil & Vinegar // Classic · queso: Americano
+- **Receta:** pan Classic // White · Albóndiga // Marinara · vegetales: — · salsas: — · queso: Americano
 - **Cómo se vende:** Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. Caliente, contundente, de los que se comen con las dos manos. Para la noche en que ya decidiste no cocinar.
 
 ### Turkey
@@ -373,7 +373,7 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
   SIG09 Philly Cheesesteak             19.90    6.48    13.42    32.5%
-  SIG02 Meatball Marinara              19.90    6.76    13.14    33.9%
+  SIG02 Meatball Marinara              19.90    6.35    13.55    31.9%
   SIG10 Turkey                         19.90    6.58    13.31    33.1%
   SIG12 Tuna Melt                      19.90    6.45    13.45    32.4%
   SIG11 Italian Hoagie                 19.90    8.21    11.69    41.3%
@@ -383,7 +383,7 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
   SIG09 Philly Cheesesteak             30.90   11.65    19.25    37.7%
-  SIG02 Meatball Marinara              30.90   12.21    18.69    39.5%
+  SIG02 Meatball Marinara              30.90   11.39    19.51    36.9%
   SIG10 Turkey                         30.90   11.86    19.04    38.4%
   SIG12 Tuna Melt                      30.90   11.60    19.30    37.5%
   SIG11 Italian Hoagie                 30.90   15.13    15.77    49.0%  <-- PASA EL TECHO
