@@ -21,3 +21,7 @@
   días y sin forma por hora (la hora pico 12-14 y 19-22 es el patrón nacional, no medido). Con
   tan pocos pedidos el plan es un piso para no agotar, no tandas completas. Se corrige con las
   primeras ventas reales.
+- **2026-11-02 · El recetario de uso diario es `recetas/COCINA_CARTA_V4.md`.** `RECETARIO.md` es
+  la referencia larga (porqués y retirados). Las recetas del panel (`production_recipes`) solo
+  cubren P09, T10 y P06: el atún, el pavo y el embutido no están. Albóndiga: bolas de 30 g (90 por
+  tanda de 2 kg = 30 porciones), no de 25.
