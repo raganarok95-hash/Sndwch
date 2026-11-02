@@ -87,7 +87,8 @@ La agencia del lunes 16 produce estas piezas. Los temas ya están fijados; las i
 Desde el viernes 20, por primera vez, **se puede decir «pide»**: el sistema ya tiene la fecha y lo deja pasar desde ese día.
 
 **El mensaje a los anotados.** El viernes 20 a las 10:45, un WhatsApp a cada persona que tocó «Avísame»: «Abrimos hoy a
-las 11:00. Tu enlace: sndwch.app/?src=avisame». **Es un envío masivo: necesita tu sí.**
+las 11:00. Tu enlace: sndwch.app/?src=avisame». **Es un envío masivo: necesita tu sí.** Marketing define el texto y la
+hora; el envío automático lo construye el hilo de la app («Maquetas del pedido simple»).
 
 ### Semana 3 · 23 al 29 de noviembre: que vuelvan
 
