@@ -4419,7 +4419,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '49817bed1d';
+var APP_BUILD = '7c83041837';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -6683,9 +6683,10 @@ function horaDoce(h) {
     var m = h % 24, suf = m < 12 ? 'a.m.' : 'p.m.', x = m % 12 === 0 ? 12 : m % 12;
     return x + ':00 ' + suf;
 }
-// El mes de apertura se dice, el día no: aún no está confirmado (CLAUDE.md). Al abrir, el panel
+// La fecha de apertura (CLAUDE.md). Al abrir, el panel
 // prende businessLaunched y este aviso desaparece solo.
-var MES_DE_APERTURA = 'Abrimos en noviembre';
+// Dueño, 2026-11-02: «Abrimos el 20 de noviembre».
+var MES_DE_APERTURA = 'Abrimos el 20 de noviembre';
 var avisameListo = false;
 async function avisameAlAbrir() {
     var cel = await showPrompt('Tu celular y te escribimos el día que abramos.', '', 'tel');

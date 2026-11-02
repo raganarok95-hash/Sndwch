@@ -1,6 +1,6 @@
 # Lo que depende de ti — SND//WCH
 
-Última actualización: 2026-10-21 · **Apertura al público: noviembre de 2026, día por confirmar** (dueño, 2026-10-21: «Abriremos en noviembre»; no llegaron los sellos ni la kraft. Antes se movió del 13 al 20 el 2026-10-08). La app quedó en «Aún no abrimos» y los anuncios en pausa: al fijar el día, se escribe en `scripts/video-auto/reglas-del-revisor.mjs` y se prende «Ya abrimos →» en el panel ese día. Permisos, precios reales y motorizados: listos.
+Última actualización: 2026-10-21 · **Apertura al público: 20 de noviembre de 2026** (dueño, 2026-11-02: «Abrimos el 20 de noviembre»; antes, 2026-10-21: «Abriremos en noviembre»; no llegaron los sellos ni la kraft. Antes se movió del 13 al 20 el 2026-10-08). La app quedó en «Aún no abrimos» y los anuncios en pausa: al fijar el día, se escribe en `scripts/video-auto/reglas-del-revisor.mjs` y se prende «Ya abrimos →» en el panel ese día. Permisos, precios reales y motorizados: listos.
 
 Todo lo de esta lista está bloqueado por algo que **solo tú** puedes conseguir: una cuenta,
 un secret, una cotización, una fecha real. Yo no lo puedo inventar — es la misma regla que

@@ -31,6 +31,7 @@ function assert(cond: boolean, msg: string) {
 }
 import { deriveCart, SIDE_PRICE, SIG_DATA } from "../supabase/functions/api/catalog.ts";
 import { recompensa, unSignature } from "./carta.ts";
+import { recompensaDeTipo } from "../supabase/functions/_shared/carta.ts";
 
 // Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
 const R_SANDWICH = recompensa("sandwich");
@@ -121,13 +122,16 @@ Deno.test("el tope de la bebida gratis sigue vivo aunque hoy ninguna bebida lo p
   // Lo que se fija es que la recompensa nunca devuelva MÁS que el tope, comprobado sobre
   // todo el catálogo vigente en vez de sobre una bebida escrita a mano — así una bebida
   // nueva y cara entra sola a esta prueba en lugar de quedar fuera en silencio.
+  // El tope se pregunta a la carta (2026-11-02): con la lata a S/8.50 subió con ella.
+  const TOPE_BEBIDA = Number(recompensaDeTipo("bebida")!.tope);
+  assert(TOPE_BEBIDA > 0, "la bebida gratis de la carta no tiene tope");
   for (const code of Object.keys(SIDE_PRICE)) {
     const conRecompensa = deriveCart([sig15(), bebida(code)], R_BEBIDA, HORA_NORMAL);
     const sinRecompensa = deriveCart([sig15(), bebida(code)], null, HORA_NORMAL);
     const perdonado = sinRecompensa.expectedTotal - conRecompensa.expectedTotal;
     assert(
-      Math.round(perdonado * 100) <= Math.round(6 * 100),
-      `la bebida gratis perdonó S/${perdonado.toFixed(2)} en ${code}: más que el tope de S/6`,
+      Math.round(perdonado * 100) <= Math.round(TOPE_BEBIDA * 100),
+      `la bebida gratis perdonó S/${perdonado.toFixed(2)} en ${code}: más que el tope de S/${TOPE_BEBIDA}`,
     );
   }
 });
