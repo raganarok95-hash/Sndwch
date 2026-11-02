@@ -481,7 +481,7 @@ Todo en `docs/LOS_DOS_HERMANOS.md`, que se lee antes de diseñar cualquier panta
 cliente — se escribió después de que el dueño corrigiera tres rondas seguidas con la misma
 frase, «no es solo un color».
 
-Cada hermano se regenera contra SU PROPIA referencia — hoy `img/sando2_frente.png` y
+Cada hermano se regenera contra SU PROPIA referencia — hoy `img/fuente/personajes/sando2_frente.png` y
 `img/wicho_rie.png`, **nunca la del otro**. Ver `docs/POSES_QUE_TE_TOCAN.md` para las poses
 que faltan.
 

@@ -167,7 +167,7 @@ como `row_to_json(t)::text`; la lista de tablas se descubre en cada corrida. Det
   Sus 9 archivos son `img/sando2_{frente,sonrie,mira,perfil,ladea,asoma,pulgar,cuerpo,cuerpo_forro}`.
   Las poses se escriben ENTERAS en `POSES` (02-*). **El logo y la puerta se quedan con el SANDO
   anterior, aprobado así: no se migran.** Lo que los distingue es cada personaje, no el color (ver
-  `docs/LOS_DOS_HERMANOS.md`). Cada uno se regenera contra SU referencia (`img/sando2_frente.png`,
+  `docs/LOS_DOS_HERMANOS.md`). Cada uno se regenera contra SU referencia (`img/fuente/personajes/sando2_frente.png`, a tamaño completo;
   `img/wicho_rie.png`); las referencias para Flow van sin transparencia, fondo blanco, al doble.
 - **Pedir la imagen que falta es parte del diseño**: si una pose no existe, se pide con su prompt
   en `docs/POSES_QUE_TE_TOCAN.md`. La respuesta más fácil casi nunca es la correcta.
