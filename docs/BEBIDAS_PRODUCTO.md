@@ -10,6 +10,9 @@ máquina selladora automática económica».
 > fórmulas de HOY están publicadas en `RECETARIO.md` (PARTE 4) y en `modelo/costo_bebidas.py`.
 > Sacarlas de ahí es decisión del dueño (borrarlas del historial de git requiere su sí expreso).
 
+**Lo de producir, imprimir y mostrar va junto en [`docs/marketing/latas/README.md`](marketing/latas/README.md)**
+(2026-11-02): las cinco, los stickers para la imprenta, las medidas, las imágenes y lo pendiente.
+
 ## 1 · Dónde están hoy las tres
 
 Azúcar calculada con las tandas del `RECETARIO.md` (gramos de azúcar ÷ 3 L):

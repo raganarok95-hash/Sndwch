@@ -23,7 +23,8 @@ BASE = AQUI + 'lata-cold-brew.png'
 
 X0, X1, Y0, Y1 = 322, 812, 672, 1978          # bloque del frente que se borra
 CENTRO = 548                                     # centro del bloque en las tres latas
-ABAJO = 1924                                     # donde empieza (abajo) el nombre
+ABAJO = 1924                                     # el pie del bloque (el sabor no baja de acá)
+CENTRO_Y = 1337                                  # el nombre va centrado a esta altura (BLOOM 1336, COLD BREW TEA 1337)
 LARGO = 1177                                     # largo máximo del nombre
 CAP_MAX = 425                                    # alto máximo de la letra del nombre (COOL)
 SABOR_DESDE = 990                                # el sabor vive entre el ícono y el pie del nombre
@@ -152,7 +153,7 @@ for clave, c in LATAS.items():
     img = orig.copy()
     img[Y0:Y1, X0:X1, :3] = relleno
     pegar(img, alfa_mono, x_mono, mono_y)
-    pegar(img, an, x_nom, ABAJO - an.shape[0] + 1)
+    pegar(img, an, x_nom, int(round(CENTRO_Y - an.shape[0] / 2)))
     centro_s = (SABOR_DESDE + ABAJO) / 2 + 5
     pegar(img, ss, x_sab, int(centro_s - ss.shape[0] / 2))
     pegar(img, ic, x_ico, int(850 - ic.shape[0] / 2))
