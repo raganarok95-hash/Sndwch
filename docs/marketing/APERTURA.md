@@ -33,7 +33,9 @@ El plan de plata pone **5 pedidos al día al 19 de diciembre** como primera meta
 | 23–29 nov | pedidos al día · cuántos con `src=` | 3 al día, y al menos 1 pedido en grupo |
 | 30 nov–6 dic | pedidos al día · cuántos vuelven | 4 al día, y 1 oficina con almuerzo semanal |
 
-Son hipótesis: la primera semana con pedidos reales las corrige. **Cada enlace lleva su `src=`** (`ig-bio`, `ig-hist-*`,
+Ojo: son metas de control, no el camino a los S/5,000. El modelo nuevo (`modelo/desde_cero.py`, 2026-11-02) pide ~8
+clientes nuevos al día desde el día 1 para llegar en el mes 3, y eso no sale solo con contenido orgánico: lo que falte lo
+decide el plan de plata (anuncios en apps y Google, embajadores). Son hipótesis: la primera semana con pedidos reales las corrige. **Cada enlace lleva su `src=`** (`ig-bio`, `ig-hist-*`,
 `ig-post-*`, `emb-*`, `qr-bolsa`) para saber qué trajo cada pedido. El Analista lo lee los domingos.
 
 ## El calendario
