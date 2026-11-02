@@ -1,0 +1,65 @@
+import { test, Page } from '@playwright/test';
+import { mockBackend, stubWindowOpen, pedirUnSignature, clearDeliveryPin } from './helpers';
+const D = '/tmp/claude-0/maq2/';
+async function abrir(page: Page) {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mockBackend(page, { 'get-store-hours': { hours: {}, businessLaunched: false } } as any);
+  await stubWindowOpen(page);
+  await page.goto('file://' + process.cwd() + '/index.html');
+  await page.locator('.pta').waitFor();
+  await page.getByRole('button', { name: /Ya está resuelto/ }).click();
+  await page.locator('.mtarot').waitFor();
+  await page.waitForTimeout(900);
+}
+async function foto(page: Page, n: string) { await page.waitForTimeout(500); await page.screenshot({ path: D + n + '.png' }); }
+const caja = (page: Page, sel: string) => page.locator(sel).boundingBox();
+
+test('tarot', async ({ page }) => {
+  await abrir(page);
+  await foto(page, 't1-tarot');
+  const lado = page.locator('.mtarot .k').nth(1);
+  const b = await lado.boundingBox();
+  require('fs').writeFileSync(D + 't1.json', JSON.stringify(b));
+  await lado.click();
+  await page.waitForTimeout(900);
+  await foto(page, 't2-centrada');
+  const b2 = await page.locator('.mtarot .k.sel').boundingBox();
+  require('fs').writeFileSync(D + 't2.json', JSON.stringify(b2));
+  await page.locator('.mtarot .k.sel').click();
+  await page.locator('.m15').waitFor();
+  await foto(page, 't3-plato');
+});
+
+test('hoja', async ({ page }) => {
+  await abrir(page);
+  await page.locator('.mtarot .k').first().dispatchEvent('click');
+  await page.locator('.m15').waitFor();
+  await pedirUnSignature(page);
+  await page.evaluate(() => { const w = window as any; w._mLat = null; w._mLon = null; w.addrText = ''; w.render(); });
+  await page.locator('.m30 .en', { hasText: 'Recibe' }).click();
+  await page.locator('#o-nom').fill('Ana');
+  await page.locator('#o-phone').fill('987654321');
+  await foto(page, 'h1-hoja');
+  require('fs').writeFileSync(D + 'h1.json', JSON.stringify(await page.locator('.m30-go .oro').boundingBox()));
+  await page.locator('.m30-go .oro').click();
+  await page.locator('.hoja').waitFor({ state: 'detached' });
+  await foto(page, 'h2-carrito');
+  require('fs').writeFileSync(D + 'h2.json', JSON.stringify(await page.locator('.m30-go .oro').boundingBox()));
+  await page.locator('.m30-go .oro').click();
+  await page.locator('.hoja').waitFor();
+  await foto(page, 'h3-hoja-otra-vez');
+  require('fs').writeFileSync(D + 'h3.json', JSON.stringify(await page.locator('.hoja [data-accion="marcar-en-el-mapa"]').boundingBox()));
+  await page.locator('.hoja [data-accion="marcar-en-el-mapa"]').click();
+  await page.waitForTimeout(800);
+  await page.addStyleTag({ content: '#mmap-accuracy-banner{display:none!important}' });
+  await foto(page, 'h4-mapa');
+});
+
+test('listo', async ({ page }) => {
+  await abrir(page);
+  await page.locator('.mtarot .k').first().dispatchEvent('click');
+  await page.locator('.m15').waitFor();
+  await pedirUnSignature(page);
+  await page.evaluate(() => { const w = window as any; w._mLat = -8.112; w._mLon = -79.029; w.addrText = 'Av. España 123, Trujillo'; w.deliveryDistrict = 'trujillo'; w.confNom = 'Ana'; w.confPhone = '987654321'; w.render(); });
+  await foto(page, 'h5-listo');
+});
