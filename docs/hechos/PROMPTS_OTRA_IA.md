@@ -51,7 +51,7 @@ Abre a más tardar la segunda semana de octubre de 2026: todavía no hay cliente
 ### Italian Hoagie
 - **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/9.90 / +S/19.90
 - **Receta:** pan Classic // White · Embutido // Italiano · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: Americano
-- **Cómo se vende:** Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. El sándwich de deli de toda la vida: cada capa suma sabor y ninguna sobra. Para cuando quieres de todo en un solo pan.
+- **Cómo se vende:** Jamón ahumado, salame y pepperoni en pliegues, queso americano, verduras frescas y oil & vinegar. El sándwich de deli de toda la vida: cada capa suma sabor y ninguna sobra. Para cuando quieres de todo en un solo pan.
 
 ### Classic Tuna
 - **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/10.90 / +S/21.90
@@ -117,7 +117,7 @@ frase de «Cómo se vende». Si en el portal redondeas, se anota en `docs/PENDIE
 | Meatball Marinara | S/21.89 | S/33.99 | 15 cm · 85 g de albóndiga marinara (30 cm: 170 g). Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. |
 | Turkey | S/21.89 | S/33.99 | 15 cm · 85 g de pavo horneado (30 cm: 170 g). Pavo horneado en lonjas finas con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. |
 | Tuna Melt | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco. |
-| Italian Hoagie | S/21.89 | S/33.99 | 15 cm · 85 g de embutido italiano (30 cm: 170 g). Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. |
+| Italian Hoagie | S/21.89 | S/33.99 | 15 cm · 85 g de embutido italiano (30 cm: 170 g). Jamón ahumado, salame y pepperoni en pliegues, queso americano, verduras frescas y oil & vinegar. |
 | Classic Tuna | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. |
 
 
@@ -205,7 +205,7 @@ Abre a más tardar la segunda semana de octubre de 2026: todavía no hay cliente
 ### Italian Hoagie
 - **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/9.90 / +S/19.90
 - **Receta:** pan Classic // White · Embutido // Italiano · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: Americano
-- **Cómo se vende:** Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. El sándwich de deli de toda la vida: cada capa suma sabor y ninguna sobra. Para cuando quieres de todo en un solo pan.
+- **Cómo se vende:** Jamón ahumado, salame y pepperoni en pliegues, queso americano, verduras frescas y oil & vinegar. El sándwich de deli de toda la vida: cada capa suma sabor y ninguna sobra. Para cuando quieres de todo en un solo pan.
 
 ### Classic Tuna
 - **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/10.90 / +S/21.90
@@ -271,7 +271,7 @@ frase de «Cómo se vende». Si en el portal redondeas, se anota en `docs/PENDIE
 | Meatball Marinara | S/21.89 | S/33.99 | 15 cm · 85 g de albóndiga marinara (30 cm: 170 g). Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. |
 | Turkey | S/21.89 | S/33.99 | 15 cm · 85 g de pavo horneado (30 cm: 170 g). Pavo horneado en lonjas finas con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. |
 | Tuna Melt | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco. |
-| Italian Hoagie | S/21.89 | S/33.99 | 15 cm · 85 g de embutido italiano (30 cm: 170 g). Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. |
+| Italian Hoagie | S/21.89 | S/33.99 | 15 cm · 85 g de embutido italiano (30 cm: 170 g). Jamón ahumado, salame y pepperoni en pliegues, queso americano, verduras frescas y oil & vinegar. |
 | Classic Tuna | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. |
 
 

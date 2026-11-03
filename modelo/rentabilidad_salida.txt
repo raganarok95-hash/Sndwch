@@ -15,86 +15,100 @@
   15CM
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
-  SIG01 The Original                   20.90    6.20    14.70    29.7%
-  SIG02 The Marinara                   21.90    4.47    17.43    20.4%
-  SIG03 The Smoke                      23.90    7.76    16.14    32.5%
-  SIG04 The Fresh                      20.90    6.03    14.87    28.9%
-  SIG06 The Teriyaki                   19.90    5.47    14.43    27.5%
+  SIG09 Philly Cheesesteak             19.90    6.48    13.42    32.5%
+  SIG02 Meatball Marinara              19.90    6.35    13.55    31.9%
+  SIG10 Turkey                         19.90    6.58    13.31    33.1%
+  SIG12 Tuna Melt                      19.90    6.45    13.45    32.4%
+  SIG11 Italian Hoagie                 19.90    6.67    13.23    33.5%
+  SIG04 Classic Tuna                   19.90    5.55    14.35    27.9%
 
   30CM
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
-  SIG01 The Original                   26.90   11.10    15.80    41.2%
-  SIG02 The Marinara                   28.90    7.64    21.26    26.4%
-  SIG03 The Smoke                      34.90   14.22    20.68    40.8%
-  SIG04 The Fresh                      34.90   10.76    24.14    30.8%
-  SIG06 The Teriyaki                   25.90    9.65    16.25    37.3%
+  SIG09 Philly Cheesesteak             30.90   11.65    19.25    37.7%
+  SIG02 Meatball Marinara              30.90   11.39    19.51    36.9%
+  SIG10 Turkey                         30.90   11.86    19.04    38.4%
+  SIG12 Tuna Melt                      30.90   11.60    19.30    37.5%
+  SIG11 Italian Hoagie                 30.90   12.04    18.86    39.0%
+  SIG04 Classic Tuna                   30.90    9.80    21.10    31.7%
 
 ============================================================================================
-                             2 · ARMA EL TUYO — las 6 proteinas                             
+                          2 · ARMA EL TUYO — 4 proteinas armables                           
 ============================================================================================
 
   15CM
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
-  Res asada                            14.90    6.58     8.32    44.2%
-  Pollo teriyaki                       13.90    5.90     8.00    42.5%
-  Pollo cajún                          13.90    5.92     7.98    42.6%
-  Atún                                 16.90    6.68    10.22    39.5%
-  Embutido                             16.90    7.72     9.18    45.7%  <-- PASA EL TECHO
-  Albóndiga                            14.90    4.77    10.13    32.0%
+  Pollo // Cajun (fuera del armador)   13.90    6.95     6.95    50.0%  <-- PASA EL TECHO
+  Atún // House                        19.90    7.71    12.19    38.8%
+  Embutido // Italiano (fuera del armador)   16.90    7.22     9.68    42.7%
+  Albóndiga // Marinara                19.90    7.42    12.48    37.3%
+  Pavo // Horneado                     19.90    8.22    11.68    41.3%
+  Res // Laminada                      19.90    7.50    12.40    37.7%
 
   30CM
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
-  Res asada                            24.90   11.86    13.04    47.6%  <-- PASA EL TECHO
-  Pollo teriyaki                       23.90   10.51    13.39    44.0%
-  Pollo cajún                          23.90   10.53    13.37    44.1%
-  Atún                                 32.90   12.06    20.84    36.7%
-  Embutido                             32.90   14.15    18.75    43.0%
-  Albóndiga                            26.90    8.24    18.66    30.6%
+  Pollo // Cajun (fuera del armador)   23.90   12.60    11.30    52.7%  <-- PASA EL TECHO
+  Atún // House                        30.90   14.13    16.77    45.7%  <-- PASA EL TECHO
+  Embutido // Italiano (fuera del armador)   32.90   13.13    19.77    39.9%
+  Albóndiga // Marinara                30.90   13.53    17.37    43.8%
+  Pavo // Horneado                     30.90   15.14    15.76    49.0%  <-- PASA EL TECHO
+  Res // Laminada                      30.90   13.70    17.20    44.3%
 
   DOBLE PROTEINA (el recargo contra lo que cuesta la porcion extra)
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
-  Res asada 15CM                        7.00    3.15     3.85    45.0%
-  Res asada 30CM                       14.00    6.30     7.70    45.0%
-  Pollo teriyaki 15CM                   6.00    2.47     3.53    41.2%
-  Pollo teriyaki 30CM                  11.00    4.95     6.05    45.0%
-  Pollo cajún 15CM                      6.00    2.49     3.51    41.5%
-  Pollo cajún 30CM                     11.00    4.97     6.03    45.2%  <-- PASA EL TECHO
-  Atún 15CM                            10.90    3.25     7.65    29.8%
-  Atún 30CM                            21.90    6.50    15.40    29.7%
-  Embutido 15CM                         9.90    4.29     5.61    43.3%
-  Embutido 30CM                        19.90    8.59    11.31    43.2%
-  Albóndiga 15CM                        6.00    1.34     4.66    22.3%
-  Albóndiga 30CM                        6.00    2.68     3.32    44.7%
+  Pollo // Cajun (fuera del armador) 15CM    6.00    2.49     3.51    41.5%
+  Pollo // Cajun (fuera del armador) 30CM   11.00    4.97     6.03    45.2%  <-- PASA EL TECHO
+  Atún // House 15CM                   10.90    3.25     7.65    29.8%
+  Atún // House 30CM                   21.90    6.50    15.40    29.7%
+  Embutido // Italiano (fuera del armador) 15CM    9.90    2.75     7.15    27.8%
+  Embutido // Italiano (fuera del armador) 30CM   19.90    5.50    14.40    27.7%
+  Albóndiga // Marinara 15CM            6.90    2.95     3.95    42.8%
+  Albóndiga // Marinara 30CM           13.90    5.90     8.00    42.5%
+  Pavo // Horneado 15CM                 9.00    3.76     5.24    41.8%
+  Pavo // Horneado 30CM                17.00    7.51     9.49    44.2%
+  Res // Laminada 15CM                  7.00    3.04     3.96    43.4%
+  Res // Laminada 30CM                 13.90    6.07     7.83    43.7%
 
 ============================================================================================
-                                     3 · LAS 4 BEBIDAS                                      
+                                     3 · LAS 3 BEBIDAS                                      
 ============================================================================================
 
-  ⚠ EL COSTO DE LAS BEBIDAS NO ESTA COTIZADO. No existe el dato. CLAUDE.md dice que el
-  margen real es 56-66% "con botella con tapa a rosca a ~S/1 (estimado, falta cotizar)".
-  Aca se toma el punto medio (61% de margen) y se dice que es una suposicion, no una
-  medicion. Cotizar el envase es lo unico que convierte esta tabla en un dato.
+  EL ENVASE YA ESTA COTIZADO Y COMPRADO (dueno 2026-09-05): S/138 por 200 unidades = S/0.69
+  la botella, y el tamano ya esta decidido: MEDIO LITRO. Con los dos datos, el insumo se
+  deriva de las tandas del RECETARIO.md en modelo/costo_bebidas.py, que trae el origen de
+  cada precio por kilo. Lo que sigue [ESTIMADO] es el precio de las hierbas, que pesa mucho
+  menos que el envase. Promedio ponderado: 26.3% de costo.
+
+  El envase es la MITAD del costo de una infusion y NO escala con el volumen: por eso pasar
+  de 350 ml a 500 ml sube el costo mucho menos de lo que parece (The Cool: +2.4 puntos por
+  43% mas de bebida). Es la palanca mas barata de valor percibido que tiene el negocio.
 
 
   a precio de carta
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
-  The Bloom // Hibiscus                 6.00    2.34     3.66    39.0%
-  The Midnight // Brew                  5.00    1.95     3.05    39.0%
-  The Cool // Mint                      6.00    2.34     3.66    39.0%
-  The Spice // Chai                     9.00    3.51     5.49    39.0%
+  The Bloom // Hibiscus                 6.00    1.89     4.11    31.5%
+  Cold Brew // Tea                      5.00    1.41     3.59    28.2%
+  The Cool // Mint                      6.00    1.17     4.83    19.5%
 
-  en combo (-S/1)
+  si el combo (-S/1) se le carga ENTERO a la bebida
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
-  The Bloom // Hibiscus                 5.00    2.34     2.66    46.8%  <-- PASA EL TECHO
-  The Midnight // Brew                  4.00    1.95     2.05    48.8%  <-- PASA EL TECHO
-  The Cool // Mint                      5.00    2.34     2.66    46.8%  <-- PASA EL TECHO
-  The Spice // Chai                     8.00    3.51     4.49    43.9%
+  (atribucion, no hecho: el descuento sale del TOTAL del pedido. Ver nota abajo.)
+  The Bloom // Hibiscus                 5.00    1.89     3.11    37.8%
+  Cold Brew // Tea                      4.00    1.41     2.59    35.2%
+  The Cool // Mint                      5.00    1.17     3.83    23.4%
+
+  Por que se muestra igual: es el PEOR caso contable de la bebida, y sirve para saber si el
+  combo puede llegar a comerse lo que deja. A S/2 si pasaba — THE MIDNIGHT en combo dejaba
+  -S/0.31, o sea que el par sandwich+bebida rendia MENOS que el sandwich solo, y por eso el
+  combo bajo a S/1 el 2026-08-22. Hoy ninguna bebida pasa el techo ni con el combo entero
+  encima, asi que el mecanismo esta sano.
+  Lo que NO se puede concluir de esta tabla es que haya margen que recuperar moviendo el
+  descuento: el sandwich y la bebida van en la misma cuenta.
 
 ============================================================================================
              4 · LOS MECANISMOS QUE REGALAN — cuanto cuesta cada uno de verdad              
@@ -106,11 +120,11 @@
 
   recompensa                          puntos  nos cuesta  = descuento   pts/sol
   ------------------------------------------------------------------------------
-  4ta salsa gratis                        40        0.27        0.67%     150.4
-  sube a 30CM gratis (tope S/8)          160        5.28        3.30%      30.3
-  doble proteína gratis                  120        3.15        2.62%      38.1
-  bebida gratis (tope S/6)               120        2.34        1.95%      51.3
-  sándwich 15CM gratis                   400        5.90        1.48%      67.8
+  4ta salsa gratis                        20        0.27        1.33%      75.2
+  sube a 30CM gratis (tope S/8)          320        6.91        2.16%      46.3
+  doble proteína gratis                  160        3.76        2.35%      42.6
+  bebida gratis (tope S/6)               160        1.89        1.18%      84.7
+  sándwich 15CM gratis                   400        8.22        2.06%      48.6
 
   La ultima columna es la "tasa de cambio" del programa: cuantos puntos cuesta cada sol de
   costo real. Si dos recompensas tienen tasas muy distintas, el cliente racional canjea
@@ -139,7 +153,7 @@
 
   CREDITO REGALADO — mueve saldo entre clientes, sin costo extra. Neutro.
 
-  REFERIDO — 400 pts a quien invita + 120 al invitado = S/7.65 de costo real.
+  REFERIDO — 400 pts a quien invita + 160 al invitado = S/7.65 de costo real.
      Contra un CAC pagado de ~S/17.87, el referido cuesta 43% de lo que cuesta comprar el
      mismo cliente en Meta. Es el canal mas barato que tiene el negocio.
 
@@ -166,12 +180,8 @@
 
   parte                                      costo %   cuanto se pasa
   ----------------------------------------------------------------------
-  The Midnight // Brew en combo                48.8%            3.8 pts
-  BYO Res asada 30CM                           47.6%            2.6 pts
-  The Bloom // Hibiscus en combo               46.8%            1.8 pts
-  The Cool // Mint en combo                    46.8%            1.8 pts
-  BYO Embutido 15CM                            45.7%            0.7 pts
-  doble Pollo cajún 30CM                       45.2%            0.2 pts
+  BYO Pavo // Horneado 30CM                    49.0%            4.0 pts
+  BYO Atún // House 30CM                       45.7%            0.7 pts
 
   ⚠ NADA DE ESTO SE ARREGLA CON PUBLICIDAD. Al contrario: la publicidad multiplica el
   volumen de lo que ya esta mal. Por eso hacer rentable cada parte va ANTES de gastar en

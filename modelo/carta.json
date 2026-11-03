@@ -90,7 +90,7 @@
       "id": "P05",
       "nombre": "Embutido",
       "sabor": "Italiano",
-      "desc": "Tres fiambres ahumados laminados finos y puestos en pliegues, nunca planos.",
+      "desc": "Jamón ahumado, salame y pepperoni, laminados finos y puestos en pliegues, nunca planos.",
       "p15": 16.9,
       "p30": 32.9,
       "dbl15": 9.9,
@@ -376,7 +376,7 @@
       "queso": "C01",
       "foto": "img/sig11.jpg",
       "fotoVertical": "img/sig11_v.webp",
-      "pitch": "Tres embutidos italianos en pliegues, queso americano, verduras frescas y oil & vinegar. El sándwich de deli de toda la vida: cada capa suma sabor y ninguna sobra. Para cuando quieres de todo en un solo pan."
+      "pitch": "Jamón ahumado, salame y pepperoni en pliegues, queso americano, verduras frescas y oil & vinegar. El sándwich de deli de toda la vida: cada capa suma sabor y ninguna sobra. Para cuando quieres de todo en un solo pan."
     },
     {
       "id": "SIG04",

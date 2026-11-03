@@ -68,8 +68,6 @@ SIN_RECONCILIAR = {
     "P02": "el rendimiento documentado del pollo (0.64-0.69) da S/2.17 y el modelo usa "
            "S/2.47. Sobrecostea S/0.30 — conservador, pero sin explicación escrita",
     "P03": "igual que P02: mismo insumo, mismo rendimiento, misma diferencia",
-    "P05": "nunca se documentó un rendimiento. Es fiambre, así que debería ser 1.00 "
-           "(S/4.08) y el modelo usa S/4.29",
     "P06": "nunca se documentó un rendimiento NI se cotizó la carne molida, y es la "
            "proteína del producto más rentable del menú",
 }

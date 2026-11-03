@@ -73,7 +73,8 @@ RECARGO_PAN = {"B03": (0.50, 1.00)}   # lo que SE COBRA por la focaccia
 PROT = {
     "P03": (2.49, 4.97, "[COTIZADO] pollo cajún, mismo rendimiento"),
     "P04": (3.25, 6.50, "[COTIZADO 2026-09-04] atún S/4 la lata de 140 g neto = S/43.96/kg"),
-    "P05": (4.29, 8.59, "[ESTIMADO] embutido S/48/kg confirmado por el dueño, porción sin cotizar"),
+    # Desde el 2026-11-03: jamón ahumado + salame + pepperoni (insumos.py), antes S/48/kg.
+    "P05": (*_I.porcion_derivada("P05"), "[ESTIMADO] trío jamón ahumado/salame/pepperoni ~S/32.38/kg, Makro online"),
     # Desde su receta (insumos.albondiga_porcion, 2026-09-30): carne molida S/23.50/kg y la marinara.
     "P06": (*_I.albondiga_porcion(), "[DERIVADO] receta de la tanda: carne molida S/23.50/kg + marinara"),
     # P08 es la ÚNICA con rendimiento 1.00: es fiambre, no se cocina. Por eso su costo por
