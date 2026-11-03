@@ -1,8 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 // SND//WCH — weekly-summary
-// Se dispara una vez por semana desde pg_cron: "0 2 * * 1" (lunes 2:00 UTC), que en hora de
-// Lima (UTC-5) cae DOMINGO 9:00pm, no lunes por la mañana como sugería una versión anterior
+// Se dispara una vez por semana desde pg_cron: "30 3 * * 1" (desde 2026-11-03; antes "0 2 * * 1"),
+// que en hora de Lima (UTC-5) cae DOMINGO 10:30pm, después de cerrar. Antes caía a las 9:00pm, no lunes por la mañana como sugería una versión anterior
 // de este comentario (hallazgo de la re-auditoría de 10 agentes, informativo — la ventana
 // de datos es rolling de 7 días, no de calendario, así que esto no corrompe ninguna cifra;
 // si en algún momento se quiere que dispare lunes por la mañana hora Lima, el cron real
