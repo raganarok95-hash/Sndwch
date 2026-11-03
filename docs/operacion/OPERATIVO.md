@@ -45,7 +45,7 @@ Cada tanda, con lo que hay que tener a mano para hacerla. La tanda **de apertura
 | **ALBÓNDIGA // MARINARA** (media) | 15 porciones | 1 kg carne molida 15-20% grasa · 100 g pan del día · 110 ml leche · 1 huevo · 50 g parmesano · 10 g ajo · 12 g perejil · sal, pimienta, orégano · **marinara 1.5 L:** 1.25 kg tomate pelado en lata (~3 latas de 400 g), 50 ml aceite de oliva, 20 g ajo, 100 g cebolla, 10 g sal, orégano y albahaca | cuando queden 4 porciones congeladas |
 | **ATÚN // HOUSE** | 2 porciones 15CM por lata | 1 lata de 140 g escurrido + 35 g de mayonesa + pimienta blanca | **todos los días que se venda**: solo las latas del día (dura 3 días, no se congela) |
 | **PAVO // HORNEADO** | 11 porciones por kilo | jamón de pavo en pieza: 500 g para abrir | se lamina lo del día; comprar cuando quede 1/3 de la pieza |
-| **EMBUTIDO // ITALIANO** | 250 g ≈ 3 porciones | **espera la elección del ITALIAN HOAGIE** (hilo de recetas) | se lamina lo del día |
+| **EMBUTIDO // ITALIANO** (dueño, 2026-11-03) | por 15CM: 35 g jamón ahumado + 25 g salame + 25 g pepperoni (30CM, el doble) | ya tajados, un paquete de 500 g de cada uno (Makro): alcanza para ~14 porciones | cuando quede 1/3 del jamón; abierto, cerrar bien y usar primero lo más viejo |
 | **OIL & VINEGAR** (250 ml) | ~17 porciones | 125 ml aceite de oliva · 50 ml aceite vegetal · 63 ml vinagre de vino tinto · 5 g orégano · 3 g ajo en polvo · 3 g sal · 1 g pimienta | cada 2 semanas (dura 1 mes) |
 | **HONEY MUSTARD** (250 g) | ~17 porciones | 95 g mostaza amarilla · 75 g miel · 63 g mayonesa · 13 ml vinagre de manzana · 1 g sal | cada 2 semanas |
 | **CHIMICHURRI PIÑA Y AJÍ** (250 g) | ~17 porciones | 75 g piña · 25 g perejil · 9 g ajo · 6 g ají limo · 4 g ají panca · 25 ml vinagre de vino tinto · 63 ml aceite · 2 g orégano · 4 g sal | cada semana (dura 7 días) |
@@ -115,7 +115,7 @@ regla: **toda compra se anota en el panel el mismo día**, con proveedor, cantid
 | carne molida 15-20% | S/15 el kilo | cotizado por el dueño (30-sep) | **falta** | **falta** |
 | atún en lata 140 g | S/4 la lata | cotizado (4-sep) | **falta** | se compra al día |
 | jamón de pavo | S/44.20 el kilo | cotizado (12-sep), Braedt | **falta** | **falta** |
-| embutido italiano | S/48 el kilo | cotizado; cambia con la elección del ITALIAN HOAGIE | **falta** | **falta** |
+| jamón ahumado, salame y pepperoni tajados | ~S/32.38 el kilo (ponderado) | precio online de Makro: confirmar en Trujillo | Makro | se compra al día |
 | pan sub | S/2 la unidad | cotizado (22-ago) | panadero del dueño | **falta** |
 | queso cheddar tajado | S/7.20 el paquete de 136 g | precio online de Tottus | — | se compra al día |
 | queso americano tajado | S/10.95 el paquete de 170 g | precio online de Tottus | — | se compra al día |
