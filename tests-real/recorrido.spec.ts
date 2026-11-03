@@ -84,8 +84,10 @@ test('un cliente nuevo recorre la app real sin errores', async ({ page }) => {
   await paso(page, 'sando-carta', async () => { await elegirSando(page); });
   await paso(page, 'signature-al-carrito', async () => { await pedirUnSignature(page); });
   await paso(page, 'carrito-recibe-y-donde', async () => {
-    await ponerRecibe(page, 'Revisión Automática', '900000000');
+    // La dirección va ANTES de RECIBE: desde «menos toques» (2026-11-02) el «Listo» de RECIBE sin
+    // el punto del mapa abre el mapa, y su «Es acá» tapaba «Pagar» (rojo desde el 2026-11-02).
     await ponerDireccion(page);
+    await ponerRecibe(page, 'Revisión Automática', '900000000');
   });
   await paso(page, 'pagar-yape', async () => {
     await page.locator('.m30-go .oro').click();
