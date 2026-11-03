@@ -530,6 +530,9 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
   permiso `instagram_business_content_publish` en el caso de uso, y entrar a Instagram **con el usuario
   snd__wch** en Chrome normal. Como comparte el correo con la cuenta personal, el popup abre la personal si no.
 - «La cuenta comercial no tiene permiso para publicar anuncios» es de anuncios; no bloquea publicar.
+- Meta recomienda migrar a la «configuración con inicio de sesión unificado» (token de usuario del sistema, no vence)
+  y llama «legacy» a nuestra vía, que sigue funcionando. No se migra antes de abrir (dueño lo vio el 2026-11-03): pide
+  el Instagram como activo del portafolio, lo mismo que el portafolio bloqueó. Probar después del 6-dic.
 - Nada sale solo salvo lo que esté `scheduled` en `marketing_calendar` (al 2026-11-03: 0 filas). Desde el 20-nov
   el Revisor aprueba el video del día y sale solo (dueño, 2026-11-03: «Que salga solo desde el 20»).
 
