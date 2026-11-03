@@ -520,6 +520,19 @@ Ojo: `page.setContent()` no carga imágenes `file://`; se escribe el HTML a disc
 - El workflow guarda lo que encuentra en la rama `instagram-captura` (se reescribe en cada
   corrida, con push forzado a esa rama y solo a esa).
 
+## Publicar en Instagram: la vía que funciona (2026-11-03)
+- **Instagram API con inicio de sesión de Instagram** (graph.instagram.com), sin página de Facebook. Secret
+  `INSTAGRAM_LOGIN_TOKEN` (empieza con «IG», dura ~60 días). Lo renueva solo `auto-renovar-instagram`
+  (cron `sndwch-auto-renovar-instagram`, domingos). Código: `api/actions/social.ts`
+  (`publicarConInstagramLogin`). Verificado con `estado-apertura.yml`: «puede publicar: sí».
+- La vía de Facebook no sirve: la página Snd//wch no tiene Instagram unido y el portafolio no deja unirlo.
+- Para generar el token: @snd__wch con rol «Instagram Tester» en la app SNDWCH.APP (modo desarrollo), el
+  permiso `instagram_business_content_publish` en el caso de uso, y entrar a Instagram **con el usuario
+  snd__wch** en Chrome normal. Como comparte el correo con la cuenta personal, el popup abre la personal si no.
+- «La cuenta comercial no tiene permiso para publicar anuncios» es de anuncios; no bloquea publicar.
+- Nada sale solo salvo lo que esté `scheduled` en `marketing_calendar` (al 2026-11-03: 0 filas). Desde el 20-nov
+  el Revisor aprueba el video del día y saldría solo: decide el dueño.
+
 ## Generar imágenes gratis desde la nube (2026-10-07)
 - Pollinations sin cuenta, probado desde GitHub (`traer-imagenes.yml`): `flux` responde, pero a
   686×858 con marca de agua; `kontext` y `nanobanana` con imagen de referencia → **HTTP 500**.
