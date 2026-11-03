@@ -25,3 +25,8 @@
   la referencia larga (porqués y retirados). Las recetas del panel (`production_recipes`) solo
   cubren P09, T10 y P06: el atún, el pavo y el embutido no están. Albóndiga: bolas de 30 g (90 por
   tanda de 2 kg = 30 porciones), no de 25.
+- **2026-11-03 · Nace el hilo «Operativo».** Dueño (2026-11-02): «encargado de recopilar todo lo
+  necesario constantemente para la producción, se encarga que sigamos produciendo». Hoja viva:
+  `docs/operacion/OPERATIVO.md`. Verificado en la base: `inventory` 0 filas, `ingredient_purchases`
+  0 filas (el costo real y el aviso de alza de precio no operan hasta que se anoten compras), y la
+  res laminada P09 tiene dos recetas activas (ids 6 y 8; la 6 dice «~S/20/kg»).
