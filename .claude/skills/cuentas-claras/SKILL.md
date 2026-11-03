@@ -14,8 +14,8 @@ todo pedido de la base es de prueba y se dice así.
 ## Lo que ya corre solo (no se rehace a mano)
 | qué | dónde | cuándo |
 |---|---|---|
-| Cierre del día: comida cobrada, insumos y empaque del modelo, descuentos, comisiones, lo que queda, por canal; lo que debe verse en Yape/Plin y lo que Culqi debe depositar; alertas de techo y de pagos que no cuadran | correo `daily-summary` | pg_cron `0 2 * * *` = 21:00 de Lima (ojo: antes de cerrar a las 22:00; moverlo espera el sí del dueño) |
-| La semana en plata: lo mismo + pauta (`ad_spend`) + compras de insumos de la semana + costo % de los 8 productos que más venden | correo `weekly-summary` | pg_cron, domingo 21:00 de Lima (misma salvedad) |
+| Cierre del día: comida cobrada, insumos y empaque del modelo, descuentos, comisiones, lo que queda, por canal; lo que debe verse en Yape/Plin y lo que Culqi debe depositar; alertas de techo y de pagos que no cuadran | correo `daily-summary` | pg_cron `30 3 * * *` = 22:30 de Lima, después de cerrar (dueño, 2026-11-03) |
+| La semana en plata: lo mismo + pauta (`ad_spend`) + compras de insumos de la semana + costo % de los 8 productos que más venden | correo `weekly-summary` | pg_cron `30 3 * * 1` = domingo 22:30 de Lima |
 | El cálculo | `supabase/functions/_shared/finanzas.ts` (`cierre`, `conciliar`, `alertasDePlata`), probado en `tests-api/finanzas.test.ts` | — |
 | El costo de cada producto | `_shared/costos.ts`, GENERADO por `python3 modelo/exportar_costos.py` desde `modelo/insumos.py` | `check:costos` falla si quedó viejo |
 | Cuánto deja cada sándwich en web, tarjeta, Rappi y PedidosYa | `python3 modelo/margen_por_canal.py` | a pedido |
