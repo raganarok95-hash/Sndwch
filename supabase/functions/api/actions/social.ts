@@ -347,7 +347,8 @@ export async function actAutoRenovarInstagram(b: Entrada<"auto-renovar-instagram
   if (!candidatos.length) {
     let parecidos: string[] = [];
     try { parecidos = Object.keys(Deno.env.toObject()).filter((k) => /INSTA|^IG|_IG|META/i.test(k)).sort(); } catch (_) { /* sin permiso */ }
-    return { ok: true, renovado: false, motivo: "sin token de Instagram", secretsParecidos: parecidos };
+    const forma = (META_PAGE_ACCESS_TOKEN || "").trim().slice(0, 3).replace(/[^A-Z]/g, "");
+    return { ok: true, renovado: false, motivo: "sin token de Instagram", secretsParecidos: parecidos, metaPageEmpiezaCon: forma || null };
   }
   let ultimo = "";
   for (const tok of candidatos) {

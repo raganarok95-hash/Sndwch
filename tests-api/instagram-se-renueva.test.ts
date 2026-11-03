@@ -42,3 +42,12 @@ Deno.test("si Instagram no devuelve token, la renovación falla en voz alta", as
     globalThis.fetch = original;
   }
 });
+
+// Promesa: si el token de Instagram quedó guardado como META_PAGE_ACCESS_TOKEN, igual se usa.
+// Modo de fallo: silencio, con el token puesto y la app diciendo que no hay.
+import { tokenDeInstagramEnElEntorno } from "../supabase/functions/api/env.ts";
+Deno.test("un token de Instagram guardado en el secret de la página se reconoce por su forma", () => {
+  assertEquals(tokenDeInstagramEnElEntorno(undefined, " IGAAxyz "), "IGAAxyz");
+  assertEquals(tokenDeInstagramEnElEntorno(undefined, "EAAxyz"), undefined, "un token de página de Facebook no es de Instagram");
+  assertEquals(tokenDeInstagramEnElEntorno("IGAAuno", "IGAAdos"), "IGAAuno", "el secret con su nombre manda");
+});
