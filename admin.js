@@ -1,6 +1,6 @@
 // SND//WCH — bundle del PANEL. Generado por scripts/build.mjs; no editar a mano.
 // Se carga bajo demanda desde el router (loadAdminBundle) cuando se abre una pantalla
-// de admin. Ningún cliente lo descarga: son ~351 KB que antes
+// de admin. Ningún cliente lo descarga: son ~364 KB que antes
 // viajaban en index.html a cada celular que abría la carta.
 // Íconos de línea minimalistas — mismo trazo/estilo que el ícono de Instagram del pie
 // de página (stroke currentColor, sin relleno), en vez de emoji grandes y de colores
@@ -349,8 +349,7 @@ async function copyFromField(id) {
 }
 var PANEL_OPCIONES = [
     { k: 'pedidos', t: 'Buscar pedidos', s: 'por número, cliente o día', i: 'buscar', c: 'Hoy', m: [['Buscar pedidos', "sndScreen='admin_search';searchResults=null;render()", 'admin_search']] },
-    { k: 'caja', t: 'Cierre de caja', s: 'lo que entró hoy, por medio de pago', i: 'caja', c: 'Hoy', m: [['Cierre de caja', 'loadCashClose()', 'admin_cash']] },
-    { k: 'numeros', t: 'Números', s: 'ventas, ticket, reportes por fechas', i: 'reportes', c: 'Hoy', m: [['Panel de negocio', 'loadDashboard()', 'admin_dashboard'], ['Reportes', "sndScreen='admin_report';reportData=null;render()", 'admin_report']] },
+    { k: 'numeros', t: 'Números', s: 'ventas, ticket, reportes por fechas', i: 'reportes', c: 'Hoy', m: [['Ventas', 'loadDashboard()', 'admin_dashboard'], ['Cierre de caja', 'loadCashClose()', 'admin_cash'], ['Reportes', "sndScreen='admin_report';reportData=null;render()", 'admin_report']] },
     { k: 'stock', t: 'Stock y tanda', s: 'inventario, preparación, cuánto cocinar', i: 'inventario', c: 'Hoy', m: [['Inventario', 'loadInventory()', 'admin_inventory'], ['Preparación', 'loadPrepList()', 'admin_prep'], ['Plan de tanda', 'loadBatchPlan()', 'admin_batch']] },
     { k: 'carta', t: 'La carta', s: 'Signatures, menú secreto, precios', i: 'precios', c: 'Carta', m: [['Signatures', 'loadCatalogItemsAdmin()', 'admin_items'], ['Menú secreto', 'loadSecretSignatureAdmin()', 'admin_secret'], ['Precios', 'loadAdminCatalog()', 'admin_catalog']] },
     { k: 'recetas', t: 'Recetas', s: 'gramos y costo de cada sándwich', i: 'recipe', c: 'Carta', m: [['Recetas', 'loadRecipes()', 'admin_recipes']] },
@@ -373,7 +372,6 @@ var PANEL_OPCIONES = [
     { k: 'cumplimiento', t: 'Cumplimiento', s: 'lo legal que hay que tener al día', i: 'reclamo', c: 'Sistema', m: [['Cumplimiento', 'loadCompliance()', 'admin_compliance']] },
     { k: 'celular', t: 'Este celular', s: 'sonido, notificaciones, modo claro', i: 'admins', c: 'Sistema', m: [['Este celular', "sndScreen='admin_celular';render()", 'admin_celular']] },
 ];
-var FIJADAS_DE_SIEMPRE = ['caja', 'numeros', 'carta', 'avisale'];
 function opcionDePantalla(sc) {
     for (var i = 0; i < PANEL_OPCIONES.length; i++) {
         if (PANEL_OPCIONES[i].m.some(function (x) { return x[2] === sc; }))
@@ -381,13 +379,10 @@ function opcionDePantalla(sc) {
     }
     return null;
 }
-// El cajón lateral (02-*) sigue pidiendo «secciones»: salen de la MISMA lista, así no pueden
-// volver a divergir.
+// El cajón lateral (02-*) muestra lo mismo que el inicio (2026-11-03, tres puertas): un camino
+// menos para llegar a lo mismo.
 function adminToolsSections() {
-    var cajones = ['Hoy', 'Carta', 'Clientes', 'Marketing', 'Sistema'];
-    return cajones.map(function (c) {
-        return [c, PANEL_OPCIONES.filter(function (o) { return o.c === c; }).map(function (o) { return [o.i, o.t, accionDeOpcion(o)]; })];
-    });
+    return [['Panel', [['sandwich', 'Cocina', 'abrirCocina()'], ['precios', 'Carta', 'abrirCarta()'], ['reportes', 'Números', 'loadDashboard()'], ['admins', 'Ajustes', 'abrirAjustes()']]]];
 }
 function usoLocal() { try {
     return JSON.parse(localStorage.getItem('sw_uso_panel') || '{}') || {};
@@ -395,19 +390,6 @@ function usoLocal() { try {
 catch (e) {
     return {};
 } }
-function fijadas() {
-    var uso = usoLocal();
-    var conUso = PANEL_OPCIONES.filter(function (o) { return (uso[o.k] || 0) >= 3; }).sort(function (a, b) { return (uso[b.k] || 0) - (uso[a.k] || 0); });
-    var lista = conUso.slice(0, 4);
-    FIJADAS_DE_SIEMPRE.forEach(function (k) {
-        if (lista.length < 4 && !lista.some(function (o) { return o.k === k; })) {
-            var o = PANEL_OPCIONES.find(function (x) { return x.k === k; });
-            if (o)
-                lista.push(o);
-        }
-    });
-    return lista;
-}
 // La acción va escrita en el onclick (no se evalúa texto en tiempo de ejecución): contar el uso
 // de este celular para las fijadas y abrir la pantalla.
 function accionDeOpcion(o, idx) {
@@ -453,7 +435,7 @@ function filtrarOpciones(q) {
     var n = normalizarBusqueda(q).trim();
     var filas = document.querySelectorAll('[data-opcion]');
     var vistas = 0;
-    filas.forEach(function (el) { var ok = !n || String(el.getAttribute('data-q')).indexOf(n) >= 0; el.style.display = ok ? '' : 'none'; if (ok)
+    filas.forEach(function (el) { var ok = n ? String(el.getAttribute('data-q')).indexOf(n) >= 0 : el.getAttribute('data-fuera') !== '1'; el.style.display = ok ? '' : 'none'; if (ok)
         vistas++; });
     document.querySelectorAll('.adm-cajon h3').forEach(function (h) { h.style.display = n ? 'none' : ''; });
     var fij = document.getElementById('adm-fijadas');
@@ -522,33 +504,278 @@ function addressFlagsBanner() {
 // mezclados. Ahora es lo que el dueño decide con calma: un botón grande a «Cocina abierta»
 // (con lo que espera adentro) y los cinco cajones. La cola vive SOLO en la cocina: dos
 // listas del mismo dato terminan contradiciéndose.
-function sAdminHome() {
+// ══ TRES PUERTAS (dueño, 2026-11-03: eligió «B con los avisos de C») ══════════════════════════
+// Dueño, 2026-11-02: «el panel de admin y la funcionalidad para manejar el negocio está super
+// complejo y nada intuitivo». Maqueta: docs/maquetas/propuestas/panel-simple.png. Arriba, solo
+// lo que pide atención (pagos por confirmar, avisos del negocio, este celular sin avisos); abajo
+// tres puertas: Cocina, Carta y Números. Todo lo demás en «Ajustes», con buscador. El marketing
+// salió de la lista (lo lleva otro frente) pero sigue alcanzable escribiendo su nombre.
+function avisosDelInicio() {
     var ao = sortedActiveOrders();
     var pagos = ao.filter(esPagoPorConfirmar).length;
-    var abierta = storeStatus().open;
+    var h = '';
+    if (pollFailing)
+        h += '<div class="pn-aviso mal"><b>No se pudo actualizar</b><p>Revisa tu conexión: lo que ves puede estar atrasado.</p></div>';
+    if (pagos)
+        h += '<div class="pn-aviso" data-aviso="pagos"><b>' + pagos + ' pago' + (pagos === 1 ? '' : 's') + ' por confirmar</b><p>Mira la captura y confirma si llegó.</p>'
+            + '<button data-accion="ver-pagos" onclick="cocinaFiltro=\'pago\';abrirCocina()">Ver</button></div>';
+    if (healthData && healthData.signals)
+        healthData.signals.filter(function (sg) { return sg.level !== 'ok' && sg.id !== 'pagos' && sg.id !== 'estancados'; }).forEach(function (sg) {
+            var ir = sg.screen === 'admin_inventory' ? 'abrirCarta()' : (AVISO_PANTALLA[sg.screen] || 'loadTechHealth()');
+            h += '<div class="pn-aviso ' + (sg.level === 'problema' ? 'mal' : '') + '" data-aviso="' + esc(sg.id) + '"><b>' + esc(sg.label) + (sg.count ? ' · ' + sg.count : '') + '</b>'
+                + (sg.hint ? '<p>' + esc(sg.hint) + '</p>' : '') + '<button onclick="' + ir + '">Ver</button></div>';
+        });
+    return h + avisoDeAvisos();
+}
+function agotadosDeLaCarta() {
+    var n = 0;
+    INV_CATS.concat([{ t: 'Bebidas', arr: SIDES }]).forEach(function (c) { c.arr.forEach(function (x) { if (invStock[x.id] === false)
+        n++; }); });
+    return n;
+}
+function sAdminHome() {
+    cargarAvisosDelNegocio();
+    var ao = sortedActiveOrders();
+    var pagos = ao.filter(esPagoPorConfirmar).length;
+    var st = storeStatus();
+    var pausa = storePausedUntil && new Date(storePausedUntil).getTime() > Date.now();
+    var agotados = agotadosDeLaCarta();
+    var hoy = diaDeHoyLima();
+    var deHoy = (adminOrders || []).filter(function (o) { return o.created_at && new Date(o.created_at).toLocaleDateString('en-CA', { timeZone: 'America/Lima' }) === hoy && o.status !== 'CANCELADO'; }).length;
+    return '<div class="pn">'
+        + '<div class="pn-cab"><b>' + WORDMARK(22) + '</b><span class="pill ' + (pausa ? 'pausa' : st.open ? 'on' : 'off') + '">' + (pausa ? 'EN PAUSA' : st.open ? 'ABIERTO' : 'CERRADO') + '</span></div>'
+        + avisosDelInicio()
+        + '<button class="pn-puerta p1" data-accion="abrir-cocina" onclick="abrirCocina()"><s>'
+        + (ao.length ? ao.length + ' pedido' + (ao.length === 1 ? '' : 's') + ' en curso' + (pagos ? ' · ' + pagos + ' por confirmar' : '') : 'Sin pedidos en curso') + '</s><b>Cocina</b></button>'
+        + '<button class="pn-puerta p2" data-accion="abrir-carta" onclick="abrirCarta()"><s>Precios, stock y lo que está disponible' + (agotados ? ' · ' + agotados + ' agotado' + (agotados === 1 ? '' : 's') : '') + '</s><b>Carta</b></button>'
+        + '<button class="pn-puerta p3" data-accion="abrir-numeros" onclick="loadDashboard()"><s>' + (deHoy ? 'Hoy: ' + deHoy + ' pedido' + (deHoy === 1 ? '' : 's') : 'Ventas, caja del día y reportes') + '</s><b>Números</b></button>'
+        + '<div class="pn-pie">'
+        + '<button data-accion="abrir-ajustes" onclick="abrirAjustes()">Ajustes</button>'
+        + '<button data-accion="salir-del-panel" onclick="stopPoll();sndScreen=\'o_home\';sndTab=\'order\';render()">Salir</button>'
+        + '</div></div>';
+}
+// ── AJUSTES: lo que no es Cocina, Carta ni Números ───────────────────────────────────────────
+var EN_LAS_PUERTAS = ['numeros', 'stock', 'carta'];
+var FUERA_DEL_PANEL = ['Marketing'];
+function abrirAjustes() { panelModo = 'admin'; sndScreen = 'admin_ajustes'; render(); }
+function sAdminAjustes() {
     var fila = function (o) {
         var q = normalizarBusqueda(o.t + ' ' + o.s + ' ' + o.m.map(function (x) { return x[0]; }).join(' '));
-        return '<button class="adm-op" data-opcion="' + o.k + '" data-q="' + esc(q) + '" onclick="' + accionDeOpcion(o) + '">' + icon(o.i, 18) + '<span><b>' + esc(o.t) + '</b><s>' + esc(o.s) + '</s></span><i aria-hidden="true">›</i></button>';
+        var fuera = FUERA_DEL_PANEL.indexOf(o.c) >= 0;
+        return '<button class="adm-op" data-opcion="' + o.k + '" data-q="' + esc(q) + '"' + (fuera ? ' data-fuera="1" style="display:none"' : '') + ' onclick="' + accionDeOpcion(o) + '">' + icon(o.i, 18) + '<span><b>' + esc(o.t) + '</b><s>' + esc(o.s) + '</s></span><i aria-hidden="true">›</i></button>';
     };
-    var cajones = ['Hoy', 'Carta', 'Clientes', 'Marketing', 'Sistema'];
-    return '<div class="adm">'
-        + '<div class="adm-top"><b>Administrar</b>'
-        + '<button class="adm-x" data-accion="salir-del-panel" onclick="stopPoll();sndScreen=\'o_home\';sndTab=\'order\';render()">Salir</button></div>'
-        + (pollFailing ? '<div class="adm-alerta">No se pudo actualizar la cola. Revisa tu conexión.</div>' : '')
-        + avisoDeAvisos()
-        + '<button class="adm-cocina" data-accion="abrir-cocina" onclick="abrirCocina()">'
-        + '<span class="t">Te toca →</span>'
-        + '<span class="s">' + (ao.length ? ao.length + ' pedido' + (ao.length === 1 ? '' : 's') + ' en curso' + (pagos ? ' · ' + pagos + ' pago' + (pagos === 1 ? '' : 's') + ' por confirmar' : '') : 'Sin pedidos en curso')
-        + (abierta ? '' : ' · la tienda está cerrada') + '</span></button>'
-        + '<input class="adm-busca" type="search" id="adm-busca" placeholder="Busca: precios, horario, un cliente…" aria-label="Buscar una opción del panel" oninput="filtrarOpciones(this.value)">'
-        + '<div id="adm-fijadas" class="adm-cajon"><h3>Lo que más usas</h3><div class="adm-fij">'
-        + fijadas().map(function (o) { return '<button data-fijada="' + o.k + '" onclick="' + accionDeOpcion(o) + '">' + icon(o.i, 18) + '<b>' + esc(o.t) + '</b></button>'; }).join('')
-        + '</div></div>'
-        + cajones.map(function (c) {
-            return '<div class="adm-cajon"><h3>' + c + '</h3>' + PANEL_OPCIONES.filter(function (o) { return o.c === c; }).map(fila).join('') + '</div>';
-        }).join('')
+    return '<div class="pn">'
+        + '<div class="pn-cab"><button class="pn-atras" aria-label="Volver" onclick="irAAdministrar()">←</button><b>Ajustes</b><span></span></div>'
+        + '<input class="adm-busca" type="search" id="adm-busca" placeholder="Busca: horario, un cliente, reclamos…" aria-label="Buscar una opción del panel" oninput="filtrarOpciones(this.value)">'
+        + PANEL_OPCIONES.filter(function (o) { return EN_LAS_PUERTAS.indexOf(o.k) < 0; }).map(fila).join('')
         + '<div id="adm-nada" class="coc-vacio" style="display:none">Nada con ese nombre. Prueba con otra palabra.</div>'
         + '</div>';
+}
+// ── CARTA: cada producto en una ficha que se guarda sola ─────────────────────────────────────
+// Antes el precio vivía en «Precios», el stock en «Inventario» (con un «Guardar» por fila y otro
+// para todos) y el agotado en una pestaña de la cocina. Ahora un producto es UNA ficha: precio,
+// cuántos quedan y si está disponible, y cada cambio se guarda al soltarlo.
+var cartaFicha = null;
+var cartaEstado = '';
+async function abrirCarta() {
+    if (!/^admin_(carta|ficha)$/.test(String(sndScreen)))
+        cartaFicha = null;
+    sndScreen = 'admin_carta';
+    busy = true;
+    busyMsg = 'Cargando la carta...';
+    render();
+    await loadCatalogBackground();
+    busy = false;
+    render();
+}
+function gruposDeLaCarta() {
+    return [
+        { t: 'Signatures', tipo: 'sig', arr: SIGS.map(function (s) { return { id: s.id, n: s.n, s: s.s }; }) },
+        { t: 'Proteínas', tipo: 'protein', arr: PROTS.map(function (p) { return { id: p.id, n: p.l, s: p.s }; }) },
+        { t: 'Bebidas', tipo: 'side', arr: SIDES.map(function (d) { return { id: d.id, n: d.l, s: d.s }; }) },
+        { t: 'Panes', tipo: 'insumo', arr: BASES.map(function (x) { return { id: x.id, n: x.l, s: x.s }; }) },
+        { t: 'Toppings', tipo: 'insumo', arr: TOPS.map(function (x) { return { id: x.id, n: x.l, s: x.s }; }) },
+        { t: 'Quesos', tipo: 'insumo', arr: CHEESE.map(function (x) { return { id: x.id, n: x.l, s: x.s }; }) },
+        { t: 'Salsas', tipo: 'insumo', arr: SAUCES.map(function (x) { return { id: x.id, n: x.l, s: x.s }; }) },
+        { t: 'Recompensas', tipo: 'reward', arr: RWDS.map(function (r) { return { id: r.id, n: r.n, s: r.s }; }) },
+    ];
+}
+function resumenDeLaFicha(tipo, id) {
+    var stock = invStock[id] === false ? 'Agotado' : (invQty[id] != null ? 'Quedan ' + invQty[id] : '');
+    if (tipo === 'sig') {
+        var s = SIGS.find(function (x) { return x.id === id; });
+        return s ? SOLES_TXT + pz(s.p15) + ' · ' + SOLES_TXT + pz(s.p30) : '';
+    }
+    if (tipo === 'protein') {
+        var p = PROTS.find(function (x) { return x.id === id; });
+        return p ? [SOLES_TXT + pz(p.p15) + ' · ' + SOLES_TXT + pz(p.p30), stock].filter(Boolean).join(' · ') : '';
+    }
+    if (tipo === 'side') {
+        var d = SIDES.find(function (x) { return x.id === id; });
+        return d ? [SOLES_TXT + pz(d.p), stock].filter(Boolean).join(' · ') : '';
+    }
+    if (tipo === 'reward') {
+        var r = RWDS.find(function (x) { return x.id === id; });
+        return r ? r.pts + ' puntos' : '';
+    }
+    return stock || 'Disponible';
+}
+function sAdminCarta() {
+    return '<div class="pn">'
+        + '<div class="pn-cab"><button class="pn-atras" aria-label="Volver" onclick="irAAdministrar()">←</button><b>Carta</b><span></span></div>'
+        + '<input class="adm-busca" type="search" id="carta-busca" placeholder="Busca un producto" aria-label="Buscar un producto" oninput="filtrarCarta(this.value)">'
+        + gruposDeLaCarta().map(function (g) {
+            return '<div class="pn-grupo" data-grupo="' + g.tipo + '"><h3>' + g.t + '</h3>' + g.arr.map(function (x) {
+                var ag = invStock[x.id] === false && g.tipo !== 'reward' && g.tipo !== 'sig';
+                return '<button class="pn-prod' + (ag ? ' ag' : '') + '" data-ficha="' + esc(x.id) + '" data-q="' + esc(normalizarBusqueda(x.n + ' ' + x.s)) + '" onclick="abrirFicha(\'' + g.tipo + '\',\'' + esc(x.id) + '\')">'
+                    + '<span><b>' + esc(x.n) + '</b><s>' + esc(x.s || '') + '</s></span><u>' + esc(resumenDeLaFicha(g.tipo, x.id)) + '</u><i aria-hidden="true">›</i></button>';
+            }).join('') + '</div>';
+        }).join('')
+        + '<div class="pn-grupo"><h3>Más de la carta</h3>'
+        + [['Menú secreto', 'loadSecretSignatureAdmin()'], ['Registrar una tanda y su caducidad', 'loadInventory()'], ['Lista de preparación', 'loadPrepList()'], ['Cuánto cocinar', 'loadBatchPlan()']].map(function (x) {
+            return '<button class="pn-prod" data-q="' + esc(normalizarBusqueda(x[0])) + '" onclick="' + x[1] + '"><span><b>' + x[0] + '</b></span><i aria-hidden="true">›</i></button>';
+        }).join('') + '</div>'
+        + '</div>';
+}
+function filtrarCarta(q) {
+    var t = normalizarBusqueda(q).trim();
+    document.querySelectorAll('.pn-prod').forEach(function (el) { el.style.display = !t || (el.getAttribute('data-q') || '').indexOf(t) >= 0 ? '' : 'none'; });
+}
+function abrirFicha(tipo, id) { cartaFicha = { tipo: tipo, id: id }; cartaEstado = ''; sndScreen = 'admin_ficha'; render(); }
+function campoDePrecio(campo, etiqueta, valor, paso) {
+    return '<label class="pn-campo"><s>' + etiqueta + '</s><input id="fi-' + campo + '" type="number" inputmode="decimal" step="' + (paso || '0.1') + '" min="0" value="' + esc(String(valor == null ? '' : valor)) + '" onchange="guardarPrecioDeLaFicha()"></label>';
+}
+function sAdminFicha() {
+    var f = cartaFicha;
+    if (!f)
+        return sAdminCarta();
+    var g = gruposDeLaCarta().filter(function (x) { return x.tipo === f.tipo; })[0];
+    var it = g && g.arr.filter(function (x) { return x.id === f.id; })[0];
+    if (!it)
+        return sAdminCarta();
+    var h = '<div class="pn">'
+        + '<div class="pn-cab"><button class="pn-atras" aria-label="Volver" onclick="sndScreen=\'admin_carta\';render()">←</button><b>' + esc(it.n) + '</b><span></span></div>'
+        + '<div class="pn-sub">' + esc(it.s || '') + ' · ' + esc(g.t) + '</div>';
+    if (f.tipo === 'sig') {
+        var s = SIGS.find(function (x) { return x.id === f.id; });
+        h += campoDePrecio('p15', 'Precio 15CM', s.p15) + campoDePrecio('p30', 'Precio 30CM', s.p30);
+    }
+    if (f.tipo === 'protein') {
+        var p = PROTS.find(function (x) { return x.id === f.id; });
+        h += campoDePrecio('p15', 'Precio 15CM', p.p15) + campoDePrecio('p30', 'Precio 30CM', p.p30) + campoDePrecio('pDbl', 'Doble 15CM, suma', p.pDbl) + campoDePrecio('pDbl30', 'Doble 30CM, suma', p.pDbl30);
+    }
+    if (f.tipo === 'side') {
+        var d = SIDES.find(function (x) { return x.id === f.id; });
+        h += campoDePrecio('price', 'Precio', d.p);
+    }
+    if (f.tipo === 'reward') {
+        var r = RWDS.find(function (x) { return x.id === f.id; });
+        h += campoDePrecio('pts', 'Puntos que cuesta', r.pts, '1');
+    }
+    if (f.tipo === 'protein' || f.tipo === 'side' || f.tipo === 'insumo') {
+        var dispo = invStock[f.id] !== false;
+        var q = invQty[f.id];
+        h += '<div class="pn-campo"><s>Disponible</s><button class="pn-sw' + (dispo ? ' on' : '') + '" role="switch" aria-checked="' + dispo + '" data-accion="disponible" onclick="cambiarDisponible()"></button></div>'
+            + '<div class="pn-campo"><s>Cuántos quedan</s><span class="pn-num">'
+            + '<button aria-label="Uno menos" data-accion="menos" onclick="cambiarQuedan(-1)">−</button>'
+            + '<input id="fi-qty" type="number" inputmode="numeric" min="0" placeholder="—" value="' + (q != null ? q : '') + '" onchange="guardarQuedan()">'
+            + '<button aria-label="Uno más" data-accion="mas" onclick="cambiarQuedan(1)">+</button></span></div>'
+            + '<p class="pn-nota">Vacío: se vende sin límite. Con 0 se agota solo en la app.</p>';
+    }
+    if (f.tipo === 'sig')
+        h += '<button class="pn-campo pn-link" onclick="ciSel=\'' + esc(f.id) + '\';loadCatalogItemsAdmin()"><s>Foto, nombre, receta y si se ve en la carta</s><i>›</i></button>';
+    if (f.tipo === 'sig' || f.tipo === 'protein')
+        h += '<button class="pn-campo pn-link" onclick="loadRecipes()"><s>Receta y costo</s><i>›</i></button>';
+    h += '<div class="pn-guarda" id="fi-estado" role="status">' + esc(cartaEstado || 'Cada cambio se guarda solo') + '</div>';
+    return h + '</div>';
+}
+function estadoDeLaFicha(t) { cartaEstado = t; var el = document.getElementById('fi-estado'); if (el)
+    el.textContent = t; }
+function numeroDeLaFicha(campo) {
+    var el = document.getElementById('fi-' + campo);
+    if (!el || el.value.trim() === '')
+        return null;
+    var n = Number(el.value);
+    return isFinite(n) && n >= 0 ? n : null;
+}
+async function guardarPrecioDeLaFicha() {
+    var f = cartaFicha;
+    if (!f)
+        return;
+    var campos = { sig: ['p15', 'p30'], protein: ['p15', 'p30', 'pDbl', 'pDbl30'], side: ['price'], reward: ['pts'] }[f.tipo] || [];
+    var values = {};
+    for (var i = 0; i < campos.length; i++) {
+        var n = numeroDeLaFicha(campos[i]);
+        if (n == null) {
+            estadoDeLaFicha('Escribe un número en cada campo.');
+            return;
+        }
+        values[campos[i]] = n;
+    }
+    estadoDeLaFicha('Guardando…');
+    try {
+        await api('admin-catalog-set-price', { token: token, code: f.id, category: f.tipo, values: values });
+        await loadCatalogBackground();
+        estadoDeLaFicha('✓ Guardado');
+    }
+    catch (e) {
+        estadoDeLaFicha('No se guardó: ' + e.message);
+    }
+}
+async function cambiarDisponible() {
+    var f = cartaFicha;
+    if (!f)
+        return;
+    var it = gruposDeLaCarta().reduce(function (a, g) { return a.concat(g.arr); }, []).filter(function (x) { return x.id === f.id; })[0];
+    var va = !(invStock[f.id] !== false);
+    estadoDeLaFicha('Guardando…');
+    try {
+        await api('admin-inventory-toggle', { token: token, code: f.id, name: it ? it.n : f.id, inStock: va });
+        invStock[f.id] = va;
+        cartaEstado = va ? '✓ Disponible' : '✓ Agotado: ya no se ofrece';
+        render();
+    }
+    catch (e) {
+        estadoDeLaFicha('No se guardó: ' + e.message);
+    }
+}
+var _quedanTimer = null;
+function cambiarQuedan(d) {
+    var el = document.getElementById('fi-qty');
+    if (!el)
+        return;
+    var n = el.value.trim() === '' ? 0 : Number(el.value) || 0;
+    el.value = String(Math.max(0, n + d));
+    clearTimeout(_quedanTimer);
+    _quedanTimer = setTimeout(guardarQuedan, 700);
+}
+async function guardarQuedan() {
+    var f = cartaFicha;
+    if (!f)
+        return;
+    clearTimeout(_quedanTimer);
+    var el = document.getElementById('fi-qty');
+    if (!el)
+        return;
+    var raw = el.value.trim();
+    var qty = raw === '' ? null : Math.max(0, parseInt(raw, 10));
+    if (raw !== '' && !isFinite(qty)) {
+        estadoDeLaFicha('Escribe un número.');
+        return;
+    }
+    var it = gruposDeLaCarta().reduce(function (a, g) { return a.concat(g.arr); }, []).filter(function (x) { return x.id === f.id; })[0];
+    estadoDeLaFicha('Guardando…');
+    try {
+        await api('admin-inventory-set-stock', { token: token, code: f.id, name: it ? it.n : f.id, qty: qty });
+        invQty[f.id] = qty;
+        if (qty != null)
+            invStock[f.id] = qty > 0;
+        cartaEstado = qty == null ? '✓ Sin límite' : '✓ Quedan ' + qty;
+        render();
+    }
+    catch (e) {
+        estadoDeLaFicha('No se guardó: ' + e.message);
+    }
 }
 // «Este celular»: lo que antes ocupaba el final de la portada y se ajusta una vez.
 // LOS AVISOS DEL DUEÑO, A UN TOQUE (2026-10-15). A cinco días de abrir había 0 celulares
@@ -1001,7 +1228,7 @@ function cargarAvisosDelNegocio(ya) {
     if (!ya && Date.now() - _avisosPedidosEn < 5 * 60000)
         return;
     _avisosPedidosEn = Date.now();
-    api('admin-health', { token: token }).then(function (r) { healthData = r; if (sndScreen === 'admin_cocina')
+    api('admin-health', { token: token }).then(function (r) { healthData = r; if (sndScreen === 'admin_cocina' || sndScreen === 'admin_home')
         render(); }).catch(function () { });
 }
 var AVISO_PANTALLA = { admin_inventory: 'loadInventory()', admin_complaints: 'loadAdminComplaints()' };
@@ -1059,8 +1286,8 @@ function sAdminCocina() {
         + (enCamino.length ? '<div class="coc-sec"><h3>En camino · ' + enCamino.length + '</h3><p>Los cierra el cliente con «Ya me llegó». Los de contra entrega, tú, cuando el motorizado entrega lo cobrado.</p>' + enCamino.map(filaEnCamino).join('') + '</div>' : '')
         + '<div class="coc-tabs sw-barra">'
         + '<button class="sel">Te toca</button>'
-        + '<button data-accion="agotar" onclick="loadInventory()">Agotar</button>'
-        + '<button data-accion="ir-a-administrar" onclick="irAAdministrar()">Administrar</button>'
+        + '<button data-accion="agotar" onclick="abrirCarta()">Carta</button>'
+        + '<button data-accion="ir-a-administrar" onclick="irAAdministrar()">Inicio</button>'
         + '</div>'
         + '</div>';
 }
@@ -4492,6 +4719,9 @@ function exportComplianceCsv() {
 // aparte de escribir, y ninguna herramienta lo comprueba por ti.
 Object.assign(ADMIN_SCREENS, {
     admin_home: sAdminHome,
+    admin_ajustes: sAdminAjustes,
+    admin_carta: sAdminCarta,
+    admin_ficha: sAdminFicha,
     admin_celular: sAdminCelular,
     admin_health: sAdminHealth,
     admin_batch: sAdminBatchPlan,

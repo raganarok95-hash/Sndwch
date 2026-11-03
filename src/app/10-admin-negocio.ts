@@ -2706,6 +2706,9 @@ function exportComplianceCsv(){
 // aparte de escribir, y ninguna herramienta lo comprueba por ti.
 Object.assign(ADMIN_SCREENS, {
   admin_home: sAdminHome,
+  admin_ajustes: sAdminAjustes,
+  admin_carta: sAdminCarta,
+  admin_ficha: sAdminFicha,
   admin_celular: sAdminCelular,
   admin_health: sAdminHealth,
   admin_batch: sAdminBatchPlan,

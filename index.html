@@ -419,6 +419,51 @@ body.kb-open #app{padding-bottom:0}
 /* PANEL EN DOS MODOS (2026-10-01, docs/PANEL_NUEVO.md). Funcional, no bonito: los tokens del
    tema del panel (.admin-dark / .admin-light), dedos de 44 px y un color por etapa. */
 .adm,.adm *,.coc,.coc *{font-family:'Public Sans','Segoe UI',system-ui,-apple-system,sans-serif}
+/* TRES PUERTAS (2026-11-03, docs/maquetas/propuestas/panel-simple.png, B con los avisos de C) */
+.pn{min-height:100vh;background:var(--sw-bg);color:var(--sw-text);font-family:Archivo,system-ui,sans-serif;padding:0 16px 32px;display:flex;flex-direction:column;gap:10px}
+.pn-cab{display:flex;align-items:center;gap:10px;padding:16px 0 4px}
+.pn-cab b{flex:1;font-size:22px;font-weight:800}
+.pn-cab .pill{padding:4px 9px;border-radius:999px;font-size:11px;font-weight:800}
+.pn-cab .pill.on{background:var(--sw-ok,#25D366);color:#06210f}
+.pn-cab .pill.off{background:var(--sw-border);color:var(--sw-text)}
+.pn-cab .pill.pausa{background:var(--sw-warn,#ffa500);color:#1A1203}
+.pn-atras{all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--sw-text-muted)}
+.pn-sub{font-size:13px;color:var(--sw-text-muted);margin:-6px 0 6px}
+.pn-aviso{background:var(--sw-card);border-radius:12px;padding:14px 16px;border-left:4px solid var(--sw-warn,#ffa500)}
+.pn-aviso.mal{border-left-color:var(--sw-danger-strong,#ff5555)}
+.pn-aviso b{display:block;font-size:15px}
+.pn-aviso p{font-size:13px;color:var(--sw-text-muted);margin:4px 0 0;line-height:1.4}
+.pn-aviso button,.pn-aviso a{all:unset;cursor:pointer;display:inline-block;margin-top:10px;background:var(--sw-text);color:var(--sw-bg);font-weight:700;font-size:13px;border-radius:999px;padding:9px 16px}
+.pn-puerta{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;justify-content:flex-end;gap:6px;min-height:128px;padding:18px;border-radius:20px}
+.pn-puerta b{font-size:28px;font-weight:800}
+.pn-puerta s{text-decoration:none;font-size:13px;opacity:.85}
+.pn-puerta.p1{background:#CBA258;color:#241a08}
+.pn-puerta.p2{background:#8CC8EC;color:#0E1A17}
+.pn-puerta.p3{background:var(--sw-card);color:var(--sw-text);border:1px solid var(--sw-border)}
+.pn-pie{display:flex;justify-content:center;gap:8px;margin-top:6px}
+.pn-pie button{all:unset;cursor:pointer;min-height:44px;padding:0 18px;font-size:15px;color:var(--sw-text-muted)}
+.pn-grupo h3{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--sw-text-muted);margin:14px 0 4px}
+.pn-prod{all:unset;box-sizing:border-box;cursor:pointer;display:flex;align-items:center;gap:10px;width:100%;min-height:56px;padding:8px 2px;border-bottom:1px solid var(--sw-border)}
+.pn-prod span{flex:1;min-width:0}
+.pn-prod b{display:block;font-size:15px;font-weight:700}
+.pn-prod s{display:block;text-decoration:none;font-size:13px;color:var(--sw-text-muted)}
+.pn-prod u{text-decoration:none;font-size:13px;color:var(--sw-text-muted);text-align:right}
+.pn-prod.ag b{color:var(--sw-text-muted)}
+.pn-prod.ag u{color:var(--sw-danger,#ff8888)}
+.pn-prod i,.pn-link i{font-style:normal;color:var(--sw-text-muted);font-size:18px}
+.pn-campo{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:56px;background:var(--sw-card);border-radius:12px;padding:8px 14px}
+.pn-campo s{text-decoration:none;font-size:15px;color:var(--sw-text-body)}
+.pn-campo input{all:unset;box-sizing:border-box;width:96px;text-align:right;font-size:18px;font-weight:700;color:var(--sw-text);padding:8px;border-radius:8px;background:var(--sw-bg)}
+.pn-link{cursor:pointer}
+.pn-sw{all:unset;cursor:pointer;width:52px;height:32px;border-radius:999px;background:var(--sw-border);position:relative;flex-shrink:0}
+.pn-sw:after{content:"";position:absolute;left:4px;top:4px;width:24px;height:24px;border-radius:999px;background:#fff;transition:left .15s}
+.pn-sw.on{background:var(--sw-ok,#25D366)}
+.pn-sw.on:after{left:24px}
+.pn-num{display:flex;align-items:center;gap:4px}
+.pn-num button{all:unset;cursor:pointer;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:22px;border-radius:10px;background:var(--sw-bg);color:var(--sw-text)}
+.pn-num input{width:64px;text-align:center}
+.pn-nota{font-size:13px;color:var(--sw-text-muted);margin:-2px 2px 0;line-height:1.4}
+.pn-guarda{font-size:13px;color:var(--sw-ok,#25D366);text-align:center;padding:10px 0}
 .adm{min-height:100vh;background:var(--sw-bg);color:var(--sw-text);padding:0 16px 32px}
 .adm-top{display:flex;align-items:center;gap:10px;padding:16px 0 12px}
 .adm-top b{font-size:22px;font-weight:800;flex:1}
@@ -4425,7 +4470,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '1ea09d96e6';
+var APP_BUILD = 'b78e7f60bc';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -4751,8 +4796,7 @@ function renderOverlays() {
         html += '<div onclick="toggleAdminToolsDrawer()" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:430" class="fi"></div>'
             + '<div role="dialog" aria-modal="true" aria-label="Herramientas de administración" style="position:fixed;top:0;right:0;bottom:0;width:82%;max-width:340px;background:var(--sw-bg,#17130E);border-left:1px solid var(--sw-border,#2C3228);z-index:431;overflow-y:auto;padding:20px" class="fi">'
             + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:18px;font-weight:640;color:var(--sw-text,#FFFFFF)">Herramientas<span style="color:' + GOLD + '"> //</span></div><button onclick="toggleAdminToolsDrawer()" aria-label="Cerrar" style="all:unset;cursor:pointer;color:var(--sw-text-muted,#9DA096);font-size:18px;padding:4px">&#10005;</button></div>'
-            + drawerRow('refresh', 'Te toca', 'abrirCocina()')
-            + drawerRow('grid', 'Administrar', 'irAAdministrar()')
+            + drawerRow('grid', 'Inicio', 'irAAdministrar()')
             + adminToolsSections().map(function (section) {
                 return '<div style="font-family:\'EB Garamond\',serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin:18px 0 4px">' + section[0] + '</div>'
                     + section[1].map(function (x) { return drawerRow(x[0], x[1], x[2]); }).join('');
