@@ -103,3 +103,13 @@ Fuentes: USDA FoodData Central (té negro, infusión de hierbas y jugo de limón
 - **El riesgo:** «Cero azúcar» se sostiene con el cálculo (0.3 g o menos frente al tope de 0.5 g). Si INDECOPI o DIGESA lo
   piden, hay que respaldarlo con la receta y este cálculo. El análisis se hace cuando vayan a tiendas (P66).
 - **La vida útil** de la tapa (vence) sale de la prueba casera de 7, 14 y 21 días (§3, §23), no de un estudio.
+
+## Un QR por sabor (dueño, 2026-11-03: «Sí, hazlo»)
+
+- Cada reverso apunta a `sndwch.app/?src=lata-<sabor>` (lata-bloom, lata-cool, lata-lemon-tea, lata-chai, lata-cold-brew).
+  La app ya guarda el `?src=` al entrar y lo manda con el pedido: así se ve qué lata trae más pedidos. Los cinco QR se
+  leyeron con un lector automático antes de entregarlos.
+- COOL: la receta de cocina (archivos del proyecto) dice 25 ml de limón por litro. La tabla pasa a 0.4 g de carbohidratos
+  y 0.1 g de azúcares.
+- **Sal, por aclarar:** el dueño dijo «la receta no lo lleva», pero la receta revisada de las bebidas dice «sal (2 g de
+  solución al 10%)» por litro, o sea 0.2 g. Si va, suma ~8 mg de sodio por 100 ml y «sal» entra en los ingredientes.
