@@ -151,11 +151,17 @@ lleno). 85 g en 15CM, 170 g en 30CM. **Lamina lo del día**; la pieza entera, en
 
 **No se cocina. Se lamina y se pesa.** Lamina lo del día.
 
+**Desde el 2026-11-03 (dueño): jamón ahumado, salame y pepperoni** (antes jamón, cabanossi y paté).
+
 | fiambre | 15CM | 30CM | corte |
 |---|---|---|---|
-| jamón ahumado | 34 g | 68 g | fino, en pliegues |
-| cabanossi | 30 g | 60 g | en diagonal, 2-3 mm |
-| paté peperoncino | 21 g | 42 g | en tajadas de 5 mm |
+| jamón ahumado | 35 g | 70 g | fino, doblado en pliegues |
+| salame | 25 g | 50 g | tajadas finas, dobladas a la mitad |
+| pepperoni | 25 g | 50 g | rodajas finas, en escalera |
+
+Arma en capas alternadas (jamón, salame, pepperoni, jamón…) para que cada mordida lleve los tres.
+Se compra ya tajado en paquetes de 500 g (Makro): no hay que laminar. Paquete abierto, bien
+cerrado en refri y úsalo en pocos días.
 
 ### OIL & VINEGAR // CLASSIC — para TURKEY e ITALIAN HOAGIE
 
@@ -185,12 +191,12 @@ Sale de `modelo/rentabilidad_por_parte.py` con los precios de la base (`catalog_
 | MEATBALL MARINARA | S/6.35 | 31.9% | S/11.39 | 36.9% |
 | TURKEY | S/6.58 | 33.1% | S/11.86 | 38.4% |
 | TUNA MELT | S/6.45 | 32.4% | S/11.60 | 37.5% |
-| ITALIAN HOAGIE | S/8.21 | 41.3% | S/15.13 | **49.0% (pasa el techo)** |
+| ITALIAN HOAGIE | S/6.67 | 33.5% | S/12.04 | 39.0% |
 | CLASSIC TUNA | S/5.55 | 27.9% | S/9.80 | 31.7% |
 
 Lo que todavía es estimado y mueve estos números: el rendimiento de la res laminada (0.70, sin
 medir), el peso de la albóndiga cocida, el tomate en lata, las salsas, y los tres fiambres del
-ITALIAN HOAGIE (se costean juntos a S/48 el kilo, pero no cuestan lo mismo).
+ITALIAN HOAGIE (precios online de Makro: confírmalos en Makro Trujillo).
 
 ---
 

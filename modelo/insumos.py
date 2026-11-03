@@ -142,7 +142,12 @@ PROTEINA_KG = {
     "P03": (Insumo(17.00, KG, COTIZADO, "pollo cajún, mismo insumo", "2026-08-01"), 0.665),
     "P04": (Insumo(43.96, KG, COTIZADO, "atún S/4 la lata de 140 g neto = S/43.96/kg "
                                         "escurrido", "2026-09-04"), 1.00),
-    "P05": (Insumo(48.00, KG, COTIZADO, "embutido premium S/48/kg", "2026-08-01"), None),
+    # Trío del ITALIAN HOAGIE desde el 2026-11-03 (dueño eligió «Jamón ahumado, salame, pepperoni»):
+    # 40/30/30 a precios online de Makro: jamón ahumado La Segoviana 500 g S/14.90 (S/29.80/kg),
+    # salame La Segoviana 500 g S/16.90 (S/33.80/kg), pepperoni La Segoviana 500 g S/17.20 (S/34.40/kg).
+    # Antes: jamón, cabanossi y paté a S/48/kg. Fiambre: no se cocina, rinde 1.00.
+    "P05": (Insumo(32.38, KG, ESTIMADO, "jamón ahumado + salame + pepperoni 40/30/30, Makro online "
+                                        "(confirmar en Makro Trujillo)", "2026-11-03"), 1.00),
     "P06": (Insumo(15.00, KG, COTIZADO, "carne molida S/15/kg, cotizada por el dueño el 2026-09-30 "
                                         "(online: Tottus S/23.50, Metro S/24.90)", "2026-09-30"), None),
     "P08": (Insumo(44.20, KG, COTIZADO, "pavo S/44.20/kg al por mayor — el mismo que el "
@@ -150,7 +155,7 @@ PROTEINA_KG = {
 }
 # Rendimientos documentados: res 0.54 (limpieza 10% + cocción 40%), pollo 0.64-0.69 (se usa
 # el punto medio 0.665), res laminada 0.567. El atún y el pavo rinden 1.00 porque no se
-# cocinan. De P05 y P06 NUNCA se documentó ninguno.
+# cocinan, igual que el embutido P05. De P06 NUNCA se documentó ninguno.
 # Res laminada en frío: el corte del Philly. El rendimiento es SUPUESTO y hay que medirlo en
 # la primera tanda — con 0.55 en vez de 0.70 el Philly 15CM pasa de 23.6% a 27.9% de costo.
 RES_LAMINADA_KG = (Insumo(25.00, KG, COTIZADO, "aguja de res S/25/kg (dueño, 2026-09-30), laminada en frío", "2026-09-30"),
@@ -162,7 +167,7 @@ PROTEINA_KG["P09"] = RES_LAMINADA_KG
 # derivación de arriba; las cuatro que no reconcilian salen nombradas en su salida.
 PORCION_EN_USO = {
     "P01": (3.15, 6.30), "P02": (2.47, 4.95), "P03": (2.49, 4.97), "P04": (3.25, 6.50),
-    "P05": (4.29, 8.59), "P06": (2.95, 5.90), "P08": (3.76, 7.51), "P09": (3.04, 6.07),
+    "P05": (2.75, 5.50), "P06": (2.95, 5.90), "P08": (3.76, 7.51), "P09": (3.04, 6.07),
 }
 # P01 y P02 salieron de la carta con la v4 (2026-09-24). Siguen acá porque el modelo todavía
 # costea la carta de apertura para compararla (SIG_APERTURA en rentabilidad_por_parte.py).

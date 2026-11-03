@@ -347,6 +347,10 @@ Señales para botar: olor agrio o metálico fuerte, líquido separado en el fond
 
 ## P05 · EMBUTIDO // ITALIANO — hoy en SIG11 Italian Hoagie (antes en SIG03 The Smoke, retirado)
 
+> **2026-11-03 · CAMBIÓ.** El dueño eligió **jamón ahumado, salame y pepperoni** (35/25/25 g en
+> 15CM, el doble en 30CM, ~S/32/kg en Makro). Lo de abajo es la versión anterior con cabanossi y
+> paté. La vigente está en `recetas/COCINA_CARTA_V4.md`.
+
 **No se cocina. Se lamina y se pesa.** Son tres fiambres, y la proporción define el costo:
 
 | Fiambre | % | En 85 g | En 170 g | Grosor |
