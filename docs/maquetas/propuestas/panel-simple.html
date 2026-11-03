@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<title>Panel simple · 3 opciones</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* REPENSAR (docs/COMO_DISENAR_ACA.md), 2026-11-03. Archivo en blanco: no parte del marcado de
+   09/10-admin-*. Dueño, 2026-11-02: «el panel de admin y la funcionalidad para manejar el negocio
+   está super complejo y nada intuitivo». Productos y precios de muestra: semilla de _shared/carta.ts. */
+:root{--bg:#14110D;--card:#211C16;--card2:#2A241C;--line:#352E25;--tx:#F4F1E8;--mu:#A39D90;--oro:#CBA258;--cel:#8CC8EC;--ok:#3FBF6A;--bad:#E5675B;--amb:#F2A93B}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#E7E3D8;font-family:Archivo,system-ui,sans-serif;color:#1b1a16;padding:32px;width:1320px}
+h1{font-size:30px;font-weight:800;letter-spacing:-.01em}
+.lead{font-size:16px;line-height:1.5;color:#46443c;max-width:1180px;margin-top:8px}
+.diag{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px}
+.diag div{background:#fff;border-radius:12px;padding:14px 16px;font-size:14px;line-height:1.45}
+.diag b{display:block;font-size:15px;margin-bottom:4px}
+h2{font-size:24px;font-weight:800;margin-top:40px;padding-top:16px;border-top:2px solid #1b1a16;display:flex;gap:12px;align-items:baseline}
+h2 small{font:600 13px 'IBM Plex Mono',monospace;color:#7a766b;letter-spacing:.04em}
+.idea{font-size:15px;line-height:1.5;color:#46443c;max-width:1180px;margin-top:6px}
+.fila{display:flex;gap:28px;margin-top:16px;align-items:flex-start}
+.nota{width:360px;font-size:14px;line-height:1.5;color:#46443c}
+.nota b{color:#1b1a16}
+.nota ul{margin:8px 0 0 18px}
+.nota li{margin-bottom:6px}
+.reco{background:#1b1a16;color:#F4F1E8;border-radius:14px;padding:18px 20px;margin-top:40px;font-size:16px;line-height:1.55}
+.reco b{color:var(--oro)}
+/* teléfono */
+.tel{width:360px;height:760px;background:var(--bg);color:var(--tx);border:7px solid #0c0b09;border-radius:28px;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.cab{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 10px}
+.cab b{font-size:22px;font-weight:800}
+.cab span{font-size:13px;color:var(--mu)}
+.est{display:inline-flex;align-items:center;gap:6px;font:600 11px 'IBM Plex Mono',monospace;letter-spacing:.06em;padding:4px 8px;border-radius:999px;background:#1E3A2A;color:#8FE3AE}
+.est.cer{background:#3A2320;color:#F2A49B}
+.cuerpo{padding:4px 16px 16px;display:flex;flex-direction:column;gap:12px;flex:1;overflow:hidden}
+.et{font:600 11px 'IBM Plex Mono',monospace;letter-spacing:.1em;color:var(--mu);text-transform:uppercase;margin-top:6px}
+.b{background:var(--card);border-radius:12px;padding:14px 16px}
+.paso{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:12px;padding:14px 16px}
+.paso i{width:26px;height:26px;border-radius:999px;border:2px solid var(--line);flex-shrink:0;font-style:normal;display:flex;align-items:center;justify-content:center;font-size:14px}
+.paso.hecho i{background:var(--ok);border-color:var(--ok);color:#0c1a10}
+.paso div{flex:1}
+.paso b{display:block;font-size:15px}
+.paso s{text-decoration:none;font-size:13px;color:var(--mu)}
+.paso em{font-style:normal;font-size:20px;color:var(--mu)}
+.grande{background:var(--oro);color:#241a08;border-radius:14px;padding:18px}
+.grande b{display:block;font-size:22px;font-weight:800}
+.grande s{text-decoration:none;font-size:14px}
+.mas{margin-top:auto;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding:14px 2px 2px;font-size:15px;color:var(--mu)}
+.puerta{border-radius:16px;padding:20px 18px;display:flex;flex-direction:column;gap:6px;min-height:150px;justify-content:flex-end}
+.puerta b{font-size:26px;font-weight:800}
+.puerta s{text-decoration:none;font-size:14px;opacity:.85}
+.p1{background:var(--oro);color:#241a08}
+.p2{background:var(--cel);color:#0E1A17}
+.p3{background:var(--card2);color:var(--tx)}
+.chico{display:flex;justify-content:center;gap:22px;font-size:14px;color:var(--mu);padding:6px 0}
+.aviso{background:var(--card);border-radius:12px;padding:14px 16px;border-left:4px solid var(--amb)}
+.aviso.rojo{border-left-color:var(--bad)}
+.aviso.azul{border-left-color:var(--cel)}
+.aviso b{display:block;font-size:16px}
+.aviso p{font-size:13px;color:var(--mu);margin-top:3px;line-height:1.4}
+.aviso button{all:unset;margin-top:10px;display:inline-block;background:var(--tx);color:#14110D;font-weight:700;font-size:14px;border-radius:999px;padding:9px 16px}
+.busca{background:var(--card);border-radius:999px;padding:13px 18px;color:var(--mu);font-size:15px}
+.calma{text-align:center;color:var(--mu);font-size:14px;padding:6px 0}
+.calma b{display:block;color:var(--tx);font-size:17px;margin-bottom:2px}
+/* adentro */
+.atras{font-size:15px;color:var(--mu);padding:18px 18px 0}
+.tit{font-size:24px;font-weight:800;padding:6px 18px 4px}
+.sub{font-size:13px;color:var(--mu);padding:0 18px 10px}
+.prod{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.prod div{flex:1}
+.prod b{display:block;font-size:15px}
+.prod s{text-decoration:none;font-size:12px;color:var(--mu)}
+.num{display:flex;align-items:center;gap:0;background:var(--card2);border-radius:10px;overflow:hidden}
+.num span{width:34px;height:40px;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--mu)}
+.num u{text-decoration:none;width:36px;text-align:center;font-size:18px;font-weight:700}
+.sw{width:46px;height:28px;border-radius:999px;background:var(--ok);position:relative;flex-shrink:0}
+.sw:after{content:"";position:absolute;right:3px;top:3px;width:22px;height:22px;border-radius:999px;background:#fff}
+.sw.off{background:var(--line)}
+.sw.off:after{right:auto;left:3px}
+.pie{margin-top:auto;padding:14px 16px 16px;border-top:1px solid var(--line)}
+.btn{display:block;text-align:center;background:var(--oro);color:#241a08;font-weight:800;font-size:17px;border-radius:12px;padding:15px}
+.ficha{display:flex;flex-direction:column;gap:10px}
+.campo{background:var(--card);border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+.campo s{text-decoration:none;font-size:13px;color:var(--mu)}
+.campo b{font-size:18px}
+.guarda{font:600 12px 'IBM Plex Mono',monospace;color:#8FE3AE;text-align:center;letter-spacing:.04em}
+.foto{height:150px;border-radius:12px;background:linear-gradient(135deg,#3a2c1c,#1f1913);display:flex;align-items:flex-end;padding:12px;font-size:12px;color:var(--mu)}
+.paso2{background:var(--card);border-radius:12px;padding:16px}
+.paso2 b{font-size:17px;display:block}
+.paso2 p{font-size:14px;color:var(--mu);margin-top:6px;line-height:1.45}
+.paso2 .op{display:flex;gap:8px;margin-top:12px}
+.paso2 .op span{flex:1;text-align:center;padding:12px;border-radius:10px;background:var(--card2);font-weight:700;font-size:15px}
+.paso2 .op span.si{background:var(--ok);color:#0c1a10}
+.foto2{height:220px;border-radius:12px;background:repeating-linear-gradient(45deg,#2a241c 0 10px,#241f18 10px 20px);display:flex;align-items:center;justify-content:center;color:var(--mu);font-size:13px}
+</style></head><body>
+
+<h1>El panel, más simple · tres caminos distintos</h1>
+<p class="lead">Me dijiste que el panel «está súper complejo y nada intuitivo». Antes de dibujar, lo recorrí entero. Esto es lo que lo hace difícil:</p>
+<div class="diag">
+  <div><b>Demasiadas puertas</b>21 opciones en 5 grupos, más un buscador, más «Lo que más usas», más un menú lateral. Son cuatro caminos a lo mismo, y ninguno dice por dónde empezar.</div>
+  <div><b>Lo mismo en tres sitios</b>El stock aparece en «¿Con cuántas abres?», en la pestaña Agotar, en Inventario, en Preparación y en Plan de tanda. El precio está en «Precios», separado del producto.</div>
+  <div><b>Cada fila con su propio «Guardar»</b>En Inventario y Precios cada producto tiene su botón, y además hay un «Guardar todos». Si cambias tres cosas y tocas uno solo, se pierden las otras dos.</div>
+  <div><b>Cosas que hoy no usas</b>Freno de CAC, las tres palancas, auditoría, franjas, guion de video, embajadores. Sirven para después de abrir o las hace otro frente, y hoy solo estorban.</div>
+</div>
+
+<!-- ═══ A ═══ -->
+<h2>A · Tu día, en orden <small>EL PANEL ES UNA LISTA DE PASOS</small></h2>
+<p class="idea">Abres el panel y ves tu día: lo de antes de abrir, el servicio y el cierre, en ese orden. Lo que ya hiciste se marca. Todo lo demás queda en un solo «Más», que casi nunca vas a abrir.</p>
+<div class="fila">
+  <div class="tel">
+    <div class="cab"><b>Hoy, viernes</b><span class="est cer">CERRADO</span></div>
+    <div class="cuerpo">
+      <div class="et">Antes de abrir</div>
+      <div class="paso hecho"><i>✓</i><div><b>Horario de hoy</b><s>11:00 a 22:00</s></div><em>›</em></div>
+      <div class="paso"><i></i><div><b>¿Con cuánto abres?</b><s>Cuenta las proteínas y los panes</s></div><em>›</em></div>
+      <div class="paso"><i></i><div><b>Abrir la tienda</b><s>Los clientes ya pueden pedir</s></div><em>›</em></div>
+      <div class="et">Durante</div>
+      <div class="grande"><b>Te toca →</b><s>Sin pedidos en curso</s></div>
+      <div class="et">Al cerrar</div>
+      <div class="paso"><i></i><div><b>Cierre de caja</b><s>Lo que entró hoy, por Yape y tarjeta</s></div><em>›</em></div>
+      <div class="mas"><span>Más: carta, clientes, horario, ajustes</span><span>›</span></div>
+    </div>
+  </div>
+  <div class="tel">
+    <div class="atras">← Hoy</div>
+    <div class="tit">¿Con cuánto abres?</div>
+    <div class="sub">Lo que pongas en 0 se agota solo en la app.</div>
+    <div class="cuerpo" style="gap:0">
+      <div class="prod"><div><b>Pollo</b><s>Cajun</s></div><div class="num"><span>−</span><u>12</u><span>+</span></div></div>
+      <div class="prod"><div><b>Atún</b><s>House</s></div><div class="num"><span>−</span><u>8</u><span>+</span></div></div>
+      <div class="prod"><div><b>Albóndiga</b><s>Marinara</s></div><div class="num"><span>−</span><u>10</u><span>+</span></div></div>
+      <div class="prod"><div><b>Pavo</b><s>Horneado</s></div><div class="num"><span>−</span><u>0</u><span>+</span></div></div>
+      <div class="prod"><div><b>Res</b><s>Laminada</s></div><div class="num"><span>−</span><u>6</u><span>+</span></div></div>
+      <div class="prod"><div><b>Pan Classic</b><s>White</s></div><div class="num"><span>−</span><u>30</u><span>+</span></div></div>
+    </div>
+    <div class="pie"><span class="btn">Listo, sigue</span></div>
+  </div>
+  <div class="nota"><b>Lo bueno:</b> no tienes que pensar a dónde ir. El panel te lleva paso a paso, y el stock se carga en un solo lugar.
+    <b><br><br>Lo que cuesta:</b> cambiar un precio o una foto queda dentro de «Más», a dos toques. Sirve si casi todos los días se parecen.
+    <ul><li>El stock queda en una pantalla, no en cinco.</li><li>Con «−» y «+», sin teclado.</li><li>Un solo botón al final, sin un «Guardar» por fila.</li></ul></div>
+</div>
+
+<!-- ═══ B ═══ -->
+<h2>B · Tres puertas <small>EL PANEL SON TRES BOTONES</small></h2>
+<p class="idea">Tres botones grandes, uno por cada trabajo: <b>Cocina</b> (atender pedidos), <b>Carta</b> (cada producto con su precio, su stock y si está agotado, todo en una ficha) y <b>Números</b> (cuánto vendiste y la caja). Horario, administradores y este celular van en «Ajustes». El marketing sale del panel, porque ya lo lleva otro frente.</p>
+<div class="fila">
+  <div class="tel">
+    <div class="cab"><b>SND//WCH</b><span class="est">ABIERTO</span></div>
+    <div class="cuerpo">
+      <div class="puerta p1"><s>2 pedidos en curso · 1 Yape por confirmar</s><b>Cocina</b></div>
+      <div class="puerta p2"><s>12 productos · 1 agotado</s><b>Carta</b></div>
+      <div class="puerta p3"><s>Hoy: 9 pedidos</s><b>Números</b></div>
+      <div class="chico" style="margin-top:auto"><span>Ajustes</span><span>·</span><span>Buscar</span><span>·</span><span>Salir</span></div>
+    </div>
+  </div>
+  <div class="tel">
+    <div class="atras">← Carta</div>
+    <div class="tit">Philly Cheesesteak</div>
+    <div class="sub">Signature · se ve en la carta</div>
+    <div class="cuerpo">
+      <div class="foto">foto del plato · tocar para cambiar</div>
+      <div class="ficha">
+        <div class="campo"><s>Precio 15CM</s><b>S/19.90</b></div>
+        <div class="campo"><s>Precio 30CM</s><b>S/30.90</b></div>
+        <div class="campo"><s>Disponible hoy</s><span class="sw"></span></div>
+        <div class="campo"><s>Receta y costo</s><b style="font-size:15px;color:var(--mu)">›</b></div>
+      </div>
+      <div class="guarda" style="margin-top:auto">✓ CADA CAMBIO SE GUARDA SOLO</div>
+    </div>
+  </div>
+  <div class="nota"><b>Lo bueno:</b> es lo más fácil de entender de un vistazo. Un producto es una ficha, con todo junto, y lo que cambias se guarda solo.
+    <b><br><br>Lo que cuesta:</b> el panel no te avisa lo que falta hacer. Tienes que acordarte de entrar a Carta para contar el stock.
+    <ul><li>De 21 opciones a 3, más Ajustes.</li><li>Precio, stock, agotado, foto y receta, en el mismo lugar.</li><li>Marketing, embajadores, palancas y freno de CAC salen del panel.</li></ul></div>
+</div>
+
+<!-- ═══ C ═══ -->
+<h2>C · Solo lo que necesita tu atención <small>EL PANEL NO TIENE MENÚ</small></h2>
+<p class="idea">El panel no muestra opciones: muestra avisos. Cada uno dice qué pasó y trae el único botón que lo resuelve. Si no hay nada, dice «Todo en orden». Para lo raro, como un precio o un cliente, se busca escribiendo.</p>
+<div class="fila">
+  <div class="tel">
+    <div class="cab"><b>Hoy</b><span class="est">ABIERTO</span></div>
+    <div class="cuerpo">
+      <div class="aviso"><b>1 Yape por confirmar</b><p>Pedido de Ana · S/26.90 · hace 3 min</p><button>Ver la captura</button></div>
+      <div class="aviso rojo"><b>Pavo: quedan 2</b><p>Con 0 se agota solo en la app.</p><button>Contar de nuevo</button></div>
+      <div class="aviso azul"><b>Un reclamo vence en 3 días</b><p>Libro de Reclamaciones · plazo legal de 15 días hábiles</p><button>Responder</button></div>
+      <div class="busca" style="margin-top:auto">Busca: un precio, un cliente, el horario…</div>
+    </div>
+  </div>
+  <div class="tel">
+    <div class="atras">← Hoy</div>
+    <div class="tit">Yape por confirmar</div>
+    <div class="sub">Pedido de Ana · S/26.90</div>
+    <div class="cuerpo">
+      <div class="foto2">captura del Yape</div>
+      <div class="paso2"><b>¿Llegó S/26.90 a tu Yape?</b><p>Revisa tu app de Yape. Si llegó, el pedido pasa a la cocina.</p>
+        <div class="op"><span class="si">Sí, llegó</span><span>No llegó</span></div></div>
+      <div class="calma" style="margin-top:auto"><b>Después de esto: todo en orden</b>No queda nada pendiente</div>
+    </div>
+  </div>
+  <div class="nota"><b>Lo bueno:</b> nunca te pierdes algo que cuesta plata o tiene plazo legal. Si no hay avisos, no hay nada que hacer.
+    <b><br><br>Lo que cuesta:</b> cuando quieres hacer algo por tu cuenta, como subir un precio, dependes del buscador. Y los avisos tienen que estar bien hechos: si uno falla, no lo ves.
+    <ul><li>Cero menús en la pantalla principal.</li><li>Un aviso, un botón.</li><li>Lo que no pide atención no aparece.</li></ul></div>
+</div>
+
+<div class="reco"><b>Mi recomendación: B, con los avisos de C arriba de las tres puertas.</b> B es lo más fácil de entender el primer día y junta el stock y el precio de cada producto en una sola ficha, que es la causa principal del desorden de hoy. Los avisos de C cubren lo único que B no resuelve: avisarte del Yape por confirmar, del stock que se acaba y del reclamo con plazo. A sirve si quieres que el panel te guíe día por día. Las tres eliminan el «Guardar» por fila y sacan del panel lo que hoy no usas.</div>
+</body></html>
