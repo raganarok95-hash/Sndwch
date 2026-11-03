@@ -154,6 +154,9 @@ regla: **toda compra se anota en el panel el mismo día**, con proveedor, cantid
 - **Cada vez que compres**: anótalo en Compras del panel. Si me pasas el ticket o los precios, lo
   paso yo a esta hoja y te aviso si algo subió.
 - **Antes de cada semana**: la lista de compras con lo vendido real y lo que queda.
-- **Cada noche, al cerrar (cuando haya ventas)**: qué reponer mañana y qué vence.
+- **Cada noche, al cerrar (cuando haya ventas)**: qué reponer mañana y qué vence. Desde la apertura,
+  el correo diario trae los pedidos reales y el costo de insumos por producto (`_shared/finanzas.ts`):
+  con eso se ajusta la reposición, no con el supuesto. Si las compras se anotan en el panel, el
+  correo semanal compara lo comprado contra lo que se debió consumir (la diferencia es merma).
 - **Nunca compro ni gasto nada sin tu sí, ni creo tareas programadas sin tu sí.** Lo que es plata
   va con Finanzas.
