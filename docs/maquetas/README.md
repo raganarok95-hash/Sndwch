@@ -61,6 +61,7 @@ vive en el chat o en `/tmp`, no existe.
 | Panel · Te toca (modo trabajo) | `panel-te-toca.png` | captura de la app (`../propuestas/panel-productivo.html` A + C) | «una mezcla … Hazlo, decide y avanza» (2026-10-07): lista de lo que te toca, avisos del negocio, motorizado agrupado, en camino abajo. Decidido por delegación del dueño; detalle en `docs/PANEL_NUEVO.md` §8 |
 | Panel · Administrar | `panel-administrar.png` | captura de la app (`../propuestas/panel-productivo.html` §4) | mismo día: buscador, «Lo que más usas» y 21 entradas con pestañas adentro (de 36 botones) |
 | Panel · La receta | `panel-receta.png` | captura de la app (`../propuestas/panel-productivo.html` C) | 2026-10-08, de la misma «mezcla»: cada ingrediente se tacha con un toque, la alergia arriba en rojo, la entrega debajo y el siguiente paso fijo abajo |
+| Panel · Tres puertas | `panel-tres-puertas.png` | `../propuestas/panel-simple.html` B con los avisos de C | 2026-11-03, tarjeta «¿Qué camino tomamos para el panel?» → «B con los avisos de C». Reemplaza a «Panel · Administrar»: arriba los avisos, abajo Cocina, Carta y Números; cada producto en una ficha que se guarda sola; Ajustes con buscador; el marketing sale de la lista |
 | Estado vacío (el patrón) | `estado-vacio.png` | `l1.html` #4 | «aprobada, pero sin logo» |
 | Detalle de un pedido | `detalle-de-un-pedido.png` | `u2.html` #1 | «me agradan, aprobadas» |
 | Tu pedido fijo | `tu-pedido-fijo.png` | `u2.html` #2 | «me agradan, aprobadas» |

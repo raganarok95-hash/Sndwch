@@ -84,6 +84,8 @@ async function entrarAlCierre(page: any, datos: unknown) {
   await page.locator('.bottom-nav').getByRole('button', { name: 'PUNTOS' }).click();
   await entrarConTelefono(page, '900000099', '1234');
   await page.locator('[onclick*="admin_home"]').first().click();
+  // Tres puertas (2026-11-03): la caja del día está dentro de Números, como su segunda pestaña.
+  await page.locator('[data-accion="abrir-numeros"]').click();
   await page.locator('[onclick*="loadCashClose()"]').first().click();
 }
 

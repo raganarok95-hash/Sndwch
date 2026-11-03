@@ -229,3 +229,21 @@ cliente). Dos a la misma zona: 20 → 8.
   Un producto que ya no está en la carta se nombra por su código, nunca queda en blanco.
 - Sigue pendiente: las pantallas de adentro de Administrar conservan su estilo viejo; los ~37
   campos `crudo` del panel; probar en el celular del dueño (hoja de compartir, «Te toca» en servicio).
+
+## 9 · Tres puertas (2026-11-03)
+
+Dueño, 2026-11-02: «el panel de admin y la funcionalidad para manejar el negocio está super complejo y nada intuitivo». Se le mostraron tres caminos (`docs/maquetas/propuestas/panel-simple.png`) y eligió en la tarjeta **«B con los avisos de C»**.
+
+- **Inicio** (`sAdminHome`, 09-*):
+  - Arriba van los avisos: pagos por confirmar, las señales de `admin-health` (reclamos con plazo, agotados, tandas, procesos caídos) y «este celular no recibe avisos».
+  - Abajo hay tres puertas: **Cocina** (`abrirCocina`), **Carta** (`abrirCarta`) y **Números** (`loadDashboard`, con «Cierre de caja» como pestaña).
+  - Al pie: Ajustes y Salir.
+- **Carta** (`admin_carta`, `admin_ficha`):
+  - Cada producto es UNA ficha con su precio, cuántos quedan (con − y +) y si está disponible. Cada cambio se guarda solo: ya no hay «Guardar» por fila ni «Guardar todos».
+  - La ficha de precio manda TODOS los valores de la categoría (`tests/panel-ficha.spec.ts`, vista fallar).
+  - «Más de la carta» lleva a menú secreto, tanda y caducidad, preparación y plan de tanda.
+- **Ajustes** (`admin_ajustes`): las demás entradas de `PANEL_OPCIONES`, con buscador.
+  - Lo de Marketing no se muestra, pero aparece si se escribe su nombre: ninguna pantalla se borró.
+  - El cajón lateral muestra lo mismo que el inicio.
+- En «Te toca», la pestaña «Agotar» pasó a «Carta» y «Administrar» a «Inicio».
+- Pendiente: las pantallas de adentro (horario, números, clientes…) siguen con su estilo viejo.
