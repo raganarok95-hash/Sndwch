@@ -17,6 +17,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { sbGet, debugLog, verifyCronSecret } from "../_shared/sb.ts";
 import { emailShell } from "../_shared/email-shell.ts";
 import { PALETA as C } from "../_shared/paleta.ts";
+import { cierre, alertasDePlata, nombreCanal, pct, soles } from "../_shared/finanzas.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "SND//WCH <pedidos@sndwch.app>";
@@ -64,12 +65,22 @@ Deno.serve(async (req: Request) => {
     const prevWeekStart = new Date(now - 14 * 24 * 3600000).toISOString();
 
     const [ordersThisWeek, ordersPrevWeek, customersThisWeek, inventory, cancelledThisWeek] = await Promise.all([
-      sbGet("orders", `created_at=gte.${encodeURIComponent(weekStart)}&select=total,payment_status,created_at,origen&limit=3000`),
+      sbGet("orders", `created_at=gte.${encodeURIComponent(weekStart)}&select=ref,total,delivery_fee,payment_method,payment_status,status,created_at,origen,items&limit=3000`),
       sbGet("orders", `created_at=gte.${encodeURIComponent(prevWeekStart)}&created_at=lt.${encodeURIComponent(weekStart)}&select=total,payment_status&limit=3000`),
       sbGet("customers", `created_at=gte.${encodeURIComponent(weekStart)}&select=phone`),
       sbGet("inventory", "select=product_code,product_name,in_stock,stock_qty,low_stock_threshold"),
       sbGet("orders", `created_at=gte.${encodeURIComponent(weekStart)}&status=eq.CANCELADO&select=cancel_reason&limit=3000`),
     ]);
+    // LA SEMANA EN PLATA (_shared/finanzas.ts): costo real del modelo, por canal, contra la pauta
+    // y las compras de la semana. Solo en este correo privado.
+    const [pauta, compras] = await Promise.all([
+      sbGet("ad_spend", `spend_date=gte.${weekStart.slice(0, 10)}&select=amount&limit=500`).catch(() => []),
+      sbGet("ingredient_purchases", `purchased_at=gte.${weekStart.slice(0, 10)}&select=total_paid&limit=2000`).catch(() => []),
+    ]);
+    const plata = cierre(ordersThisWeek);
+    const gastoPauta = pauta.reduce((a: number, x: any) => a + (Number(x.amount) || 0), 0);
+    const gastoCompras = compras.reduce((a: number, x: any) => a + (Number(x.total_paid) || 0), 0);
+    const alertasPlata = alertasDePlata(plata);
     const deliveredThisWeek = await sbGet(
       "orders",
       `created_at=gte.${encodeURIComponent(weekStart)}&delivered_at=not.is.null&select=created_at,delivered_at&limit=3000`,
@@ -120,6 +131,21 @@ Deno.serve(async (req: Request) => {
         ${row("Ticket promedio", "S/" + avgTicketThisWeek)}
         ${row("Clientes nuevos", String(customersThisWeek.length))}
       </table>
+      <div style="margin-top:18px;padding:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px">
+        <div style="font-size:11px;color:${C["text-muted"]};letter-spacing:.1em;margin-bottom:6px">LA SEMANA EN PLATA //</div>
+        <table style="width:100%;border-collapse:collapse">
+          ${row("Comida cobrada (sin envío)", soles(plata.comida))}
+          ${row("Insumos y empaque (modelo)", soles(plata.costo) + " · " + pct(plata.costoPct) + " de la carta")}
+          ${row("Descuentos", soles(plata.descuentos))}
+          ${row("Comisiones", soles(plata.comisiones))}
+          ${row("Pauta", soles(gastoPauta))}
+          ${row("Te queda antes de fijos", soles(plata.contribucion - gastoPauta))}
+          ${row("Compraste en insumos", soles(gastoCompras))}
+        </table>
+        ${plata.porCanal.map((k) => `<div style="font-size:12px;color:${C["text-body"]};margin-top:4px">${nombreCanal(k.canal)}: ${k.pedidos} pedido(s), deja ${soles(k.porPedido)} por pedido (${pct(k.margenPct)})</div>`).join("")}
+        ${plata.porProducto.slice(0, 8).map((p) => `<div style="font-size:12px;color:${p.pasaElTecho ? C.warn : C["text-body"]};margin-top:4px">${p.clave}: ${p.unidades} u. · costo ${pct(p.costoPct)}${p.pasaElTecho ? " ⚠ pasa el techo" : ""}</div>`).join("")}
+        ${alertasPlata.map((a) => `<div style="font-size:12px;color:${C.warn};margin-top:4px">⚠ ${a}</div>`).join("")}
+      </div>
       ${porOrigen.length
         ? `<div style="margin-top:18px;padding:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px">
             <div style="font-size:11px;color:${C["text-muted"]};letter-spacing:.1em;margin-bottom:6px">DE DÓNDE VINIERON //</div>
