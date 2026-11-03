@@ -98,7 +98,7 @@ const PIEZAS = {
   '3-como-se-dice': [
     wichoFoto({ f: 'foto-arma-capas.jpg', etiqueta: 'CÓMO SE DICE', titulo: 'Sub, hoagie, melt', frase: 'Las palabras de la carta, en simple. Desliza.' }),
     palabra({ etiqueta: 'CÓMO SE DICE · 1 DE 4', titulo: 'Sub', frase: 'El sándwich de pan largo, al estilo americano. De 15 o de 30 cm.', sem: 1 }),
-    palabra({ etiqueta: 'CÓMO SE DICE · 2 DE 4', titulo: 'Hoagie', frase: 'Así le dicen al sub en Filadelfia. El nuestro va con tres embutidos italianos.', sem: 2 }),
+    palabra({ etiqueta: 'CÓMO SE DICE · 2 DE 4', titulo: 'Hoagie', frase: 'Así le dicen al sub en Filadelfia. El nuestro va con jamón ahumado, salame y pepperoni.', sem: 2 }),
     palabra({ etiqueta: 'CÓMO SE DICE · 3 DE 4', titulo: 'Melt', frase: 'Cuando el queso va fundido encima. El Tuna Melt lleva cheddar que se estira.', sem: 3 }),
     palabra({ etiqueta: 'CÓMO SE DICE · 4 DE 4', titulo: 'Arma el tuyo', frase: 'Cuando el que decide eres tú: el pan, la proteína y lo de encima.', sem: 4 }),
   ],

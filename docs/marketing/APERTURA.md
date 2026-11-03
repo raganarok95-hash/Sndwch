@@ -68,8 +68,9 @@ quién se lo mandas: 10 personas que almuerzan en oficina o en la universidad.
 | jue 12 | 19:30 | ¿Frío o gratinado? (foto, en comentarios: CLASSIC TUNA contra TUNA MELT) |
 | sáb 14 | 12:30 | Cómo se dice: Sub, Hoagie, Melt (carrusel de 5) |
 
-Está en `semanas/2026-11-09/`. **Espera tu sí** a las 9 imágenes nuevas en Figma (versión 2, con los créditos de tu plan);
-si no, sale la versión 1, hecha con las fotos aprobadas. Cada publicación va también en historia, con la fecha.
+Está en `semanas/2026-11-09/v2/final/` (producida el 2-nov con tu «ya todo aprobado»). **Falta 1 lámina**: el HOAGIE de
+«Cómo se dice» muestra prosciutto, mortadela y salame, y desde el 3-nov el ITALIAN HOAGIE lleva jamón ahumado, salame y
+pepperoni. Se rehace con 1 imagen nueva (tu sí). Cada publicación va también en historia, con la fecha.
 
 **Crecer:** con los embajadores que dijeron sí, se les da su enlace (`emb-…`) para que lo pasen desde el 20.
 
@@ -116,7 +117,7 @@ El domingo 6 se compara contra la meta (4 pedidos al día) y se decide la semana
 ## Lo que necesita tu sí
 
 1. **El concepto de «Ya hay día»** (tarjeta en el hilo).
-2. **Las imágenes nuevas en Figma**: las 9 de la semana del 9 y 1 o 2 de «Ya hay día», con los créditos de tu plan.
+2. **Las imágenes nuevas en Figma**: 1 o 2 de «Ya hay día» y 1 de los embutidos nuevos del ITALIAN HOAGIE, con los créditos de tu plan (las de la semana del 9 ya se hicieron el 2-nov con tu «ya todo aprobado»).
 3. **Tu estado de WhatsApp del 20** (lo pones tú, si quieres).
 4. **El video del día**: con la fecha fijada, el sistema lo deja salir desde el 20 (antes, desde el 30). Hoy no se
    publica solo porque Instagram no está unido a la página. Si quieres que siga en pausa aunque se una, dímelo.

@@ -102,7 +102,7 @@ const portadaDice = caja(`background:${W.pelaje}`, `${curvas(1080, 1350, 880, 30
 const DICE = [
   portadaDice,
   palabraObjeto(1, 'Sub', `<img src="${foto('v2-sub-regla-recorte.png')}" style="width:1000px;transform:rotate(-4deg);${sombra}">`, 'El sándwich de pan largo, al estilo americano. De 15 o de 30 cm.', 1),
-  palabraObjeto(2, 'Hoagie', `<img src="${foto('v2-embutidos-recorte.png')}" style="width:860px;${sombra}">`, 'Así le dicen al sub en Filadelfia. El nuestro va con tres embutidos italianos.', 2, 280),
+  palabraObjeto(2, 'Hoagie', `<img src="${foto('v2-embutidos-recorte.png')}" style="width:860px;${sombra}">`, 'Así le dicen al sub en Filadelfia. El nuestro va con jamón ahumado, salame y pepperoni.', 2, 280),
   palabraObjeto(3, 'Melt', `<img src="${foto('v2-melt-estira-recorte.png')}" style="width:900px;${sombra}">`, 'Cuando el queso va fundido encima. El del Tuna Melt se estira.', 3),
   palabraObjeto(4, 'Arma el tuyo', `<div style="background:#fff;border-radius:20px;padding:10px;${sombra}"><img src="${foto('v2-cuencos.png')}" style="width:760px;display:block;border-radius:12px"></div>`, 'Cuando el que decide eres tú: el pan, la proteína y lo de encima.', 4, 170),
 ];

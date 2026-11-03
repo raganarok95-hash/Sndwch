@@ -26,7 +26,7 @@ aprobado el 2026-10-30 (`instagram-perfil/final/`). No se generó nada nuevo y n
 ## Arte y calidad (revisado en la sesión, con estilo-sndwch y verdad-y-ley)
 - **Verdad.** Cada frase sale de `docs/hechos/CARTA.md`. El Philly lleva res laminada, cebolla, pimiento y cheddar. Los
   dos atunes son el mismo atún en lascas: con mayonesa y pimienta blanca, y el Melt además bajo cheddar. El Hoagie lleva
-  tres embutidos italianos. «Hoagie» es el nombre del sub en Filadelfia. Los tamaños son de 15 y 30 cm. No hay precios,
+  jamón ahumado, salame y pepperoni (dueño, 2026-11-03). «Hoagie» es el nombre del sub en Filadelfia. Los tamaños son de 15 y 30 cm. No hay precios,
   fechas ni ofertas.
 - **Arte.** La comida no se tapa: el texto va en la franja de abajo y todo queda dentro del recorte 3:4 de la cuadrícula.
   El texto de cada lado va en su propio color: en la primera versión, una línea cruzaba de oliva a celeste y no se leía.
