@@ -36,7 +36,7 @@
     "check:maquetas": "node scripts/check-maquetas.mjs",
     "check:doble-escritura": "node scripts/check-doble-escritura.mjs",
     "check:doble-escritura:probar": "node scripts/check-doble-escritura.mjs --probar",
-    "check:costos": "python3 scripts/check_costos.py",
+    "check:costos": "python3 scripts/check_costos.py && python3 modelo/exportar_costos.py --check",
     "check:costos:probar": "python3 scripts/check_costos.py --probar",
     "exportar:carta": "node --experimental-strip-types --no-warnings scripts/exportar-carta.mjs",
     "check:carta": "node --experimental-strip-types --no-warnings scripts/exportar-carta.mjs --check",

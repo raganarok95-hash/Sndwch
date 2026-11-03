@@ -17,3 +17,8 @@
 - **2026-10-16 · El empaque, desglosado siempre.** El dueño creyó que faltaban el papel manteca y los
   stickers porque el resumen decía solo «S/0.50». Regla: un costo compuesto se muestra con sus
   piezas (bolsa S/0.26, papel S/0.075, sticker ~S/0.10, tinta <S/0.01; el sello es compra única).
+- **2026-11-02 · El rol fijo.** Dueño: «Cierra el de Proyección, ya no sirve, abre uno de finanzas,
+  dale skills para automáticamente hacer todo lo necesario» y «finanzas, que se encargue de
+  monitorear y buscar aumentar las ganancias constantemente». Regla: no se parte de la proyección;
+  los cierres salen de `_shared/finanzas.ts` (costo real del modelo, no un 45% plano) y cada informe
+  termina con la palanca que más sube la ganancia.

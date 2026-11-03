@@ -8,6 +8,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { sbGet, debugLog, verifyCronSecret } from "../_shared/sb.ts";
 import { emailShell } from "../_shared/email-shell.ts";
 import { PALETA as C } from "../_shared/paleta.ts";
+import { cierre, conciliar, alertasDePlata, nombreCanal, pct, soles } from "../_shared/finanzas.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "SND//WCH <pedidos@sndwch.app>";
@@ -30,6 +31,8 @@ Deno.serve(async (req: Request) => {
       sbGet("inventory", "in_stock=eq.false&select=product_code,product_name"),
       sbGet("debug_logs", "select=source,detail,created_at&order=created_at.desc&limit=200"),
     ]);
+    // Culqi cobró y el pedido todavía no existe (lo recupera un cron; si sigue, hay que mirarlo).
+    const cobrosSinPedido = await sbGet("pending_charges", "status=eq.charged&charge_id=not.is.null&select=ref&limit=50").catch(() => []);
 
     // "Hoy" en hora de Lima (UTC-5), sin depender de la zona horaria del runtime.
     const limaNow = new Date(Date.now() - 5 * 3600000);
@@ -56,6 +59,11 @@ Deno.serve(async (req: Request) => {
     const errorsBySource = new Map<string, number>();
     for (const r of recentErrorRows) errorsBySource.set(r.source, (errorsBySource.get(r.source) || 0) + 1);
 
+    // LA PLATA DEL DÍA (_shared/finanzas.ts): costo real del modelo, margen por canal, techo y
+    // conciliación. Solo en este correo privado: el repo es público.
+    const plata = cierre(ordersToday);
+    const cuadre = conciliar(ordersToday, cobrosSinPedido);
+
     const row = (label: string, value: string) =>
       `<tr><td style="padding:6px 0;color:${C["text-muted"]};font-size:13px">${label}</td><td style="padding:6px 0;color:${C.text};font-size:15px;font-weight:700;text-align:right">${value}</td></tr>`;
 
@@ -63,6 +71,7 @@ Deno.serve(async (req: Request) => {
     if (stillOpen.length) alerts.push(`${stillOpen.length} pedido(s) siguen sin marcarse ENTREGADO`);
     if (pendingPaymentToday) alerts.push(`${pendingPaymentToday} pedido(s) de hoy sin pago confirmado`);
     if (outOfStock.length) alerts.push(`Sin stock: ${outOfStock.map((o: any) => o.product_name || o.product_code).join(", ")}`);
+    alerts.push(...alertasDePlata(plata), ...cuadre.avisos);
     if (errorsBySource.size) {
       const parts = Array.from(errorsBySource.entries()).map(([src, n]) => `${src} (${n})`);
       alerts.push(`${recentErrorRows.length} error(es) técnico(s) en las últimas 24h: ${parts.join(", ")}`);
@@ -76,6 +85,18 @@ Deno.serve(async (req: Request) => {
         ${row("Clientes nuevos hoy", String(newCustomersToday))}
         ${row("Pedidos activos (sin cerrar)", String(stillOpen.length))}
       </table>
+      <div style="margin-top:18px;padding:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px">
+        <div style="font-size:11px;color:${C["text-muted"]};letter-spacing:.1em;margin-bottom:6px">LO QUE TE QUEDA //</div>
+        <table style="width:100%;border-collapse:collapse">
+          ${row("Comida cobrada (sin envío)", soles(plata.comida))}
+          ${row("Insumos y empaque", soles(plata.costo) + " · " + pct(plata.costoPct) + " de la carta")}
+          ${row("Descuentos (combo, recompensas, códigos)", soles(plata.descuentos))}
+          ${row("Comisiones (tarjeta y apps)", soles(plata.comisiones))}
+          ${row("Te queda antes de fijos", soles(plata.contribucion) + " · " + pct(plata.margenPct))}
+        </table>
+        ${plata.porCanal.map((k) => `<div style="font-size:12px;color:${C["text-body"]};margin-top:4px">${nombreCanal(k.canal)}: ${k.pedidos} pedido(s), deja ${soles(k.porPedido)} por pedido (${pct(k.margenPct)})</div>`).join("")}
+        <div style="font-size:12px;color:${C["text-body"]};margin-top:8px">Debe verse en tu Yape/Plin: <b>${soles(cuadre.yapeEsperado)}</b> (${cuadre.yapePedidos}) · Culqi debe depositar: <b>${soles(cuadre.culqiNetoEsperado)}</b> (${cuadre.culqiPedidos})</div>
+      </div>
       ${alerts.length
         ? `<div style="margin-top:18px;padding:14px;background:rgba(255,165,0,.12);border:1px solid rgba(255,165,0,.3);border-radius:8px">
             <div style="font-size:11px;color:${C.warn};letter-spacing:.1em;margin-bottom:6px">ALERTAS //</div>
