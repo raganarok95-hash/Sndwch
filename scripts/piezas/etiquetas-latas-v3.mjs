@@ -26,7 +26,7 @@ const LATAS = [
   { id: 'bloom', nut: [2, 0, 0, 0.5, 0.2, 0, 4], nombre: 'BLOOM', sabor: 'Hibiscus', icono: 'flor', tinta: CREMA, liquido: '#7F0D31',
     desc: 'Floral, vibrante y bien helada.',
     ing: 'agua, flor de jamaica (hibiscus), cáscara de naranja, canela, edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)' },
-  { id: 'cool', nut: [2, 0, 0, 0.6, 0.2, 0, 2], nombre: 'COOL', sabor: 'Hierba luisa y menta', icono: 'rama', tinta: OSCURA, liquido: '#BFB662',
+  { id: 'cool', nut: [2, 0, 0, 0.4, 0.1, 0, 2],   nombre: 'COOL', sabor: 'Hierba luisa y menta', icono: 'rama', tinta: OSCURA, liquido: '#BFB662',
     desc: 'Un respiro de menta helada.',
     ing: 'agua, hierba luisa, menta, jugo de limón, edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)' },
   // LEMON TEA: con 60 ml de limón por litro (BEBIDAS_PRODUCTO §18)
@@ -45,7 +45,8 @@ const LATAS = [
 // El nombre del titular NO se commitea (repo público): se pasa al imprimir con LEGAL_TITULAR.
 const LEGAL = { razonSocial: (process.env.LEGAL_TITULAR || '[nombre del titular del RUC]') + ' (SNDWCH)', ruc: '10736044523',  // dueño, 2026-11-02: «SNDWCH», RUC 10…: persona natural, va su nombre
   direccion: 'Av. Prolongación César Vallejo 2670, Trujillo', registro: null };  // dirección: dueño, 2026-11-02. R.S.: solo si DIGESA lo pide
-const URL_LATA = 'https://sndwch.app/?src=lata';
+// Un QR por sabor (dueño, 2026-11-03: «Sí, hazlo»): el ?src= queda en el pedido y dice qué lata trae más pedidos.
+const URL_LATA = (id) => 'https://sndwch.app/?src=lata-' + id;
 
 // Íconos de línea (viewBox 100), el mismo trazo que la flor y la hoja de las latas aprobadas.
 const ICONOS = {
@@ -175,7 +176,7 @@ for (const L of LATAS) {
 
 // ── 2 · Atrás 50 × 92 mm, TRANSPARENTE: solo tinta, sin placa (v3). Sin sticker en la tapa: la fecha y el lote
 //        van aquí, en el recuadro de la etiquetadora ────────────────────────────────────────────
-const QR = await qrPath(URL_LATA);
+// el QR se arma por lata, abajo
 for (const L of LATAS) {
   await pieza(`atras-${L.id}`, 50, 92, {
     fn: ({ L, LEGAL, QR }) => {
@@ -211,7 +212,7 @@ for (const L of LATAS) {
         + '<div style="font:500 1.4mm/1.2 IBM Plex Mono;letter-spacing:.03em;margin-top:1.3mm">PARA LOS QUE NO SE CONFORMAN //</div></div>';
       document.getElementById('v').innerHTML = '<svg style="position:absolute;inset:0" width="50mm" height="92mm" viewBox="0 0 50 92">' + s + '</svg>' + legal + fecha + pide;
     },
-    arg: { L, LEGAL, QR },
+    arg: { L, LEGAL, QR: await qrPath(URL_LATA(L.id)) },
   }, L.liquido);
 }
 
