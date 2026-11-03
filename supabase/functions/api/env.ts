@@ -564,9 +564,10 @@ export const MODELO_OBJETIVOS = {
 export const CAC_TECHO = {
   // [DERIVADO] `proyeccion.pedido()["propio"] + GASTO_PEDIDO` — lo que deja un pedido propio
   // con la carta de hoy (ticket menos insumos, tarjeta y recompensas), antes del gasto fijo
-  // por pedido. Con el 15CM a S/19.90 y la bebida en botella de 500 ml: 13.06 (14.13 con el modelo
-  // viejo antes del 2026-10-16). Con la lata a S/8.50 sube a 13.64 (rama claude/precio-latas).
-  contribPedido: 13.06,
+  // por pedido. Con el 15CM a S/19.90 y la bebida en botella de 500 ml: 13.22 desde el 2026-11-03
+  // (ITALIAN HOAGIE con jamón, salame y pepperoni; antes 13.06; 14.13 con el modelo viejo antes del
+  // 2026-10-16). Con la lata a S/8.50 sube (rama claude/precio-latas: recalcular al mergearla).
+  contribPedido: 13.22,
   // [MÉTODO] `GASTO_PEDIDO` de proyeccion.py — gas, frío y coordinación, aparte del insumo.
   overheadPedido: 0.5,
   // [MEDIDO] `COSTO_REFERIDO` — el insumo del 15CM de R06 + la bebida de R05. Es el canal
