@@ -342,7 +342,13 @@ export async function actAutoRenovarInstagram(b: Entrada<"auto-renovar-instagram
   } catch (_) { /* sin fila */ }
   // Si el dueño puso un secret nuevo, también sirve: se prueba después del guardado.
   if (INSTAGRAM_LOGIN_TOKEN && !candidatos.includes(INSTAGRAM_LOGIN_TOKEN)) candidatos.push(INSTAGRAM_LOGIN_TOKEN);
-  if (!candidatos.length) return { ok: true, renovado: false, motivo: "sin token de Instagram" };
+  // Sin token: se dicen los NOMBRES de los secrets parecidos (nunca sus valores), para saber si el
+  // dueño lo guardó con otro nombre (2026-11-02: «el código de ig ya está en supabase»).
+  if (!candidatos.length) {
+    let parecidos: string[] = [];
+    try { parecidos = Object.keys(Deno.env.toObject()).filter((k) => /INSTA|^IG|_IG|META/i.test(k)).sort(); } catch (_) { /* sin permiso */ }
+    return { ok: true, renovado: false, motivo: "sin token de Instagram", secretsParecidos: parecidos };
+  }
   let ultimo = "";
   for (const tok of candidatos) {
     try {
