@@ -189,7 +189,14 @@ export const META_GRAPH_VERSION = "v21.0";
 // el token se saca entrando con la cuenta de Instagram misma y publica sin ninguna página vinculada.
 // Si este secret está, Instagram se publica por ahí; Facebook sigue usando META_PAGE_ACCESS_TOKEN.
 // El token dura 60 días: se renueva con `refresh_access_token` (ver docs/ENTORNO.md).
-export const INSTAGRAM_LOGIN_TOKEN = Deno.env.get("INSTAGRAM_LOGIN_TOKEN");
+// Si el dueño pegó el token de Instagram en META_PAGE_ACCESS_TOKEN (2026-11-03: «el código de ig ya
+// está en supabase» y no había ningún secret con INSTAGRAM en el nombre), se reconoce por su forma:
+// los de Instagram Login empiezan con «IG» y los de página de Facebook con «EAA».
+export function tokenDeInstagramEnElEntorno(ig: string | undefined, pagina: string | undefined): string | undefined {
+  if (ig) return ig;
+  return pagina && /^IG/.test(pagina.trim()) ? pagina.trim() : undefined;
+}
+export const INSTAGRAM_LOGIN_TOKEN = tokenDeInstagramEnElEntorno(Deno.env.get("INSTAGRAM_LOGIN_TOKEN"), META_PAGE_ACCESS_TOKEN);
 // Anuncios (Marketing API) para el botón de apagar/prender del panel. La cuenta publicitaria no
 // es un secreto (es el número que se ve en el Administrador de anuncios); el token sí. Si
 // META_ADS_TOKEN no está, se usa el de la página: si a ese le falta el permiso de anuncios,
