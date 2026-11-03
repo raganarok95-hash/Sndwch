@@ -18,3 +18,8 @@ costado (ahora sí se ve el pan largo), la res en la plancha, la cebolla con el 
 embutidos, el Tuna Melt estirándose y los cuencos de «Arma el tuyo». Las 10 láminas finales están en `final/`, y
 `todas-las-laminas.jpg` las muestra juntas. «Cómo se dice» ya no abre con la foto de «Arma el tuyo» del feed: abre con
 las tres palabras. Los textos para pegar son los mismos de `../TEXTOS.md`.
+
+## El HOAGIE con el trío nuevo (2026-11-03)
+Dueño eligió «Sí, 1 imagen en Figma» para rehacer la lámina HOAGIE: el ITALIAN HOAGIE ahora lleva jamón ahumado, salame
+y pepperoni. Imagen nueva `fotos/v2-embutidos-nuevos.png` (Figma, `gpt-image-2.5-flare`, 1 variante) y su recorte;
+la lámina `final/3-como-se-dice-3.jpg` se volvió a renderizar con el texto nuevo. Las demás no cambiaron.
