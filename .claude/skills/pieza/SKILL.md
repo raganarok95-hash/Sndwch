@@ -44,6 +44,8 @@ salta a la maqueta (paso 4) con esa idea.
 | 2 | `creativo` | `CONCEPTOS.md` (3 conceptos con lo que se ve) | |
 | 3 | `redactor` | `TEXTOS.md` (3 opciones por concepto) | |
 | 4 | `director-de-arte` (A) | `maquetas/*.png` + `ARTE.md` | **1 · concepto** (arte) |
+
+La maqueta del paso 4 se puede armar en Claude Design (skill `claude-design`, dueño 2026-11-04): un artboard 4:5 y uno 9:16 por concepto; se exporta a `maquetas/*.png`.
 | 5 | `calidad` | `CALIDAD.md` | **1 · concepto** (verdad) |
 | — | **el dueño** | elige el concepto | **1 · concepto** |
 | 6 | `productor` | imágenes finales + `PRODUCCION.md` | |
