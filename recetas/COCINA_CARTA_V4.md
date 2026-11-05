@@ -101,7 +101,8 @@ Al pedido (3 min):
 4. Al horno a **200 °C, 15 a 18 min**, en bandeja.
 5. Termínalas **15 min dentro de la marinara caliente**.
 
-**Marinara — tanda de 3 L (apertura: 1.5 L, la mitad):** tomate pelado en lata 2.5 kg · aceite de
+**Marinara — tanda de 3 L (apertura: 1.5 L, la mitad):** tomate pelado en lata 2.5 kg (**6 latas
+de 400 g**; Mutti S/4.99 en Makro, 5-nov-2026: S/30 la tanda, S/1.00 por porción de 15CM) · aceite de
 oliva 100 ml · ajo 40 g · cebolla 200 g · sal 20 g · orégano y albahaca · una pizca de azúcar solo
 si el tomate está muy ácido.
 1. Sofríe el ajo y la cebolla en el aceite.
@@ -109,6 +110,11 @@ si el tomate está muy ácido.
 3. Cocina **destapada, a fuego bajo, 40 a 50 min**.
 4. **Está lista** cuando pasas una cuchara por el fondo y el camino tarda en cerrarse. Si se cierra
    al toque, está aguada: sigue cocinando. Aguada empapa el pan.
+
+**Con tomate fresco (si no hay lata):** 3 kg de tomate italiano bien rojo por tanda. Hazle una
+cruz en la base, 30 s en agua hirviendo y a agua con hielo; pela, parte en cuatro y saca las
+semillas. Sigue igual desde el paso 1, pero cuenta **60 a 80 min** de fuego bajo: el fresco trae
+más agua. Prueba la acidez al final; el fresco cambia de sabor según la temporada.
 
 **Guardar:** enfría rápido y congela en bolsitas de **3 albóndigas (15CM)** o **6 (30CM)** con
 un poco de su marinara. Usar dentro de 1 mes.
@@ -188,14 +194,14 @@ Sale de `modelo/rentabilidad_por_parte.py` con los precios de la base (`catalog_
 | sándwich | 15CM: costo | % | 30CM: costo | % |
 |---|---|---|---|---|
 | PHILLY CHEESESTEAK | S/6.48 | 32.5% | S/11.65 | 37.7% |
-| MEATBALL MARINARA | S/6.35 | 31.9% | S/11.39 | 36.9% |
+| MEATBALL MARINARA | S/6.03 | 30.3% | S/10.76 | 34.8% |
 | TURKEY | S/6.58 | 33.1% | S/11.86 | 38.4% |
 | TUNA MELT | S/6.45 | 32.4% | S/11.60 | 37.5% |
 | ITALIAN HOAGIE | S/6.67 | 33.5% | S/12.04 | 39.0% |
 | CLASSIC TUNA | S/5.55 | 27.9% | S/9.80 | 31.7% |
 
 Lo que todavía es estimado y mueve estos números: el rendimiento de la res laminada (0.70, sin
-medir), el peso de la albóndiga cocida, el tomate en lata, las salsas, y los tres fiambres del
+medir), el peso de la albóndiga cocida, las salsas, y los tres fiambres del
 ITALIAN HOAGIE (precios online de Makro: confírmalos en Makro Trujillo).
 
 ---

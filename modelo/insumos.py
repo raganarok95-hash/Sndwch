@@ -211,7 +211,7 @@ def queso_porcion(ficha: Insumo):
 
 # ── LA ALBÓNDIGA SE COSTEA DESDE SU RECETA (production_recipes id 9, la del panel desde el 2026-11-02) ──────────
 # Tanda de 2 kg de carne → 90 albóndigas de 30 g (eran 25 g hasta el 2026-11-02) → 30 porciones de 15CM (3 albóndigas), con su
-# marinara. Cada ingrediente con su estado; el que pesa y no está cotizado es la lata de tomate.
+# marinara. Cada ingrediente con su estado; la lata de tomate se cotizó el 2026-11-05.
 ALBONDIGA_TANDA = [
     ("carne molida 15-20% grasa", 2.0,  PROTEINA_KG["P06"][0]),
     ("pan del día (200 g)",       1.0,  Insumo(2.67, PEDIDO, ESTIMADO, "200 g de pan sub a S/2 la unidad de ~150 g", "2026-09-30")),
@@ -219,7 +219,7 @@ ALBONDIGA_TANDA = [
     ("huevo ×2",                  1.0,  Insumo(1.00, PEDIDO, ESTIMADO, "huevo ~S/0.50 la unidad", "2026-09-30")),
     ("queso rallado 100 g",       0.10, Insumo(72.47, KG, COTIZADO, "parmesano granulado 454 g S/32.90 (Tottus online)", "2026-09-30")),
     ("ajo, perejil, sal, pimienta, orégano", 1.0, Insumo(1.82, PEDIDO, ESTIMADO, "condimentos de la tanda", "2026-09-30")),
-    ("tomate pelado en lata 2.5 kg", 2.5, Insumo(16.25, KG, SIN_COTIZAR, "~S/6.50 la lata de 400 g — sin precio online", "2026-09-30")),
+    ("tomate pelado en lata 2.5 kg", 2.5, Insumo(12.48, KG, COTIZADO, "Mutti pelati lata 400 g S/4.99 (Makro online); 6 latas por tanda", "2026-11-05")),
     ("aceite de oliva 100 ml",    1.0,  Insumo(3.50, PEDIDO, ESTIMADO, "aceite de oliva ~S/35 el litro", "2026-09-30")),
     ("cebolla 200 g",             0.2,  CEBOLLA_KG),
 ]
