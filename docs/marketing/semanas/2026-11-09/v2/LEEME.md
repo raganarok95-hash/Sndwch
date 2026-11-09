@@ -23,3 +23,8 @@ las tres palabras. Los textos para pegar son los mismos de `../TEXTOS.md`.
 Dueño eligió «Sí, 1 imagen en Figma» para rehacer la lámina HOAGIE: el ITALIAN HOAGIE ahora lleva jamón ahumado, salame
 y pepperoni. Imagen nueva `fotos/v2-embutidos-nuevos.png` (Figma, `gpt-image-2.5-flare`, 1 variante) y su recorte;
 la lámina `final/3-como-se-dice-3.jpg` se volvió a renderizar con el texto nuevo. Las demás no cambiaron.
+
+## Corrección: no hay plancha (2026-11-09)
+`docs/DECISIONES.md` (2026-09-24): la res y la cebolla del PHILLY se saltean en una sartén grande. La lámina 3 decía «en
+la misma plancha»: ahora dice «en la misma sartén». Las imágenes de las láminas 2 y 3 (`v2-res-plancha.png` y
+`v2-cebolla-pimiento.png`) muestran una plancha negra. Hay que regenerarlas en sartén (2 imágenes, con el sí del dueño).

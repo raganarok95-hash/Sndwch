@@ -56,7 +56,7 @@ otra cosa.
 8. **La ejecución tiene que sorprender, además de la idea.** Cada concepto elige una forma de verlo que el feed todavía
    no tiene:
    - **despiece**: las capas flotando, con rótulos en mono como un plano técnico;
-   - **macro de proceso**: la res en la plancha, el vapor, el queso estirándose;
+   - **macro de proceso**: la res salteándose en la sartén (no hay plancha), el vapor, el queso estirándose;
    - **cenital con dos luces**: lo frío con luz de día y lo caliente con lámpara, en la misma mesa;
    - **escala**: el pan de 30 cm junto a una regla o a la mano;
    - **objeto aislado sobre el color de un hermano**, como las portadas de los destacados;

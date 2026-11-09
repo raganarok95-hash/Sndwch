@@ -13,6 +13,6 @@
    smartphone with a completely plain flat white screen facing up, next to a folded sheet of brown kraft paper and a
    closed laptop. Clear bright morning light. No food, no text, no logos, no face.»
 3. **Hoy abrimos**: «Photograph at a small kitchen's doorway in morning light: one hand passes a plain brown kraft paper
-   takeaway bag with flat paper handles, completely blank, to another hand; behind, out of focus, a black flat-top
-   griddle with light steam. Only hands and forearms, neutral clothing, no faces. No text, no logos, no alcohol.»
+   takeaway bag with flat paper handles, completely blank, to another hand; behind, out of focus, a large black skillet on
+   the stove with light steam (no flat-top griddle). Only hands and forearms, neutral clothing, no faces. No text, no logos, no alcohol.»
    El logo oficial (`img/marca/avatar-1024-transparente.png`) se monta después como etiqueta sobre la bolsa.

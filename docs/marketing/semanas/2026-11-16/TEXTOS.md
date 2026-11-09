@@ -12,5 +12,5 @@ Todo en sndwch.app, desde el navegador: nada que instalar.
 
 ## Viernes 20, 10:30 · Hoy abrimos (fijar arriba)
 Hoy abrimos.
-La plancha se prendió a las 11:00. Tu pedido, en sndwch.app (enlace en la biografía).
+La cocina abre a las 11:00. Tu pedido, en sndwch.app (enlace en la biografía).
 Gracias por esperar con nosotros //
