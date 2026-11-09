@@ -9,7 +9,7 @@ function pieza(d, W, H) {
   return `<html><head><style>${css}
   *{margin:0;box-sizing:border-box} body{width:${W}px;height:${H}px;background:${d.fondo};overflow:hidden;position:relative}
   .top{position:absolute;top:0;left:0;right:0;height:${blk}px;padding:${pt}px 80px 0}
-  h1{font-family:Anton;font-size:${v?150:140}px;line-height:.95;color:${d.tinta};max-width:${v?900:700}px}
+  h1{font-family:Anton;font-size:${d.fs||(v?150:140)}px;line-height:.95;color:${d.tinta};max-width:${v?900:700}px}
   p{font-family:'Instrument Serif';font-style:italic;font-size:44px;color:${d.tinta};margin-top:28px;max-width:${v?620:640}px;line-height:1.15}
   .marca{position:absolute;top:${mt}px;right:80px;font-family:Anton;font-size:46px;color:${d.tinta};display:flex;align-items:center}
   .b{display:inline-flex;gap:.16em;margin:0 .06em} .b i{display:block;width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px}
@@ -24,9 +24,9 @@ function pieza(d, W, H) {
   const b = await chromium.launch(); const out = R + 'final/'; fs.mkdirSync(out, { recursive: true });
   const precio = process.env.PRECIO;
   const piezas = [
-    ['philly', { fondo:'#EFE6D4', tinta:'#1E2B22', titular:'HAMBRE EN<br>SERIO.', linea:'Res salteada al momento y cheddar fundido. Lo pides en sndwch.app y llega.', foto:'ad-philly-manos.png' }],
-    ['meatball', { fondo:'#1E2B22', tinta:'#EFE6D4', titular:'HOY NO<br>COCINAS.', linea:'Albóndigas en su marinara y queso hasta el borde. Lo pides en sndwch.app y llega.', foto:'ad-meatball-mordida.png' }],
-    ['oficina', { fondo:'#EFE6D4', tinta:'#1E2B22', titular:'EL ALMUERZO<br>RESUELTO.', linea:'Cada uno elige el suyo desde su celular. Pides en grupo en sndwch.app y llega.', foto:'ad-turkey-oficina.png' }],
+    ['philly', { fondo:'#EFE6D4', tinta:'#1E2B22', titular:'FILADELFIA,<br>A DOMICILIO.', linea:'Res laminada y salteada, cebolla, pimiento y cheddar. En sndwch.app.', foto:'ad-philly-manos.png' }],
+    ['meatball', { fondo:'#1E2B22', tinta:'#EFE6D4', titular:'PRIMERA MORDIDA.<br>SILENCIO.', fs:108, linea:'Albóndigas en su marinara, queso americano encima. En sndwch.app.', foto:'ad-meatball-mordida.png' }],
+    ['oficina', { fondo:'#EFE6D4', tinta:'#1E2B22', titular:'UN ENLACE.<br>CADA UNO<br>EL SUYO.', fs:108, linea:'Mandas el enlace al grupo y cada quien elige desde su celular. En sndwch.app.', foto:'ad-turkey-oficina.png' }],
   ];
   for (const [n, d] of piezas) for (const [W, H, suf] of [[1080,1350,'feed'],[1080,1920,'vertical']]) {
     const pg = await b.newPage({ viewport: { width: W, height: H } });
