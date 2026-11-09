@@ -6,9 +6,14 @@ fieles a `docs/hechos/CARTA.md`. Precio del sello leído de `docs/hechos/CARTA.m
 
 | pieza | titular | imagen | enlace previsto |
 |---|---|---|---|
-| philly | HAMBRE EN SERIO. | manos con el PHILLY CHEESESTEAK | `?src=meta-directo-philly` |
-| meatball | HOY NO COCINAS. | mordida del MEATBALL MARINARA, sin rostro | `?src=meta-directo-meatball` |
-| oficina | EL ALMUERZO RESUELTO. | tres manos y tres TURKEY en un escritorio | `?grupo=1&src=meta-directo-oficina` |
+| philly | FILADELFIA, A DOMICILIO. | manos con el PHILLY CHEESESTEAK | `?src=meta-directo-philly` |
+| meatball | PRIMERA MORDIDA. SILENCIO. | mordida del MEATBALL MARINARA, sin rostro | `?src=meta-directo-meatball` |
+| oficina | UN ENLACE. CADA UNO EL SUYO. | tres manos y tres TURKEY en un escritorio | `?grupo=1&src=meta-directo-oficina` |
 
 Montar: `PRECIO=… FUENTES_CSS=$(bash scripts/piezas/fuentes-locales.sh) NODE_PATH=$(npm root -g) node montar.cjs` (rutas absolutas dentro).
 A revisar: la res del PHILLY se ve algo picada, la receta dice laminada. Nada se publicó ni se subió a Meta.
+
+## Cambio del 2026-11-09
+Dueño: «Deja de usar la misma estupidez a cada rato, usas esas mismas frases, ¿qué de creativo tiene eso?». Los tres
+titulares anteriores se botaron. Los nuevos salen de una verdad de cada pieza (el origen del PHILLY, el primer bocado,
+el enlace del pedido en grupo) y se buscaron en el historial con `git grep -i` antes de usarlos: ninguno aparecía.

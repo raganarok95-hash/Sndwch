@@ -14,8 +14,8 @@ mi?» y «Allí no existen fotos reales». Se toma **la fórmula**, nunca su mar
 | pieza | qué hace | regla en SND//WCH |
 |---|---|---|
 | **Bloque de color arriba** (~40% del alto) con el titular | se lee en un segundo, aunque el pulgar no pare | papel `#EFE6D4` con tinta `#1E2B22`, o al revés. Una sola marca por pieza: el logo con el `//` arriba a la derecha |
-| **Titular de 3 a 4 palabras con punto final** | un momento o un antojo, no una descripción | Anton en mayúsculas. Ejemplos de tono: «HAMBRE EN SERIO.», «HOY NO COCINAS.», «EL ALMUERZO RESUELTO.» |
-| **Una línea de cómo pedir** | quita la duda de «¿y cómo lo consigo?» | IBM Plex Mono o Instrument Serif: «Lo pides en sndwch.app y llega.» |
+| **Titular de 3 a 4 palabras con punto final** | un momento o un antojo, no una descripción | Anton en mayúsculas. Nunca uno ya usado (abajo) |
+| **Una línea de la verdad del producto** | quita la duda de «¿qué es y dónde lo pido?» | Instrument Serif: ingredientes reales + sndwch.app, con palabras nuevas cada vez |
 | **Sello «DESDE S/…»** | el precio de entrada ancla y filtra | **el número sale de la base** (el 15CM más barato de `catalog_prices`, vía `docs/hechos/CARTA.md`), nunca escrito a mano |
 | **La comida grande, con manos o alguien comiendo**, abajo (~60%) | la mano y el bocado hacen que la mente «lo pruebe» (Elder y Krishna, *Journal of Consumer Research*, 2012) | imagen generada, fiel a la receta (abajo) |
 | **Botón a la app** | un solo camino | `sndwch.app/?src=meta-<pieza>`; en orgánico, enlace en la biografía |
@@ -36,6 +36,16 @@ mi?» y «Allí no existen fotos reales». Se toma **la fórmula**, nunca su mar
 3. Imagen en Figma (`generate_image`) y maqueta en Claude Design (`claude-design`), 1080×1350 y 1080×1920.
 4. Calidad: `verdad-y-ley` (porción, precio de la base, sin promesas que no existen).
 5. El dueño elige. Después se monta y, si es anuncio, se crea **en pausa** (`pauta-medible`).
+
+## Nunca repetir (dueño, 2026-11-09)
+«Deja de usar la misma estupidez a cada rato, usas esas mismas frases, ¿qué de creativo tiene eso?»
+- **Ningún titular ni frase que ya se haya usado**, ni parecido: antes de proponer, buscar en el historial
+  (`git grep -i "<frase>" -- docs/marketing .claude`) y en lo publicado. Si aparece, se descarta.
+- Prohibidos por gastados: «Hoy no cocinas», «Hambre en serio», «El almuerzo…», «Hoy sí cocino», «Llena sin pesar»,
+  «Lo pides … y llega» (es la frase de la referencia), «Pide en sndwch.app», «Ya está», «Detrás del pan».
+- Cada titular sale de **una verdad concreta de ese sándwich o de ese momento** (un ingrediente, un origen, un gesto),
+  no de una fórmula que sirva para cualquier comida. Si el titular sirve igual para una pizza, no pasa.
+- Tres piezas de una tanda = tres ángulos distintos (producto, momento, grupo), nunca la misma estructura con otra palabra.
 
 ## Lo que nunca
 Copiar el logo, la paleta, el sello o las frases de la referencia; escribir un precio a mano; publicar o prender un
