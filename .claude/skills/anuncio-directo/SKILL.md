@@ -41,8 +41,6 @@ mi?» y «Allí no existen fotos reales». Se toma **la fórmula**, nunca su mar
 Copiar el logo, la paleta, el sello o las frases de la referencia; escribir un precio a mano; publicar o prender un
 anuncio sin el sí del dueño.
 
-## Pendiente del sí del dueño (2026-11-08)
-Esta fórmula choca con tres reglas vigentes; hasta su sí, se produce solo como maqueta:
-1. `estilo-sndwch` regla 2: «nada de bloques de color».
-2. `estilo-sndwch` regla 1: «nadie en el cuadro hasta que haya fotos reales».
-3. `CONCEPTO_DEL_NEGOCIO.md` §8: «no poner el precio en anuncios para quien no nos conoce».
+## Aprobado
+Dueño (2026-11-09): «Por favor quitemos esas reglas que mencionas específicamente las mencionadas» — bloque de
+color, personas generadas y precio en anuncios (leído de la base). Ya se produce en serie.

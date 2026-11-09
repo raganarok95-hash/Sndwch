@@ -29,11 +29,11 @@ otra cosa.
 1. **Foto.** El sándwich ocupa entre la mitad y dos tercios del cuadro, en tres cuartos, con el
    fondo desenfocado. **La luz cuenta la hora**: mediodía claro para el almuerzo; lámpara cálida
    para la noche. Un solo objeto del momento (la laptop del almuerzo; la bebida de la carta en la
-   noche). Nada que no se venda, nada de alcohol, nadie en el cuadro hasta que haya fotos reales.
+   noche). Nada que no se venda, nada de alcohol. Personas generadas sí: manos o alguien comiendo, sin rostro reconocible (dueño, 2026-11-09: «Por favor quitemos esas reglas que mencionas específicamente las mencionadas»).
    La receta y la porción de `docs/hechos/CARTA.md`: pan de 15 cm, una capa, ~85 g de proteína.
 2. **Composición.** Un solo foco: la comida. El texto va en la zona tranquila, nunca sobre el
-   sándwich. Un solo velo oscuro, solo donde hay texto. **Nada de franjas, marcos, bandas ni
-   bloques de color.** En 9:16, libre el 14% de arriba y el 35% de abajo (los botones de Instagram).
+   sándwich. Un solo velo oscuro, solo donde hay texto. **Nada de franjas, marcos ni bandas.** El bloque de
+   color del anuncio directo sí va (`anuncio-directo`, dueño, 2026-11-09: «Por favor quitemos esas reglas que mencionas específicamente las mencionadas»). En 9:16, libre el 14% de arriba y el 35% de abajo (los botones de Instagram).
 3. **Letra: tres voces, siempre las mismas.**
    - **Anton**, mayúsculas: **el momento** (el titular; cinco palabras como máximo).
    - **Instrument Serif itálica**: **la verdad del producto** (una frase de la carta).

@@ -93,8 +93,8 @@ La pauta en Meta empieza con poco (anuncios armados y en pausa) y **nada se pren
 el sí del dueño**.
 
 **Lo que no se hace nunca**: prometer más relleno del que llega, mostrar alcohol o algo que no se
-vende, poner el precio en anuncios para quien no nos conoce, nombrar promociones que ya no existen,
-inventar datos del negocio (RUC, dirección) o tocar el texto legal.
+vende, nombrar promociones que ya no existen,
+inventar datos del negocio (RUC, dirección) o tocar el texto legal. (El precio en anuncios se permite desde el 2026-11-09, siempre leído de la base: dueño, «quitemos esas reglas».)
 
 ## 9 · Lo que está desfasado o por decidir (para el dueño)
 

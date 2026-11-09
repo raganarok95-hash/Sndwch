@@ -34,7 +34,8 @@ Se escribe en inglés, desde la receta de `docs/hechos/CARTA.md`, con este orden
    midday window light` o `kraft paper, warm evening lamp light`.
 6. El encuadre: `three-quarter angle, sandwich facing the viewer, ready to eat, shallow depth of
    field`.
-7. Lo prohibido siempre: `no people, no hands, no logos, no text, no alcohol, no other food`.
+7. Lo prohibido siempre: `no logos, no text, no alcohol, no other food`. Sin personas, salvo en `anuncio-directo`
+   (dueño, 2026-11-09): manos o alguien comiendo, `face cropped below the nose, no recognizable face`.
 
 Pide **2 variantes** por foto y guarda el prompt exacto junto a la imagen: el Director de arte y
 Calidad lo necesitan para revisar. Los prompts aprobados viven en
