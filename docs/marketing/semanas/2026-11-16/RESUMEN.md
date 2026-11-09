@@ -23,8 +23,8 @@ Maquetas: `maqueta-*.jpg` (de `maquetas.cjs`). Los prompts están en `PROMPTS.md
 ## Lo que se cortó
 - **Las historias del viernes 20** (cocina prendida, primer pedido, la noche) quedan para fotos reales del día. Generarlas
   sería mostrar algo que todavía no pasó.
-- **«Ya hay día» (concepto B, la plancha)**: es del hilo «Equipo de marketing». Aquí solo se toma la frase de la
-  plancha para el 20, sin su imagen.
+- **«La plancha se prendió»**: se cambió por «La cocina abre a las 11:00.». No hay plancha: la res y la cebolla del
+  PHILLY se saltean en una sartén grande (`docs/DECISIONES.md`, 2026-09-24). Lo avisó el hilo «Equipo de marketing».
 
 ## Encargos a Flow
 No hay encargos para la semana en curso (9 al 15). Los 14 del 3 al 8 se dieron por perdidos (APERTURA.md).

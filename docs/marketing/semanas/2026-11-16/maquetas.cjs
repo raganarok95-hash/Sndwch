@@ -48,9 +48,9 @@ const PIEZAS = {
     <div class="abs" style="left:70px;top:60px;right:70px;display:flex;justify-content:space-between">
       <div class="mono" style="font-size:26px;color:${P.tinta}">VIERNES 20 · 11:00</div>${marca(P.tinta)}</div>
     <div class="abs disp" style="left:70px;top:130px;font-size:170px;color:${P.tinta}">Hoy<br>abrimos.</div>
-    <div class="abs voz" style="left:70px;top:470px;width:640px;font-size:40px;line-height:1.12;color:${P.tinta}">La plancha se prendió a las 11:00. Tu pedido, en sndwch.app.</div>
+    <div class="abs voz" style="left:70px;top:470px;width:640px;font-size:40px;line-height:1.12;color:${P.tinta}">La cocina abre a las 11:00. Tu pedido, en sndwch.app.</div>
     ${sello(P.tinta, P.papel)}
-    ${hueco(740, 'Una bolsa kraft lisa con asas planas pasando de una mano a otra en la puerta de la cocina, luz de mañana, la plancha encendida desenfocada al fondo. El logo oficial se monta como etiqueta sobre la bolsa. Manos sin rostro, sin alcohol.')}`),
+    ${hueco(740, 'Una bolsa kraft lisa con asas planas pasando de una mano a otra en la puerta de la cocina, luz de mañana, al fondo y desenfocada la sartén grande con vapor. El logo oficial se monta como etiqueta sobre la bolsa. Manos sin rostro, sin alcohol.')}`),
 };
 
 (async () => {
