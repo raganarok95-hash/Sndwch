@@ -19,4 +19,4 @@ El vigía de las 22:13 cuenta las filas `abierta` y las pone en el correo de cie
 | Q09 | 2026-11-06 | recetas | Qué chimichurri con piña ganó la cata, A o B | abierta | |
 | Q10 | 2026-11-09 | disenos | Alto de la parte lisa de la botella de 500 ml (hacen falta 10.5 cm) | abierta | |
 | Q11 | 2026-11-09 | disenos | ¿La imprenta tiene tinta blanca? | abierta | |
-| Q12 | 2026-11-03 | disenos | ¿Las bebidas llevan sal? (la receta guardada dice 0.2 g por litro) | de-otro-hilo | La responde RECETAS: `recetas/2026-11-10-sal-en-bebidas.md` |
+| Q12 | 2026-11-03 | disenos | ¿Las bebidas llevan sal? (la receta guardada dice 0.2 g por litro) | respondida | Ezra, 2026-11-02: «sin sal en la receta». Quitada del panel y del recetario el 2026-11-10 (RECETAS). |
