@@ -15,11 +15,13 @@ Dueño, 2026-11-09: «También necesito que me mandes todos los stickers que nec
 | 3 | **Botella, atrás** (uno por sabor, con su QR) | `botella-atras-<sabor>.pdf` | 50 × 92 mm | igual que el frente | **24 de cada sabor** (en la misma plancha) | va con el frente |
 | 4 | **Salsas y soluciones**, con nombre | `salsas-A4-1-con-nombre.pdf` | 60 × 40 mm, 18 por A4 | vinilo **blanco + laminado mate** | **1 plancha A4** (18) | pedir precio |
 | 5 | **Salsas en blanco** (repuestos y lo nuevo) | `salsas-A4-2-en-blanco.pdf` | 60 × 40 mm, 18 por A4 | igual | **1 plancha A4** (18) | pedir precio |
+| 7 | **Cocina, una por tanda** (en el táper de las porciones) | `cocina-A4-tandas.pdf` | 60 × 40 mm, 18 por A4 | vinilo **blanco + laminado mate** | **1 plancha A4** (18) | pedir precio |
 | 6 | Calle (opcional, publicidad) | `../imprimir/sticker-calle-8x8cm.pdf` | 8 × 8 cm | vinilo blanco + laminado mate UV | 0 por ahora (o 250) | S/70 las 250 en papel; vinilo, aparte |
 
 **No necesitan sticker:** el papel manteca (ya tienes el que lleva logo), las latas (hasta que se
 compre la selladora; la etiqueta v3 está lista en `/mnt/project-files/latas/imprenta-v3/`) y las
-porciones en bolsitas de congelar (cinta masking y plumón: producto y fecha, es lo más barato).
+bolsitas de cada porción (van dentro del táper de su tanda, que lleva la etiqueta 7). Tampoco hace falta un
+precinto en la tapa de la botella: va dentro de la bolsa, y el sticker de cierre ya la sella.
 
 ## Por qué así
 
@@ -33,6 +35,8 @@ porciones en bolsitas de congelar (cinta masking y plumón: producto y fecha, es
 - **Salsas.** Se escriben con **plumón indeleble** y se borran con alcohol: la etiqueta se reusa en
   cada tanda (frascos.md: «todo con etiqueta: código, fecha y vence»). El código es el de la carta.
   Los 9 squeeze y los frascos de `frascos.md` (menos el de sal) quedan cubiertos, con 2 de sobra y la plancha en blanco.
+- **Cocina.** Una etiqueta por tanda y no una por bolsita: se escribe HECHA y VENCE y se borra con alcohol,
+  como las de salsas. Los nombres y si va congelado o en la refri salen de OPERATIVO.md (2026-11-10).
 - La **línea fucsia** del pliego de salsas es solo la guía de corte: no se imprime.
 
 ## Antes de imprimir
