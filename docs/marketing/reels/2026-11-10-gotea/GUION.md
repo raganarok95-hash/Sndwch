@@ -18,3 +18,4 @@ Créditos de Flow: 2 tomas de Veo 3.1 Lite, 10 c/u, dentro de los 50 gratis del 
 Por qué vendería: el conflicto con un remate que se puede pedir es el motor de la serie (§1); la comida aparece
 desde el segundo 0 y el texto se lee sin sonido. Evidencia de formato: se completa con `referentes/2026-11-10.md`.
 Estado: **borrador. No se publica sin el sí de Ezra.**
+Estado: **rechazado por Ezra (2026-11-10)**: «¿en qué mierda se basa para ponerle un título como 'ese ya gotea'? Título todo tonto». Se rehace con plataforma de marca y el porqué de cada decisión.
