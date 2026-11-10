@@ -7,7 +7,7 @@ claude en chrome… en google flow, usando a personajes como sando y wicho» y �
 ## El ciclo (corre solo cada lunes, 10:13, en el hilo «Equipo de marketing»)
 | paso | quién | dónde | qué sale |
 |---|---|---|---|
-| 1 · Referentes | la rutina (nube) | `docs/marketing/referentes/<fecha>.md` + lo que mande el hilo de investigación | qué modelo usar esta semana |
+| 1 · Referentes | la rutina (nube) | `docs/marketing/referentes/<fecha>.md`, el banco de ideas de Ezra (`referentes/ideas/`, lo que él manda y analiza investigación) + lo que mande el hilo de investigación | qué modelo usar esta semana |
 | 2a · Mini-brief | Planner (la sesión, con `PLATAFORMA_DE_MARCA.md`) | `reels/<id>/BRIEF.md` (`METODO_GRANDES_EQUIPOS.md` §4.2.1) | un brief por reel, con insight y fuente. **Sin insight, no hay reel** |
 | 2b · Duplas | 2 llamadas en paralelo al agente `creativo`, cada una con un territorio distinto, sin verse | `DUPLA_A.md`, `DUPLA_B.md` | 4 ideas cada una, con guion corto y 3 títulos con su porqué |
 | 2c · Crítico | agente `critico` (`.claude/agents/critico.md`; si no aparece, general-purpose que lo lea) | `CRITICO.md`, `MATADAS.md` | las 8 puertas: un «no» mata; 2 finalistas por brief |
