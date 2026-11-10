@@ -4,7 +4,10 @@
 del proyecto, `marketing/ideas/2026-11-10-capturas/` (hay 4 hojas `_hoja-N.jpg` con todas juntas).
 Los números son los que se ven en la captura (me gusta / envíos), no son de un estudio.
 
-**Falta Muah Burgers:** no venía en las 16 capturas que llegaron. Se analiza cuando llegue.
+**Muah Burgers:** no hace falta (Ezra, 2026-11-10: «No te preocupes no necesitamos las de muah burguer»).
+
+**Corrección de Ezra (2026-11-10, 13:44):** «No descartes la de bronson y la 200 g ni el doble sentido de quincy,
+podemos usarla». Las piezas 1 y 4 quedan habilitadas, con sus versiones abajo.
 
 ## Lo que se repite en las seis
 
@@ -26,8 +29,14 @@ Los números son los que se ven en la captura (me gusta / envíos), no son de un
 ### 1 · Bronson y 200g: «Sí, te perdono. Pero todo tiene un precio» (carrusel de 2, música «Perdóname»)
 - **Mecánica:** una escalera de 3 precios para 3 tamaños de culpa («perdón básico / deluxe / premium», cada uno
   una hamburguesa). Se manda a quien te debe una disculpa.
-- **Gastada:** dos hamburgueserías peruanas usaron la misma plantilla en octubre (Bronson 23-oct, 200g). Para el 20
-  de noviembre estará vista. **No se copia la frase ni la escalera de «perdón».**
+- **Está habilitada (Ezra, 2026-11-10).** Dato a tener en cuenta: dos hamburgueserías peruanas usaron la misma
+  plantilla en octubre (Bronson 23-oct, 200g), así que ya es una tendencia reconocible. Eso juega a favor si la
+  usamos como tendencia (la gente entiende el chiste al toque) y en contra si sale igual. Se toma la mecánica
+  y el giro de «todo tiene un precio»; los tres niveles y el texto son nuestros.
+- **Versión directa, «Sí, te perdono…»:** SANDO, con los brazos cruzados: «SÍ, TE PERDONO. PERO TODO TIENE UN
+  PRECIO.» Lámina 2, tres niveles con nuestra carta real (nombres y precios interpolados de la carta): «Perdón
+  chico: un 15CM», «Perdón en serio: un 30CM», «Perdón de cumpleaños olvidado: 30CM con doble proteína y THE
+  BLOOM». Música de la tendencia. Pie: «Mándaselo a quien te tiene que pedir perdón.»
 - **Nuestra versión, «Lo que se debe»:** WICHO le debe algo a SANDO, y SANDO le cobra según la deuda. Lámina 1:
   «WICHO, ME DEBES UNA.» Lámina 2, la escalera con nuestra carta real: «¿Un favor? Un 15CM. ¿Una mudanza? Un
   30CM. ¿Te comiste mi mitad? 30CM con doble proteína.» Los tamaños y precios salen de la carta
@@ -51,9 +60,15 @@ Los números son los que se ven en la captura (me gusta / envíos), no son de un
 ### 4 · Quincy: «Cómete ésta» → «Es broma… pero sí, cómete ésta» (carrusel de 3)
 - **Mecánica:** un doble sentido de entrada (la hamburguesa a la altura del pantalón), un giro y el remate con el
   producto. Por eso tiene la mayor cantidad de me gusta.
-- **Lo que no se toma:** el doble sentido sexual. Va en contra de la marca y puede chocar con las normas de
-  anuncios de Meta si algún día se paga.
-- **Lo que sí se toma:** la estructura de tres tiempos: anzuelo → «es broma» → «pero esto va en serio». Nuestra
+- **Está habilitada con doble sentido (Ezra, 2026-11-10).** Cuidado práctico: un doble sentido sirve **en el
+  feed orgánico**; si algún día se paga como anuncio, Meta puede rechazarlo por contenido sexual sugerente, y
+  entonces se paga la versión sin doble sentido. Calidad revisa que quede en picardía (insinuado, nunca
+  explícito ni con partes del cuerpo en primer plano).
+- **Versión con doble sentido, «Muérdelo»:** lámina 1, las manos sosteniendo un 30CM entero, de frente, con el
+  texto curvo «ESTE SÍ MIDE 30.» Lámina 2: WICHO tapándose la cara, «¿Qué estabas pensando?» Lámina 3: SANDO
+  serio, «Es el 30CM. Treinta centímetros de pan, de verdad.» Con el tamaño real: no promete más de lo que llega
+  (INDECOPI), solo juega con cómo se lee.
+- **Versión sin doble sentido (la que se puede pagar):** la estructura de tres tiempos: anzuelo → «es broma» → «pero esto va en serio». Nuestra
   versión: WICHO propone algo absurdo («PHILLY con tres salsas»), SANDO dice «es broma» y remata «pero el
   PHILLY CHEESESTEAK sí va así: sin salsa, el jugo es de la res». Es el motor de la serie (`BIBLIA_DE_LA_SERIE.md`).
 
@@ -81,7 +96,8 @@ Los números son los que se ven en la captura (me gusta / envíos), no son de un
 | 1 | «Abre la foto» con WICHO | carrusel de 2 con música | semana de apertura |
 | 2 | «Un sándwich no te arregla el lunes, peeero…» | carrusel de 6 con fotos reales | primer lunes después de abrir (23-nov) |
 | 3 | «No abras la bolsa» + encuesta | carrusel de 2 + historia | semana del 16 |
-| 4 | «Lo que se debe» (escalera 15CM / 30CM / doble) | carrusel de 2 con música | después de abrir |
+| 4 | «Sí, te perdono…» o «Lo que se debe» (escalera 15CM / 30CM / doble) | carrusel de 2 con música | después de abrir |
+| 4b | «Este sí mide 30» (doble sentido, solo orgánico) | carrusel de 3 | después de abrir |
 | 5 | Tres tiempos «es broma… pero esto va en serio» | reel de la serie | rutina de reels |
 
 Todas pasan por `/pieza` (concepto → arte → calidad) y esperan el sí de Ezra antes de publicarse.
