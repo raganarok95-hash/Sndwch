@@ -22,7 +22,7 @@ Deno.test("una automática en rojo, una entrega atascada y las preguntas aparece
   const l = lineasDelSistema({
     automaticas_en_rojo: [{ nombre: "Recorrido de un cliente por el sitio real", archivo: "recorrido-real.yml" }],
     entregas_atascadas: [{ hilo: "recetas", archivo: "2026-11-08-sal.md", de: "disenos", desde: "2026-11-08" }],
-    preguntas_abiertas: [{ id: "P01", hilo: "app", pregunta: "Token de Instagram" }],
+    preguntas_abiertas: [{ id: "Q01", hilo: "app", pregunta: "Token de Instagram" }],
   }, RECIEN, AHORA);
   ok(l.some((x) => x.includes("Recorrido de un cliente")), "no dijo qué automática");
   ok(l.some((x) => x.includes("de disenos para recetas")), "no dijo la entrega atascada");

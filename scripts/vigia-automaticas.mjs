@@ -36,7 +36,7 @@ export function enRojo(conclusiones) {
 }
 
 export function preguntasAbiertas(md) {
-  return md.split('\n').filter((l) => /^\|\s*P\d+\s*\|/.test(l)).map((l) => l.split('|').map((c) => c.trim()))
+  return md.split('\n').filter((l) => /^\|\s*Q\d+\s*\|/.test(l)).map((l) => l.split('|').map((c) => c.trim()))
     .map((c) => ({ id: c[1], desde: c[2], hilo: c[3], pregunta: c[4], estado: c[5] }))
     .filter((p) => p.estado === 'abierta');
 }
