@@ -160,6 +160,16 @@ async function pieza(archivo, w, h, armar, vista, conFondoEnPdf = false) {
 }
 
 
+// Cocina: una etiqueta por TANDA (en el táper donde van las porciones), no una por bolsita: se reusa como la de
+// las salsas. Los nombres y si va congelado salen de OPERATIVO.md §2 (2026-11-10: «bolsitas de congelar y etiquetas»).
+const COCINA = [
+  ['RES // LAMINADA', '', 'congelado'], ['RES // LAMINADA', '', 'congelado'], ['ALBÓNDIGA // MARINARA', '', 'congelado'],
+  ['ALBÓNDIGA // MARINARA', '', 'congelado'], ['PAN SUB', '', 'congelado'], ['PAN SUB', '', 'congelado'],
+  ['CEBOLLA // SALTEADA', '', 'refri'], ['CEBOLLA // SALTEADA', '', 'refri'], ['ATÚN // HOUSE', '', 'refri · no se congela'],
+  ['PAVO // HORNEADO', '', 'refri'], ['EMBUTIDO // ITALIANO', '', 'refri'], ['QUESOS', '', 'refri'],
+  ['VEGETALES DEL DÍA', '', 'refri'], ['VEGETALES DEL DÍA', '', 'refri'], ['', '', ''], ['', '', ''], ['', '', ''], ['', '', ''],
+];
+
 // ── 1 · Botellas: frente 60 × 100 (el dibujo de la lata, a escala) ────────────────────────────
 for (const L of BOTELLAS) {
   await pieza(`botella-frente-${L.id}`, 60, 100, {
@@ -232,6 +242,7 @@ async function pliegoSalsas(archivo, lista) {
   }, '#FFFFFF', true);
 }
 await pliegoSalsas('salsas-A4-1-con-nombre', SALSAS);
+await pliegoSalsas('cocina-A4-tandas', COCINA);
 await pliegoSalsas('salsas-A4-2-en-blanco', Array.from({ length: 18 }, () => ['', '', '']));
 
 // ── 4 · Vista para el dueño: las tres botellas (frente y atrás) sobre su bebida ──
