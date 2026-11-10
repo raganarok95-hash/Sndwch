@@ -11,3 +11,6 @@
 - **2026-11-02 · Ejecución, no solo idea.** «Te lo explicamos» le gustó al dueño, pero la ejecución le pareció simple:
   «están algo simples, no la idea, la ejecución». Cada concepto trae ahora tres formas de verlo y elige la que el feed no
   tiene (`idear-y-cerrar` §3).
+
+## 2026-11-10 · reel «¿Y si hoy son albóndigas?»
+Dueño, al verlo montado: «Ya vi el video no me gustó para nada». Se paró la toma 1 rehecha. Pendiente: qué no le gustó.
