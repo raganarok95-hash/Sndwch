@@ -1,0 +1,8 @@
+{
+  "tramos": [
+    { "video": "../../estudio/hecho/2026-11-10-gotea-1/v1.mp4", "dura": 5.5, "quien": "WICHO", "titular": "¿Mayonesa? ¿Ketchup? ¿Todas?" },
+    { "video": "../../estudio/hecho/2026-11-10-gotea-2/v1.mp4", "dura": 5.5, "quien": "SANDO", "titular": "Ese ya gotea." },
+    { "imagen": "../../../../img/sig09_v.webp", "dura": 4, "quien": null, "titular": "PHILLY CHEESESTEAK", "linea": "El jugo es de la res. No lleva salsa." }
+  ],
+  "cierre": { "titular": "Abrimos el viernes 20, 11:00.", "linea": "sndwch.app", "dura": 2.5 }
+}

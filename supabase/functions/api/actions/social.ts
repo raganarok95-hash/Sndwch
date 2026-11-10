@@ -141,7 +141,7 @@ async function instagramDeLaPagina(pagina: { id: string; token: string }): Promi
 // la página tenga su Instagram profesional y que el token pueda publicar en él. El límite de
 // publicación de Instagram solo responde si el token trae `instagram_content_publish`: leerlo
 // prueba el permiso sin crear ningún contenedor. La usa verificar-meta (Estado para abrir).
-export type VerificacionPublicacion = { token: boolean; pagina: string | null; instagram: string | null; puedePublicar: boolean | null; detalle: string | null; permisos: string | null; vinculo: string | null };
+export type VerificacionPublicacion = { token: boolean; pagina: string | null; instagram: string | null; puedePublicar: boolean | null; detalle: string | null; permisos: string | null; mensajes?: string | null; vinculo: string | null };
 export async function verificarPublicacion(): Promise<VerificacionPublicacion> {
   const v: VerificacionPublicacion = { token: !!META_PAGE_ACCESS_TOKEN, pagina: null, instagram: null, puedePublicar: null, detalle: null, permisos: null, vinculo: null };
   // Con la puerta de Instagram (sin página), se prueba esa: es la que publica.
@@ -156,6 +156,13 @@ export async function verificarPublicacion(): Promise<VerificacionPublicacion> {
     } catch (e: any) {
       v.puedePublicar = false;
       v.detalle = "INSTAGRAM_LOGIN_TOKEN: " + String(e?.message || e).slice(0, 200);
+    }
+    // ¿Lee la bandeja? (2026-11-04, antes del contestador de mensajes). Solo lee: no manda nada.
+    try {
+      const c = await metaGraphGet("me/conversations", { platform: "instagram", fields: "updated_time", limit: "25", access_token: igTok }, GRAPH_IG);
+      v.mensajes = `sí, ve ${Array.isArray(c?.data) ? c.data.length : 0} conversación(es)`;
+    } catch (e: any) {
+      v.mensajes = "NO: " + String(e?.message || e).slice(0, 200);
     }
     return v;
   }

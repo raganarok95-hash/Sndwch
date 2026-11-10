@@ -5,8 +5,8 @@ se necesiten para optimizar todo». Este es el marco que sigue la agencia cada l
 La agencia del lunes (`agencia-semana`) lee este archivo antes del brief: el tema y la meta de cada semana salen de acá;
 las piezas, de la agencia completa, y **tú eliges**.
 
-Nada de esto gasta plata, prende anuncios ni publica solo. Tú subes cada publicación (Instagram todavía no está unido a
-la página: lo ve el hilo «Maquetas del pedido simple»).
+Nada de esto gasta plata, prende anuncios ni publica solo. Instagram ya publica desde el sistema (2026-11-03), pero ninguna
+publicación sale sin tu sí.
 
 ## La idea de todo el mes: «Ya tiene día»
 
@@ -119,8 +119,9 @@ El domingo 6 se compara contra la meta (4 pedidos al día) y se decide la semana
 1. **El concepto de «Ya hay día»** (tarjeta en el hilo).
 2. **Las imágenes nuevas en Figma**: 1 o 2 de «Ya hay día» y 1 de los embutidos nuevos del ITALIAN HOAGIE, con los créditos de tu plan (las de la semana del 9 ya se hicieron el 2-nov con tu «ya todo aprobado»).
 3. **Tu estado de WhatsApp del 20** (lo pones tú, si quieres).
-4. **El video del día**: con la fecha fijada, el sistema lo deja salir desde el 20 (antes, desde el 30). Hoy no se
-   publica solo porque Instagram no está unido a la página. Si quieres que siga en pausa aunque se una, dímelo.
+4. **El video del día**: con la fecha fijada, el sistema lo deja salir desde el 20 (antes, desde el 30). Instagram ya está
+   conectado (2026-11-03): desde el 20 el Revisor lo aprueba y sale solo, a las 12:00 o 18:00.
+   **Decidido (dueño, 2026-11-03): «Que salga solo desde el 20».**
 
 ## Lo que no entra (y por qué)
 

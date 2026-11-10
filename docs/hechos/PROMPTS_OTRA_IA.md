@@ -373,20 +373,20 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
   SIG09 Philly Cheesesteak             19.90    6.48    13.42    32.5%
-  SIG02 Meatball Marinara              19.90    6.35    13.55    31.9%
+  SIG02 Meatball Marinara              19.90    6.03    13.87    30.3%
   SIG10 Turkey                         19.90    6.58    13.31    33.1%
   SIG12 Tuna Melt                      19.90    6.45    13.45    32.4%
-  SIG11 Italian Hoagie                 19.90    8.21    11.69    41.3%
+  SIG11 Italian Hoagie                 19.90    6.67    13.23    33.5%
   SIG04 Classic Tuna                   19.90    5.55    14.35    27.9%
 
   30CM
                                       precio   costo     deja  costo %
   ----------------------------------------------------------------------------
   SIG09 Philly Cheesesteak             30.90   11.65    19.25    37.7%
-  SIG02 Meatball Marinara              30.90   11.39    19.51    36.9%
+  SIG02 Meatball Marinara              30.90   10.76    20.14    34.8%
   SIG10 Turkey                         30.90   11.86    19.04    38.4%
   SIG12 Tuna Melt                      30.90   11.60    19.30    37.5%
-  SIG11 Italian Hoagie                 30.90   15.13    15.77    49.0%  <-- PASA EL TECHO
+  SIG11 Italian Hoagie                 30.90   12.04    18.86    39.0%
   SIG04 Classic Tuna                   30.90    9.80    21.10    31.7%
 
 ============================================================================================
@@ -398,8 +398,8 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
   ----------------------------------------------------------------------------
   Pollo // Cajun (fuera del armador)   13.90    6.95     6.95    50.0%  <-- PASA EL TECHO
   Atún // House                        19.90    7.71    12.19    38.8%
-  Embutido // Italiano (fuera del armador)   16.90    8.75     8.15    51.8%  <-- PASA EL TECHO
-  Albóndiga // Marinara                19.90    7.42    12.48    37.3%
+  Embutido // Italiano (fuera del armador)   16.90    7.22     9.68    42.7%
+  Albóndiga // Marinara                19.90    7.10    12.80    35.7%
   Pavo // Horneado                     19.90    8.22    11.68    41.3%
   Res // Laminada                      19.90    7.50    12.40    37.7%
 
@@ -408,8 +408,8 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
   ----------------------------------------------------------------------------
   Pollo // Cajun (fuera del armador)   23.90   12.60    11.30    52.7%  <-- PASA EL TECHO
   Atún // House                        30.90   14.13    16.77    45.7%  <-- PASA EL TECHO
-  Embutido // Italiano (fuera del armador)   32.90   16.22    16.68    49.3%  <-- PASA EL TECHO
-  Albóndiga // Marinara                30.90   13.53    17.37    43.8%
+  Embutido // Italiano (fuera del armador)   32.90   13.13    19.77    39.9%
+  Albóndiga // Marinara                30.90   12.90    18.00    41.8%
   Pavo // Horneado                     30.90   15.14    15.76    49.0%  <-- PASA EL TECHO
   Res // Laminada                      30.90   13.70    17.20    44.3%
 
@@ -420,10 +420,10 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
   Pollo // Cajun (fuera del armador) 30CM   11.00    4.97     6.03    45.2%  <-- PASA EL TECHO
   Atún // House 15CM                   10.90    3.25     7.65    29.8%
   Atún // House 30CM                   21.90    6.50    15.40    29.7%
-  Embutido // Italiano (fuera del armador) 15CM    9.90    4.29     5.61    43.3%
-  Embutido // Italiano (fuera del armador) 30CM   19.90    8.59    11.31    43.2%
-  Albóndiga // Marinara 15CM            6.90    2.95     3.95    42.8%
-  Albóndiga // Marinara 30CM           13.90    5.90     8.00    42.5%
+  Embutido // Italiano (fuera del armador) 15CM    9.90    2.75     7.15    27.8%
+  Embutido // Italiano (fuera del armador) 30CM   19.90    5.50    14.40    27.7%
+  Albóndiga // Marinara 15CM            6.90    2.64     4.26    38.2%
+  Albóndiga // Marinara 30CM           13.90    5.27     8.63    37.9%
   Pavo // Horneado 15CM                 9.00    3.76     5.24    41.8%
   Pavo // Horneado 30CM                17.00    7.51     9.49    44.2%
   Res // Laminada 15CM                  7.00    3.04     3.96    43.4%
@@ -538,7 +538,6 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
   parte                                      costo %   cuanto se pasa
   ----------------------------------------------------------------------
   BYO Pavo // Horneado 30CM                    49.0%            4.0 pts
-  SIG11 Italian Hoagie 30CM                    49.0%            4.0 pts
   BYO Atún // House 30CM                       45.7%            0.7 pts
 
   ⚠ NADA DE ESTO SE ARREGLA CON PUBLICIDAD. Al contrario: la publicidad multiplica el

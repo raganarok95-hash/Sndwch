@@ -51,7 +51,7 @@ const banda = (etiqueta, titulo, frase, t = 104) => `
 
 // ── 1 · ¿Qué es un Philly? ──────────────────────────────────────────────────────────────────────────────
 // Portada: el despiece de costado (el pan largo se ve largo), con la leyenda arriba y un número junto a cada capa,
-// fuera de la comida. Después, tres acercamientos del proceso en la plancha. Todo sale de CARTA.md.
+// fuera de la comida. Después, tres acercamientos del proceso en la sartén (no hay plancha: DECISIONES.md, 2026-09-24). Todo sale de CARTA.md.
 const capas = [[460, 'Cheddar fundido'], [576, 'Res laminada fina'], [724, 'Cebolla y pimiento'], [871, 'Pan Classic de 15 cm']];
 const num = (k, c = S.verde) => `<span style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:99px;background:${S.tan};color:${c};font:600 24px 'IBM Plex Mono',monospace;flex:none">${k}</span>`;
 const philly1 = caja(`background:#1d120b`, `
@@ -66,7 +66,7 @@ const proceso = (f, k, titulo, frase) => caja(`background:#1d120b`, `
 const PHILLY = [
   philly1,
   proceso('v2-res-plancha.png', 1, 'La res', 'Laminada fina y salteada en el momento. Nada de carne molida.'),
-  proceso('v2-cebolla-pimiento.png', 2, 'Cebolla y pimiento', 'Se saltean en la misma plancha, junto con la res.'),
+  proceso('v2-cebolla-pimiento.png', 2, 'Cebolla y pimiento', 'Se saltean junto con la res, en la misma sartén.'),
   proceso('v2-cheddar-fundido.png', 3, 'Cheddar fundido', 'Se funde encima hasta amarrarlo todo. Tan jugoso que no lleva salsa.'),
 ];
 
@@ -102,7 +102,7 @@ const portadaDice = caja(`background:${W.pelaje}`, `${curvas(1080, 1350, 880, 30
 const DICE = [
   portadaDice,
   palabraObjeto(1, 'Sub', `<img src="${foto('v2-sub-regla-recorte.png')}" style="width:1000px;transform:rotate(-4deg);${sombra}">`, 'El sándwich de pan largo, al estilo americano. De 15 o de 30 cm.', 1),
-  palabraObjeto(2, 'Hoagie', `<img src="${foto('v2-embutidos-recorte.png')}" style="width:860px;${sombra}">`, 'Así le dicen al sub en Filadelfia. El nuestro va con jamón ahumado, salame y pepperoni.', 2, 280),
+  palabraObjeto(2, 'Hoagie', `<img src="${foto('v2-embutidos-nuevos-recorte.png')}" style="width:860px;${sombra}">`, 'Así le dicen al sub en Filadelfia. El nuestro va con jamón ahumado, salame y pepperoni.', 2, 280),
   palabraObjeto(3, 'Melt', `<img src="${foto('v2-melt-estira-recorte.png')}" style="width:900px;${sombra}">`, 'Cuando el queso va fundido encima. El del Tuna Melt se estira.', 3),
   palabraObjeto(4, 'Arma el tuyo', `<div style="background:#fff;border-radius:20px;padding:10px;${sombra}"><img src="${foto('v2-cuencos.png')}" style="width:760px;display:block;border-radius:12px"></div>`, 'Cuando el que decide eres tú: el pan, la proteína y lo de encima.', 4, 170),
 ];

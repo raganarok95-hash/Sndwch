@@ -7,7 +7,7 @@
 // Regenerar después de cada migración (con la herramienta de Supabase generate_typescript_types)
 // y actualizar la línea de abajo con la versión de la última migración aplicada.
 // `npm run check:tipos-base` falla si hay una migración más nueva que esta.
-// generado-contra-migracion: 20261103123143
+// generado-contra-migracion: 20261110133804
 export type Json =
   | string
   | number
@@ -110,6 +110,8 @@ export type Database = {
       }
       app_settings: {
         Row: {
+          avisos_del_sistema: Json | null
+          avisos_del_sistema_at: string | null
           business_launched: boolean
           id: boolean
           meta_ads_pausadas: string[]
@@ -120,6 +122,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          avisos_del_sistema?: Json | null
+          avisos_del_sistema_at?: string | null
           business_launched?: boolean
           id?: boolean
           meta_ads_pausadas?: string[]
@@ -130,6 +134,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          avisos_del_sistema?: Json | null
+          avisos_del_sistema_at?: string | null
           business_launched?: boolean
           id?: boolean
           meta_ads_pausadas?: string[]

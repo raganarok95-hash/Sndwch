@@ -36,3 +36,7 @@ user-invocable: false
 - **Titular del anuncio** (debajo de la imagen): 40 caracteres o menos.
 - El botón: «Pedir ahora». El enlace lleva su `?src=`.
 - Entrega **tres opciones** de cada texto, cada una con una línea de por qué.
+
+## Nunca repetir (dueño, 2026-11-09)
+«Deja de usar la misma estupidez a cada rato, usas esas mismas frases». Ningún titular ni frase ya usada: se busca en
+el historial antes de proponer (`git grep -i` en `docs/marketing`). Lista de gastados en `anuncio-directo`.

@@ -1,0 +1,42 @@
+{
+ "semana": "2026-11-02",
+ "prueba": true,
+ "pedidos": 1,
+ "clientesNuevos": 1,
+ "clientesQueVuelven": 0,
+ "ticketPromedio": 24.9,
+ "enGrupo": 0,
+ "conPedidoFijo": 0,
+ "porOrigen": [
+  {
+   "origen": "ig-bio",
+   "visitas": 2,
+   "pedidos": 1,
+   "nuevos": 1,
+   "conversion": 0.5
+  },
+  {
+   "origen": "directo",
+   "visitas": 169,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  },
+  {
+   "origen": "meta-turkey",
+   "visitas": 1,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  }
+ ],
+ "porHora": {
+  "7": 1
+ },
+ "porDia": {
+  "lun": 1
+ },
+ "gastoDePauta": {},
+ "costoPorClienteNuevoMeta": null,
+ "generado": "2026-11-09T12:49:16.263Z"
+}
