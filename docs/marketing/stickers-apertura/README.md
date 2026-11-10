@@ -32,7 +32,7 @@ porciones en bolsitas de congelar (cinta masking y plumón: producto y fecha, es
   plancha A3 (297 × 420) entran 8 juegos (frente + atrás). Se reimprime lo que se acabe.
 - **Salsas.** Se escriben con **plumón indeleble** y se borran con alcohol: la etiqueta se reusa en
   cada tanda (frascos.md: «todo con etiqueta: código, fecha y vence»). El código es el de la carta.
-  Los 9 squeeze y 11 frascos de `frascos.md` quedan cubiertos, con 2 de sobra y la plancha en blanco.
+  Los 9 squeeze y los frascos de `frascos.md` (menos el de sal) quedan cubiertos, con 2 de sobra y la plancha en blanco.
 - La **línea fucsia** del pliego de salsas es solo la guía de corte: no se imprime.
 
 ## Antes de imprimir
@@ -41,9 +41,8 @@ porciones en bolsitas de congelar (cinta masking y plumón: producto y fecha, es
    si mide 10.5 cm o más. Si es menos, se ajusta.
 2. **Tinta blanca:** el texto crema sobre vinilo transparente (BLOOM y COLD BREW TEA) necesita
    blanco de base. Si la imprenta no tiene blanco, el texto sale muy claro: avísame y lo paso a verde.
-3. **La sal:** la etiqueta de la botella dice que no lleva sal, como dijiste; en la receta guardada
-   cada litro lleva 2 g de solución de sal al 10% (0.2 g de sal). Por eso hay una etiqueta «SAL AL
-   10%». Si no lleva, se quita; si sí lleva, se agrega a los ingredientes de la botella.
+3. **La sal:** resuelta. Las bebidas no llevan sal (Ezra, 2026-11-02: «sin sal en la receta»; RECETAS sacó el
+   sobrante de la receta guardada el 2026-11-10, Q12). Ya no hay etiqueta «SAL AL 10%»: quedan 3 en blanco.
 
 ## Dónde imprimir en Trujillo
 

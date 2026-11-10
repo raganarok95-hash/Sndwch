@@ -41,7 +41,7 @@ const SALSAS = [
   ['PICANTE // MIEL', 'S12', 'squeeze'], ['HONEY // MUSTARD', 'S04', 'frasco'], ['SPICY // MAYO', 'S02', 'frasco'],
   ['PICANTE // MIEL', 'S12', 'frasco'], ['CHIMICHURRI', 'S09', 'frasco'], ['CHIMICHURRI', 'S09', 'frasco'],
   ['CHIMICHURRI', 'S09', 'frasco'], ['CHIMICHURRI SIN PICANTE', '', 'frasco'], ['SUCRALOSA AL 2%', '', 'solución'],
-  ['SAL AL 10%', '', 'solución'], ['', '', ''], ['', '', ''],
+  ['', '', ''], ['', '', ''], ['', '', ''],  // sin «SAL AL 10%»: las bebidas no llevan sal (RECETAS, 2026-11-10, Q12)
 ];
 const ICONOS = {
   flor: [0, 1, 2, 3, 4].map((i) => `<path transform="rotate(${72 * i} 50 50)" d="M50 44 C38 36 34 18 42 10 C46 6 54 6 58 10 C66 18 62 36 50 44 Z"/>`).join('') + '<circle cx="50" cy="50" r="6"/>',
