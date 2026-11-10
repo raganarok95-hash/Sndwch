@@ -52,3 +52,8 @@ SANDO y WICHO son personajes dibujados, no personas: hoy no entran ahí. El ries
 media cara fotorrealistas generadas** (anuncio directo): si Instagram las detecta, puede marcar la cuenta y cortar
 el alcance en Reels y Explorar. Por eso, en el contenido orgánico, las personas fotorrealistas generadas se usan poco
 y nunca como protagonista. Si llega un aviso en «Estado de la cuenta», se le avisa a Ezra el mismo día.
+
+## Entregas entre hilos (desde 2026-11-10, `docs/entregas/README.md`)
+Antes de empezar la semana, leer `docs/entregas/marketing/` (por ejemplo la historia «hoy hay» con el stock real que
+pasa App, o los avisos de `cambio-de-carta.yml` para revisar piezas). Las preguntas para Ezra van a
+`docs/entregas/ezra/PREGUNTAS.md`, no al chat.
