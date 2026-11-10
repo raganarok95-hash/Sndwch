@@ -20,8 +20,8 @@ Método: `equipo/METODO_GRANDES_EQUIPOS.md` §4.2.1. Plataforma: `PLATAFORMA_DE_
    verdad de la carta, sin «promo».
 8. **Tipo de gancho (Meta):** promesa de valor o pregunta/invitación.
 9. **Lo que NO:** nada de «Ese ya gotea» (negativo, WICHO tonto, sin momento); ninguna frase prohibida de
-   `anuncio-directo` «Nunca repetir»; sin plancha (sartén); sin etiqueta de IA; sin fecha de apertura en la idea
-   (va en el cierre, de `APERTURA.md`); nunca «dark kitchen».
+   `anuncio-directo` «Nunca repetir»; sin plancha (sartén); sin etiqueta de IA; sin fecha en el video (dueño, 2026-10-30:
+   va en el caption, la biografía y la historia); nunca «dark kitchen».
 10. **Cómo se mide y cuándo se decide:** envíos por alcance, skip rate a 3 s contra nuestros últimos reels, alcance a no
     seguidores; postmortem al día 6 (18-nov).
 

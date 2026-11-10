@@ -40,7 +40,7 @@ y `docs/marketing/AGENCIA.md`. La meta: **S/6,000 líquidos al mes** antes del s
   (~85 g de proteína en un pan de 15 cm, una capa, sin desbordar). Una imagen que promete más
   relleno, otro queso u otro ingrediente es publicidad engañosa (caso Bon o Bon).
 - Nada que no se venda en la imagen: **nada de alcohol**, ni platos o bebidas que no están en la
-  carta. Nadie en el cuadro hasta que haya fotos reales.
+  carta. Personas: solo manos o la parte baja de la cara generadas, sin rostro reconocible, y poco (dueño, 2026-11-09; riesgo de alcance de Instagram en `reels/COMO_SE_HACEN.md`).
 - Nunca inventes datos legales (RUC, razón social, dirección) ni un dato del negocio.
 - El texto legal (Términos, Privacidad, Cambios y Devoluciones, Cancelaciones) no se toca.
 
