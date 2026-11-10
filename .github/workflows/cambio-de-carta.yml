@@ -1,0 +1,45 @@
+name: Cambio de carta
+
+# Dueño (2026-11-10): «Todo debe funcionar en automático». Cuando cambia un producto de la carta, deja una
+# entrega a cada hilo al que le toca (foto, piezas, compras, costo, etiqueta). docs/entregas/README.md.
+on:
+  push:
+    branches: [main]
+    paths: ['modelo/carta.json']
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cambio-de-carta
+  cancel-in-progress: false
+
+jobs:
+  entregas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Dejar las entregas
+        env:
+          ANTES: ${{ github.event.before }}
+        run: |
+          base="$ANTES"
+          if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then base=HEAD~1; fi
+          git show "$base:modelo/carta.json" > /tmp/carta-antes.json
+          node scripts/cambio-de-carta.mjs /tmp/carta-antes.json modelo/carta.json
+      - name: Guardarlas en main
+        run: |
+          git add docs/entregas
+          if git diff --cached --quiet; then echo "Sin entregas nuevas"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Entregas por cambio de carta"
+          for i in 1 2 3; do git pull --rebase origin main && git push origin HEAD:main && exit 0; sleep 5; done
+          exit 1
