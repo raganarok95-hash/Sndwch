@@ -59,3 +59,8 @@ pasa App, o los avisos de `cambio-de-carta.yml` para revisar piezas). Las pregun
 `docs/entregas/ezra/PREGUNTAS.md`, no al chat.
 - **«Hoy hay» de las 11:00:** los Signatures disponibles salen de `node scripts/hoy-hay.mjs` (corre en GitHub; el
   proxy de las sesiones bloquea la API). Si devuelve `ok: false` no hay inventario cargado y esa historia no sale.
+
+## Límite de Flow (2026-11-10)
+Tras ~40 generaciones seguidas, Flow mostró «Detectamos actividad inusual» (su detección de bots). No se rodea: se para,
+Ezra lo verifica en su Chrome y se sigue. Para no volver a chocar: **tandas de 12 a 15 generaciones como máximo, con
+pausas**, y lo urgente (las tomas de video de la semana) primero.
