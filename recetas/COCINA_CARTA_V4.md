@@ -59,10 +59,13 @@ porciones. La tanda grande de cada receta está abajo; la de apertura, al lado.
 
 Al pedido (3 min):
 1. Sartén grande **muy caliente** con un hilo de aceite.
-2. La porción extendida en **una sola capa**. Sal y pimienta encima.
-3. A los 2 min voltea y separa con la espátula. Suma la cebolla salteada (40 g; 80 g en 30CM) y
+2. La porción extendida en **una sola capa**. Sal y pimienta encima. **No la muevas el primer
+   minuto:** ese dorado es el sabor del Philly.
+3. A los 2 min voltea y **pícala con el canto de la espátula**. Si quedó jugo en la sartén, déjalo
+   a un lado: no va al pan. Suma la cebolla salteada (40 g; 80 g en 30CM) y
    el pimiento verde (7 g; 14 g en 30CM).
-4. Junta todo en la forma del pan, el cheddar encima y espera a que se funda (1 min).
+4. Junta todo en la forma del pan, el cheddar encima y espera a que se funda (1 min). **Mézclalo
+   con la carne** para que el queso la amarre y no se caiga en la moto.
 5. Pásalo al pan con la espátula.
 
 - **Nunca más de dos porciones a la vez** en la sartén: se enfría y la carne hierve en su jugo.
@@ -97,9 +100,11 @@ Al pedido (3 min):
 
 1. Remoja el pan en la leche 10 min y aplástalo hasta que sea una pasta.
 2. Junta todo y mezcla **con la mano y poco**. Si amasas mucho, quedan como salchicha.
-3. Haz bolas de **30 g** (pésalas las primeras veces).
+3. Haz bolas de **30 g** (pésalas las primeras veces). **Mientras calienta el horno, la bandeja a
+   la refri:** frías, quedan redondas.
 4. Al horno a **200 °C, 15 a 18 min**, en bandeja.
-5. Termínalas **15 min dentro de la marinara caliente**.
+5. Termínalas **15 min dentro de la marinara, a fuego bajo, que apenas burbujee**. Si hierve
+   fuerte, se rompen.
 
 **Marinara — tanda de 3 L (apertura: 1.5 L, la mitad):** tomate pelado en lata 2.5 kg (**6 latas
 de 400 g**; Mutti S/4.99 en Makro, 5-nov-2026: S/30 la tanda, S/1.00 por porción de 15CM) · aceite de
@@ -135,8 +140,8 @@ Al pedido (4 min):
 **No se cocina. Se mezcla.** La cuenta fácil: **1 lata de 140 g escurrido + 35 g de mayonesa = dos
 15CM o un 30CM.**
 
-1. **Escurre de verdad:** aprieta con la tapa de la lata hasta que no salga líquido. Atún mal
-   escurrido empapa el pan.
+1. **Escurre de verdad:** la lata abierta, boca abajo en un colador, 5 min; después aprieta suave
+   con la tapa. Atún mal escurrido empapa el pan.
 2. Desmenuza con tenedor en **lascas** (no lo hagas pasta).
 3. Mezcla con la mayonesa y pimienta blanca. **Sal solo si hace falta:** la lata ya trae.
 4. Porción: **85 g en 15CM, 170 g en 30CM.**
@@ -166,7 +171,8 @@ lleno). 85 g en 15CM, 170 g en 30CM. **Lamina lo del día**; la pieza entera, en
 | pepperoni | 25 g | 50 g | rodajas finas, en escalera |
 
 Arma en capas alternadas (jamón, salame, pepperoni, jamón…) para que cada mordida lleve los tres.
-Se compra ya tajado en paquetes de 500 g (Makro): no hay que laminar. Paquete abierto, bien
+Se compra ya tajado: paquetes chicos al abrir y de 500 g (Makro, menos de la mitad por kilo) cuando
+se vendan ~15 HOAGIE a la semana. No hay que laminar. Paquete abierto, bien
 cerrado en refri y úsalo en pocos días.
 
 ### OIL & VINEGAR // CLASSIC — para TURKEY e ITALIAN HOAGIE
