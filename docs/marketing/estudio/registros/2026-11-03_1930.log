@@ -1,0 +1,9 @@
+﻿19:30:03  inicio. powershell=5.1.26100.9444
+19:30:05  ERROR al subir a GitHub: git : fatal: unable to access 'https://github.com/raganarok95-hash/Sndwch.git/': Could not resolve host: github.com
+En ~\sndwch-estudio\scripts\estudio\estudio.ps1: 36 Carácter: 14
++   $salida = (git push -q origin estudio 2>&1 | Out-String)
++              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (fatal: unable t...ost: github.com:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+19:30:05  ERROR: no pude subir lo de la corrida anterior a GitHub; no sigo, para no perderlo
+19:30:05  fin. hecho: 
