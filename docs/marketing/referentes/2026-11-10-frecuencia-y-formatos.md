@@ -4,7 +4,8 @@ Dueño (2026-11-10): «necesito que no el equipo de marketing sino el equipo de 
 cuantos post al día son ideales, que tipo de post, como aumentar las ventas». Dato que da el dueño: generar
 imágenes con Google Flow es gratis, así que el volumen no cuesta plata.
 
-Lo lee la rutina de reels del lunes (Equipo de marketing). Cada cifra lleva su fuente al final.
+Lo lee la rutina de reels del lunes (Equipo de marketing). Cada cifra lleva su fuente al final. Complementa
+a `2026-11-10.md` (modelos de estructura de reels y anuncios activos en Perú, del mismo día).
 
 ## La respuesta corta
 
