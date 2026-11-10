@@ -11,6 +11,13 @@ import { elegirSando, pedirUnSignature, ponerRecibe, ponerDireccion, salirALaPue
 
 type Hallazgo = { paso: string; que: string };
 const hallazgos: Hallazgo[] = [];
+
+// La apertura (dueño, 2026-11-02: «Abrimos el 20 de noviembre»; el cron sndwch-abrir-tienda-20-nov la
+// prende a las 6:00 de Lima). Antes de esa hora la app NO debe tomar pedidos. El 2026-11-10 el recorrido
+// llegaba a «Pagar con Yape» todos los días y salía en verde: la tienda había quedado abierta desde las
+// pruebas del 2026-11-02 y cualquiera con el enlace podía pagar. Ahora eso es un hallazgo.
+// Si la fecha se mueve, se cambia aquí y en el cron el mismo día.
+const APERTURA = Date.parse('2026-11-20T11:00:00Z');
 let pasoActual = '';
 
 // El píxel de Meta (el script y sus envíos): un robot no es un cliente.
@@ -107,6 +114,9 @@ test('un cliente nuevo recorre la app real sin errores', async ({ page }) => {
       // vuelva a avisar de los errores de verdad (estuvo en rojo todos los días del 2026-10-25 al 2026-11-01 por esto).
       if (/Todavía no abrimos/.test(aviso)) { console.log('antes de abrir: Pagar avisa «Todavía no abrimos» (esperado)'); return; }
       hallazgos.push({ paso: pasoActual, que: 'Pagar no llevó a ninguna pantalla' + (aviso ? ': ' + aviso.slice(0, 160) : '') });
+    }
+    if (llego && Date.now() < APERTURA) {
+      hallazgos.push({ paso: pasoActual, que: 'la tienda toma pedidos y todavía no abrimos (abre el 20 de noviembre): Pagar llegó a ' + (llego === 'yape' ? 'Yape' : 'Programar') + '. Revisar app_settings.business_launched.' });
     }
     if (llego === 'yape') {
       await expect(page.locator('[data-accion="copiar-yape"]')).toContainText(/\d{3} \d{3} \d{3}/);
