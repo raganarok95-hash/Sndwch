@@ -11,7 +11,7 @@ Revisado con `git grep`: ni «gotea» ni «el jugo es de la res» se usaron ante
 |---|---|---|
 | 0–6 s | Flow, toma 1: WICHO con tres salsas sobre el PHILLY | WICHO: «¿MAYONESA? ¿KETCHUP? ¿TODAS?» |
 | 6–12 s | Flow, toma 2: SANDO levanta media mitad, cae una gota | SANDO: «ESE YA GOTEA.» |
-| 12–16 s | la foto real `img/sig01.jpg` | «PHILLY CHEESESTEAK» · *El jugo es de la res. No lleva salsa.* |
+| 12–16 s | la foto real `img/sig09_v.webp` | «PHILLY CHEESESTEAK» · *El jugo es de la res. No lleva salsa.* |
 | 16–18 s | cierre papel `#EFE6D4` | *Abrimos el viernes 20, 11:00* · sndwch.app (la fecha sale de `APERTURA.md`) |
 
 Créditos de Flow: 2 tomas de Veo 3.1 Lite, 10 c/u, dentro de los 50 gratis del día. Nunca se compran créditos.
