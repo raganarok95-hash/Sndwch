@@ -57,3 +57,5 @@ y nunca como protagonista. Si llega un aviso en «Estado de la cuenta», se le a
 Antes de empezar la semana, leer `docs/entregas/marketing/` (por ejemplo la historia «hoy hay» con el stock real que
 pasa App, o los avisos de `cambio-de-carta.yml` para revisar piezas). Las preguntas para Ezra van a
 `docs/entregas/ezra/PREGUNTAS.md`, no al chat.
+- **«Hoy hay» de las 11:00:** los Signatures disponibles salen de `node scripts/hoy-hay.mjs` (corre en GitHub; el
+  proxy de las sesiones bloquea la API). Si devuelve `ok: false` no hay inventario cargado y esa historia no sale.
