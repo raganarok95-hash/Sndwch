@@ -14,3 +14,4 @@
 
 ## 2026-11-10 · reel «¿Y si hoy son albóndigas?»
 Dueño, al verlo montado: «Ya vi el video no me gustó para nada». Se paró la toma 1 rehecha. Pendiente: qué no le gustó.
+Dueño, minuto después: «Es super genérico, sin una idea clara que conecte, solo super genérico». Lección: pasar el test (insight con fuente, título con porqué) no basta; una idea que sirve igual para cualquier sandwichería con dos mascotas es genérica. Antes del reel tiene que existir UNA idea de campaña propia de SND//WCH que todos los reels repitan.
