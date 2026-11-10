@@ -31,3 +31,12 @@ M5 El estreno del día de cierre · M6 Primer plano del queso fundido · M7 Resp
 M8 Presentación del personaje · M9 Reacción en 24 h (hoy no encaja). Primera tanda sugerida: M1, M4 y M3.
 Límite: de Perú solo se vio qué pautan y desde cuándo (Instagram y el detalle de los anuncios no se leen sin
 navegador); se completa con Claude in Chrome en la laptop.
+
+## Frecuencia y formatos (hilo de investigación, `referentes/2026-11-10-frecuencia-y-formatos.md`)
+- Feed: **6 por semana** = 4 reels + 2 carruseles con música; 0 fotos solas. Más **1 reel de prueba al día** (Reels
+  de prueba, a no seguidores; el que gana se republica).
+- Historias los días de servicio: 3 a 6 (11:00 «hoy hay» con foto real; 12:00 enlace `?src=historia`).
+- Cada reel: comida desde el segundo 0, cierre con foto real, pensado para que **lo manden** (envíos por alcance,
+  métrica número uno), precio o combo de la carta a la vista, **etiqueta de IA** en todo reel con SANDO y WICHO.
+- El cuello de botella es la revisión y el sí de Ezra: la rutina le entrega **la semana entera el lunes** para
+  aprobarla de una vez.
