@@ -1,10 +1,11 @@
 {
+  "nota": "Toma 1 descartada (pan corto y albóndigas apiladas: no es la receta ni la porción). El gancho va sobre la toma de SANDO hasta regenerarla.",
   "tramos": [
-    { "video": "../../estudio/hecho/2026-11-12-albondigas-1/v1.mp4", "dura": 3, "quien": null, "titular": "¿Y si hoy son albóndigas?" },
-    { "video": "../../estudio/hecho/2026-11-12-albondigas-2/v1.mp4", "dura": 4, "quien": "SANDO", "titular": "Así viene." },
-    { "video": "../../estudio/hecho/2026-11-12-albondigas-3/v1.mp4", "dura": 4, "quien": "WICHO", "titular": "Así la quiero." },
-    { "imagen": "../../estudio/hecho/2026-11-12-albondigas-4/v1.png", "dura": 3.5, "quien": null, "titular": "La receta, o a tu manera." },
-    { "imagen": "../../estudio/hecho/2026-11-12-albondigas-5/v1.png", "dura": 3.5, "quien": null, "titular": "MEATBALL MARINARA", "linea": "Albóndigas en pan largo." }
+    { "video": "../../estudio/hecho/2026-11-12-albondigas-2/v1.mp4", "desde": 0, "dura": 2.6, "quien": null, "titular": "¿Y si hoy son albóndigas?" },
+    { "video": "../../estudio/hecho/2026-11-12-albondigas-2/v1.mp4", "desde": 2.6, "dura": 3.2, "quien": "SANDO", "titular": "Así viene." },
+    { "video": "../../estudio/hecho/2026-11-12-albondigas-3/v1.mp4", "desde": 0.5, "dura": 4.5, "quien": "WICHO", "titular": "Así la quiero." },
+    { "imagen": "../../estudio/hecho/2026-11-12-albondigas-4/v2.jpg", "dura": 3.5, "quien": null, "titular": "La receta, o a tu manera." },
+    { "imagen": "../../estudio/hecho/2026-11-12-albondigas-5/v1.jpg", "dura": 3.5, "quien": null, "titular": "MEATBALL MARINARA", "linea": "Albóndigas en pan largo." }
   ],
   "cierre": { "titular": "SNDWCH.APP", "linea": "", "dura": 1.5 }
 }

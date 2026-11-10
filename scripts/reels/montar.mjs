@@ -53,7 +53,7 @@ for (const [i, t] of reel.tramos.entries()) {
   const out = join(dir, `p${i}.mp4`);
   const fondo = '[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30';
   const entrada = t.video
-    ? ['-i', ruta(t.video)]
+    ? [...(t.desde ? ['-ss', String(t.desde)] : []), '-i', ruta(t.video)]
     : ['-loop', '1', '-framerate', '30', '-i', ruta(t.imagen)];
   const zoom = t.imagen ? `,zoompan=z='1+0.0008*on':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=30` : '';
   execFileSync(FF, ['-y', '-loglevel', 'error', ...entrada, '-i', over, '-t', String(t.dura),

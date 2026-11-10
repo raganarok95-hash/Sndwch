@@ -31,3 +31,12 @@ Ganó A3 (41/50). **Espera el sí de Ezra.**
 Caption (con la fecha, que no va en el video): sale de `APERTURA.md` al montarlo.
 **Flow:** 3 tomas de video × 10 créditos = 30, dentro de los 50 gratis del día; 2 imágenes gratis. Nunca se compran créditos.
 **Se mide:** envíos por alcance, skip rate a 3 s, alcance a no seguidores. Postmortem el 18-nov.
+
+## Producción (2026-11-10)
+Flow en la laptop de Ezra: 3 tomas y 2 imágenes, 50 créditos gratis (incluye 2 reintentos), nada comprado.
+- **Toma 1 descartada**: salió un pan corto y redondo con albóndigas apiladas, que no es la receta ni la porción
+  (INDECOPI). El gancho va sobre la toma de SANDO; se regenera cuando se renueven los créditos.
+- Toma 2 recortada a los primeros 5.8 s (al final aparecía un segundo pan). Imagen 4: v2 (pulgar de WICHO). Imagen 5: v1
+  (americano amarillo pálido; la primera salió con queso blanco y se repitió).
+- Montaje: `scripts/reels/montar.mjs reel.json` → `final.mp4` (18.8 s). Revisión de arte y verdad: la receta del
+  MEATBALL MARINARA y la de WICHO se pueden pedir tal cual.
