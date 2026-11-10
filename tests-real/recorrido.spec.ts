@@ -15,7 +15,9 @@ const hallazgos: Hallazgo[] = [];
 // La apertura (dueño, 2026-11-02: «Abrimos el 20 de noviembre»; el cron sndwch-abrir-tienda-20-nov la
 // prende a las 6:00 de Lima). Antes de esa hora la app NO debe tomar pedidos. El 2026-11-10 el recorrido
 // llegaba a «Pagar con Yape» todos los días y salía en verde: la tienda había quedado abierta desde las
-// pruebas del 2026-11-02 y cualquiera con el enlace podía pagar. Ahora eso es un hallazgo.
+// pruebas del 2026-11-02 y cualquiera con el enlace podía pagar. Se volvió hallazgo, pero el dueño decidió
+// dejarla abierta a propósito (2026-11-10: «no cerraremos el app hasta abrir el 20, que siga abierta»):
+// queda como nota en el registro, no como rojo. Si se cierra antes de abrir otra vez, se vuelve hallazgo.
 // Si la fecha se mueve, se cambia aquí y en el cron el mismo día.
 const APERTURA = Date.parse('2026-11-20T11:00:00Z');
 let pasoActual = '';
@@ -116,7 +118,7 @@ test('un cliente nuevo recorre la app real sin errores', async ({ page }) => {
       hallazgos.push({ paso: pasoActual, que: 'Pagar no llevó a ninguna pantalla' + (aviso ? ': ' + aviso.slice(0, 160) : '') });
     }
     if (llego && Date.now() < APERTURA) {
-      hallazgos.push({ paso: pasoActual, que: 'la tienda toma pedidos y todavía no abrimos (abre el 20 de noviembre): Pagar llegó a ' + (llego === 'yape' ? 'Yape' : 'Programar') + '. Revisar app_settings.business_launched.' });
+      console.log('nota: la tienda toma pedidos antes del 20 de noviembre (abierta a propósito por el dueño): Pagar llegó a ' + (llego === 'yape' ? 'Yape' : 'Programar'));
     }
     if (llego === 'yape') {
       await expect(page.locator('[data-accion="copiar-yape"]')).toContainText(/\d{3} \d{3} \d{3}/);
