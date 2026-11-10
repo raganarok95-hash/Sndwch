@@ -295,13 +295,13 @@ async function avisarSinCuenta(){
   if(!('serviceWorker' in navigator)||!('PushManager' in window)){pushMsg='Tu navegador no deja avisos.';render();return;}
   try{
     var perm=await Notification.requestPermission();
-    if(perm!=='granted'){pushMsg='Permite los avisos en tu navegador';render();return;}
+    if(perm!=='granted'){reportarError('avisos:permiso',new Error('permiso '+perm+' (sin cuenta)'));pushMsg='Permite los avisos en tu navegador';render();return;}
     var reg=await navigator.serviceWorker.ready;
     var sub=await reg.pushManager.getSubscription()||await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
     var j=sub.toJSON();
     await api('push-subscribe-pedido',{orderId:window._lOrderId,endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth});
     pushSubscribed=true;pushMsg='';render();
-  }catch(e){pushMsg='No se pudo activar: '+(e.message||'intenta de nuevo');render();}
+  }catch(e){reportarError('avisos:activar',e);pushMsg='No se pudo activar: '+(e.message||'intenta de nuevo');render();}
 }
 async function togglePushNotifications(){
   if(!('serviceWorker' in navigator)||!('PushManager' in window)){pushMsg='Tu navegador no soporta notificaciones push.';render();return;}
@@ -316,12 +316,14 @@ async function togglePushNotifications(){
       return;
     }
     var perm=await Notification.requestPermission();
-    if(perm!=='granted'){pushMsg='Necesitas permitir notificaciones desde tu navegador.';render();return;}
+    // Desde el 2026-11-10: el dueño tiene 0 suscripciones y no había rastro de por qué. Cada intento fallido
+    // queda en debug_logs (report-client-error) con lo que respondió el navegador.
+    if(perm!=='granted'){reportarError('avisos:permiso',new Error('permiso '+perm+(isAdmin?' (panel)':'')));pushMsg='Necesitas permitir notificaciones desde tu navegador.';render();return;}
     var sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
     var subJson=sub.toJSON();
     await api('push-subscribe',{token:token,endpoint:subJson.endpoint,p256dh:subJson.keys.p256dh,auth:subJson.keys.auth});
     pushSubscribed=true;pushMsg='¡Notificaciones activadas!';render();
-  }catch(e){pushMsg='No se pudo activar: '+(e.message||'intenta de nuevo.');render();}
+  }catch(e){reportarError('avisos:activar',e);pushMsg='No se pudo activar: '+(e.message||'intenta de nuevo.');render();}
 }
 
 // Los dos momentos en que un tercero puede haber pisado algo: cuando termina de cargar

@@ -4470,7 +4470,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = 'b78e7f60bc';
+var APP_BUILD = 'bc6a01e3f3';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -13785,6 +13785,7 @@ async function avisarSinCuenta() {
     try {
         var perm = await Notification.requestPermission();
         if (perm !== 'granted') {
+            reportarError('avisos:permiso', new Error('permiso ' + perm + ' (sin cuenta)'));
             pushMsg = 'Permite los avisos en tu navegador';
             render();
             return;
@@ -13798,6 +13799,7 @@ async function avisarSinCuenta() {
         render();
     }
     catch (e) {
+        reportarError('avisos:activar', e);
         pushMsg = 'No se pudo activar: ' + (e.message || 'intenta de nuevo');
         render();
     }
@@ -13825,7 +13827,10 @@ async function togglePushNotifications() {
             return;
         }
         var perm = await Notification.requestPermission();
+        // Desde el 2026-11-10: el dueño tiene 0 suscripciones y no había rastro de por qué. Cada intento fallido
+        // queda en debug_logs (report-client-error) con lo que respondió el navegador.
         if (perm !== 'granted') {
+            reportarError('avisos:permiso', new Error('permiso ' + perm + (isAdmin ? ' (panel)' : '')));
             pushMsg = 'Necesitas permitir notificaciones desde tu navegador.';
             render();
             return;
@@ -13838,6 +13843,7 @@ async function togglePushNotifications() {
         render();
     }
     catch (e) {
+        reportarError('avisos:activar', e);
         pushMsg = 'No se pudo activar: ' + (e.message || 'intenta de nuevo.');
         render();
     }
