@@ -8,7 +8,7 @@ El vigía de las 22:13 cuenta las filas `abierta` y las pone en el correo de cie
 
 | id | desde | hilo | pregunta | estado | respuesta |
 |---|---|---|---|---|---|
-| Q01 | 2026-11-03 | app | Pegar el token de Instagram (empieza con «IG») como `INSTAGRAM_LOGIN_TOKEN` en Supabase | abierta | |
+| Q01 | 2026-11-03 | app | Pegar el token de Instagram (empieza con «IG») como `INSTAGRAM_LOGIN_TOKEN` en Supabase | respondida | Ya está: verificado en la base el 2026-11-10 (token «IG», se renovó solo el 2026-11-08, vence el 2027-01-07). |
 | Q02 | 2026-11-03 | app | Pegar en Supabase el borrado de los 7 pedidos de prueba | abierta | |
 | Q03 | 2026-11-03 | operativo | A quién le compras la res, la carne molida, el pavo y el pan, y cuántos días tarda cada uno | abierta | |
 | Q04 | 2026-11-03 | operativo | ¿Ya llegaron las bolsas kraft y los sellos? | abierta | |
@@ -20,3 +20,5 @@ El vigía de las 22:13 cuenta las filas `abierta` y las pone en el correo de cie
 | Q10 | 2026-11-09 | disenos | Alto de la parte lisa de la botella de 500 ml (hacen falta 10.5 cm) | abierta | |
 | Q11 | 2026-11-09 | disenos | ¿La imprenta tiene tinta blanca? | abierta | |
 | Q12 | 2026-11-03 | disenos | ¿Las bebidas llevan sal? (la receta guardada dice 0.2 g por litro) | de-otro-hilo | La responde RECETAS: `recetas/2026-11-10-sal-en-bebidas.md` |
+| Q13 | 2026-11-10 | app | ¿Pongo en la base los umbrales de stock bajo de Operativo (Res 2; Albóndiga, Atún, Pavo y Embutido 1)? Sin eso el aviso salta desde el primer pedido. El SQL está en `docs/entregas/app/2026-11-10-stock-minimo-y-recorrido.md` | abierta | |
+| Q14 | 2026-11-10 | app | Para que el recorrido diario revise la cuenta y los puntos de verdad: ¿creo una cuenta robot de cliente (sin pedidos, sin permisos de panel)? | abierta | |
