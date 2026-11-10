@@ -64,6 +64,7 @@ delivery nuevo: el orden es una hipótesis y la corrigen los `?src=` de la prime
 ### Semanas 5 y 6 (7 al 19-dic): diciembre en la oficina
 - El almuerzo de fin de año (pedido en grupo con fecha), reseñas y fotos de clientes, recompra.
 - Se sube lo que trajo clientes a menos del techo; lo demás se cambia o se apaga.
+- **Creadores de comida de Trujillo (dueño, 2026-11-10):** «a los 3 o 4 semanas de abierto, para tener números reales que medir sin y con». Se invitan 2 o 3 entre el 11 y el 18 de diciembre, cada uno con su `?src=creador-<nombre>`, y se comparan pedidos y clientes nuevos de las dos semanas antes y después.
 
 ## 3 · Lo que queda listo para usar
 

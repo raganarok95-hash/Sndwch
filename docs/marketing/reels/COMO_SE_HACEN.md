@@ -37,6 +37,14 @@ navegador); se completa con Claude in Chrome en la laptop.
   de prueba, a no seguidores; el que gana se republica).
 - Historias los días de servicio: 3 a 6 (11:00 «hoy hay» con foto real; 12:00 enlace `?src=historia`).
 - Cada reel: comida desde el segundo 0, cierre con foto real, pensado para que **lo manden** (envíos por alcance,
-  métrica número uno), precio o combo de la carta a la vista, **etiqueta de IA** en todo reel con SANDO y WICHO.
+  métrica número uno), precio o combo de la carta a la vista. **Sin etiqueta de IA voluntaria** (dueño, 2026-11-10: «no debe llevar nunca la etiqueta de IA. Eso arruina el contenido»).
 - El cuello de botella es la revisión y el sí de Ezra: la rutina le entrega **la semana entera el lunes** para
   aprobarla de una vez.
+
+### La etiqueta de IA: qué exige Instagram (revisado el 2026-11-10)
+Desde el 31-ago-2026, Instagram baja el alcance a no seguidores de los perfiles que muestran **una persona generada
+con IA** sin la etiqueta «AI-generated profile» ([WorkOS](https://workos.com/blog/instagram-ai-generated-profile-label)).
+SANDO y WICHO son personajes dibujados, no personas: hoy no entran ahí. El riesgo está en las piezas con **manos o
+media cara fotorrealistas generadas** (anuncio directo): si Instagram las detecta, puede marcar la cuenta y cortar
+el alcance en Reels y Explorar. Por eso, en el contenido orgánico, las personas fotorrealistas generadas se usan poco
+y nunca como protagonista. Si llega un aviso en «Estado de la cuenta», se le avisa a Ezra el mismo día.
