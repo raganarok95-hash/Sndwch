@@ -8,7 +8,11 @@ claude en chrome… en google flow, usando a personajes como sando y wicho» y �
 | paso | quién | dónde | qué sale |
 |---|---|---|---|
 | 1 · Referentes | la rutina (nube) | `docs/marketing/referentes/<fecha>.md` + lo que mande el hilo de investigación | qué modelo usar esta semana |
-| 2 · Guiones | la rutina, con `voz-sndwch`, `BIBLIA_DE_LA_SERIE.md`, `anuncio-directo` «Nunca repetir» | `reels/<fecha>-<nombre>/GUION.md` y `reel.json` | 4 guiones (mar, jue, sáb, dom), 4 modelos distintos |
+| 2a · Mini-brief | Planner (la sesión, con `PLATAFORMA_DE_MARCA.md`) | `reels/<id>/BRIEF.md` (`METODO_GRANDES_EQUIPOS.md` §4.2.1) | un brief por reel, con insight y fuente. **Sin insight, no hay reel** |
+| 2b · Duplas | 2 llamadas en paralelo al agente `creativo`, cada una con un territorio distinto, sin verse | `DUPLA_A.md`, `DUPLA_B.md` | 4 ideas cada una, con guion corto y 3 títulos con su porqué |
+| 2c · Crítico | agente `critico` (`.claude/agents/critico.md`; si no aparece, general-purpose que lo lea) | `CRITICO.md`, `MATADAS.md` | las 8 puertas: un «no» mata; 2 finalistas por brief |
+| 2d · Extraño | agente `extrano` con solo el título y los 3 primeros segundos | `EXTRANO.md` | qué entiende alguien sin contexto y su lectura mala |
+| 2e · Guion final | la sesión | `GUION.md` y `reel.json` | plano a plano, con el porqué de cada decisión |
 | 3 · Encargos | la rutina | `estudio/encargos/<id>.md` (tipo video, `creditos_max: 10`) | máx. 2 tomas de video por reel; imágenes sin límite (gratis) |
 | 4 · Flow | Claude in Chrome en la laptop de Ezra (`start_remote_control` + `scripts/estudio/FLOW_EN_CHROME.md`) | `estudio/hecho/<id>/v1.mp4` → rama `estudio` → main | las tomas |
 | 5 · Montaje | la rutina: `node scripts/reels/montar.mjs reels/<id>/reel.json salida.mp4` (con `FUENTES_CSS`) | `reels/<id>/final.mp4` y copia en `/mnt/project-files/marketing/reels/` | el reel 9:16 con texto en pantalla, foto real y cierre |
