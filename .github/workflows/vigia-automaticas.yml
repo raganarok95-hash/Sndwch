@@ -1,0 +1,29 @@
+name: Vigía de las automáticas
+
+# Dueño (2026-11-10): «Todo debe funcionar en automático» · «Y sí dale luz verde a todo». El recorrido real
+# estuvo 9 días en rojo sin que nadie se enterara. Cada noche, antes del correo de cierre de las 22:30, mira
+# las automáticas programadas, las preguntas abiertas a Ezra y las entregas entre hilos atascadas
+# (docs/entregas/README.md) y lo deja en la base para el correo. Falla si una automática está en rojo.
+on:
+  schedule:
+    - cron: '13 3 * * *'   # 22:13 de Lima, antes del cierre de las 22:30 (minuto 13: GitHub se salta los :00)
+  workflow_dispatch: {}
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  vigia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Revisar automáticas, preguntas y entregas
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: node scripts/vigia-automaticas.mjs

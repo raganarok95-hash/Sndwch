@@ -62,6 +62,12 @@ relatos están en `docs/MANUAL_DETALLADO.md`** (copia íntegra del archivo anter
   las skills se cargan en la sesión; un subagente solo para revisar de forma independiente lo que se paga.
   **Excepción (dueño, 2026-11-02): las piezas creativas del feed van por `/pieza` con los subagentes** («úsala y reactívala»).
 
+## Entregas entre hilos (dueño, 2026-11-10: «mejorar la intercomunicación de equipos»)
+
+- **Antes de empezar, leer `docs/entregas/<tu-hilo>/`**; lo que otro hilo necesita se le deja ahí y se le avisa
+  directo. Cada dato tiene un hilo dueño, que se pregunta antes que a Ezra (`docs/entregas/README.md`).
+- **Toda pregunta a Ezra va a `docs/entregas/ezra/PREGUNTAS.md`**, y se busca ahí antes de preguntar. Sin montos.
+
 ## ⚠ Precios
 
 - **Cambiar un precio en `_shared/carta.ts` o `catalog.ts` NO cambia el precio real**: manda la

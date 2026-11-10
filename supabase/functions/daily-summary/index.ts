@@ -9,6 +9,7 @@ import { sbGet, debugLog, verifyCronSecret } from "../_shared/sb.ts";
 import { emailShell } from "../_shared/email-shell.ts";
 import { PALETA as C } from "../_shared/paleta.ts";
 import { cierre, conciliar, alertasDePlata, nombreCanal, pct, soles } from "../_shared/finanzas.ts";
+import { lineasDelSistema } from "../_shared/sistema.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const FROM_EMAIL = Deno.env.get("FROM_EMAIL") ?? "SND//WCH <pedidos@sndwch.app>";
@@ -33,6 +34,9 @@ Deno.serve(async (req: Request) => {
     ]);
     // Culqi cobró y el pedido todavía no existe (lo recupera un cron; si sigue, hay que mirarlo).
     const cobrosSinPedido = await sbGet("pending_charges", "status=eq.charged&charge_id=not.is.null&select=ref&limit=50").catch(() => []);
+    // EL SISTEMA (scripts/vigia-automaticas.mjs, 22:13): automáticas en rojo, entregas atascadas, preguntas a Ezra.
+    const ajustes = await sbGet("app_settings", "select=avisos_del_sistema,avisos_del_sistema_at&id=eq.true").catch(() => []);
+    const sistema = lineasDelSistema(ajustes[0]?.avisos_del_sistema, ajustes[0]?.avisos_del_sistema_at);
 
     // "Hoy" en hora de Lima (UTC-5), sin depender de la zona horaria del runtime.
     const limaNow = new Date(Date.now() - 5 * 3600000);
@@ -103,6 +107,12 @@ Deno.serve(async (req: Request) => {
             ${alerts.map((a) => `<div style="font-size:12px;color:${C["text-body"]};margin-bottom:4px">⚠ ${a}</div>`).join("")}
           </div>`
         : `<div style="margin-top:18px;font-size:12px;color:${C.ok}">✓ Sin pendientes ni alertas.</div>`}
+      ${sistema.length
+        ? `<div style="margin-top:18px;padding:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px">
+            <div style="font-size:11px;color:${C["text-muted"]};letter-spacing:.1em;margin-bottom:6px">EL SISTEMA //</div>
+            ${sistema.map((a) => `<div style="font-size:12px;color:${C["text-body"]};margin-bottom:4px">· ${a}</div>`).join("")}
+          </div>`
+        : `<div style="margin-top:12px;font-size:12px;color:${C.ok}">✓ Las automáticas están en verde y no hay entregas atascadas.</div>`}
       <p style="font-size:11px;color:${C["text-muted2"]};margin-top:20px">Panel completo → sndwch.app → PUNTOS → PANEL ADMIN → PANEL DE NEGOCIO</p>
     `);
 
