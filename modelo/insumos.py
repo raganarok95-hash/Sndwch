@@ -150,8 +150,8 @@ PROTEINA_KG = {
                                         "(confirmar en Makro Trujillo)", "2026-11-03"), 1.00),
     "P06": (Insumo(15.00, KG, COTIZADO, "carne molida S/15/kg, cotizada por el dueño el 2026-09-30 "
                                         "(online: Tottus S/23.50, Metro S/24.90)", "2026-09-30"), None),
-    "P08": (Insumo(44.20, KG, COTIZADO, "pavo S/44.20/kg al por mayor — el mismo que el "
-                                        "retail de Braedt", "2026-09-12"), 1.00),
+    "P08": (Insumo(44.20, KG, COTIZADO, "pavo en pieza S/44.20/kg al por mayor (2026-09-12); Ezra "
+                                        "2026-11-11: pieza tajada a diario, Operativo recotiza", "2026-09-12"), 1.00),
 }
 # Rendimientos documentados: res 0.54 (limpieza 10% + cocción 40%), pollo 0.64-0.69 (se usa
 # el punto medio 0.665), res laminada 0.567. El atún y el pavo rinden 1.00 porque no se
