@@ -82,3 +82,10 @@ Dueño: «Nadie conoce qué es un Philly, entonces debemos venderlo como sándwi
 «Philly Cheesesteak» no dice nada. Bajo el nombre va qué es y qué lleva: «El sándwich más famoso de Filadelfia: res,
 cebolla y cheddar fundido.». Lección: si el nombre de un producto es extranjero o poco conocido, la primera línea dice qué
 es antes que cómo sabe. Revisar lo mismo con Hoagie y Tuna Melt.
+
+## 2026-11-11 · «siento que las inventas de la nada sin investigación»
+Ezra: «Lo que no me convence son tus frases, siento que las inventas de la nada sin investigación».
+Regla: cada titular cita su fuente: (1) palabras reales del público (reseñas y comentarios de la competencia de
+Trujillo, en `docs/marketing/referentes/frases/`), (2) una fórmula con envíos probados (capturas de Ezra y referentes),
+o (3) un hecho de la carta. Sin fuente, no se propone. Las frases de las láminas de identidad («Me debes uno»,
+«¿Cuánta hambre traes hoy?») eran de relleno.
