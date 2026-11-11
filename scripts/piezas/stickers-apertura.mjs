@@ -63,7 +63,11 @@ const qrPath = async (url) => {
   const n = Number(s.match(/viewBox="0 0 (\d+) \d+"/)[1]);
   const d = [...s.matchAll(/<path[^>]*stroke="[^"]+"[^>]*d="([^"]+)"/g)].map((m) => m[1]).join(' ')
     || s.match(/<path[^>]*d="([^"]+)"[^>]*stroke=/)[1];
-  return { n, d };
+  // los módulos oscuros como cuadrados, para calarlos en la placa con evenodd (sin <mask>: Chrome la pasa al PDF
+  // como imagen con máscara suave y hay lectores e imprentas que la pintan entera, sin QR; 2026-11-11)
+  const { modules: M } = QRCode.create(url, { errorCorrectionLevel: 'Q' });
+  let huecos = ''; for (let y = 0; y < M.size; y++) for (let x = 0; x < M.size; x++) if (M.get(x, y)) huecos += `M${x} ${y}h1v1h-1z`;
+  return { n, d, huecos };
 };
 
 
@@ -188,8 +192,7 @@ for (const L of BOTELLAS) {
       s += regla(7, 43, 18.8, t, 0.18);
       const lado = 11.5, q = lado / QR.n, qx = 4.6, qy = 76.6;
       if (clara) s += '<g transform="translate(' + qx + ' ' + qy + ') scale(' + q + ')"><path d="' + QR.d + '" stroke="' + t + '" fill="none"/></g>';
-      else s += '<defs><mask id="m"><rect x="' + (qx - 1) + '" y="' + (qy - 1) + '" width="' + (lado + 2) + '" height="' + (lado + 2) + '" fill="#fff"/><g transform="translate(' + qx + ' ' + qy + ') scale(' + q + ')"><path d="' + QR.d + '" stroke="#000" fill="none"/></g></mask></defs>'
-        + '<rect x="' + (qx - 1) + '" y="' + (qy - 1) + '" width="' + (lado + 2) + '" height="' + (lado + 2) + '" rx="0.8" fill="' + t + '" mask="url(#m)"/>';
+      else s += '<path fill-rule="evenodd" fill="' + t + '" transform="translate(' + qx + ' ' + qy + ') scale(' + q + ')" d="M' + (-1 / q) + ' ' + (-1 / q) + 'H' + (QR.n + 1 / q) + 'V' + (QR.n + 1 / q) + 'H' + (-1 / q) + 'Z' + QR.huecos + '"/>';
       s += '<rect x="27" y="66.2" width="19" height="7.4" rx="0.8" fill="none" stroke="' + t + '" stroke-width="0.22" stroke-dasharray="0.7 0.5"/>';
       const der = 'style="text-align:right"', k = ML / 100;
       const tabla = '<table style="width:100%;border-collapse:collapse;margin:0.9mm 0 0.8mm;font:500 1.75mm/1.22 Archivo">'
