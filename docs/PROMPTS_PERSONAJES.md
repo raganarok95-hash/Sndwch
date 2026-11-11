@@ -1,5 +1,7 @@
 # SND//WCH — cómo pedir las imágenes
 
+> **2026-11-11: la cocina de noche queda retirada.** Ezra: «Las imágenes que marketing está haciendo en flow son horribles parecen de películas de terror». Desde hoy, las imágenes se piden con `docs/marketing/estudio/LUZ_DE_DIA.md` y los fondos de `docs/marketing/identidad/IDENTIDAD_VISUAL_2026-11-11.md`. Lo de abajo queda como historia.
+
 > Los personajes y el mundo están descritos en **`docs/UNIVERSO_SNDWCH.md`**. Este archivo es
 > solo el **cómo pedirlos**: los prompts listos para pegar y las reglas técnicas que, si se
 > saltan, obligan a tirar la imagen y volver a empezar.

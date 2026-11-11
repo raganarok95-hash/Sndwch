@@ -26,6 +26,14 @@ otra cosa.
 
 ## Las reglas
 
+> **Identidad visual aprobada por Ezra el 2026-11-11** («Sí, con estos 6 formatos»):
+> `docs/marketing/identidad/IDENTIDAD_VISUAL_2026-11-11.md` (láminas en `identidad/muestras/`). Manda sobre las reglas
+> 4 y 5 y sobre el sistema del feed del 30-oct: **cuatro fondos llenos** (naranja forro `#D8823C`, celeste `#8CC8EC`,
+> verde noche `#1E2B22`, papel `#EFE6D4`), **frase gigante en Anton con una palabra en Instrument Serif itálica**,
+> **producto recortado y grande**, **SANDO y WICHO pueden acompañar al producto** (nunca taparlo), **seis formatos que
+> rotan** (al menos 4 distintos por semana, ninguno dos veces seguidas, ninguna foto repetida como protagonista).
+> **La luz siempre es de día** (`docs/marketing/estudio/LUZ_DE_DIA.md`, Ezra 2026-11-11: «parecen de películas de terror»).
+
 1. **Foto.** El sándwich ocupa entre la mitad y dos tercios del cuadro, en tres cuartos, con el
    fondo desenfocado. **La luz cuenta la hora**: mediodía claro para el almuerzo; lámpara cálida
    para la noche. Un solo objeto del momento (la laptop del almuerzo; la bebida de la carta en la

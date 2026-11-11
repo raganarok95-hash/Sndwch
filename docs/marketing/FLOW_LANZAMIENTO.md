@@ -1,5 +1,7 @@
 # Imágenes para el lanzamiento, en Flow (gratis) — 2026-10-07
 
+> **2026-11-11: la cocina de noche queda retirada.** Ezra: «Las imágenes que marketing está haciendo en flow son horribles parecen de películas de terror». Desde hoy, las imágenes se piden con `docs/marketing/estudio/LUZ_DE_DIA.md` y los fondos de `docs/marketing/identidad/IDENTIDAD_VISUAL_2026-11-11.md`. Lo de abajo queda como historia.
+
 > **2026-10-14: este MCP ya no sirve.** Flow se mudó a `flow.google.com` y el MCP solo conoce
 > `labs.google`. El Estudio genera ahora con **gflow-cli** (`scripts/estudio/flow.ps1`,
 > autorizado por el dueño). Ver `docs/marketing/estudio/INSTALAR.md` y `docs/ENTORNO.md`.

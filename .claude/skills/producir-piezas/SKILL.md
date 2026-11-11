@@ -6,6 +6,8 @@ user-invocable: false
 
 # Producir piezas
 
+> **Antes de escribir un encargo a Flow:** `docs/marketing/estudio/LUZ_DE_DIA.md` (bloque fijo de luz de día, 2026-11-11) y los formatos de `docs/marketing/identidad/IDENTIDAD_VISUAL_2026-11-11.md`. La cocina de noche está retirada.
+
 El Productor ejecuta lo que ya aprobó la **Puerta 1** (concepto + maqueta). No inventa conceptos:
 si algo del encargo no se puede hacer, lo dice y propone el cambio más chico.
 

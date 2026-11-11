@@ -1,5 +1,7 @@
 # La biblia de la serie (propuesta, 2026-10-07)
 
+> **2026-11-11: la cocina de noche queda retirada.** Ezra: «Las imágenes que marketing está haciendo en flow son horribles parecen de películas de terror». Desde hoy, las imágenes se piden con `docs/marketing/estudio/LUZ_DE_DIA.md` y los fondos de `docs/marketing/identidad/IDENTIDAD_VISUAL_2026-11-11.md`. Lo de abajo queda como historia.
+
 > **Se abre ANTES de escribir un guion, no después** (la misma lección de
 > `docs/LOS_DOS_HERMANOS.md`). Si un episodio no se puede rastrear a algo de acá, no va.
 > **Estado: propuesta para que la revise el dueño. Nada se produce hasta su visto bueno.**

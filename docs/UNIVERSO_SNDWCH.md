@@ -1,5 +1,7 @@
 # SND//WCH — el universo: los tres hermanos, el mundo y el estilo
 
+> **2026-11-11: la cocina de noche queda retirada.** Ezra: «Las imágenes que marketing está haciendo en flow son horribles parecen de películas de terror». Desde hoy, las imágenes se piden con `docs/marketing/estudio/LUZ_DE_DIA.md` y los fondos de `docs/marketing/identidad/IDENTIDAD_VISUAL_2026-11-11.md`. Lo de abajo queda como historia.
+
 > **Qué es canon y qué es propuesta.** SANDO y WICHO están decididos: existen en el código, en
 > `img/` y en las reglas de `CLAUDE.md`. **MAFE quedó aprobada el 2026-09-11** (nombre, color y
 > que es una monita igual que sus hermanos) — lo que sigue marcado con ⟡ es solo lo que todavía

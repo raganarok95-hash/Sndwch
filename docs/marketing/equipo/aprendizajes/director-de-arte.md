@@ -219,3 +219,9 @@ que el feed no tenía, con el mismo sistema de franjas. Se mantiene como estánd
   cantidad y el archivo. Los avisos y recomendaciones van en el chat.
 - Dueño: «¿Por qué sin color o a una tinta y es un sticker?». Lección: al pasar un sello a sticker, se aprovecha el
   full color (cuesta lo mismo); no se copia la limitación del medio anterior.
+
+## 2026-11-11 · «parecen de películas de terror» e identidad aprobada
+Ezra: «Las imágenes que marketing está haciendo en flow son horribles parecen de películas de terror, busca skills que
+sirvan para que los haga bien». Causa: el bloque «night kitchen, a single warm bulb, everything falls to black».
+Regla: luz de día siempre (`estudio/LUZ_DE_DIA.md`). Ese mismo día aprobó la identidad visual («Sí, con estos 6
+formatos», `identidad/IDENTIDAD_VISUAL_2026-11-11.md`).
