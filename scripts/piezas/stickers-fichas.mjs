@@ -26,6 +26,8 @@ const FICHAS = [
   ...[['5-salsas-con-nombre', 'salsas-A4-1-con-nombre', 'ETIQUETAS DE SALSAS'], ['6-salsas-en-blanco', 'salsas-A4-2-en-blanco', 'ETIQUETAS EN BLANCO'], ['7-cocina', 'cocina-A4-tandas', 'ETIQUETAS DE COCINA']].map(([f, img, titulo]) => ({
     f, titulo: titulo + ' · PLANCHA A4', piezas: [{ img, w: 210, h: 297, nombre: 'PLANCHA A4' }], k: 0.75, celda: true,
     datos: [['Medida de corte', 'cada etiqueta 6 × 4 cm, esquinas de 3 mm · 18 por plancha A4 (21 × 29.7 cm)'], ['Material', 'vinilo blanco + laminado mate, corte de contorno'], ['Línea fucsia', 'guía de corte: no se imprime'], ['Cantidad', '1 plancha'], ['Archivo', img + '.pdf']] })),
+  { f: '9-sello-bolsa-10x10', titulo: 'STICKER DEL FRENTE DE LA BOLSA', piezas: [{ img: 'sticker-sello-10x10cm', w: 100, h: 100 }], k: 1.6,
+    datos: [['Medida de corte', '10 × 10 cm, esquinas redondeadas de 4 mm'], ['Material', 'papel adhesivo mate, troquelado'], ['Impresión', 'una tinta, verde casi negro #1E2B22'], ['Cantidad', '250'], ['Archivo', 'sticker-sello-10x10cm.pdf (con 3 mm de sangrado)']] },
   { f: '8-sticker-8x8', titulo: 'STICKER CUADRADO 8 × 8', piezas: [{ img: 'sticker-calle-8x8cm', w: 80, h: 80, bleed: 3 }], k: 2.0,
     datos: [['Medida de corte', '8 × 8 cm, esquinas redondeadas de 6 mm'], ['Material', 'vinilo blanco + laminado mate UV, troquelado'], ['Cantidad', '250'], ['Archivo', 'sticker-calle-8x8cm.pdf (con 3 mm de sangrado)']] },
 ];
