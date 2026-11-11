@@ -45,7 +45,7 @@ Cada tanda, con lo que hay que tener a mano para hacerla. La tanda **de apertura
 | **CEBOLLA // SALTEADA** (apertura) | 10 porciones | 700 g de cebolla blanca | cada 3 días (dura 3) |
 | **ALBÓNDIGA // MARINARA** (media) | 15 porciones | 1 kg carne molida 15-20% grasa · 100 g pan del día · 110 ml leche · 1 huevo · 50 g parmesano · 10 g ajo · 12 g perejil · sal, pimienta, orégano · **marinara 1.5 L:** 1.25 kg tomate pelado en lata (~3 latas de 400 g), 50 ml aceite de oliva, 20 g ajo, 100 g cebolla, 10 g sal, orégano y albahaca | cuando queden 4 porciones congeladas |
 | **ATÚN // HOUSE** | 2 porciones 15CM por lata | 1 lata de 140 g escurrido + 35 g de mayonesa + pimienta blanca | **todos los días que se venda**: solo las latas del día (dura 3 días, no se congela) |
-| **PAVO // HORNEADO** (se compra, no se hornea: dueño, 2026-11-11) | ~5 porciones por paquete de 480 g | jamón de pavo Braedt tajado, 480 g | abierto dura pocos días: comprar uno nuevo cuando se abra el último |
+| **PAVO // HORNEADO** (se compra en pieza y se taja a diario: dueño, 2026-11-11) | ~11 porciones por kilo | jamón de pavo en pieza, sin tajar: 500 g para abrir | se taja solo lo del día; comprar cuando quede 1/3 de la pieza |
 | **EMBUTIDO // ITALIANO** (dueño, 2026-11-03) | por 15CM: 35 g jamón ahumado + 25 g salame + 25 g pepperoni (30CM, el doble) | para abrir, paquete chico o mostrador: jamón ahumado 250 g, salame 150 g, pepperoni 150 g (~6 porciones); el paquete de 500 g recién cuando se venda más | cuando quede 1/3 del jamón; abierto, cerrar bien y usar primero lo más viejo |
 | **OIL & VINEGAR** (250 ml) | ~17 porciones | 125 ml aceite de oliva · 50 ml aceite vegetal · 63 ml vinagre de vino tinto · 5 g orégano · 3 g ajo en polvo · 3 g sal · 1 g pimienta | cada 2 semanas (dura 1 mes) |
 | **HONEY MUSTARD** (250 g) | ~17 porciones | 95 g mostaza amarilla · 75 g miel · 63 g mayonesa · 13 ml vinagre de manzana · 1 g sal | cada 2 semanas |
@@ -115,7 +115,7 @@ regla: **toda compra se anota en el panel el mismo día**, con proveedor, cantid
 | aguja de res | S/25 el kilo | cotizado por el dueño (30-sep) | **falta** | **falta** |
 | carne molida 15-20% | S/15 el kilo | cotizado por el dueño (30-sep) | **falta** | **falta** |
 | atún en lata 140 g | S/4 la lata | cotizado (4-sep) | **falta** | se compra al día |
-| jamón de pavo Braedt 480 g | ~S/42.30 el kilo (S/20.30 en Tottus; S/20.50 en Makro) | precio online, 11-nov | Tottus o Makro | se compra al día |
+| jamón de pavo en pieza | S/44.20 el kilo (referencia, sin confirmar) | **falta cotizar en el mostrador** (Makro, Metro, Tottus) o con distribuidor | — | — |
 | jamón ahumado, salame y pepperoni tajados | ~S/32.38 el kilo (ponderado) | precio online de Makro: confirmar en Trujillo | Makro | se compra al día |
 | pan sub | S/2 la unidad | cotizado (22-ago) | panadero del dueño | **falta** |
 | queso cheddar tajado | S/7.20 el paquete de 136 g | precio online de Tottus | — | se compra al día |
