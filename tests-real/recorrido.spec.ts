@@ -156,5 +156,23 @@ test('un cliente nuevo recorre la app real sin errores', async ({ page }) => {
     await expect(page.locator('.en')).toBeVisible();
   });
 
+  // LA CUENTA Y LOS PUNTOS, con la cuenta robot (scripts/robot-recorrido.mjs; Ezra, 2026-11-11). Entra con
+  // teléfono y PIN y abre su cuenta: cualquier acción de la cuenta que falle (pedidos, puntos, avisos) sale
+  // arriba como hallazgo. Sin las variables (corrida local) se salta y se dice.
+  await paso(page, 'cuenta-y-puntos', async () => {
+    if (!process.env.ROBOT_PIN) { console.log('sin cuenta robot: no se revisó la cuenta'); return; }
+    await page.goto('/');
+    await page.locator('.pta .yo').click();
+    await page.locator('.en').waitFor();
+    await page.locator('button[onclick^="authPinFallback=true"]').click();
+    await page.locator('#l-phone').fill(process.env.ROBOT_TELEFONO || '000000000');
+    await page.locator('#l-pin').fill(process.env.ROBOT_PIN);
+    await page.locator('.en-go button.oro').click();
+    await expect.poll(() => page.evaluate(() => (window as any).sndScreen), { timeout: 20000 }).toBe('p_home');
+    const cuenta = await page.evaluate(() => { const w = window as any; return { puntos: w.cust?.points, admin: w.isAdmin }; });
+    if (typeof cuenta.puntos !== 'number') hallazgos.push({ paso: pasoActual, que: 'la cuenta abrió sin puntos: ' + JSON.stringify(cuenta) });
+    if (cuenta.admin) hallazgos.push({ paso: pasoActual, que: 'la cuenta robot entró como administradora' });
+  });
+
   expect(hallazgos, hallazgos.map((h) => `[${h.paso}] ${h.que}`).join('\n')).toHaveLength(0);
 });
