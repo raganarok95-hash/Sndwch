@@ -212,3 +212,10 @@ verse que el feed no tiene (`estilo-sndwch` reglas 7 y 8, criterio Novedad), y e
 Dueño, al ver las 10 láminas con imágenes nuevas (el despiece del Philly, la plancha, la mesa con dos luces y las
 palabras con su objeto): «Genial, mucho mejor». Lección: lo que movió la aguja fue la imagen nueva y una forma de verse
 que el feed no tenía, con el mismo sistema de franjas. Se mantiene como estándar.
+
+## 2026-11-11 · Stickers para la imprenta
+- Dueño: «Lo que me compartes se lo voy a mandar a quien hace los stickers no debe contener en esa imágen tus
+  consejos o si es opcional o no». Lección: la ficha para la imprenta lleva solo el arte, la medida, el material, la
+  cantidad y el archivo. Los avisos y recomendaciones van en el chat.
+- Dueño: «¿Por qué sin color o a una tinta y es un sticker?». Lección: al pasar un sello a sticker, se aprovecha el
+  full color (cuesta lo mismo); no se copia la limitación del medio anterior.
