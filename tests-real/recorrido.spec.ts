@@ -35,6 +35,8 @@ const IGNORAR = [
   // El mismo botón de Google pide un token por FedCM y, en un navegador sin sesión de Google, falla con NetworkError.
   // Visto todos los días desde el 2026-10-25 en el paso «entrar»; no es la app.
   /\[GSI_LOGGER\]: FedCM get\(\) rejects with NetworkError/i,
+  // Lo mismo al entrar con teléfono y PIN: FedCM dice que no hay sesión de Google. Visto el 2026-11-11.
+  /Not signed in with the identity provider/i,
 ];
 
 function vigilar(page: Page) {
@@ -154,6 +156,32 @@ test('un cliente nuevo recorre la app real sin errores', async ({ page }) => {
     await page.goto('/');
     await page.locator('.pta .yo').click();
     await expect(page.locator('.en')).toBeVisible();
+  });
+
+  // LA CUENTA Y LOS PUNTOS, con la cuenta robot (scripts/robot-recorrido.mjs; Ezra, 2026-11-11). Entra con
+  // teléfono y PIN y abre su cuenta: cualquier acción de la cuenta que falle (pedidos, puntos, avisos) sale
+  // arriba como hallazgo. Sin las variables (corrida local) se salta y se dice.
+  await paso(page, 'cuenta-y-puntos', async () => {
+    if (!process.env.ROBOT_PIN) { console.log('sin cuenta robot: no se revisó la cuenta'); return; }
+    await page.goto('/');
+    await page.locator('.pta .yo').click();
+    await page.locator('.en').waitFor();
+    await page.locator('button[onclick^="authPinFallback=true"]').click();
+    await page.locator('#l-phone').fill(process.env.ROBOT_TELEFONO || '000000000');
+    await page.locator('#l-pin').fill(process.env.ROBOT_PIN);
+    const login = page.waitForResponse((r) => /functions\/v1\/api/.test(r.url()) && /"action":"login"/.test(r.request().postData() || ''), { timeout: 20000 }).catch(() => null);
+    await page.locator('.en-go button.oro').click();
+    const resp = await login;
+    if (!resp) {
+      const err = await page.locator('#auth-err').innerText().catch(() => '');
+      hallazgos.push({ paso: pasoActual, que: 'Entrar no llamó al servidor' + (err ? ': ' + err : '') });
+      return;
+    }
+    if (resp.status() !== 200) return; // ya quedó anotado como hallazgo por vigilar()
+    await expect.poll(() => page.evaluate(() => (window as any).sndScreen), { timeout: 20000 }).toBe('p_home');
+    const cuenta = await page.evaluate(() => { const w = window as any; return { puntos: w.cust?.points, admin: w.isAdmin }; });
+    if (typeof cuenta.puntos !== 'number') hallazgos.push({ paso: pasoActual, que: 'la cuenta abrió sin puntos: ' + JSON.stringify(cuenta) });
+    if (cuenta.admin) hallazgos.push({ paso: pasoActual, que: 'la cuenta robot entró como administradora' });
   });
 
   expect(hallazgos, hallazgos.map((h) => `[${h.paso}] ${h.que}`).join('\n')).toHaveLength(0);
