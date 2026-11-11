@@ -1,7 +1,7 @@
 {
  "campana": "PASAPORTE",
  "sello": 1,
- "nota": "v3 (2026-11-11), tras el extraño y el crítico: comida desde el segundo 0, sello con ciudad y año, leyendas dichas como leyendas, foto real salvo el Tuna Melt (la de img/ es abierto sobre pan tostado, no la receta).",
+ "nota": "v3 (2026-11-11), tras el extraño y el crítico: comida desde el segundo 0, sello con ciudad y año, leyendas dichas como leyendas, foto real salvo el Tuna Melt (la de img/ es abierto sobre pan tostado, no la receta). v4: sin comparar con el original (Ezra, 11-nov).",
  "tramos": [
   {
    "imagen": "../../../../img/sig09_v.webp",
@@ -30,8 +30,8 @@
    "desde": 0.5,
    "dura": 3.3,
    "quien": "WICHO",
-   "titular": "El primero fue provolone. Acá: cheddar.",
-   "linea": "Curado y salado. No se pierde debajo de la carne."
+   "titular": "Res salteada al momento.",
+   "linea": "Cebolla salteada junto con la res y cheddar que no se pierde debajo."
   },
   {
    "imagen": "../../../../img/sig09_v.webp",

@@ -6,7 +6,7 @@ Campaña: `docs/marketing/campanas/PASAPORTE.md` (fuentes en su tabla). Lo que s
 |---|---|---|
 | 0–3 | el sándwich | **El almuerzo de un astillero.** / Cuentan que los obreros italoamericanos de Hog Island lo llevaban en pan largo. De ahí, «hoagie». · sello «FILADELFIA · LEYENDA» |
 | 3–6 | SANDO sella | SANDO · El origen. · el mismo sello |
-| 6–9 | WICHO escribe | WICHO · **El de allá: provolone. Acá: queso americano.** / Se funde parejo y cubre todo, de borde a borde. |
+| 6–9 | WICHO escribe | WICHO · **Tres fiambres, en pliegues.** / Jamón ahumado, salame y pepperoni, con aceite y vinagre. |
 | 9–12 | el sándwich | **ITALIAN HOAGIE** / Jamón ahumado, salame, pepperoni, queso americano, verduras, aceite y vinagre. |
 | 12–13 | cierre | Sello 2 · SNDWCH.APP |
 

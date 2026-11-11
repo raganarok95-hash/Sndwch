@@ -1,5 +1,11 @@
 # Campaña PASAPORTE
 
+> **2026-11-11, Ezra:** «No tiene sentido tu campaña, ¿qué ganamos con lo que me has propuesto exponiendo
+> básicamente los errores o modificaciones del negocio?» → **v4: se quita toda comparación con el original.**
+> SANDO cuenta el origen; WICHO cuenta por qué se antoja (de la ficha del ingrediente). La columna «Lo distinto
+> acá» de abajo queda solo como registro interno: no sale en ningún reel ni caption. En espera de que Ezra
+> confirme la campaña.
+
 Ezra la eligió el 2026-11-11 en la tarjeta de ideas de campaña («PASAPORTE (origen)»), después de rechazar
 los reels «Ese ya gotea» («tonto») y «¿Y si hoy son albóndigas?» («super genérico, sin una idea clara que conecte»).
 

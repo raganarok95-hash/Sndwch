@@ -6,7 +6,7 @@ Campaña: `docs/marketing/campanas/PASAPORTE.md` (fuentes en su tabla). Lo que s
 |---|---|---|
 | 0–3 | el sándwich | **En 1913, el atún era de restaurante fino.** / California: «el atún se está sirviendo en los mejores restaurantes», contaba un diario. · sello «CALIFORNIA · 1913» |
 | 3–6 | SANDO sella | SANDO · El origen. · el mismo sello |
-| 6–9 | WICHO escribe | WICHO · **Allá: de restaurante fino. Acá: de almuerzo.** / Atún // House: lascas gruesas, la mayonesa justa y pimienta blanca. |
+| 6–9 | WICHO escribe | WICHO · **Atún en lascas gruesas.** / La mayonesa justa y pimienta blanca. |
 | 9–12 | el sándwich | **CLASSIC TUNA** / Atún en lascas, mayonesa justa y pimienta blanca. |
 | 12–13 | cierre | Sello 4 · SNDWCH.APP |
 

@@ -6,7 +6,7 @@ Campaña: `docs/marketing/campanas/PASAPORTE.md` (fuentes en su tabla). Lo que s
 |---|---|---|
 | 0–3 | el sándwich | **El atún también se come caliente.** / Cuentan que nació en una cafetería de Charleston, en 1965. Nadie lo ha podido probar. · sello «CHARLESTON · 1965 · LEYENDA» |
 | 3–6 | SANDO sella | SANDO · El origen. · el mismo sello |
-| 6–9 | WICHO escribe | WICHO · **Allá: ensalada de atún. Acá: en lascas.** / Lascas gruesas, nunca hecho pasta, y cheddar fundido encima. |
+| 6–9 | WICHO escribe | WICHO · **Atún en lascas, caliente.** / Lascas gruesas y cheddar fundido encima. |
 | 9–12 | el sándwich | **TUNA MELT** / Atún en lascas y cheddar fundido, caliente. |
 | 12–13 | cierre | Sello 3 · SNDWCH.APP |
 

@@ -1,7 +1,7 @@
 {
  "campana": "PASAPORTE",
  "sello": 3,
- "nota": "v3 (2026-11-11), tras el extraño y el crítico: comida desde el segundo 0, sello con ciudad y año, leyendas dichas como leyendas, foto real salvo el Tuna Melt (la de img/ es abierto sobre pan tostado, no la receta).",
+ "nota": "v3 (2026-11-11), tras el extraño y el crítico: comida desde el segundo 0, sello con ciudad y año, leyendas dichas como leyendas, foto real salvo el Tuna Melt (la de img/ es abierto sobre pan tostado, no la receta). v4: sin comparar con el original (Ezra, 11-nov).",
  "tramos": [
   {
    "imagen": "../../estudio/hecho/2026-11-16-pasaporte-sandwich-tunamelt/v1.jpg",
@@ -30,8 +30,8 @@
    "desde": 0.5,
    "dura": 3.3,
    "quien": "WICHO",
-   "titular": "Allá: ensalada de atún. Acá: en lascas.",
-   "linea": "Lascas gruesas, nunca hecho pasta, y cheddar fundido encima."
+   "titular": "Atún en lascas, caliente.",
+   "linea": "Lascas gruesas y cheddar fundido encima."
   },
   {
    "imagen": "../../estudio/hecho/2026-11-16-pasaporte-sandwich-tunamelt/v1.jpg",
