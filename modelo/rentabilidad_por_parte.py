@@ -80,7 +80,7 @@ PROT = {
     # P08 es la ÚNICA con rendimiento 1.00: es fiambre, no se cocina. Por eso su costo por
     # porción es literalmente el precio del kilo por el gramaje, sin el ~1.85x de merma que
     # llevan las que sí pasan por la olla.
-    "P08": (3.76, 7.51, "[WEB] pavo S/44.20/kg (retail Braedt S/43.75) — sin merma, rendimiento 1.00"),
+    "P08": (3.59, 7.19, "[COTIZADO] jamón de pavo Braedt 480 g S/42.29/kg (Tottus, 2026-11-11) — sin merma, rendimiento 1.00"),
     # P09 entra con la carta v4 (2026-09-24): la res del Philly, laminada en frío y salteada.
     # Rendimiento 0.70 SUPUESTO — hay que medirlo en la primera tanda (ver insumos.py).
     "P09": (*_I.porcion_derivada("P09"), "[COTIZADO] aguja S/25/kg laminada en frío, rendimiento 0.70 SUPUESTO"),
