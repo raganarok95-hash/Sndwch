@@ -23,3 +23,10 @@ Lección: nunca comparar la receta propia contra un «original» en el contenido
 se lee como confesar que lo nuestro no es el de verdad, aunque se explique el motivo. El contenido dice lo que el
 sándwich ES y por qué se antoja; la diferencia con otra versión no se menciona. Y cada propuesta tiene que decir
 primero qué gana el negocio (qué cambia en el que mira y cómo lleva a un pedido), no solo por qué es original.
+
+## 2026-11-11 · «deja de buscar hacer siempre lo más fácil»
+Ezra: «También deja de buscar hacer siempre lo más fácil, creatividad» y «Primero debes formular una identidad visual
+de la marca, ¿viste los ejemplos que te di?», «no andar repitiendo la misma imagen para todo ni el mismo formato».
+Lección: lo fácil era un tema con los hermanos hablando a cámara y la misma foto oscura con texto encima en cada reel.
+Una campaña es una mecánica que mueve un número; cada pieza elige un formato distinto de `identidad/`; los ejemplos que
+manda Ezra se miran antes de diseñar (`referentes/ideas/`).
