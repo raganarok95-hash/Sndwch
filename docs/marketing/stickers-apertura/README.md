@@ -16,6 +16,7 @@ Dueño, 2026-11-09: «También necesito que me mandes todos los stickers que nec
 | 4 | **Salsas y soluciones**, con nombre | `salsas-A4-1-con-nombre.pdf` | 60 × 40 mm, 18 por A4 | vinilo **blanco + laminado mate** | **1 plancha A4** (18) | pedir precio |
 | 5 | **Salsas en blanco** (repuestos y lo nuevo) | `salsas-A4-2-en-blanco.pdf` | 60 × 40 mm, 18 por A4 | igual | **1 plancha A4** (18) | pedir precio |
 | 7 | **Cocina, una por tanda** (en el táper de las porciones) | `cocina-A4-tandas.pdf` | 60 × 40 mm, 18 por A4 | vinilo **blanco + laminado mate** | **1 plancha A4** (18) | pedir precio |
+| 8 | **Frente de la bolsa** (los dos sellos en un sticker: no llegaron los sellos ni las kraft, Ezra 2026-11-11) | `sticker-sello-10x10cm.pdf` | 10 × 10 cm, esquinas de 4 mm | papel adhesivo mate, una tinta #1E2B22 | **250** | 9 cm a S/75 las 250 en la lista; 10 cm, pedir precio |
 | 6 | Calle (opcional, publicidad) | `../imprimir/sticker-calle-8x8cm.pdf` | 8 × 8 cm | vinilo blanco + laminado mate UV | 0 por ahora (o 250) | S/70 las 250 en papel; vinilo, aparte |
 
 **No necesitan sticker:** el papel manteca (ya tienes el que lleva logo), las latas (hasta que se
