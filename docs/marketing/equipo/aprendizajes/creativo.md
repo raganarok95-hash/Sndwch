@@ -15,3 +15,11 @@
 ## 2026-11-10 · reel «¿Y si hoy son albóndigas?»
 Dueño, al verlo montado: «Ya vi el video no me gustó para nada». Se paró la toma 1 rehecha. Pendiente: qué no le gustó.
 Dueño, minuto después: «Es super genérico, sin una idea clara que conecte, solo super genérico». Lección: pasar el test (insight con fuente, título con porqué) no basta; una idea que sirve igual para cualquier sandwichería con dos mascotas es genérica. Antes del reel tiene que existir UNA idea de campaña propia de SND//WCH que todos los reels repitan.
+
+## 2026-11-11 · PASAPORTE v3, «Allá X, acá Y»
+Ezra: «No tiene sentido tu campaña, ¿qué ganamos con lo que me has propuesto exponiendo básicamente los errores o
+modificaciones del negocio?»
+Lección: nunca comparar la receta propia contra un «original» en el contenido. Decir «allá provolone, acá cheddar»
+se lee como confesar que lo nuestro no es el de verdad, aunque se explique el motivo. El contenido dice lo que el
+sándwich ES y por qué se antoja; la diferencia con otra versión no se menciona. Y cada propuesta tiene que decir
+primero qué gana el negocio (qué cambia en el que mira y cómo lleva a un pedido), no solo por qué es original.
