@@ -4,6 +4,13 @@ Dueño (2026-11-10): «deseo que genere 3 o 4 reels a la semana… generar un gu
 claude en chrome… en google flow, usando a personajes como sando y wicho» y «Lo importante es que sea automatizado,
 … sí o sí todas las semanas». También: «es gratis hacer imágenes con google flow».
 
+## La campaña vigente: PASAPORTE (Ezra la eligió el 2026-11-11)
+Cada semana sale de `docs/marketing/campanas/PASAPORTE.md`: un sello por Signature con origen verificado, misma
+estructura de 5 tramos, las mismas 2 tomas de SANDO y WICHO (`2026-11-16-pasaporte-sando|wicho`). Los briefs y
+las duplas trabajan dentro de la campaña (el dato de origen y la decisión de acá), no abren ideas sueltas: una
+idea suelta que podría ser de cualquier sandwichería es lo que Ezra rechazó como «genérico». Cuando se acaben
+los sellos verificados, la semana trae al dueño la siguiente campaña antes de seguir.
+
 ## El ciclo (corre solo cada lunes, 10:13, en el hilo «Equipo de marketing»)
 | paso | quién | dónde | qué sale |
 |---|---|---|---|

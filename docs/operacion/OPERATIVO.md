@@ -124,9 +124,10 @@ regla: **toda compra se anota en el panel el mismo día**, con proveedor, cantid
 | tomate pelado en lata Mutti 400 g | S/4.99 la lata | elegido por el dueño (2026-11-05), Makro web | Makro | se compra al día |
 | mayonesa | ~S/15 el kilo | estimado | — | — |
 | lechuga, tomate, cebolla, pimiento | S/3 a S/4.50 el kilo | estimado | mercado | se compra al día |
-| bolsa kraft lisa #20 | S/0.26 | estimado (offi.pe) | **¿llegó?** | — |
+| bolsa kraft lisa #20 | S/0.26 | estimado (offi.pe) | **no llegó** (dueño, 2026-11-11). Plan B: 30 bolsas kraft lisas compradas en Trujillo (tienda de descartables o librería) el mar 17 si el pedido no llega el lun 16 | — |
 | papel manteca | S/0.075 por sándwich | cotizado | — | — |
 | sticker de cierre | ~S/0.10 | sin cotizar | — | — |
+| sticker de frente 10×10 cm (reemplaza los sellos) | sin cotizar | 250 unidades, arte en `docs/marketing/stickers-apertura/` | imprenta | — |
 | botella de 500 ml | S/0.69 | comprada (hay 200) | — | — |
 | té, jamaica, hierbas, sucralosa pura | — | **sin cotizar** | — | — |
 

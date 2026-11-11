@@ -1,0 +1,49 @@
+{
+ "campana": "PASAPORTE",
+ "sello": 3,
+ "nota": "v3 (2026-11-11), tras el extraño y el crítico: comida desde el segundo 0, sello con ciudad y año, leyendas dichas como leyendas, foto real salvo el Tuna Melt (la de img/ es abierto sobre pan tostado, no la receta).",
+ "tramos": [
+  {
+   "imagen": "../../estudio/hecho/2026-11-16-pasaporte-sandwich-tunamelt/v1.jpg",
+   "dura": 3,
+   "quien": null,
+   "titular": "El atún también se come caliente.",
+   "linea": "Cuentan que nació en una cafetería de Charleston, en 1965. Nadie lo ha podido probar.",
+   "sello": {
+    "ciudad": "CHARLESTON",
+    "anio": "1965 · LEYENDA"
+   }
+  },
+  {
+   "video": "../../estudio/hecho/2026-11-16-pasaporte-sando/v1.mp4",
+   "desde": 0.5,
+   "dura": 3,
+   "quien": "SANDO",
+   "titular": "El origen.",
+   "sello": {
+    "ciudad": "CHARLESTON",
+    "anio": "1965 · LEYENDA"
+   }
+  },
+  {
+   "video": "../../estudio/hecho/2026-11-16-pasaporte-wicho/v1.mp4",
+   "desde": 0.5,
+   "dura": 3.3,
+   "quien": "WICHO",
+   "titular": "Allá: ensalada de atún. Acá: en lascas.",
+   "linea": "Lascas gruesas, nunca hecho pasta, y cheddar fundido encima."
+  },
+  {
+   "imagen": "../../estudio/hecho/2026-11-16-pasaporte-sandwich-tunamelt/v1.jpg",
+   "dura": 3,
+   "quien": null,
+   "titular": "TUNA MELT",
+   "linea": "Atún en lascas y cheddar fundido, caliente."
+  }
+ ],
+ "cierre": {
+  "titular": "Sello 3",
+  "linea": "SNDWCH.APP",
+  "dura": 1.6
+ }
+}
