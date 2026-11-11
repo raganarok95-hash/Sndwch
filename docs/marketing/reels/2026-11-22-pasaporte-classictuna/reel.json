@@ -1,0 +1,49 @@
+{
+ "campana": "PASAPORTE",
+ "sello": 4,
+ "nota": "v3 (2026-11-11), tras el extraño y el crítico: comida desde el segundo 0, sello con ciudad y año, leyendas dichas como leyendas, foto real salvo el Tuna Melt (la de img/ es abierto sobre pan tostado, no la receta).",
+ "tramos": [
+  {
+   "imagen": "../../../../img/sig04_v.webp",
+   "dura": 3,
+   "quien": null,
+   "titular": "En 1913, el atún era de restaurante fino.",
+   "linea": "California: «el atún se está sirviendo en los mejores restaurantes», contaba un diario.",
+   "sello": {
+    "ciudad": "CALIFORNIA",
+    "anio": "1913"
+   }
+  },
+  {
+   "video": "../../estudio/hecho/2026-11-16-pasaporte-sando/v1.mp4",
+   "desde": 0.5,
+   "dura": 3,
+   "quien": "SANDO",
+   "titular": "El origen.",
+   "sello": {
+    "ciudad": "CALIFORNIA",
+    "anio": "1913"
+   }
+  },
+  {
+   "video": "../../estudio/hecho/2026-11-16-pasaporte-wicho/v1.mp4",
+   "desde": 0.5,
+   "dura": 3.3,
+   "quien": "WICHO",
+   "titular": "Allá: de restaurante fino. Acá: de almuerzo.",
+   "linea": "Atún // House: lascas gruesas, la mayonesa justa y pimienta blanca."
+  },
+  {
+   "imagen": "../../../../img/sig04_v.webp",
+   "dura": 3,
+   "quien": null,
+   "titular": "CLASSIC TUNA",
+   "linea": "Atún en lascas, mayonesa justa y pimienta blanca."
+  }
+ ],
+ "cierre": {
+  "titular": "Sello 4",
+  "linea": "SNDWCH.APP",
+  "dura": 1.6
+ }
+}

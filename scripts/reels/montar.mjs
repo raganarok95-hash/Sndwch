@@ -1,7 +1,7 @@
 // SND//WCH — reels/montar: arma un reel vertical 1080×1920 con las tomas de Flow, la foto real y el cierre.
 // Uso: FUENTES_CSS=… node scripts/reels/montar.mjs docs/marketing/reels/<id>/reel.json salida.mp4
 // reel.json: { "tramos": [ { "video"|"imagen": ruta, "dura": s, "quien": "WICHO"|"SANDO"|null,
-//   "titular": "…", "linea": "…" } ], "cierre": { "titular": "…", "linea": "…", "dura": s } }
+//   "titular": "…", "linea": "…", "sello"?: { "ciudad": "…", "anio": "…" } } ], "cierre": { "titular": "…", "linea": "…", "dura": s } }
 // Las cifras y la fecha las pone quien escribe reel.json leyendo docs/hechos/ (nunca a mano).
 import { chromium } from '@playwright/test';
 import { readFileSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
@@ -30,7 +30,9 @@ const css = `*{margin:0;box-sizing:border-box}body{width:1080px;height:1920px;ba
 .l{font:italic 400 50px/1.15 'Instrument Serif';margin-top:22px}
 .g{position:absolute;left:0;right:0;top:0;height:1100px;background:linear-gradient(#0d1410d9,#0d141099 55%,#0d141000)}
 .c{position:absolute;inset:0;background:#EFE6D4;color:#1E2B22;padding:420px 80px 0}
-.c .h{font-size:120px}.c .m{color:#1E2B22;text-shadow:none;top:300px}`;
+.c .h{font-size:120px}.c .m{color:#1E2B22;text-shadow:none;top:300px}
+.s{position:absolute;right:90px;top:1080px;width:380px;height:380px;border:10px solid #CBA258;border-radius:50%;outline:3px solid #CBA258;outline-offset:-26px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:#CBA258;background:#0d1410b8;transform:rotate(-9deg);font:400 54px/1.0 Anton;text-transform:uppercase;opacity:.93;padding:40px}
+.s small{display:block;font:600 30px 'IBM Plex Mono';letter-spacing:.12em;margin-top:12px}`;
 
 const b = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_PATH ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } : {});
 const pg = await b.newPage({ viewport: { width: 1080, height: 1920 } });
@@ -48,7 +50,7 @@ async function capa(html, archivo, transparente = true) {
 
 const partes = [];
 for (const [i, t] of reel.tramos.entries()) {
-  const texto = `<div class="g"></div>${marca}<div class="t">${t.quien ? `<div class="q">${esc(t.quien)}</div>` : ''}<div class="h">${esc(t.titular)}</div>${t.linea ? `<div class="l">${esc(t.linea)}</div>` : ''}</div>`;
+  const texto = `<div class="g"></div>${marca}<div class="t">${t.quien ? `<div class="q">${esc(t.quien)}</div>` : ''}<div class="h">${esc(t.titular)}</div>${t.linea ? `<div class="l">${esc(t.linea)}</div>` : ''}</div>${t.sello ? `<div class="s">${esc(t.sello.ciudad)}${t.sello.anio ? `<small>${esc(t.sello.anio)}</small>` : ''}</div>` : ''}`;
   const over = await capa(texto, 'capa' + i);
   const out = join(dir, `p${i}.mp4`);
   const fondo = '[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30';

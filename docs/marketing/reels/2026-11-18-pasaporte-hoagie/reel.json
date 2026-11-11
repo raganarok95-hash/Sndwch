@@ -1,0 +1,49 @@
+{
+ "campana": "PASAPORTE",
+ "sello": 2,
+ "nota": "v3 (2026-11-11), tras el extraño y el crítico: comida desde el segundo 0, sello con ciudad y año, leyendas dichas como leyendas, foto real salvo el Tuna Melt (la de img/ es abierto sobre pan tostado, no la receta).",
+ "tramos": [
+  {
+   "imagen": "../../../../img/sig11_v.webp",
+   "dura": 3,
+   "quien": null,
+   "titular": "El almuerzo de un astillero.",
+   "linea": "Cuentan que los obreros italoamericanos de Hog Island lo llevaban en pan largo. De ahí, «hoagie».",
+   "sello": {
+    "ciudad": "FILADELFIA",
+    "anio": "LEYENDA"
+   }
+  },
+  {
+   "video": "../../estudio/hecho/2026-11-16-pasaporte-sando/v1.mp4",
+   "desde": 0.5,
+   "dura": 3,
+   "quien": "SANDO",
+   "titular": "El origen.",
+   "sello": {
+    "ciudad": "FILADELFIA",
+    "anio": "LEYENDA"
+   }
+  },
+  {
+   "video": "../../estudio/hecho/2026-11-16-pasaporte-wicho/v1.mp4",
+   "desde": 0.5,
+   "dura": 3.3,
+   "quien": "WICHO",
+   "titular": "El de allá: provolone. Acá: queso americano.",
+   "linea": "Se funde parejo y cubre todo, de borde a borde."
+  },
+  {
+   "imagen": "../../../../img/sig11_v.webp",
+   "dura": 3,
+   "quien": null,
+   "titular": "ITALIAN HOAGIE",
+   "linea": "Jamón ahumado, salame, pepperoni, queso americano, verduras, aceite y vinagre."
+  }
+ ],
+ "cierre": {
+  "titular": "Sello 2",
+  "linea": "SNDWCH.APP",
+  "dura": 1.6
+ }
+}
