@@ -567,7 +567,7 @@ export const CAC_TECHO = {
   // por pedido. Con el 15CM a S/19.90 y la bebida en botella de 500 ml: 13.22 desde el 2026-11-03
   // (ITALIAN HOAGIE con jamón, salame y pepperoni; antes 13.06; 14.13 con el modelo viejo antes del
   // 2026-10-16). Con la lata a S/8.50 sube (rama claude/precio-latas: recalcular al mergearla).
-  contribPedido: 13.26,
+  contribPedido: 13.22,
   // [MÉTODO] `GASTO_PEDIDO` de proyeccion.py — gas, frío y coordinación, aparte del insumo.
   overheadPedido: 0.5,
   // [MEDIDO] `COSTO_REFERIDO` — el insumo del 15CM de R06 + la bebida de R05. Es el canal

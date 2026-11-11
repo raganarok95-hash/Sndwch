@@ -17,7 +17,7 @@
   ----------------------------------------------------------------------------
   SIG09 Philly Cheesesteak             19.90    6.48    13.42    32.5%
   SIG02 Meatball Marinara              19.90    6.03    13.87    30.3%
-  SIG10 Turkey                         19.90    6.42    13.48    32.2%
+  SIG10 Turkey                         19.90    6.58    13.31    33.1%
   SIG12 Tuna Melt                      19.90    6.45    13.45    32.4%
   SIG11 Italian Hoagie                 19.90    6.67    13.23    33.5%
   SIG04 Classic Tuna                   19.90    5.55    14.35    27.9%
@@ -27,7 +27,7 @@
   ----------------------------------------------------------------------------
   SIG09 Philly Cheesesteak             30.90   11.65    19.25    37.7%
   SIG02 Meatball Marinara              30.90   10.76    20.14    34.8%
-  SIG10 Turkey                         30.90   11.54    19.36    37.3%
+  SIG10 Turkey                         30.90   11.86    19.04    38.4%
   SIG12 Tuna Melt                      30.90   11.60    19.30    37.5%
   SIG11 Italian Hoagie                 30.90   12.04    18.86    39.0%
   SIG04 Classic Tuna                   30.90    9.80    21.10    31.7%
@@ -43,7 +43,7 @@
   Atún // House                        19.90    7.71    12.19    38.8%
   Embutido // Italiano (fuera del armador)   16.90    7.22     9.68    42.7%
   Albóndiga // Marinara                19.90    7.10    12.80    35.7%
-  Pavo // Horneado                     19.90    8.05    11.85    40.5%
+  Pavo // Horneado                     19.90    8.22    11.68    41.3%
   Res // Laminada                      19.90    7.50    12.40    37.7%
 
   30CM
@@ -53,7 +53,7 @@
   Atún // House                        30.90   14.13    16.77    45.7%  <-- PASA EL TECHO
   Embutido // Italiano (fuera del armador)   32.90   13.13    19.77    39.9%
   Albóndiga // Marinara                30.90   12.90    18.00    41.8%
-  Pavo // Horneado                     30.90   14.82    16.08    48.0%  <-- PASA EL TECHO
+  Pavo // Horneado                     30.90   15.14    15.76    49.0%  <-- PASA EL TECHO
   Res // Laminada                      30.90   13.70    17.20    44.3%
 
   DOBLE PROTEINA (el recargo contra lo que cuesta la porcion extra)
@@ -67,8 +67,8 @@
   Embutido // Italiano (fuera del armador) 30CM   19.90    5.50    14.40    27.7%
   Albóndiga // Marinara 15CM            6.90    2.64     4.26    38.2%
   Albóndiga // Marinara 30CM           13.90    5.27     8.63    37.9%
-  Pavo // Horneado 15CM                 9.00    3.59     5.41    39.9%
-  Pavo // Horneado 30CM                17.00    7.19     9.81    42.3%
+  Pavo // Horneado 15CM                 9.00    3.76     5.24    41.8%
+  Pavo // Horneado 30CM                17.00    7.51     9.49    44.2%
   Res // Laminada 15CM                  7.00    3.04     3.96    43.4%
   Res // Laminada 30CM                 13.90    6.07     7.83    43.7%
 
@@ -121,10 +121,10 @@
   recompensa                          puntos  nos cuesta  = descuento   pts/sol
   ------------------------------------------------------------------------------
   4ta salsa gratis                        20        0.27        1.33%      75.2
-  sube a 30CM gratis (tope S/8)          320        6.76        2.11%      47.3
-  doble proteína gratis                  160        3.59        2.24%      44.6
+  sube a 30CM gratis (tope S/8)          320        6.91        2.16%      46.3
+  doble proteína gratis                  160        3.76        2.35%      42.6
   bebida gratis (tope S/6)               160        1.89        1.18%      84.7
-  sándwich 15CM gratis                   400        8.05        2.01%      49.7
+  sándwich 15CM gratis                   400        8.22        2.06%      48.6
 
   La ultima columna es la "tasa de cambio" del programa: cuantos puntos cuesta cada sol de
   costo real. Si dos recompensas tienen tasas muy distintas, el cliente racional canjea
@@ -180,7 +180,7 @@
 
   parte                                      costo %   cuanto se pasa
   ----------------------------------------------------------------------
-  BYO Pavo // Horneado 30CM                    48.0%            3.0 pts
+  BYO Pavo // Horneado 30CM                    49.0%            4.0 pts
   BYO Atún // House 30CM                       45.7%            0.7 pts
 
   ⚠ NADA DE ESTO SE ARREGLA CON PUBLICIDAD. Al contrario: la publicidad multiplica el

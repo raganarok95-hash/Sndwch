@@ -201,7 +201,7 @@ Sale de `modelo/rentabilidad_por_parte.py` con los precios de la base (`catalog_
 |---|---|---|---|---|
 | PHILLY CHEESESTEAK | S/6.48 | 32.5% | S/11.65 | 37.7% |
 | MEATBALL MARINARA | S/6.03 | 30.3% | S/10.76 | 34.8% |
-| TURKEY | S/6.42 | 32.2% | S/11.54 | 37.3% |
+| TURKEY | S/6.58 | 33.1% | S/11.86 | 38.4% |
 | TUNA MELT | S/6.45 | 32.4% | S/11.60 | 37.5% |
 | ITALIAN HOAGIE | S/6.67 | 33.5% | S/12.04 | 39.0% |
 | CLASSIC TUNA | S/5.55 | 27.9% | S/9.80 | 31.7% |
