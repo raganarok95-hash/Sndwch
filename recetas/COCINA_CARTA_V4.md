@@ -155,8 +155,9 @@ tajada de cheddar encima (2 en 30CM), **tapa la sartén a fuego bajo 1 min** has
 
 ### PAVO // HORNEADO — para el TURKEY
 
-**No se cocina. Se lamina.** Lonjas de 1 a 1.5 mm, **en pliegues, nunca planas** (así se ve
-lleno). 85 g en 15CM, 170 g en 30CM. **Lamina lo del día**; la pieza entera, envuelta en el refri.
+**No se cocina. Viene tajado** (jamón de pavo Braedt 480 g, como hace Subway con su pavo: llega
+tajado del proveedor). **En pliegues, nunca plano** (así se ve lleno). 85 g en 15CM, 170 g en 30CM.
+Paquete abierto: bien cerrado en el refri, úsalo en 3-4 días.
 
 ### EMBUTIDO // ITALIANO — para el ITALIAN HOAGIE
 
@@ -201,7 +202,7 @@ Sale de `modelo/rentabilidad_por_parte.py` con los precios de la base (`catalog_
 |---|---|---|---|---|
 | PHILLY CHEESESTEAK | S/6.48 | 32.5% | S/11.65 | 37.7% |
 | MEATBALL MARINARA | S/6.03 | 30.3% | S/10.76 | 34.8% |
-| TURKEY | S/6.58 | 33.1% | S/11.86 | 38.4% |
+| TURKEY | S/6.42 | 32.2% | S/11.54 | 37.3% |
 | TUNA MELT | S/6.45 | 32.4% | S/11.60 | 37.5% |
 | ITALIAN HOAGIE | S/6.67 | 33.5% | S/12.04 | 39.0% |
 | CLASSIC TUNA | S/5.55 | 27.9% | S/9.80 | 31.7% |

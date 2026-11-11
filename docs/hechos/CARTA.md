@@ -54,7 +54,7 @@ El precio lo pone la proteína (más el recargo del pan, si tiene). Vegetales y 
 |---|---|---|---|---|---|
 | Atún // House | S/19.90 | S/30.90 | +S/10.90 | +S/21.90 | En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca. |
 | Albóndiga // Marinara | S/19.90 | S/30.90 | +S/6.90 | +S/13.90 | Albóndigas chicas hechas acá, cocidas dentro de su propia marinara. |
-| Pavo // Horneado | S/19.90 | S/30.90 | +S/9 | +S/17 | Lonjas de un milímetro puestas en pliegues, laminadas el mismo día. |
+| Pavo // Horneado | S/19.90 | S/30.90 | +S/9 | +S/17 | Lonjas finas puestas en pliegues, nunca planas. |
 | Res // Laminada | S/19.90 | S/30.90 | +S/7 | +S/13.90 | Laminada fina y salteada al momento. |
 
 Proteínas que existen pero NO se eligen acá: Pollo // Cajun (solo menú secreto), Embutido // Italiano (solo dentro de su Signature).
