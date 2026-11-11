@@ -1,6 +1,6 @@
 de: automatizaciones
 para: app
-estado: abierta
+estado: hecha
 para-cuando: 2026-11-18
 ---
 Ezra (2026-11-10): «Todo debe funcionar en automático» y «sí dale luz verde a todo».
@@ -26,3 +26,8 @@ Ezra (2026-11-10): «Todo debe funcionar en automático» y «sí dale luz verde
   antes de código (pendiente).
 - 2 · **Recorrido más largo:** sin una cuenta no se puede entrar a la cuenta, los puntos ni el panel reales.
   Espera Q14. Lo que sí se agregó hoy: el recorrido avisa si la tienda toma pedidos antes de abrir.
+
+**App, 2026-11-11:** hecho. Umbrales de Operativo en la base (Ezra: «Sí, ponlos»). El recorrido diario entra con
+una cuenta robot de cliente (`000000000`, sin panel, sin correo; PIN nuevo en cada corrida dentro de GitHub) y revisa
+que la cuenta abra con sus puntos (run 43016277202, en verde). Queda aparte la pantalla de insumos crudos y lista de
+compras: va con maqueta.

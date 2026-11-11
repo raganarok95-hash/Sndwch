@@ -21,6 +21,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      # La cuenta robot (Ezra, 2026-11-11): un PIN nuevo en cada corrida, que no sale del runner.
+      - name: Preparar la cuenta robot
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: node scripts/robot-recorrido.mjs
       - run: mkdir -p recorrido && npx playwright test -c playwright.real.config.ts
       - uses: actions/upload-artifact@v4
         if: always()

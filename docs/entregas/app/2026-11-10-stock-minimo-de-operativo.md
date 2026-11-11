@@ -1,6 +1,6 @@
 de: operativo
 para: app
-estado: abierta
+estado: hecha
 para-cuando: 2026-11-18
 ---
 Los stocks mínimos para el aviso automático (responde el punto 1 de `2026-11-10-stock-minimo-y-recorrido.md`).
@@ -24,3 +24,5 @@ cheddar 1 paquete · americano 1 paquete · mayonesa 500 g · botellas llenas po
 bolsas, papel manteca y stickers 30 de cada uno · gas 1 balón de repuesto.
 
 Recuerda: los pedidos de Rappi y PedidosYa no descuentan stock; si eso se automatiza, el aviso sirve de verdad.
+
+**App, 2026-11-11:** cargados en la base tal cual (migración 20261111115128).
