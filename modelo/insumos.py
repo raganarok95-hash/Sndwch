@@ -150,8 +150,8 @@ PROTEINA_KG = {
                                         "(confirmar en Makro Trujillo)", "2026-11-03"), 1.00),
     "P06": (Insumo(15.00, KG, COTIZADO, "carne molida S/15/kg, cotizada por el dueño el 2026-09-30 "
                                         "(online: Tottus S/23.50, Metro S/24.90)", "2026-09-30"), None),
-    "P08": (Insumo(44.20, KG, COTIZADO, "pavo en pieza S/44.20/kg al por mayor (2026-09-12); Ezra "
-                                        "2026-11-11: pieza tajada a diario, Operativo recotiza", "2026-09-12"), 1.00),
+    "P08": (Insumo(42.29, KG, COTIZADO, "jamón de pavo Braedt 480 g ya tajado, S/20.30 en Tottus online "
+                                        "(Makro S/20.50); Ezra 2026-11-11: «lo mismo pero más barato»", "2026-11-11"), 1.00),
 }
 # Rendimientos documentados: res 0.54 (limpieza 10% + cocción 40%), pollo 0.64-0.69 (se usa
 # el punto medio 0.665), res laminada 0.567. El atún y el pavo rinden 1.00 porque no se
@@ -167,7 +167,7 @@ PROTEINA_KG["P09"] = RES_LAMINADA_KG
 # derivación de arriba; las cuatro que no reconcilian salen nombradas en su salida.
 PORCION_EN_USO = {
     "P01": (3.15, 6.30), "P02": (2.47, 4.95), "P03": (2.49, 4.97), "P04": (3.25, 6.50),
-    "P05": (2.75, 5.50), "P06": (2.95, 5.90), "P08": (3.76, 7.51), "P09": (3.04, 6.07),
+    "P05": (2.75, 5.50), "P06": (2.95, 5.90), "P08": (3.59, 7.19), "P09": (3.04, 6.07),
 }
 # P01 y P02 salieron de la carta con la v4 (2026-09-24). Siguen acá porque el modelo todavía
 # costea la carta de apertura para compararla (SIG_APERTURA en rentabilidad_por_parte.py).

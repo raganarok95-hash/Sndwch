@@ -163,7 +163,7 @@ o Bon): la marca no puede prometer en la imagen más de lo que entrega.
 |---|---|
 | La res «laminada fina y salteada al momento» | `CARTA.md`, ARMA EL TUYO |
 | Las albóndigas «hechas acá, cocidas dentro de su propia marinara» | `CARTA.md` |
-| El pavo en «lonjas de un milímetro… laminadas el mismo día» y el tomate «cortado el mismo día» | `CARTA.md` |
+| El pavo en «lonjas finas puestas en pliegues» (desde el 2026-11-11 llega tajado) y el tomate «cortado el mismo día» | `CARTA.md` |
 | El atún «en lascas gruesas» | `CARTA.md` |
 | ~85 g de proteína en el 15 cm, el doble en el 30 cm | `CARTA.md`, tabla para Rappi |
 | Recetas que en Trujillo no se consiguen: no hay albóndiga en Rappi Trujillo y no hay Subway | `MERCADO.md` §4; `CONCEPTO_DEL_NEGOCIO.md` §1 |
