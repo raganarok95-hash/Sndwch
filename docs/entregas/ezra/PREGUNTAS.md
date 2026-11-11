@@ -22,3 +22,4 @@ El vigía de las 22:13 cuenta las filas `abierta` y las pone en el correo de cie
 | Q12 | 2026-11-03 | disenos | ¿Las bebidas llevan sal? (la receta guardada dice 0.2 g por litro) | respondida | Ezra, 2026-11-02: «sin sal en la receta». Quitada del panel y del recetario el 2026-11-10 (RECETAS). |
 | Q13 | 2026-11-10 | app | ¿Pongo en la base los umbrales de stock bajo de Operativo (Res 2; Albóndiga, Atún, Pavo y Embutido 1)? Sin eso el aviso salta desde el primer pedido. El SQL está en `docs/entregas/app/2026-11-10-stock-minimo-y-recorrido.md` | abierta | |
 | Q14 | 2026-11-10 | app | Para que el recorrido diario revise la cuenta y los puntos de verdad: ¿creo una cuenta robot de cliente (sin pedidos, sin permisos de panel)? | abierta | |
+| Q15 | 2026-11-11 | operativo | Las kraft: ¿el pedido sigue en camino y con qué fecha? Si no llegan el lun 16, ¿compro 30 bolsas kraft lisas en Trujillo el mar 17 y les pego el sticker al frente? | abierta | |
