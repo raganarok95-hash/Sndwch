@@ -21,7 +21,7 @@ escenografía ajena del cuadro.
 | `prot_p01.jpg` | **P01 Res // Asado** — punta de pecho a fuego lento | `334898925` (5760×3840) | cuadrado 2600 px desde (1868, 313) — deja fuera el pan de molde y el mantel a cuadros del plano original |
 | `prot_p02.jpg` | **P02 Pollo // Teriyaki** — muslo marinado y glaseado | `683939451` (5393×3600) | cuadrado 2100 px desde (2455, 930) — solo el plato |
 | `prot_p04.jpg` | **P04 Atún // House** — en lascas gruesas, nunca pasta | `321236277` (3251×4354) | cuadrado 1900 px desde (675, 922) — **por dentro de la lata**, que es lo que elimina el fondo turquesa de estudio |
-| `prot_p05.jpg` | **P05 Embutido // Italiano** — laminado fino, en pliegues | `559782786` (5472×3648) | cuadrado 2400 px desde (1098, 1000) — deja fuera el cuenco de aceitunas, la botella de aceite y el romero |
+| `prot_p05.jpg` | **P05 Embutido // Italiano** — jamón y dos salames en pliegues (2026-11-11, Ezra eligió «A»: la anterior parecía prosciutto) | `1569828060` (5472×3648) | cuadrado 2285 px desde (2204, 1362) — deja fuera la tabla con prosciutto y queso |
 | `prot_p06.jpg` | **P06 Albóndiga // Marinara** — chicas, en su propia marinara | `412433609` (7872×4432) | cuadrado 3000 px desde (2200, 938) — por dentro del sartén, fuera la servilleta rosa |
 | `prot_p08.jpg` | **P08 Pavo // Horneado** — lonjas finas, en pliegues | `469607542` (5184×3456) | cutout + fondo nuevo, ver abajo |
 | `prot_p09.jpg` | **P09 Res // Laminada** — salteada al momento con cebolla y pimiento (2026-09-25) | `511898883` (3712×5568) | cuadrado 2400 px desde (500, 2450) — solo la carne, fuera el pan, las papas y el cheddar de encima. Es la foto que se había descartado para el Philly por ser un macro: como foto de la proteína sola, eso es justo lo que sirve |
@@ -120,7 +120,7 @@ dueño), igual que las seis de proteínas.
 | archivo | producto | Adobe Stock | recorte aplicado al original |
 |---|---|---|---|
 | `sig09.jpg` | **Philly Cheesesteak** (SIG09) | `1877200591` (6720×4480) | (60, 430)-(3700, 4180) — **deja fuera las papas fritas de la derecha** |
-| `sig11.jpg` | **Italian Hoagie** (SIG11) | `580199632` (5133×3666) | (0, 183)-(5133, 3666) — solo se recorta la banda de humo de arriba |
+| `sig11.jpg` | **Italian Hoagie** (SIG11) — jamón y salame doblados, queso, lechuga y tomate (2026-11-11, Ezra eligió «A»: la anterior solo mostraba jamón) | `280513785` (5760×3840) | (2389, 1126)-(5760, 3412) — fuera el bowl de ensalada y los tomates |
 
 Las dos se guardan reescaladas a 1600 px, como las de proteína, y salen a 1050×708 tratadas
 — **sin el aviso de "le faltan píxeles"** que sí arrastran `sig04`…`sig08`, que son de 640 px
