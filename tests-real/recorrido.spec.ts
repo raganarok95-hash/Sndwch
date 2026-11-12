@@ -163,6 +163,9 @@ test('un cliente nuevo recorre la app real sin errores', async ({ page }) => {
       try { w.Culqi.close(); } catch { /* ya cerrada */ }
     }).catch(() => {}), 5000);
     marca('cerrada');
+    // La ventana de Culqi sigue con conexiones abiertas aunque se cierre, y la espera de «red quieta» de
+    // paso() no terminaba nunca (visto el 2026-11-12): se vuelve a la puerta, que la descarta del todo.
+    await page.goto('/');
     if (abrio !== true) hallazgos.push({ paso: pasoActual, que: 'La ventana de pago con tarjeta (Culqi) no abrió en sndwch.app (' + abrir + ')' });
   });
   await paso(page, 'wicho-armador', async () => {
