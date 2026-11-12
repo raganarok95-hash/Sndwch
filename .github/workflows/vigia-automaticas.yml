@@ -7,6 +7,9 @@ name: Vigía de las automáticas
 on:
   schedule:
     - cron: '13 3 * * *'   # 22:13 de Lima, antes del cierre de las 22:30 (minuto 13: GitHub se salta los :00)
+    # GitHub atrasa los horarios de este repo hasta 8 h (el 11-nov corrió a las 5:47 de Lima en vez de 22:13):
+    # una segunda vuelta a las 15:13 de Lima para que el correo de cierre nunca tenga datos de más de un día.
+    - cron: '13 20 * * *'
   workflow_dispatch: {}
 
 permissions:
