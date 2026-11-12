@@ -30,3 +30,12 @@ de la marca, ¿viste los ejemplos que te di?», «no andar repitiendo la misma i
 Lección: lo fácil era un tema con los hermanos hablando a cámara y la misma foto oscura con texto encima en cada reel.
 Una campaña es una mecánica que mueve un número; cada pieza elige un formato distinto de `identidad/`; los ejemplos que
 manda Ezra se miran antes de diseñar (`referentes/ideas/`).
+
+## 2026-11-12 · respuestas de Ezra a la lista de pendientes
+- «No hay diseños que pueda ver»: las láminas tienen que llegarle como imágenes sueltas adjuntas, no dentro de un
+  tablero ni de un .md.
+- Campaña: «Pasaporte pero sin que sea pasaporte algo más original». La idea del origen sigue; el envoltorio de
+  pasaporte, no.
+- Palabras de Trujillo del banco de frases (pavita, sanguche, jama, bitute, como cancha…): «Ninguna, eso es muy
+  genérico». No se usan como gancho.
+- Recetas/operativo: «todo debe ser como ya existe entonces laminado como ya venden».

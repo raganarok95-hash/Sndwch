@@ -89,3 +89,8 @@ Regla: cada titular cita su fuente: (1) palabras reales del público (reseñas y
 Trujillo, en `docs/marketing/referentes/frases/`), (2) una fórmula con envíos probados (capturas de Ezra y referentes),
 o (3) un hecho de la carta. Sin fuente, no se propone. Las frases de las láminas de identidad («Me debes uno»,
 «¿Cuánta hambre traes hoy?») eran de relleno.
+
+## 2026-11-12 · jerga de Trujillo: no
+Ezra, sobre las palabras del banco de frases [T] (pavita, sanguche, jama, bitute, como cancha, papaya…): «Ninguna eso
+es muy genérico». La parte [T] sirve para entender qué se elogia y qué se critica, no como palabras para titulares.
+Siguen valiendo [V] (fórmulas con envíos) y [P] (palabras de clientes del producto) y [C] (la carta).
