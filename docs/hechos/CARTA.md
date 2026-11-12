@@ -20,7 +20,7 @@ Todo en soles. 15CM y 30CM son los dos tamaños. «Doble» es lo que suma pedir 
 ### Turkey
 - **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/9 / +S/17
 - **Receta:** pan Classic // White · Pavo // Horneado · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: no lleva
-- **Cómo se vende:** Pavo horneado en lonjas finas con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. Llena sin pesar: el almuerzo que no te tumba la tarde.
+- **Cómo se vende:** Pavo en lonjas finas, puestas en pliegues, con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. Llena sin pesar: el almuerzo que no te tumba la tarde.
 
 ### Tuna Melt
 - **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/10.90 / +S/21.90
@@ -94,7 +94,7 @@ frase de «Cómo se vende». Si en el portal redondeas, se anota en `docs/PENDIE
 |---|---|---|---|
 | Philly Cheesesteak | S/21.89 | S/33.99 | 15 cm · 85 g de res laminada (30 cm: 170 g). El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. |
 | Meatball Marinara | S/21.89 | S/33.99 | 15 cm · 85 g de albóndiga marinara (30 cm: 170 g). Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. |
-| Turkey | S/21.89 | S/33.99 | 15 cm · 85 g de pavo horneado (30 cm: 170 g). Pavo horneado en lonjas finas con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. |
+| Turkey | S/21.89 | S/33.99 | 15 cm · 85 g de pavo horneado (30 cm: 170 g). Pavo en lonjas finas, puestas en pliegues, con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. |
 | Tuna Melt | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco. |
 | Italian Hoagie | S/21.89 | S/33.99 | 15 cm · 85 g de embutido italiano (30 cm: 170 g). Jamón ahumado, salame y pepperoni en pliegues, queso americano, verduras frescas y oil & vinegar. |
 | Classic Tuna | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. |
