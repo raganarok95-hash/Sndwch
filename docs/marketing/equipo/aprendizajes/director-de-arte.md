@@ -227,3 +227,4 @@ Regla: luz de día siempre (`estudio/LUZ_DE_DIA.md`). Ese mismo día aprobó la 
 formatos», `identidad/IDENTIDAD_VISUAL_2026-11-11.md`).
 
 - **2026-11-12, Ezra, sobre las 6 láminas de identidad:** «Me gustan del 1 al 5». El formato 6 («SANDO no grita», el personaje solo con una frase seria sobre verde noche) sale. Los hermanos van en el formato 4 y en los reels.
+- **2026-11-12, Ezra, sobre las 4 pruebas de luz de día (Philly naranja, Turkey escritorio, WICHO celeste, SANDO papel):** «Me agradaaaan, la de turkey se puede pulir un poco pero sí hemos mejorado mucho». La luz de día queda; el Turkey se repule antes de usarlo.
