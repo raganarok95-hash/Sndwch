@@ -22,3 +22,4 @@
   monitorear y buscar aumentar las ganancias constantemente». Regla: no se parte de la proyección;
   los cierres salen de `_shared/finanzas.ts` (costo real del modelo, no un 45% plano) y cada informe
   termina con la palanca que más sube la ganancia.
+- **2026-11-12 · PedidosYa cobra S/50 al mes fijos** además de su comisión (dueño, vía el hilo de la carta). Va en los fijos del mes; con el peor caso de comisión se cubre con ~6 sándwiches 15CM al mes (`margen_por_canal.py`). Se mantiene la carta de apps a +10%.
