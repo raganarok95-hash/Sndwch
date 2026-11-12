@@ -29,7 +29,7 @@ envíos y guardados por alcance, y desde el 20 con `?src=llega-tarde-<sandwich>`
 
 | # | sándwich | a dónde llega WICHO | qué pasa (el hecho) | fuente |
 |---|---|---|---|---|
-| 1 | PHILLY CHEESESTEAK | Filadelfia, 1930, una calle del sur con un carrito de hot dogs | el vendedor se hace un sándwich de res para él; un taxista lo huele y pide uno. WICHO llega cuando el taxista ya se lo está comiendo | National Geographic; Billy Penn (el taxista) |
+| 1 | PHILLY CHEESESTEAK | Filadelfia, 1930, una calle del sur con un carrito de hot dogs | el vendedor (Pat Olivieri) se hace un sándwich de res; cuentan que un taxista lo olió, lo probó y le dijo que lo vendiera. WICHO llega cuando el taxista ya se lo está comiendo. En pantalla: «cuentan que…» (solo la familia del taxista lo sostiene) | National Geographic; Billy Penn, 2016 (leyenda del taxista) |
 | 2 | ITALIAN HOAGIE | el astillero de Hog Island, hora del almuerzo, Primera Guerra Mundial | los obreros sacan su sándwich largo de fiambres; todos tienen el suyo, ninguno para él. En pantalla: «cuentan que…» | Wikipedia, carta de 1953 al *Philadelphia Bulletin* (leyenda) |
 | 3 | TUNA MELT | una barra de cafetería de los años 60 | WICHO llega cuando ya está servido el primero, queso derretido sobre el atún. En pantalla: «cuentan que…» | Chowhound, Food Republic (leyenda) |
 | 4 | CLASSIC TUNA | un restaurante elegante de California, 1913 | el atún era plato de restaurante fino; a WICHO no lo dejan entrar en polo | Tasting Table (*Christian Science Monitor*, 1913) |
@@ -41,7 +41,7 @@ Meatball y Turkey no tienen origen verificado: no hay episodio hasta tener fuent
 | s | plano | texto en pantalla | fuente del texto |
 |---|---|---|---|
 | 0–2 | WICHO abre el refri de la cocina y sale, deslumbrado, a una calle soleada | «FILADELFIA, *1930*.» | hecho |
-| 2–5 | corre hacia un carrito de hot dogs; un taxista se va mordiendo el primer sándwich de res | «El primer Philly. *Se lo llevó un taxista.*» | hecho (Billy Penn) |
+| 2–5 | corre hacia un carrito de hot dogs; un taxista se va mordiendo el primer sándwich de res | «Cuentan que el primero *se lo comió un taxista.*» | leyenda (Billy Penn, 2016) |
 | 5–8 | WICHO vuelve por el refri, despeinado; SANDO, quieto, le desliza un Philly en la tabla | «No hacía falta *viajar.*» | [V1] el remate de la estructura en tres tiempos |
 | 8–11 | el sándwich real | «PHILLY CHEESESTEAK · viernes 20, 11:00» | [C] |
 
