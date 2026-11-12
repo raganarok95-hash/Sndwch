@@ -25,6 +25,7 @@ import rentabilidad_por_parte as R  # noqa: E402
 CULQI = R.CULQI
 RAPPI = 0.26
 PYA = (0.22, 0.30)
+PYA_FIJO_MES = 50.0   # [DUEÑO 2026-11-12] PedidosYa cobra S/50 al mes fijos, además de su comisión
 
 
 def deja(precio, costo, comision):
@@ -53,6 +54,9 @@ def main():
   Tarjeta: −5.5% de Culqi. Precios de la semilla de la carta: el real está en catalog_prices.
   rappi m1 = el primer mes (sin comisión, con 30% de descuento obligatorio). pya = rango sin dato.
 """)
+    peor = min(deja(precio * (1 + P.SOBREPRECIO_APPS), costo, PYA[1]) for _n, precio, costo in filas() if "15CM" in _n)
+    print(f"  PedidosYa además cobra S/{PYA_FIJO_MES:.0f} al mes fijos: se cubren con {-(-PYA_FIJO_MES // peor):.0f} sándwiches 15CM al mes"
+          f" (peor caso, S/{peor:.2f} c/u). Por pedido: S/{PYA_FIJO_MES/30:.2f} con 1 al día, S/{PYA_FIJO_MES/90:.2f} con 3.\n")
 
 
 if __name__ == "__main__":
