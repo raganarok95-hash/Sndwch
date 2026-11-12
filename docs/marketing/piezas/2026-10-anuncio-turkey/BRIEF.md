@@ -1,3 +1,5 @@
+> **2026-11-12:** la carta de P08 cambió el 11-nov («Lonjas finas puestas en pliegues, nunca planas»; el pavo llega ya tajado). Lo de «un milímetro» y «laminadas el mismo día» de abajo ya no es verdad: no se usa.
+
 # Brief · 2026-10-anuncio-turkey
 
 > Mini-brief del Estratega (`brief-sndwch`), 2026-10-16. La idea y la foto ya están aprobadas por el

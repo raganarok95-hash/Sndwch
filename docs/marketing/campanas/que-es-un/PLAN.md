@@ -20,8 +20,8 @@ Luz: `estudio/LUZ_DE_DIA.md`. **Cada frase cita su fuente** del banco
 | | | | 2 | Tuna Melt: «bien tostado, el queso *derretido*» · Classic Tuna: «atún en lascas, frío» | [P3] «perfectly toasted with melted cheese»; [C] «en lascas gruesas» |
 | 4 | MEATBALL MARINARA | 4 · WICHO reacciona (reel, celeste) | gancho | «Albóndigas *caseras*.» | [P2] «homemade meatballs»; [C] «hechas acá» |
 | | | | cierre | «Tiernas, en su propia marinara.» | [P2] «tender meatballs»; [C] «cocidas dentro de su propia marinara» |
-| 5 | TURKEY | 5 · frase sobre foto real (oficina, luz de ventana) | 1 | (pendiente: Ezra descartó la jerga de Trujillo el 12-nov) | — |
-| | | | 2 | «Laminada el mismo día, en pliegues.» | [C] |
+| 5 | TURKEY | 5 · frase sobre foto real (oficina, luz de ventana) | 1 | «Pavo *horneado*, en lonjas finas.» | [C] P08 sabor «Horneado» y desc «Lonjas finas…» |
+| | | | 2 | «En pliegues, *nunca planas*.» | [C] desc de P08 (cambió el 11-nov: ya no se lamina acá) |
 | 6 | CÓMO SE DICE | 4 · el hermano reacciona (reel; el 6 salió el 12-nov) | — | WICHO lee mal «Philly», «Hoagie», «Tuna Melt»; SANDO levanta un cartel con la pronunciación. Remate: «Pídelo como te salga. *Igual llega.*» | [V1] Quincy, estructura en tres tiempos («Es broma… pero»); [V1] Poke de Nik «Lo pides… y llega» |
 
 **Palabras prohibidas** (son las quejas reales de Trujillo, [T1] [T2] [T5]): seco, grasoso, sin sabor, chicloso,

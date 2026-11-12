@@ -32,7 +32,7 @@ que esté en tendencia ese día, elegido al subir. Los carruseles de Instagram v
 | sáb 21 y dom 22 | — | historias y TikToks de los primeros pedidos | video real | la bolsa, el sándwich llegando (sin caras sin permiso) | real |
 
 **Ojo con repetir:** la semana del 9 tenía «¿Qué es un Philly?», «¿Frío o gratinado?» y «Cómo se dice». Si ya salieron,
-el 13 va Meatball («Albóndigas *caseras*.», formato 4), el 15 Turkey («Una *pavita* de verdad.», formato 5) y el 18 se
+el 13 va Meatball («Albóndigas *caseras*.», formato 4), el 15 Turkey («Pavo *horneado*, en lonjas finas.», formato 5) y el 18 se
 cambia por otra pieza de la carta. Ninguna pieza repite foto ni formato.
 
 **Historias diarias del 13 al 19:** la lámina del día + una cuenta regresiva de Instagram («Abrimos», viernes 20,
