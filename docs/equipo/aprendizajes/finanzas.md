@@ -23,3 +23,4 @@
   los cierres salen de `_shared/finanzas.ts` (costo real del modelo, no un 45% plano) y cada informe
   termina con la palanca que más sube la ganancia.
 - **2026-11-12 · PedidosYa cobra S/50 al mes fijos** además de su comisión (dueño, vía el hilo de la carta). Va en los fijos del mes; con el peor caso de comisión se cubre con ~6 sándwiches 15CM al mes (`margen_por_canal.py`). Se mantiene la carta de apps a +10%.
+- **2026-11-12 · Precios de PedidosYa aprobados.** Ezra: «vamos con esos precios» → 15CM S/24.90, 30CM S/37.90, bebidas 7.90/6.90/7.90 (30% de comisión + S/50 al mes). Rappi sigue web + 10%. `margen_por_canal.py` los usa.
