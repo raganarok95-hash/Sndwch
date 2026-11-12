@@ -53,8 +53,12 @@ export function entregasAtascadas(raiz = 'docs/entregas', ahora = HOY) {
     readdirSync(join(raiz, d.name)).filter((f) => /^\d{4}-\d{2}-\d{2}-.+\.md$/.test(f)).flatMap((f) => {
       const c = cabecera(readFileSync(join(raiz, d.name, f), 'utf8'));
       const desde = f.slice(0, 10);
+      // Con «para-cuando» se atasca al pasar esa fecha (una entrega en curso con plazo no es una entrega parada,
+      // marketing 2026-11-12); sin plazo, a las 24 h.
+      const plazo = /^\d{4}-\d{2}-\d{2}$/.test(c['para-cuando'] || '') ? new Date(c['para-cuando'] + 'T23:59:59-05:00') : null;
       const horas = (ahora.getTime() - new Date(desde + 'T12:00:00-05:00').getTime()) / 36e5;
-      return c.estado === 'abierta' && horas > 24 ? [{ hilo: d.name, archivo: f, de: c.de || '?', desde }] : [];
+      const vencida = plazo ? ahora > plazo : horas > 24;
+      return c.estado === 'abierta' && vencida ? [{ hilo: d.name, archivo: f, de: c.de || '?', desde }] : [];
     }));
 }
 
