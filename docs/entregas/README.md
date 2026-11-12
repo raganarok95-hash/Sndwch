@@ -43,7 +43,7 @@ automático» · «Y sí dale luz verde a todo». Lo armó el hilo Automatizacio
 ## Lo que corre solo
 
 - **Vigía de las automáticas** (`.github/workflows/vigia-automaticas.yml`, todos los días 22:13 de Lima):
-  mira las automáticas programadas, las preguntas abiertas a Ezra y las entregas abiertas hace más de 24 h, y
+  mira las automáticas programadas, las preguntas abiertas a Ezra y las entregas abiertas cuyo «para-cuando» ya pasó (o, sin esa fecha, abiertas hace más de 24 h), y
   lo deja en la base (`app_settings.avisos_del_sistema`). El correo de cierre de las 22:30 lo muestra en
   «EL SISTEMA //». Si una automática falló dos veces seguidas, el vigía además queda en rojo.
 - **Cambio de carta** (`.github/workflows/cambio-de-carta.yml`, en cada push a main que toque
