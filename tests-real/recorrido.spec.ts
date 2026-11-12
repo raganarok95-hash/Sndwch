@@ -138,21 +138,32 @@ test('un cliente nuevo recorre la app real sin errores', async ({ page }) => {
   // pagar» con tarjeta y no pasa nada (llave vencida, cuenta de Culqi sin activar, script bloqueado).
   await paso(page, 'ventana-de-culqi-abre', async () => {
     if (!(await page.locator('.m31.t').isVisible())) return;
-    await page.waitForFunction(() => typeof (window as any).Culqi !== 'undefined', null, { timeout: 20000 });
-    await page.evaluate(() => {
+    const t0 = Date.now();
+    const marca = (q: string) => console.log(`culqi: ${q} (${Math.round((Date.now() - t0) / 1000)} s)`);
+    // Cada espera tiene su techo: un paso colgado no puede tumbar el recorrido entero.
+    const conTecho = <T,>(p: Promise<T>, ms: number): Promise<T | 'techo'> => Promise.race([p, new Promise<'techo'>((r) => setTimeout(() => r('techo'), ms))]);
+    const cargo = await conTecho(page.waitForFunction(() => typeof (window as any).Culqi !== 'undefined', null, { timeout: 20000 }).then(() => true).catch(() => false), 25000);
+    marca('script ' + (cargo === true ? 'cargado' : 'NO cargó'));
+    if (cargo !== true) { hallazgos.push({ paso: pasoActual, que: 'El script de Culqi no cargó en sndwch.app' }); return; }
+    const abrir = await conTecho(page.evaluate(() => {
       const w = window as any;
       w._pendingOrder = { ref: 'ROBOT-SIN-COBRO', total: 10, email: 'robot@sndwch.app' };
       w._payingInProgress = true;
       w.payWithCulqi(10, 'robot@sndwch.app');
-    });
-    const abrio = await page.waitForFunction(() => (window as any).ventanaDeCulqiVisible(), null, { timeout: 20000 }).then(() => true).catch(() => false);
-    const err = await page.evaluate(() => (window as any).pagarErr || '');
-    await page.evaluate(() => {
+      return 'ok';
+    }).catch((e) => 'error: ' + String(e.message).slice(0, 120)), 15000);
+    marca('abrir: ' + abrir);
+    const abrio = await conTecho(page.waitForFunction(() => (window as any).ventanaDeCulqiVisible(), null, { timeout: 20000 }).then(() => true).catch(() => false), 25000);
+    marca('ventana ' + (abrio === true ? 'visible' : 'NO visible'));
+    const marcos = await conTecho(page.evaluate(() => [].slice.call(document.querySelectorAll('iframe')).map((f: any) => String(f.src).slice(0, 60) + ' ' + Math.round(f.getBoundingClientRect().width) + 'x' + Math.round(f.getBoundingClientRect().height)).join(' | ')).catch(() => '?'), 5000);
+    marca('marcos: ' + marcos);
+    await conTecho(page.evaluate(() => {
       const w = window as any;
       w._pendingOrder = null; w._payingInProgress = false; w.busy = false;
       try { w.Culqi.close(); } catch { /* ya cerrada */ }
-    });
-    if (!abrio) hallazgos.push({ paso: pasoActual, que: 'La ventana de pago con tarjeta (Culqi) no abrió en sndwch.app' + (err ? ': ' + err : '') });
+    }).catch(() => {}), 5000);
+    marca('cerrada');
+    if (abrio !== true) hallazgos.push({ paso: pasoActual, que: 'La ventana de pago con tarjeta (Culqi) no abrió en sndwch.app (' + abrir + ')' });
   });
   await paso(page, 'wicho-armador', async () => {
     await page.goto('/');
