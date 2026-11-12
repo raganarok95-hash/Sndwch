@@ -19,6 +19,10 @@ const OUT = join(RAIZ, 'docs/apps/pedidosya');
 mkdirSync(OUT, { recursive: true });
 
 const app = (n) => Math.round(n * (1 + RECARGO_APPS) * 100) / 100;
+// Propuesta de precio fijo para PedidosYa (comisión del 30% + S/50 al mes, 2026-11-12), mientras el
+// dueño no la apruebe: --precios <15CM>,<30CM> y --bebidas <D06>,<D07>,<D08> pisan el web + 10%.
+const arg = (k) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1].split(',').map(Number) : null; };
+const FIJO = arg('--precios'), BEB = arg('--bebidas');
 const sol = (n) => `S/ ${n.toFixed(2)}`;
 const por = (xs) => Object.fromEntries(xs.map((x) => [x.id, x]));
 const P = por(CARTA.proteinas), V = por(CARTA.vegetales), S = por(CARTA.salsas), Q = por(CARTA.quesos), B = por(CARTA.panes);
@@ -39,10 +43,10 @@ const sigs = signaturesDeLaCarta().map((s) => ({
   pan: `${B[s.pan].nombre} // ${B[s.pan].sabor}`,
   lleva: lleva(s),
   frase: s.pitch.split(/(?<=\.)\s/)[0],
-  p15: app(s.p15),
-  p30: app(s.p30),
+  p15: FIJO ? FIJO[0] : app(s.p15),
+  p30: FIJO ? FIJO[1] : app(s.p30),
 }));
-const bebidas = CARTA.bebidas.map((b) => ({ nombre: `${b.nombre} // ${b.sabor}`.toUpperCase(), desc: b.desc.split(/(?<=\.)\s/)[0], precio: app(b.precio) }));
+const bebidas = CARTA.bebidas.map((b) => ({ nombre: `${b.nombre} // ${b.sabor}`.toUpperCase(), desc: b.desc.split(/(?<=\.)\s/)[0], precio: BEB ? BEB[CARTA.bebidas.indexOf(b)] : app(b.precio) }));
 const panes = [...new Set(sigs.map((s) => s.pan))];
 
 const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
@@ -107,4 +111,4 @@ if (i > 0) {
   await pg.screenshot({ path: join(dest, 'carta.png'), fullPage: true });
   await br.close();
 }
-console.log(`carta lista: ${sigs.length} Signatures, ${bebidas.length} bebidas (precio de app = web + ${Math.round(RECARGO_APPS * 100)}%)`);
+console.log(`carta lista: ${sigs.length} Signatures, ${bebidas.length} bebidas (${FIJO ? `precio fijo ${FIJO.join(' / ')}` : `precio de app = web + ${Math.round(RECARGO_APPS * 100)}%`})`);
