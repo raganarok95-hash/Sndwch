@@ -16,7 +16,7 @@ El vigía de las 22:13 cuenta las filas `abierta` y las pone en el correo de cie
 | Q06 | 2026-11-05 | operativo | El sí a la compra del primer fin de semana (lista en la carpeta del proyecto, `operacion/compras-apertura.md`) | abierta | |
 | Q07 | 2026-11-03 | finanzas | Comisión real de PedidosYa, y si el 26% de Rappi es + IGV | abierta | |
 | Q08 | 2026-11-02 | servicio | ¿Existe y revisas `contacto@sndwch.com`? Ahí llegan los reclamos | abierta | |
-| Q09 | 2026-11-06 | recetas | Qué chimichurri con piña ganó la cata, A o B | abierta | |
+| Q09 | 2026-11-06 | recetas | Qué chimichurri con piña ganó la cata, A o B | respondida | Ezra 2026-11-12: «No lo haré sigamos con lo que los datos indican que es mejor». Queda A (piña 30%), la que cumple «dulce y ahumada de entrada» de la carta. |
 | Q10 | 2026-11-09 | disenos | Alto de la parte lisa de la botella de 500 ml (hacen falta 10.5 cm) | abierta | |
 | Q11 | 2026-11-09 | disenos | ¿La imprenta tiene tinta blanca? | abierta | |
 | Q12 | 2026-11-03 | disenos | ¿Las bebidas llevan sal? (la receta guardada dice 0.2 g por litro) | respondida | Ezra, 2026-11-02: «sin sal en la receta». Quitada del panel y del recetario el 2026-11-10 (RECETAS). |
