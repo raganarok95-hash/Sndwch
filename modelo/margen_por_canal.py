@@ -9,7 +9,7 @@ Responde «¿dónde me conviene vender cada cosa?» con lo que ya está en el re
 - costo: supabase/functions/_shared/costos.ts, el mismo que usan los correos (exportar_costos.py)
 - apps: carta 10% más cara [DECISIÓN 2026-10-09]; Rappi 26% desde el mes 2 [OFERTA 2026-10-16,
   falta saber si es + IGV] y el mes 1 0% de comisión con 30% de descuento obligatorio;
-  PedidosYa 22–30% [SIN DATO en Perú: se muestra el rango].
+  PedidosYa 30% por pedido + S/50 al mes [DUEÑO 2026-11-12].
 
 Uso: python3 modelo/margen_por_canal.py
 """
@@ -24,7 +24,7 @@ import rentabilidad_por_parte as R  # noqa: E402
 
 CULQI = R.CULQI
 RAPPI = 0.26
-PYA = (0.22, 0.30)
+PYA = (0.30, 0.30)   # [DUEÑO 2026-11-12] «Me cobrarán 30% por pedidos»
 PYA_FIJO_MES = 50.0   # [DUEÑO 2026-11-12] PedidosYa cobra S/50 al mes fijos, además de su comisión
 
 
@@ -52,7 +52,7 @@ def main():
     print("""
   Soles que deja UN sándwich con insumos y empaque ya restados (empaque conservador), antes de fijos.
   Tarjeta: −5.5% de Culqi. Precios de la semilla de la carta: el real está en catalog_prices.
-  rappi m1 = el primer mes (sin comisión, con 30% de descuento obligatorio). pya = rango sin dato.
+  rappi m1 = el primer mes (sin comisión, con 30% de descuento obligatorio). pya = 30%.
 """)
     peor = min(deja(precio * (1 + P.SOBREPRECIO_APPS), costo, PYA[1]) for _n, precio, costo in filas() if "15CM" in _n)
     print(f"  PedidosYa además cobra S/{PYA_FIJO_MES:.0f} al mes fijos: se cubren con {-(-PYA_FIJO_MES // peor):.0f} sándwiches 15CM al mes"
