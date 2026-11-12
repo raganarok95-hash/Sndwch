@@ -76,3 +76,36 @@ Deno.test("al repo público no va un teléfono ni la venta total", () => {
   assertEquals(/999111222|988777666/.test(texto), false, "se coló un teléfono");
   assertEquals(["ventas", "total", "ingresos", "utilidad"].some((k) => k in r), false, "se coló la venta total");
 });
+
+// LAS HERRAMIENTAS QUE SE DAN A CONOCER (2026-11-12, docs/marketing/HERRAMIENTAS_PLAN.md). Modo de fallo:
+// SILENCIO. Si un referido no se cuenta, o el 3.er pedido se cuenta dos veces, a las 4 semanas se deja de
+// comunicar la herramienta que sí traía clientes (o se sigue regalando la que no). Y ningún teléfono sale.
+Deno.test("herramientas: referido nuevo, 3.er pedido, bebida, cuenta, avisos y códigos", () => {
+  const bebida = { items: [{ type: "sig" }, { type: "side", code: "X" }] };
+  const r = resumirSemana({ ...base,
+    historia: [
+      { customer_phone: "999000111", payment_status: "paid", status: "ENTREGADO" },
+      { customer_phone: "999000111", payment_status: "paid", status: "ENTREGADO" },
+      { customer_phone: "999000111", payment_status: "pending", status: "ENTREGADO" },
+    ],
+    clientes: [{ phone: "+51999111222", referred_by: "999000111" }, { phone: "999000111", referred_by: null }],
+    avisos: [{ customer_phone: "999111222" }, { customer_phone: "999555555" }],
+    canjes: [{ code: "DIRECTO" }, { code: "DIRECTO" }, { code: "BIENVENIDA" }],
+    pedidos: [
+      pagado("999111222", "ig-dm", undefined, bebida),                       // nuevo, referido, con cuenta y avisos
+      pagado("999000111", null, "2026-10-22T17:30:00Z", { redeemed_reward: "bebida" }), // su 3.er pedido válido
+      pagado("999000111", null, "2026-10-23T17:30:00Z"),                     // 4.º: no vuelve a contar
+      pagado("999333444", null),                                             // nuevo sin cuenta
+    ] });
+  assertEquals(r.herramientas, {
+    nuevosPorReferido: 1,
+    clientesQueLleganAlTercerPedido: 1,
+    pctPedidosConBebida: 0.25,
+    pedidosConPremioDePuntos: 1,
+    pctPedidosConCuenta: 0.75,
+    pctNuevosQueCreanCuenta: 0.5,
+    pctClientesDeLaSemanaConAvisos: 0.3333,
+    canjesPorCodigo: { DIRECTO: 2, BIENVENIDA: 1 },
+  });
+  if (/\d{9}/.test(JSON.stringify(r))) throw new Error("se coló un teléfono en el resumen");
+});

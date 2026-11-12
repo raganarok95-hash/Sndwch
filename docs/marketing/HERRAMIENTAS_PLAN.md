@@ -56,3 +56,36 @@ semanas, se deja de comunicar.
 - 20-nov: historia del combo.
 - 22-nov: historia del menú secreto («se abre a tu tercer pedido»).
 - Semana del 23: un reel del pedido grupal y un post de referidos; historia fija semanal de referidos.
+
+## Lo que agregó Crecimiento (2026-11-12, hilo «Aprovechar las herramientas de retención y marketing»)
+
+**Dónde estamos hoy (base real, 12-nov):** 2 cuentas, 3 celulares con avisos (los de Ezra), 0 referidos, 0 pedidos
+grupales, 0 pedidos fijos, 0 canjes de DIRECTO y de BIENVENIDA. Todo arranca en cero el 20: no hay nada que comparar
+todavía, y por eso la medición tenía que quedar lista antes.
+
+**La medición ya es código, no una tarea a mano.** `scripts/datos/resumen.mjs` (lo corre `datos-semana.yml` cada
+domingo) suma un bloque `herramientas` al `DATOS-base.json` de la semana, con prueba en
+`tests-api/datos-de-la-semana.test.ts` (vista fallar):
+
+| número | qué herramienta mide | la señal para seguir comunicándola (a las 4 semanas) |
+|---|---|---|
+| `nuevosPorReferido` | referidos | sube semana a semana; si sigue en 0 con la historia fija, cambiar el mensaje antes que el premio |
+| `clientesQueLleganAlTercerPedido` | menú secreto al 3.er pedido | crece con los clientes; es la recompra, lo que más pesa en la meta |
+| `enGrupo` (ya existía) | pedido grupal | al menos 1 por semana desde la semana del 23 |
+| `pctPedidosConBebida` | combo | se compara con la semana anterior a cada pieza del combo |
+| `pedidosConPremioDePuntos` | puntos | que se canjeen: un punto que nadie canjea no trae a nadie de vuelta |
+| `pctNuevosQueCreanCuenta` y `pctPedidosConCuenta` | puntos y bono de bienvenida | sin cuenta no hay puntos, referidos ni menú secreto |
+| `pctClientesDeLaSemanaConAvisos` | todos los avisos automáticos | **la llave de la prioridad 2**: un aviso solo llega a quien activó las notificaciones o dejó su correo |
+| `canjesPorCodigo` | QR de la bolsa (DIRECTO) | canjes de DIRECTO contra pedidos con `origen = bolsa` |
+
+Solo salen conteos y porcentajes: ningún teléfono ni monto (el repo es público; la prueba lo vigila).
+
+**Lo que encontré al revisar:**
+- **Los avisos dependen de un permiso.** De las 15 automáticas, ninguna le llega a un cliente que no activó las
+  notificaciones ni dejó correo. La app ya lo pide en la pantalla de gracias; por eso `pctClientesDeLaSemanaConAvisos`
+  es el primer número que hay que mirar el domingo 23. Si sale bajo, el arreglo es de la app (cuándo y cómo se pide),
+  no de redes.
+- **BIENVENIDA (S/5) no se nombra en ningún lado**, y está bien así: para el primer pedido ya está DIRECTO (una
+  bebida, en la bolsa), que cuesta menos. Dos ganchos para lo mismo confunden. Se deja callado.
+- **La app no necesita cambios para la apertura**: referidos, avisos y pedido fijo ya se ofrecen solos en la pantalla
+  de gracias, y la cuenta se ofrece una vez (CLAUDE.md). El trabajo es darlas a conocer fuera de la app.

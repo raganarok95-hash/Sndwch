@@ -13,6 +13,7 @@ const LIMA = -5 * 3600e3;
 const enLima = (iso) => new Date(Date.parse(iso) + LIMA);
 const DIAS = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'];
 export const clave = (tel) => String(tel || '').replace(/\D/g, '').slice(-9);
+const pct = (a, b) => (b ? +(a / b).toFixed(4) : null);
 export const valido = (o) => o.payment_status === 'paid' && o.status !== 'CANCELADO';
 
 /**
@@ -23,11 +24,21 @@ export const valido = (o) => o.payment_status === 'paid' && o.status !== 'CANCEL
  * @param {any[]} c.gasto     ad_spend de la semana (spend_date, platform, amount)
  * @param {string} c.desde    lunes AAAA-MM-DD (hora de Lima)
  * @param {string} c.apertura AAAA-MM-DD: antes de esta fecha todo es prueba
+ * @param {any[]} [c.clientes] customers (phone, referred_by): solo para contar, nunca sale un teléfono
+ * @param {any[]} [c.canjes]   promo_code_redemptions de la semana (code)
+ * @param {any[]} [c.avisos]   push_subscriptions (customer_phone, created_at)
  */
-export function resumirSemana({ pedidos, historia, visitas, gasto, desde, apertura }) {
+export function resumirSemana({ pedidos, historia, visitas, gasto, desde, apertura, clientes = [], canjes = [], avisos = [] }) {
   const antes = new Set(historia.filter(valido).map((o) => clave(o.customer_phone)).filter(Boolean));
   const buenos = pedidos.filter(valido).sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
   const vistos = new Set();
+  // Pedidos válidos de cada cliente ANTES de la semana: para saber quién cruza su 3.er pedido.
+  const previos = new Map();
+  for (const o of historia.filter(valido)) { const k = clave(o.customer_phone); if (k) previos.set(k, (previos.get(k) || 0) + 1); }
+  const cuenta = new Map(clientes.map((c) => [clave(c.phone), c]));
+  const conAvisos = new Set(avisos.map((a) => clave(a.customer_phone)).filter(Boolean));
+  const enSemana = new Map();
+  let nuevosReferidos = 0, nuevosConCuenta = 0, conBebida = 0, conPremio = 0, conCuentaPedidos = 0, llegaAlTercero = 0;
   const origenes = new Map();
   const de = (src) => {
     if (!origenes.has(src)) origenes.set(src, { origen: src, visitas: 0, pedidos: 0, nuevos: 0 });
@@ -40,7 +51,18 @@ export function resumirSemana({ pedidos, historia, visitas, gasto, desde, apertu
     const fila = de(o.origen || 'directo');
     fila.pedidos++;
     // Cliente nuevo = su primer pedido válido de la historia, contado una vez.
-    if (k && !antes.has(k) && !vistos.has(k)) { nuevos++; fila.nuevos++; }
+    if (k && !antes.has(k) && !vistos.has(k)) {
+      nuevos++; fila.nuevos++;
+      if (cuenta.get(k)?.referred_by) nuevosReferidos++;
+      if (cuenta.has(k)) nuevosConCuenta++;
+    }
+    if (k) {
+      enSemana.set(k, (enSemana.get(k) || 0) + 1);
+      if ((previos.get(k) || 0) + enSemana.get(k) === 3) llegaAlTercero++;
+      if (cuenta.has(k)) conCuentaPedidos++;
+    }
+    if ((o.items || []).some((it) => it?.type === 'side')) conBebida++;
+    if (o.redeemed_reward) conPremio++;
     else if (k && antes.has(k) && !vistos.has(k)) vuelven++;
     if (k) vistos.add(k);
     suma += Number(o.total) || 0;
@@ -74,6 +96,17 @@ export function resumirSemana({ pedidos, historia, visitas, gasto, desde, apertu
     porDia,
     gastoDePauta: gastoPorPlataforma,
     costoPorClienteNuevoMeta: gMeta && nuevosMeta ? +(gMeta / nuevosMeta).toFixed(2) : null,
+    // Las herramientas que se dan a conocer (docs/marketing/HERRAMIENTAS_PLAN.md): solo conteos y %.
+    herramientas: {
+      nuevosPorReferido: nuevosReferidos,
+      clientesQueLleganAlTercerPedido: llegaAlTercero,
+      pctPedidosConBebida: pct(conBebida, buenos.length),
+      pedidosConPremioDePuntos: conPremio,
+      pctPedidosConCuenta: pct(conCuentaPedidos, buenos.length),
+      pctNuevosQueCreanCuenta: pct(nuevosConCuenta, nuevos),
+      pctClientesDeLaSemanaConAvisos: pct([...vistos].filter((k) => conAvisos.has(k)).length, vistos.size),
+      canjesPorCodigo: canjes.reduce((m, c) => ((m[c.code] = (m[c.code] || 0) + 1), m), {}),
+    },
   };
 }
 
