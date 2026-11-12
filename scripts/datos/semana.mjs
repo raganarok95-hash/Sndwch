@@ -19,13 +19,17 @@ const hasta = new Date(Date.parse(desde) + 7 * 864e5).toISOString().slice(0, 10)
 const ini = `${desde}T05:00:00Z`, fin = `${hasta}T05:00:00Z`;
 const { pedir } = await conectar();
 const q = (t, filtro) => pedir(`${SB}/rest/v1/${t}?${filtro}`);
-const [pedidos, historia, visitas, gasto] = await Promise.all([
-  q('orders', `created_at=gte.${ini}&created_at=lt.${fin}&select=created_at,total,payment_status,status,origen,customer_phone,group_code,recurring_id&limit=10000`),
+const [pedidos, historia, visitas, gasto, clientes, canjes, avisos] = await Promise.all([
+  q('orders', `created_at=gte.${ini}&created_at=lt.${fin}&select=created_at,total,payment_status,status,origen,customer_phone,group_code,recurring_id,items,redeemed_reward&limit=10000`),
   q('orders', `created_at=lt.${ini}&payment_status=eq.paid&select=customer_phone,payment_status,status&limit=50000`),
   q('visitas_por_origen', `dia=gte.${desde}&dia=lt.${hasta}&select=dia,src,visitas&limit=5000`),
   q('ad_spend', `spend_date=gte.${desde}&spend_date=lt.${hasta}&select=spend_date,platform,amount&limit=500`),
+  // Solo para contar (referidos, cuenta, avisos): ningún teléfono sale al JSON.
+  q('customers', `select=phone,referred_by&limit=50000`),
+  q('promo_code_redemptions', `created_at=gte.${ini}&created_at=lt.${fin}&select=code&limit=10000`),
+  q('push_subscriptions', `select=customer_phone&limit=50000`),
 ]);
-const r = resumirSemana({ pedidos, historia, visitas, gasto, desde, apertura: APERTURA });
+const r = resumirSemana({ pedidos, historia, visitas, gasto, desde, apertura: APERTURA, clientes, canjes, avisos });
 const dir = `docs/marketing/semanas/${desde}`;
 mkdirSync(dir, { recursive: true });
 writeFileSync(`${dir}/DATOS-base.json`, JSON.stringify({ ...r, generado: new Date().toISOString() }, null, 1) + '\n');
