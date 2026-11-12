@@ -22,9 +22,9 @@ const app = (n) => Math.round(n * (1 + RECARGO_APPS) * 100) / 100;
 // Propuesta de precio fijo para PedidosYa (comisión del 30% + S/50 al mes, 2026-11-12), mientras el
 // dueño no la apruebe: --precios <15CM>,<30CM> y --bebidas <D06>,<D07>,<D08> pisan el web + 10%.
 const arg = (k) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1].split(',').map(Number) : null; };
-// PRECIO APROBADO (Ezra, 2026-11-12: «vamos con esos precios»): PedidosYa cobra 30% por pedido más
+// PRECIO APROBADO (Ezra, 2026-11-12, tarde: «quisiera algo alrededor de 20 soles»; eligió 20.90/32.90): PedidosYa cobra 30% por pedido más
 // S/50 al mes, así que su carta deja de seguir el web + 10% y va con precio fijo.
-const PEDIDOSYA = { precios: [24.9, 37.9], bebidas: [7.9, 6.9, 7.9] };
+const PEDIDOSYA = { precios: [20.9, 32.9], bebidas: [6.9, 5.9, 6.9] };
 const FIJO = arg('--precios') ?? PEDIDOSYA.precios, BEB = arg('--bebidas') ?? PEDIDOSYA.bebidas;
 const sol = (n) => `S/ ${n.toFixed(2)}`;
 const por = (xs) => Object.fromEntries(xs.map((x) => [x.id, x]));
