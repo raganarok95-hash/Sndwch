@@ -1,4 +1,6 @@
-# «WICHO LLEGA TARDE» · el origen, sin pasaporte (propuesta, 2026-11-12)
+# «WICHO LLEGA TARDE» · el origen, sin pasaporte (aprobada, 2026-11-12)
+
+> **Ezra, 2026-11-12: «Sí, sigamos».** Van los 4 episodios. Primero el Philly (encargos `estudio/encargos/2026-11-13-llega-tarde-philly-1|2.md`), se le muestra y siguen Hoagie, Tuna Melt y Classic Tuna. Nada se publica sin su sí.
 
 Ezra, 2026-11-12: «Pasaporte pero sin que sea pasaporte, algo más original». Se queda **la idea del origen** (cada
 Signature nació en un lugar y un año, con su historia verificada en `campanas/PASAPORTE.md`). Se va el envoltorio de

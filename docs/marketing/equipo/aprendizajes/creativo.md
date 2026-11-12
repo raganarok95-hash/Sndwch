@@ -39,3 +39,5 @@ manda Ezra se miran antes de diseñar (`referentes/ideas/`).
 - Palabras de Trujillo del banco de frases (pavita, sanguche, jama, bitute, como cancha…): «Ninguna, eso es muy
   genérico». No se usan como gancho.
 - Recetas/operativo: «todo debe ser como ya existe entonces laminado como ya venden».
+
+- **2026-11-12, Ezra:** aprobó «WICHO llega tarde» («Sí, sigamos»): el origen contado como historia de los hermanos con remate («No hacía falta viajar»), no como documento ni dato curioso.

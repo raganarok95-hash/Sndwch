@@ -3,7 +3,7 @@
 Ezra, 2026-11-12: «necesito que se promocione bastante la apertura del 20, añadamos que la cuenta ya tiene tiktok y
 te he instalado tiktok for business. Verifica todos los mcp y ve cuál nos ayuda, apúntalo».
 
-Amplía `APERTURA.md` (semana 2) con TikTok y más piezas. Usa la identidad aprobada el 11-nov
+Amplía `APERTURA.md` (semana 2) con TikTok y más piezas. Usa la identidad aprobada el 11-nov, formatos 1 a 5 (el 6 salió el 12-nov)
 (`identidad/IDENTIDAD_VISUAL_2026-11-11.md`), la luz de día (`estudio/LUZ_DE_DIA.md`) y textos con fuente
 (`referentes/frases/2026-11-11-banco-de-frases.md`; [C] = la carta o la fecha). **Nada se publica ni se paga sin
 el sí de Ezra. Nunca etiqueta de IA.** Antes del 20 no se dice «pide».
@@ -22,7 +22,7 @@ que esté en tendencia ese día, elegido al subir. Los carruseles de Instagram v
 |---|---|---|---|---|---|
 | vie 13 | 12:30 | ¿Qué es un Philly? | 1 · palabra gigante + producto, carrusel de 3 | «¿QUÉ ES UN *Philly?*» → «Res *jugosa*, salteada al momento.» → «El pan *aguanta* el jugo.» | `campanas/que-es-un/PLAN.md` |
 | sáb 14 | 12:30 | ¿Y un Hoagie? | 2 · despiece rotulado | «¿Y un *Hoagie?*» + rótulos de la carta | ídem |
-| dom 15 | 19:30 | Cómo se dice (reel y TikTok) | 6 · SANDO no grita + WICHO | WICHO lee mal, SANDO levanta el cartel; «Viernes 20, 11:00.» | ídem |
+| dom 15 | 19:30 | **WICHO llega tarde, ep. 1 Philly** (reel y TikTok) | reel de los hermanos (el formato 6 salió, 12-nov) | «FILADELFIA, *1930*.» → «Cuentan que el primero *se lo comió un taxista.*» → «No hacía falta *viajar.*»; el día va en el caption | `campanas/wicho-llega-tarde/CAMPANA.md` |
 | lun 16 | 12:30 | La carta para guardar | 3 · escalera / lista, papel | las 6 Signatures y ARMA EL TUYO, con precios interpolados | [C] |
 | mar 17 | 12:30 | **Faltan 3 días** | 4 · el hermano reacciona (WICHO tachando un calendario) | «FALTAN *3* DÍAS.» | [C] fecha |
 | mié 18 | 19:30 | ¿Frío o gratinado? (encuesta en historias) | el chat | «¿Frío o *gratinado?*» | [V1], `que-es-un/PLAN.md` |

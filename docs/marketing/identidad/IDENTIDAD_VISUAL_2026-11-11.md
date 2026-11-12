@@ -1,4 +1,7 @@
-# Identidad visual de SND//WCH para redes (propuesta, 2026-11-11)
+# Identidad visual de SND//WCH para redes (aprobada, 2026-11-11 y 12)
+
+> **Ezra, 2026-11-12, sobre las 6 láminas: «Me gustan del 1 al 5».** Quedan los formatos 1 a 5. **El 6 («SANDO no
+> grita») sale**: no se usa en piezas nuevas. Los hermanos siguen saliendo en el 4 (el hermano reacciona) y en los reels.
 
 Ezra, 2026-11-11: «Primero debes formular una identidad visual de la marca, ¿viste los ejemplos que te di?» y
 «recuerda no andar repitiendo la misma imagen para todo ni el mismo formato».
@@ -69,7 +72,7 @@ se reconocen sin leer el logo (Romaniuk, *Building Distinctive Brand Assets*, 20
 | 3 | **Escalera de tres** | Bronson y 200g «Perdón básico, deluxe, premium» | m3 |
 | 4 | **El hermano reacciona** | el mono de Ottimo | m4 |
 | 5 | **Frase sobre foto real desenfocada** | Quiero Pizza | m5 |
-| 6 | **SANDO no grita** (el personaje solo, una frase seria) | nuestro | m6 |
+| ~~6~~ | ~~**SANDO no grita**~~ (fuera, Ezra 2026-11-12) | nuestro | m6 |
 
 Más tres que no están en láminas: **el chat** (un globo de WhatsApp, como Ottimo), **las manos y el texto curvo**
 (Quincy) y **el anuncio directo** con sello «DESDE» (Poke de Nik, ya está en `anuncio-directo`).
