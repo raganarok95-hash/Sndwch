@@ -26,7 +26,7 @@ CULQI = R.CULQI
 RAPPI = 0.26
 PYA = (0.30, 0.30)   # [DUEÑO 2026-11-12] «Me cobrarán 30% por pedidos»
 # [DUEÑO 2026-11-12, «vamos con esos precios»] precio fijo en PedidosYa (scripts/carta-pedidosya.mjs)
-PYA_PRECIO = {"15": 24.90, "30": 37.90}
+PYA_PRECIO = {"15": 20.90, "30": 32.90}   # Ezra 2026-11-12: bajó de 24.90/37.90, «caros»
 PYA_FIJO_MES = 50.0   # [DUEÑO 2026-11-12] PedidosYa cobra S/50 al mes fijos, además de su comisión
 
 
@@ -56,7 +56,7 @@ def main():
     print("""
   Soles que deja UN sándwich con insumos y empaque ya restados (empaque conservador), antes de fijos.
   Tarjeta: −5.5% de Culqi. Precios de la semilla de la carta: el real está en catalog_prices.
-  rappi m1 = el primer mes (sin comisión, con 30% de descuento obligatorio). pya = a S/24.90 (15CM) y S/37.90 (30CM), con 30%. Rappi = web + 10%.
+  rappi m1 = el primer mes (sin comisión, con 30% de descuento obligatorio). pya = a S/20.90 (15CM) y S/32.90 (30CM), con 30%. Rappi = web + 10%.
 """)
     peor = min(deja(PYA_PRECIO[t], costo, PYA[0]) for _n, _p, costo, t, sid in filas() if t == "15" and sid not in secretos)
     print(f"  PedidosYa además cobra S/{PYA_FIJO_MES:.0f} al mes fijos: se cubren con {-(-PYA_FIJO_MES // peor):.0f} sándwiches 15CM al mes"
