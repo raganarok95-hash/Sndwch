@@ -81,9 +81,9 @@ Deno.test("el margen se separa por canal: web contra apps", () => {
   const web = c.porCanal.find((k) => k.canal === "web")!;
   ok(cerca(rappi.comision, 24 * COMISION_APPS.rappi!), "Rappi resta su comisión");
   ok(rappi.contribucion < web.contribucion, "un pedido de Rappi deja menos que uno de la web");
-  // PedidosYa no tiene cifra: no se inventa, se avisa.
-  ok(c.porCanal.find((k) => k.canal === "pedidosya")!.comisionSinDato, "PedidosYa sin dato");
-  ok(alertasDePlata(c).some((a) => a.includes("PedidosYa")), "el correo lo dice");
+  const pya = c.porCanal.find((k) => k.canal === "pedidosya")!;
+  ok(cerca(pya.comision, 24 * COMISION_APPS.pedidosya!), "PedidosYa resta su comisión");
+  ok(pya.contribucion < web.contribucion, "un pedido de PedidosYa deja menos que uno de la web");
 });
 
 Deno.test("un producto que pasa su techo de costo dispara la alerta; uno sano no", () => {

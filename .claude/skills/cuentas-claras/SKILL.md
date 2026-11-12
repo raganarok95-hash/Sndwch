@@ -33,7 +33,7 @@ siguen restando el costo viejo (lo ataja `check:costos`).
 | Yape/Plin | `receipt_op_number` y `receipt_ocr` (`amount`, `coincide`, `duplicada`) de cada pedido |
 | gasto de pauta | `ad_spend` (lo carga el dueño) y Meta |
 | compras de insumos | `ingredient_purchases` (`qty`, `unit`, `total_paid`, `supplier`) |
-| comisiones de apps | `COMISION_APPS` en `finanzas.ts` (Rappi 26% desde el mes 2, oferta 2026-10-16; PedidosYa sin dato) + **PedidosYa S/50 al mes fijos** (dueño, 2026-11-12): va en los fijos del cierre del mes, no por pedido |
+| comisiones de apps | `COMISION_APPS` en `finanzas.ts` (Rappi 26% desde el mes 2, oferta 2026-10-16; PedidosYa 30%, dueño 2026-11-12) + **PedidosYa S/50 al mes fijos** (dueño, 2026-11-12): va en los fijos del cierre del mes, no por pedido |
 | embajadores | `comisionesDeEmbajadores()` en `_shared/dinero.ts` (el panel lo muestra) |
 | precio real | `catalog_prices` en la base, nunca la semilla |
 
