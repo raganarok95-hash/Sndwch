@@ -30,10 +30,11 @@ export type Canal = "web" | "rappi" | "pedidosya";
 
 // Comisión de cada app sobre la venta de comida. `null` = sin dato: el cierre lo dice y no
 // resta nada inventado. Rappi: 26% desde el mes 2 [OFERTA de Rappi al dueño, 2026-10-16; falta
-// saber si es + IGV; el mes 1 es 0%]. PedidosYa: no hay cifra en Perú (modelo/proyeccion.py).
+// saber si es + IGV; el mes 1 es 0%]. PedidosYa: 30% por pedido [DUEÑO 2026-11-12, «Me cobrarán 30% por
+// pedidos»], más S/50 al mes fijos que van en los fijos del mes, no por pedido.
 export const COMISION_APPS: Record<Exclude<Canal, "web">, number | null> = {
   rappi: 0.26,
-  pedidosya: null,
+  pedidosya: 0.30,
 };
 
 /** El canal sale de `orders.origen`. Hoy los pedidos de las apps no entran a la base: si algún
