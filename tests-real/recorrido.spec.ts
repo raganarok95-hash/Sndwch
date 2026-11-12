@@ -131,6 +131,29 @@ test('un cliente nuevo recorre la app real sin errores', async ({ page }) => {
     await page.evaluate(() => { (window as any).selectPayMethod('culqi'); (window as any).render(); });
     await expect(page.locator('.m31.t')).toBeVisible();
   });
+  // LA VENTANA DE CULQI ABRE CON LA LLAVE REAL (Ezra, 2026-11-12: «que se revise la parte de pagos»). En
+  // producción nunca se pagó con tarjeta, así que nadie había visto abrir la ventana con la llave live. Se
+  // abre SIN reservar ni cobrar: se llama directo a payWithCulqi (se salta prepare-order, que reservaría
+  // stock en la base) y se cierra sin escribir tarjeta. Modo de fallo: el día 20 el cliente toca «Ir a
+  // pagar» con tarjeta y no pasa nada (llave vencida, cuenta de Culqi sin activar, script bloqueado).
+  await paso(page, 'ventana-de-culqi-abre', async () => {
+    if (!(await page.locator('.m31.t').isVisible())) return;
+    await page.waitForFunction(() => typeof (window as any).Culqi !== 'undefined', null, { timeout: 20000 });
+    await page.evaluate(() => {
+      const w = window as any;
+      w._pendingOrder = { ref: 'ROBOT-SIN-COBRO', total: 10, email: 'robot@sndwch.app' };
+      w._payingInProgress = true;
+      w.payWithCulqi(10, 'robot@sndwch.app');
+    });
+    const abrio = await page.waitForFunction(() => (window as any).ventanaDeCulqiVisible(), null, { timeout: 20000 }).then(() => true).catch(() => false);
+    const err = await page.evaluate(() => (window as any).pagarErr || '');
+    await page.evaluate(() => {
+      const w = window as any;
+      w._pendingOrder = null; w._payingInProgress = false; w.busy = false;
+      try { w.Culqi.close(); } catch { /* ya cerrada */ }
+    });
+    if (!abrio) hallazgos.push({ paso: pasoActual, que: 'La ventana de pago con tarjeta (Culqi) no abrió en sndwch.app' + (err ? ': ' + err : '') });
+  });
   await paso(page, 'wicho-armador', async () => {
     await page.goto('/');
     await page.getByRole('button', { name: /Tú decides/ }).click();

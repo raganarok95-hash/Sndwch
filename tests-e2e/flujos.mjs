@@ -12,10 +12,12 @@
 //
 // Correr con: npm run check:e2e
 import { resolverCarrito } from '../supabase/functions/_shared/dinero.ts';
-import { BEBIDAS_SIN_SANDWICH_DESDE as MIN_BEBIDAS } from '../supabase/functions/_shared/reglas.ts';
+import { BEBIDAS_SIN_SANDWICH_DESDE as MIN_BEBIDAS, CULQI_FEE_RATE } from '../supabase/functions/_shared/reglas.ts';
 
 const TIENDA = { lat: -8.139599, lon: -79.039458 };
 const ENVIO_MINIMO = 5;
+// Con tarjeta, el envío lleva la comisión de Culqi encima (resolveDeliveryFeeCard en orders.ts).
+const ENVIO_TARJETA = Math.round((ENVIO_MINIMO / (1 - CULQI_FEE_RATE)) * 100) / 100;
 
 function preciosDelCatalogo(c) {
   const sig = {};
@@ -75,6 +77,84 @@ export const FLUJOS = {
     const historial = Number(valor(s, `select coalesce(sum(points),0) from transactions where customer_phone = '${phone}'`));
     afirmar(saldo === historial, `los puntos del cliente (${saldo}) no coinciden con la suma de su historial (${historial}); del pedido: ${ganados}. Movimientos: ` +
       valor(s, `select string_agg(type || ':' || points || ':' || coalesce(description,''), ' | ') from transactions where customer_phone = '${phone}'`));
+  },
+
+  // PAGO CON TARJETA DE PUNTA A PUNTA (Ezra, 2026-11-12: «que se revise el app la parte de pagos,
+  // que se simule un pedido»). Es el camino de la app: prepare-order reserva → create-charge cobra
+  // en Culqi → place-order con el chargeId crea el pedido. Culqi es la pasarela falsa de
+  // servidor-local.mjs: nada se cobra de verdad. Modo de fallo: un cobro doble, un cobro sin
+  // pedido, o un pedido pagado sin sus puntos; ninguno da error en pantalla.
+  async 'tarjeta: se cobra UNA vez el total justo y el pedido queda pagado con sus puntos'(s, precios, carta) {
+    const { token, phone } = await registrarYEntrar(s);
+    const ref = 'E2E-TARJ';
+    const items = [{ type: 'sig', sigId: carta.signature(0), size: '30', qty: 1 }, { type: 'side', code: carta.bebida(0), qty: 1 }];
+    const total = Math.round((resolverCarrito(items, {}, precios).total + ENVIO_TARJETA) * 100) / 100;
+    const datos = { token, ref, name: 'Cliente', phone, email: 'cliente@prueba.pe', address: 'Av. España 123, Trujillo', ...TIENDA, items, total, summary: '1x sándwich', deliveryZone: 'trujillo' };
+    const pr = await s.llamar('prepare-order', datos);
+    afirmar(pr.status === 200, `prepare-order: ${pr.status} ${pr.error || ''}`);
+    afirmar(valor(s, `select status || '|' || expected_total from pending_charges where ref = '${ref}'`) === `pending|${total.toFixed(2)}`,
+      'la reserva no quedó pendiente con el total: ' + valor(s, `select status || '|' || expected_total from pending_charges where ref = '${ref}'`));
+    const c = await s.cobrar({ token: 'tkn_test_ok', amountSoles: total, email: datos.email, orderRef: ref });
+    afirmar(c.status === 200 && c.success && c.chargeId, `create-charge: ${c.status} ${c.error || ''}`);
+    // Un segundo toque (red lenta, doble clic) no cobra otra vez.
+    const c2 = await s.cobrar({ token: 'tkn_test_ok', amountSoles: total, email: datos.email, orderRef: ref });
+    const cargos = s.cargos().filter((x) => x.metadata.order_ref === ref);
+    afirmar(cargos.length === 1, `se cobró ${cargos.length} veces (segundo intento: ${c2.status} ${c2.error || c2.chargeId || ''})`);
+    afirmar(cargos[0].amount === Math.round(total * 100), `Culqi cobró ${cargos[0].amount} céntimos y el pedido es S/${total}`);
+    const o = await s.llamar('place-order', { token, chargeId: c.chargeId, ref });
+    afirmar(o.status === 200, `place-order con el cargo: ${o.status} ${o.error || ''}`);
+    afirmar(valor(s, `select payment_status || '|' || payment_method || '|' || total || '|' || payment_id from orders where ref = '${ref}'`) === `paid|culqi|${total.toFixed(2)}|${c.chargeId}`,
+      'el pedido no quedó pagado con tarjeta, su total y su cargo: ' + valor(s, `select payment_status || '|' || payment_method || '|' || total || '|' || coalesce(payment_id,'') from orders where ref = '${ref}'`));
+    afirmar(valor(s, `select status from pending_charges where ref = '${ref}'`) === 'consumed', 'la reserva no quedó usada: ' + valor(s, `select status from pending_charges where ref = '${ref}'`));
+    const ganados = Number(valor(s, `select coalesce(sum(points),0) from transactions where order_ref = '${ref}' and type = 'earn_confirmed'`));
+    afirmar(ganados > 0, 'un pedido pagado con tarjeta no dio puntos');
+    afirmar(Number(valor(s, `select points from customers where phone = '${phone}'`)) === Number(valor(s, `select coalesce(sum(points),0) from transactions where customer_phone = '${phone}'`)),
+      'los puntos del cliente no cuadran con su historial');
+    // Confirmar dos veces (la app reintenta si se cortó la red) no crea un segundo pedido.
+    await s.llamar('place-order', { token, chargeId: c.chargeId, ref });
+    afirmar(valor(s, `select count(*) from orders where ref = '${ref}'`) === '1', 'confirmar dos veces creó dos pedidos');
+  },
+
+  async 'tarjeta rechazada: no queda cobro ni pedido, y un invitado puede pagar de nuevo'(s, precios, carta) {
+    s.sql(`delete from rate_limits`);
+    const ref = 'E2E-TARJ-RECH';
+    const items = [{ type: 'sig', sigId: carta.signature(1), size: '15', qty: 1 }];
+    const total = Math.round((resolverCarrito(items, {}, precios).total + ENVIO_TARJETA) * 100) / 100;
+    const pr = await s.llamar('prepare-order', { ref, name: 'Invitado', phone: '987654321', email: 'invitado@prueba.pe', address: 'Av. España 123, Trujillo', ...TIENDA, items, total, summary: '1x sándwich', deliveryZone: 'trujillo' });
+    afirmar(pr.status === 200, `prepare-order de invitado: ${pr.status} ${pr.error || ''}`);
+    const r = await s.cobrar({ token: 'tkn_rechazada_1', amountSoles: total, email: 'invitado@prueba.pe', orderRef: ref });
+    afirmar(r.status === 402 && /rechazada/.test(r.error || ''), `esperaba 402 con el motivo del banco, llegó ${r.status} ${r.error || ''}`);
+    afirmar(!s.cargos().some((x) => x.metadata.order_ref === ref), 'una tarjeta rechazada dejó un cargo');
+    afirmar(valor(s, `select count(*) from orders where ref = '${ref}'`) === '0', 'una tarjeta rechazada dejó un pedido');
+    afirmar(valor(s, `select status || '|' || (declined_at is not null) from pending_charges where ref = '${ref}'`) === 'pending|true',
+      'la reserva no quedó lista para reintentar con el rechazo anotado: ' + valor(s, `select status || '|' || (declined_at is not null) from pending_charges where ref = '${ref}'`));
+    const ok = await s.cobrar({ token: 'tkn_test_otra', amountSoles: total, email: 'invitado@prueba.pe', orderRef: ref });
+    afirmar(ok.status === 200 && ok.chargeId, `segundo intento con otra tarjeta: ${ok.status} ${ok.error || ''}`);
+    const o = await s.llamar('place-order', { chargeId: ok.chargeId, ref });
+    afirmar(o.status === 200, `place-order de invitado: ${o.status} ${o.error || ''}`);
+    afirmar(valor(s, `select payment_status from orders where ref = '${ref}'`) === 'paid', 'el pedido del invitado no quedó pagado');
+  },
+
+  async 'tarjeta: un monto distinto al reservado no se cobra y un cargo ya usado no paga otro pedido'(s, precios, carta) {
+    const { token, phone } = await registrarYEntrar(s);
+    const items = [{ type: 'sig', sigId: carta.signature(2), size: '15', qty: 1 }];
+    const total = Math.round((resolverCarrito(items, {}, precios).total + ENVIO_TARJETA) * 100) / 100;
+    const base = { token, name: 'Cliente', phone, email: 'cliente@prueba.pe', address: 'Av. España 123, Trujillo', ...TIENDA, items, total, summary: '1x', deliveryZone: 'trujillo' };
+    // Una reserva nueva del mismo teléfono libera la anterior sin cobrar (a propósito, 2026-11-02),
+    // así que B se reserva DESPUÉS de pagar A, como lo haría el cliente.
+    const pa = await s.llamar('prepare-order', { ...base, ref: 'E2E-TARJ-A' });
+    afirmar(pa.status === 200, `prepare-order A: ${pa.status} ${pa.error || ''}`);
+    const menos = await s.cobrar({ token: 'tkn_test_ok', amountSoles: total - 1, email: base.email, orderRef: 'E2E-TARJ-A' });
+    afirmar(menos.status >= 400 && !s.cargos().some((x) => x.metadata.order_ref === 'E2E-TARJ-A'), `un monto menor se cobró: ${menos.status} ${menos.error || ''}`);
+    const a = await s.cobrar({ token: 'tkn_test_ok', amountSoles: total, email: base.email, orderRef: 'E2E-TARJ-A' });
+    afirmar(a.status === 200 && a.chargeId, `create-charge A: ${a.status} ${a.error || ''}`);
+    const oa = await s.llamar('place-order', { token, chargeId: a.chargeId, ref: 'E2E-TARJ-A' });
+    afirmar(oa.status === 200, `place-order A: ${oa.status} ${oa.error || ''}`);
+    const pb = await s.llamar('prepare-order', { ...base, ref: 'E2E-TARJ-B' });
+    afirmar(pb.status === 200, `prepare-order B: ${pb.status} ${pb.error || ''}`);
+    const b = await s.llamar('place-order', { token, chargeId: a.chargeId, ref: 'E2E-TARJ-B' });
+    afirmar(b.status >= 400, `el cargo del pedido A pagó el pedido B: ${b.status}`);
+    afirmar(valor(s, `select count(*) from orders where ref = 'E2E-TARJ-B'`) === '0', 'quedó un pedido B pagado con el cargo de A');
   },
 
   async 'un total manipulado se rechaza y no toca nada'(s, precios, carta) {

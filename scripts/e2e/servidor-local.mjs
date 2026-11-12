@@ -5,8 +5,10 @@
 //   → un proxy que imita la ruta /rest/v1 de Supabase
 //   → la edge function `api` tal cual está en supabase/functions, corriendo en Deno.
 //
-// Nada está simulado salvo lo que sale a terceros (Culqi, Resend, Meta, Web Push): sin sus
-// claves, el propio código ya los salta. Así un flujo de punta a punta ejecuta cada línea del
+// Nada está simulado salvo lo que sale a terceros (Resend, Meta, Web Push: sin sus claves, el
+// propio código ya los salta) y Culqi, que se reemplaza por una pasarela FALSA local
+// (`culqiFalso` abajo) para poder simular un pago con tarjeta entero sin cobrar nada: corre
+// también `create-charge` y todas las llamadas a api.culqi.com van a esa pasarela. Así un flujo de punta a punta ejecuta cada línea del
 // servidor y cada función de la base, que es justo lo que las pruebas de pantalla no hacen
 // (mockean el `api` entero).
 import { execFileSync, spawn } from 'node:child_process';
@@ -58,14 +60,51 @@ function puertoLibre() {
   });
 }
 
+/** PASARELA FALSA DE CULQI. Responde como la API v2 de Culqi en lo que usa el servidor:
+ *  crear un cargo (POST /v2/charges), consultarlo (GET /v2/charges/:id) y listarlos.
+ *  Un token que empieza con `tkn_rechazada` se rechaza como lo hace un banco (402 con
+ *  user_message); cualquier otro se cobra con «venta_exitosa». No sale nada a internet. */
+function culqiFalso() {
+  const cargos = new Map();
+  const servidor = createServer((req, res) => {
+    let cuerpo = '';
+    req.on('data', (d) => (cuerpo += d));
+    req.on('end', () => {
+      const responder = (status, obj) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
+      if (!/^Bearer sk_test_/.test(req.headers.authorization || '')) return responder(401, { merchant_message: 'llave inválida' });
+      const url = new URL(req.url, 'http://x');
+      if (req.method === 'POST' && url.pathname === '/v2/charges') {
+        const b = JSON.parse(cuerpo || '{}');
+        if (String(b.source_id || '').startsWith('tkn_rechazada')) {
+          return responder(402, { object: 'error', type: 'card_error', user_message: 'Tu tarjeta fue rechazada (prueba).' });
+        }
+        const id = 'chr_test_' + (cargos.size + 1);
+        const cargo = { object: 'charge', id, amount: b.amount, currency_code: b.currency_code, email: b.email, source_id: b.source_id, metadata: b.metadata || {}, outcome: { type: 'venta_exitosa' }, creation_date: Date.now() };
+        cargos.set(id, cargo);
+        return responder(201, cargo);
+      }
+      const m = url.pathname.match(/^\/v2\/charges\/(.+)$/);
+      if (req.method === 'GET' && m) {
+        const c = cargos.get(decodeURIComponent(m[1]));
+        return c ? responder(200, c) : responder(404, { object: 'error', merchant_message: 'No existe el cargo' });
+      }
+      if (req.method === 'GET' && url.pathname === '/v2/charges') return responder(200, { data: [...cargos.values()] });
+      responder(404, { merchant_message: 'ruta no simulada' });
+    });
+  });
+  return { servidor, cargos };
+}
+
 export async function levantarServidor({ semilla = '' } = {}) {
   const procesos = [];
   const temporales = [];
   let pg = null;
   let proxy = null;
+  const servidores = [];
   const parar = () => {
     for (const p of procesos) try { p.kill('SIGKILL'); } catch { /* ya terminó */ }
     if (proxy) proxy.close();
+    for (const x of servidores) x.close();
     if (pg) pg.parar();
     for (const t of temporales) rmSync(t, { recursive: true, force: true });
   };
@@ -117,43 +156,74 @@ export async function levantarServidor({ semilla = '' } = {}) {
     });
     await new Promise((r) => proxy.listen(pProxy, '127.0.0.1', r));
 
-    // El `api` real. Se copia a una carpeta temporal para quitarle la línea de tipos de ambiente
-    // de jsr.io (bloqueado por el proxy de red, y solo son tipos: no cambia nada al correr).
+    // La pasarela falsa de Culqi (ver `culqiFalso`).
+    const culqi = culqiFalso();
+    const pCulqi = await puertoLibre();
+    await new Promise((r) => culqi.servidor.listen(pCulqi, '127.0.0.1', r));
+    servidores.push(culqi.servidor);
+
+    // El `api` real y `create-charge`. Se copian a una carpeta temporal para quitarles la línea de
+    // tipos de jsr.io (bloqueado por el proxy de red, y solo son tipos: no cambia nada al correr)
+    // y para que hablen con la pasarela falsa en vez de api.culqi.com.
     const fn = mkdtempSync(join(tmpdir(), 'sndwch-api-'));
     temporales.push(fn);
     cpSync(join(RAIZ, 'supabase', 'functions'), join(fn, 'functions'), { recursive: true });
-    const entrada = join(fn, 'functions', 'api', 'index.ts');
-    // Y el puerto: en Supabase lo pone la plataforma; acá se le pasa por variable de entorno.
-    const codigo = readFileSync(entrada, 'utf8')
-      .replace(/^import "jsr:[^"]*";\n/m, '')
-      .replace('Deno.serve(async (req', 'Deno.serve({ port: Number(Deno.env.get("PUERTO_LOCAL")), hostname: "127.0.0.1" }, async (req');
-    if (!codigo.includes('PUERTO_LOCAL')) throw new Error('El entrypoint del api cambió: no se encontró `Deno.serve(async (req`.');
-    writeFileSync(entrada, codigo);
-    const pApi = await puertoLibre();
-    const api = spawn(join(RAIZ, 'node_modules', '.bin', 'deno'), ['run', '--no-check', '--allow-net', '--allow-env', '--allow-read', entrada], {
-      cwd: fn,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: {
-        ...process.env,
-        SUPABASE_URL: `http://127.0.0.1:${pProxy}`,
-        SUPABASE_SERVICE_ROLE_KEY: 'clave-local',
-        SESSION_SECRET: 'secreto-de-sesion-local-de-pruebas-e2e',
-        PUERTO_LOCAL: String(pApi),
-      },
-    });
-    procesos.push(api);
-    let logApi = '';
-    api.stderr.on('data', (d) => (logApi += d));
-    api.stdout.on('data', (d) => (logApi += d));
-    const URL_API = `http://127.0.0.1:${pApi}`;
-    await hastaQueResponda(URL_API, { action: 'ping' }).catch((e) => {
-      throw new Error(e.message + '\n' + logApi.slice(-1500));
-    });
+    let llamadasACulqi = 0;
+    for (const f of ['api/actions/orders.ts', '_shared/culqi-claim.ts']) {
+      const ruta = join(fn, 'functions', f);
+      const antes = readFileSync(ruta, 'utf8');
+      llamadasACulqi += antes.split('https://api.culqi.com').length - 1;
+      writeFileSync(ruta, antes.replaceAll('https://api.culqi.com', `http://127.0.0.1:${pCulqi}`));
+    }
+    // Si alguien mueve la llamada a Culqi a otro archivo, se dice: si no, el pago con tarjeta
+    // saldría a la pasarela real (y fallaría sin red) en vez de a la falsa.
+    if (llamadasACulqi < 3) throw new Error('Las llamadas a api.culqi.com se movieron de orders.ts / culqi-claim.ts: actualiza servidor-local.mjs.');
+    const env = {
+      ...process.env,
+      SUPABASE_URL: `http://127.0.0.1:${pProxy}`,
+      SUPABASE_SERVICE_ROLE_KEY: 'clave-local',
+      SESSION_SECRET: 'secreto-de-sesion-local-de-pruebas-e2e',
+      CULQI_SECRET_KEY: 'sk_test_pasarela_falsa_local',
+    };
+    const funcion = async (nombre, ping) => {
+      const entrada = join(fn, 'functions', nombre, 'index.ts');
+      // Y el puerto: en Supabase lo pone la plataforma; acá se le pasa por variable de entorno.
+      const codigo = readFileSync(entrada, 'utf8')
+        .replace(/^import "jsr:[^"]*";\n/m, '')
+        .replace('Deno.serve(async (req', 'Deno.serve({ port: Number(Deno.env.get("PUERTO_LOCAL")), hostname: "127.0.0.1" }, async (req');
+      if (!codigo.includes('PUERTO_LOCAL')) throw new Error(`El entrypoint de ${nombre} cambió: no se encontró \`Deno.serve(async (req\`.`);
+      writeFileSync(entrada, codigo);
+      const puerto = await puertoLibre();
+      const p = spawn(join(RAIZ, 'node_modules', '.bin', 'deno'), ['run', '--no-check', '--allow-net', '--allow-env', '--allow-read', entrada], {
+        cwd: fn,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...env, PUERTO_LOCAL: String(puerto) },
+      });
+      procesos.push(p);
+      const f = { url: `http://127.0.0.1:${puerto}`, log: '' };
+      p.stderr.on('data', (d) => (f.log += d));
+      p.stdout.on('data', (d) => (f.log += d));
+      await hastaQueResponda(f.url, ping).catch((e) => {
+        throw new Error(e.message + '\n' + f.log.slice(-1500));
+      });
+      return f;
+    };
+    const fApi = await funcion('api', { action: 'ping' });
+    const fCobro = await funcion('create-charge', {});
+    const URL_API = fApi.url;
 
     return {
       url: URL_API,
       sql: (q) => psql(pg.url, q),
-      log: () => logApi,
+      log: () => fApi.log + '\n── create-charge ──\n' + fCobro.log.slice(-1500),
+      /** Lo que hace la app tras escribir la tarjeta: llama a create-charge con el token de Culqi. */
+      async cobrar(datos) {
+        const r = await fetch(fCobro.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datos) });
+        const cuerpo = await r.json().catch(() => ({}));
+        return { status: r.status, ...cuerpo };
+      },
+      /** Los cargos que la pasarela falsa «cobró», para contar que nunca se cobre dos veces. */
+      cargos: () => [...culqi.cargos.values()],
       async llamar(accion, datos = {}) {
         const r = await fetch(URL_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: accion, ...datos }) });
         const cuerpo = await r.json().catch(() => ({}));
