@@ -150,7 +150,7 @@ export const CARTA: Carta = {
     { id: "P04", nombre: "Atún", sabor: "House", desc: "En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.", p15: 19.9, p30: 30.9, dbl15: 10.9, dbl30: 21.9, foto: "img/prot_p04.webp" },
     { id: "P05", nombre: "Embutido", sabor: "Italiano", desc: "Jamón ahumado, salame y pepperoni, laminados finos y puestos en pliegues, nunca planos.", p15: 16.9, p30: 32.9, dbl15: 9.9, dbl30: 19.9, soloEnSignature: true, foto: "img/prot_p05.webp" },
     { id: "P06", nombre: "Albóndiga", sabor: "Marinara", desc: "Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.", p15: 19.9, p30: 30.9, dbl15: 6.9, dbl30: 13.9, foto: "img/prot_p06.webp" },
-    { id: "P08", nombre: "Pavo", sabor: "Horneado", desc: "Lonjas finas puestas en pliegues, nunca planas.", p15: 19.9, p30: 30.9, dbl15: 9, dbl30: 17, foto: "img/prot_p08.webp" },
+    { id: "P08", nombre: "Pavo", sabor: "Laminado", desc: "Lonjas finas puestas en pliegues, nunca planas.", p15: 19.9, p30: 30.9, dbl15: 9, dbl30: 17, foto: "img/prot_p08.webp" },
     { id: "P09", nombre: "Res", sabor: "Laminada", desc: "Laminada fina y salteada al momento.", p15: 19.9, p30: 30.9, dbl15: 7, dbl30: 13.9, foto: "img/prot_p09.webp" },
   ],
   vegetales: [
