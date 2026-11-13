@@ -170,7 +170,7 @@ const COCINA = [
   ['RES // LAMINADA', '', 'congelado'], ['RES // LAMINADA', '', 'congelado'], ['ALBÓNDIGA // MARINARA', '', 'congelado'],
   ['ALBÓNDIGA // MARINARA', '', 'congelado'], ['PAN SUB', '', 'congelado'], ['PAN SUB', '', 'congelado'],
   ['CEBOLLA // SALTEADA', '', 'refri'], ['CEBOLLA // SALTEADA', '', 'refri'], ['ATÚN // HOUSE', '', 'refri · no se congela'],
-  ['PAVO // HORNEADO', '', 'refri'], ['EMBUTIDO // ITALIANO', '', 'refri'], ['QUESOS', '', 'refri'],
+  ['PAVO // LAMINADO', '', 'refri'], ['EMBUTIDO // ITALIANO', '', 'refri'], ['QUESOS', '', 'refri'],
   ['VEGETALES DEL DÍA', '', 'refri'], ['VEGETALES DEL DÍA', '', 'refri'], ['', '', ''], ['', '', ''], ['', '', ''], ['', '', ''],
 ];
 
