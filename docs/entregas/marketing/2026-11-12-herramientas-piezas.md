@@ -1,7 +1,7 @@
 ---
 de: crecimiento
 para: marketing
-estado: pendiente
+estado: abierta
 para-cuando: 2026-11-20
 ---
 Ezra (2026-11-12): «de todas las herramientas que tenemos nadie las conoce». El plan es el tuyo

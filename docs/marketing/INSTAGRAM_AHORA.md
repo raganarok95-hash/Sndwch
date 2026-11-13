@@ -62,7 +62,7 @@ Textos, fieles a la carta y sin precios:
   día.»
 - **Meatball**: «Hoy no cocinas. Meatball Marinara: albóndigas cocidas en su propia marinara,
   queso derretido y un pan que aguanta todo el jugo. Abrimos en noviembre.»
-- **Turkey**: «El almuerzo que no te tumba la tarde. Turkey: pavo horneado en lonjas finas,
+- **Turkey**: «El almuerzo que no te tumba la tarde. Turkey: pavo en lonjas finas,
   lechuga, tomate, cebolla, pimiento y un toque de aceite y vinagre. Abrimos en noviembre.»
 
 ## 4 · Hasta abrir: 3 publicaciones por semana e historias cada día

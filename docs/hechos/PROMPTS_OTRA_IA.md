@@ -40,7 +40,7 @@ Abre a más tardar la segunda semana de octubre de 2026: todavía no hay cliente
 
 ### Turkey
 - **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/9 / +S/17
-- **Receta:** pan Classic // White · Pavo // Horneado · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: no lleva
+- **Receta:** pan Classic // White · Pavo // Laminado · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: no lleva
 - **Cómo se vende:** Pavo en lonjas finas, puestas en pliegues, con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. Llena sin pesar: el almuerzo que no te tumba la tarde.
 
 ### Tuna Melt
@@ -75,7 +75,7 @@ El precio lo pone la proteína (más el recargo del pan, si tiene). Vegetales y 
 |---|---|---|---|---|---|
 | Atún // House | S/19.90 | S/30.90 | +S/10.90 | +S/21.90 | En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca. |
 | Albóndiga // Marinara | S/19.90 | S/30.90 | +S/6.90 | +S/13.90 | Albóndigas chicas hechas acá, cocidas dentro de su propia marinara. |
-| Pavo // Horneado | S/19.90 | S/30.90 | +S/9 | +S/17 | Lonjas finas puestas en pliegues, nunca planas. |
+| Pavo // Laminado | S/19.90 | S/30.90 | +S/9 | +S/17 | Lonjas finas puestas en pliegues, nunca planas. |
 | Res // Laminada | S/19.90 | S/30.90 | +S/7 | +S/13.90 | Laminada fina y salteada al momento. |
 
 Proteínas que existen pero NO se eligen acá: Pollo // Cajun (solo menú secreto), Embutido // Italiano (solo dentro de su Signature).
@@ -115,7 +115,7 @@ frase de «Cómo se vende». Si en el portal redondeas, se anota en `docs/PENDIE
 |---|---|---|---|
 | Philly Cheesesteak | S/21.89 | S/33.99 | 15 cm · 85 g de res laminada (30 cm: 170 g). El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. |
 | Meatball Marinara | S/21.89 | S/33.99 | 15 cm · 85 g de albóndiga marinara (30 cm: 170 g). Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. |
-| Turkey | S/21.89 | S/33.99 | 15 cm · 85 g de pavo horneado (30 cm: 170 g). Pavo en lonjas finas, puestas en pliegues, con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. |
+| Turkey | S/21.89 | S/33.99 | 15 cm · 85 g de pavo laminado (30 cm: 170 g). Pavo en lonjas finas, puestas en pliegues, con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. |
 | Tuna Melt | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco. |
 | Italian Hoagie | S/21.89 | S/33.99 | 15 cm · 85 g de embutido italiano (30 cm: 170 g). Jamón ahumado, salame y pepperoni en pliegues, queso americano, verduras frescas y oil & vinegar. |
 | Classic Tuna | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. |
@@ -194,7 +194,7 @@ Abre a más tardar la segunda semana de octubre de 2026: todavía no hay cliente
 
 ### Turkey
 - **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/9 / +S/17
-- **Receta:** pan Classic // White · Pavo // Horneado · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: no lleva
+- **Receta:** pan Classic // White · Pavo // Laminado · vegetales: Lechuga // Fresca, Tomate // Fresco, Cebolla // Morada juliana, Pimiento // Verde · salsas: Oil & Vinegar // Classic · queso: no lleva
 - **Cómo se vende:** Pavo en lonjas finas, puestas en pliegues, con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. Llena sin pesar: el almuerzo que no te tumba la tarde.
 
 ### Tuna Melt
@@ -229,7 +229,7 @@ El precio lo pone la proteína (más el recargo del pan, si tiene). Vegetales y 
 |---|---|---|---|---|---|
 | Atún // House | S/19.90 | S/30.90 | +S/10.90 | +S/21.90 | En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca. |
 | Albóndiga // Marinara | S/19.90 | S/30.90 | +S/6.90 | +S/13.90 | Albóndigas chicas hechas acá, cocidas dentro de su propia marinara. |
-| Pavo // Horneado | S/19.90 | S/30.90 | +S/9 | +S/17 | Lonjas finas puestas en pliegues, nunca planas. |
+| Pavo // Laminado | S/19.90 | S/30.90 | +S/9 | +S/17 | Lonjas finas puestas en pliegues, nunca planas. |
 | Res // Laminada | S/19.90 | S/30.90 | +S/7 | +S/13.90 | Laminada fina y salteada al momento. |
 
 Proteínas que existen pero NO se eligen acá: Pollo // Cajun (solo menú secreto), Embutido // Italiano (solo dentro de su Signature).
@@ -269,7 +269,7 @@ frase de «Cómo se vende». Si en el portal redondeas, se anota en `docs/PENDIE
 |---|---|---|---|
 | Philly Cheesesteak | S/21.89 | S/33.99 | 15 cm · 85 g de res laminada (30 cm: 170 g). El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. |
 | Meatball Marinara | S/21.89 | S/33.99 | 15 cm · 85 g de albóndiga marinara (30 cm: 170 g). Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. |
-| Turkey | S/21.89 | S/33.99 | 15 cm · 85 g de pavo horneado (30 cm: 170 g). Pavo en lonjas finas, puestas en pliegues, con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. |
+| Turkey | S/21.89 | S/33.99 | 15 cm · 85 g de pavo laminado (30 cm: 170 g). Pavo en lonjas finas, puestas en pliegues, con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. |
 | Tuna Melt | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco. |
 | Italian Hoagie | S/21.89 | S/33.99 | 15 cm · 85 g de embutido italiano (30 cm: 170 g). Jamón ahumado, salame y pepperoni en pliegues, queso americano, verduras frescas y oil & vinegar. |
 | Classic Tuna | S/21.89 | S/33.99 | 15 cm · 85 g de atún house (30 cm: 170 g). Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. |
@@ -400,7 +400,7 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
   Atún // House                        19.90    7.71    12.19    38.8%
   Embutido // Italiano (fuera del armador)   16.90    7.22     9.68    42.7%
   Albóndiga // Marinara                19.90    7.10    12.80    35.7%
-  Pavo // Horneado                     19.90    8.05    11.85    40.5%
+  Pavo // Laminado                     19.90    8.05    11.85    40.5%
   Res // Laminada                      19.90    7.50    12.40    37.7%
 
   30CM
@@ -410,7 +410,7 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
   Atún // House                        30.90   14.13    16.77    45.7%  <-- PASA EL TECHO
   Embutido // Italiano (fuera del armador)   32.90   13.13    19.77    39.9%
   Albóndiga // Marinara                30.90   12.90    18.00    41.8%
-  Pavo // Horneado                     30.90   14.82    16.08    48.0%  <-- PASA EL TECHO
+  Pavo // Laminado                     30.90   14.82    16.08    48.0%  <-- PASA EL TECHO
   Res // Laminada                      30.90   13.70    17.20    44.3%
 
   DOBLE PROTEINA (el recargo contra lo que cuesta la porcion extra)
@@ -424,8 +424,8 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
   Embutido // Italiano (fuera del armador) 30CM   19.90    5.50    14.40    27.7%
   Albóndiga // Marinara 15CM            6.90    2.64     4.26    38.2%
   Albóndiga // Marinara 30CM           13.90    5.27     8.63    37.9%
-  Pavo // Horneado 15CM                 9.00    3.59     5.41    39.9%
-  Pavo // Horneado 30CM                17.00    7.19     9.81    42.3%
+  Pavo // Laminado 15CM                 9.00    3.59     5.41    39.9%
+  Pavo // Laminado 30CM                17.00    7.19     9.81    42.3%
   Res // Laminada 15CM                  7.00    3.04     3.96    43.4%
   Res // Laminada 30CM                 13.90    6.07     7.83    43.7%
 
@@ -537,7 +537,7 @@ Plan Semanal (S/95 → S/100 de crédito) y tarjeta de regalo (S/10–S/500): el
 
   parte                                      costo %   cuanto se pasa
   ----------------------------------------------------------------------
-  BYO Pavo // Horneado 30CM                    48.0%            3.0 pts
+  BYO Pavo // Laminado 30CM                    48.0%            3.0 pts
   BYO Atún // House 30CM                       45.7%            0.7 pts
 
   ⚠ NADA DE ESTO SE ARREGLA CON PUBLICIDAD. Al contrario: la publicidad multiplica el
