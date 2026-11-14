@@ -150,7 +150,7 @@ cambiarlas en cuanto haya foto propia.
 
 | archivo | producto | Adobe Stock | recorte aplicado al original | en qué NO calza con la receta |
 |---|---|---|---|---|
-| `sig10.jpg` | **Turkey** (SIG10) | `214459869` (6000×4000) | el sub de abajo a la izquierda, rotado −65.4° alrededor de (790, 3150) y recortado a (85, 2547)-(2235, 3995); el 2026-10-16, recortado otra vez a (540, 300)-(1400, 880) de ese archivo para dejar fuera el pepino | **ya sin pepino** (dueño, 2026-10-16: «Quita pepino»: estaba en los dos bordes y quedó fuera del recorte); no se ven tomate, cebolla ni pimiento. Pan sub blanco, pavo en lonjas, lechuga y **sin queso**, como la receta |
+| `sig10.jpg` | **Turkey** (SIG10) | `150082453` (4314×2871) | recortado a (1150, 500)-(4314, 2800) para dejar fuera las papas fritas; la vertical sale de este mismo archivo | **2026-11-14, elegida por Ezra en la tarjeta («La de pan de molde, ya»)**: pavo en lonjas finas en pliegues, tomate, cebolla morada y lechuga, como dice la carta. Diferencias que Ezra aceptó: es pan de molde integral (el Turkey va en pan Classic) y no se ve el pimiento. Reemplaza a `214459869` (una lonja gruesa y solo lechuga, ya no fiel a la carta desde el 2026-11-12). |
 | `sig12.jpg` | **Tuna Melt** (SIG12) | `325349325` (7360×4912) | (600, 1900)-(4600, 4597) — deja fuera la rúcula, el limón y la salsa | es un tuna melt **abierto sobre pan tostado**, no en pan sub; el queso fundido se ve más blanco que un cheddar |
 
 Se descartó otra vez `591239613` (tuna melt con cheddar bien amarillo, pero con **tomate**, que
