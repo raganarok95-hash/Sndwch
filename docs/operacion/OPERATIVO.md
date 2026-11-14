@@ -45,7 +45,7 @@ Cada tanda, con lo que hay que tener a mano para hacerla. La tanda **de apertura
 | **CEBOLLA // SALTEADA** (apertura) | 10 porciones | 700 g de cebolla blanca | cada 3 días (dura 3) |
 | **ALBÓNDIGA // MARINARA** (media) | 15 porciones | 1 kg carne molida 15-20% grasa · 100 g pan del día · 110 ml leche · 1 huevo · 50 g parmesano · 10 g ajo · 12 g perejil · sal, pimienta, orégano · **marinara 1.5 L:** 1.25 kg tomate pelado en lata (~3 latas de 400 g), 50 ml aceite de oliva, 20 g ajo, 100 g cebolla, 10 g sal, orégano y albahaca | cuando queden 4 porciones congeladas |
 | **ATÚN // HOUSE** | 2 porciones 15CM por lata | 1 lata de 140 g escurrido + 35 g de mayonesa + pimienta blanca | **todos los días que se venda**: solo las latas del día (dura 3 días, no se congela) |
-| **PAVO // HORNEADO** (ya tajado, como Subway: dueño, 2026-11-11, «Mejor hagamos lo mismo pero más barato») | ~11 porciones por kilo, unas 5 por paquete | jamón de pavo Braedt de 480 g, ya tajado: 1 paquete para abrir | abierto dura 3 días en frío; comprar el siguiente cuando quede medio paquete |
+| **PAVO // LAMINADO** (ya tajado, como Subway: dueño, 2026-11-11, «Mejor hagamos lo mismo pero más barato») | ~11 porciones por kilo, unas 5 por paquete | jamón de pavo Braedt de 480 g, ya tajado: 1 paquete para abrir | abierto dura 3 días en frío; comprar el siguiente cuando quede medio paquete |
 | **EMBUTIDO // ITALIANO** (dueño, 2026-11-03) | por 15CM: 35 g jamón ahumado + 25 g salame + 25 g pepperoni (30CM, el doble) | para abrir, paquete chico o mostrador: jamón ahumado 250 g, salame 150 g, pepperoni 150 g (~6 porciones); el paquete de 500 g recién cuando se venda más | cuando quede 1/3 del jamón; abierto, cerrar bien y usar primero lo más viejo |
 | **OIL & VINEGAR** (250 ml) | ~17 porciones | 125 ml aceite de oliva · 50 ml aceite vegetal · 63 ml vinagre de vino tinto · 5 g orégano · 3 g ajo en polvo · 3 g sal · 1 g pimienta | cada 2 semanas (dura 1 mes) |
 | **HONEY MUSTARD** (250 g) | ~17 porciones | 95 g mostaza amarilla · 75 g miel · 63 g mayonesa · 13 ml vinagre de manzana · 1 g sal | cada 2 semanas |
@@ -77,7 +77,7 @@ es el mínimo de abajo.
 | RES // LAMINADA (descongelada en el refri) | 4 | 2 | 3 días en el refri; 1 mes congelada |
 | ALBÓNDIGA // MARINARA | 2 | 1 | 3 días en el refri; 1 mes congelada |
 | ATÚN // HOUSE | 2 (1 lata) | 1 | 3 días, no se congela |
-| PAVO // HORNEADO | 2 | 1 | 3 días laminado |
+| PAVO // LAMINADO | 2 | 1 | 3 días laminado |
 | EMBUTIDO // ITALIANO | 2 | 1 | 3 días laminado |
 
 Regla de cada noche (de `docs/equipo/APERTURA_OPERACION.md`): contar lo que sobró, abrir mañana
