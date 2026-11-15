@@ -115,7 +115,7 @@ regla: **toda compra se anota en el panel el mismo día**, con proveedor, cantid
 | aguja de res | S/25 el kilo | cotizado por el dueño (30-sep) | **falta** | **falta** |
 | carne molida 15-20% | S/15 el kilo | cotizado por el dueño (30-sep) | **falta** | **falta** |
 | atún en lata 140 g | S/4 la lata | cotizado (4-sep) | **falta** | se compra al día |
-| jamón de pavo Braedt 480 g, ya tajado | S/20.30 el paquete (S/42.29 el kilo) | precio online de Tottus (Makro S/20.50) | Tottus o Makro | se compra al día |
+| jamón de pavo Braedt 480 g, ya tajado | S/20.30 el paquete (S/42.29 el kilo) | precio online de Tottus (Makro y Plaza Vea S/20.50, verificado 15-nov) | Tottus o Makro | se compra al día |
 | jamón ahumado, salame y pepperoni tajados | ~S/32.38 el kilo (ponderado) | precio online de Makro: confirmar en Trujillo | Makro | se compra al día |
 | pan sub | S/2 la unidad | cotizado (22-ago) | panadero del dueño | **falta** |
 | queso cheddar tajado | S/7.20 el paquete de 136 g | precio online de Tottus | — | se compra al día |
