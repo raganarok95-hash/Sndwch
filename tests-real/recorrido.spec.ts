@@ -204,8 +204,15 @@ test('un cliente nuevo recorre la app real sin errores', async ({ page }) => {
     await page.locator('.pta .yo').click();
     await page.locator('.en').waitFor();
     await page.locator('button[onclick^="authPinFallback=true"]').click();
-    await page.locator('#l-phone').fill(process.env.ROBOT_TELEFONO || '000000000');
-    await page.locator('#l-pin').fill(process.env.ROBOT_PIN);
+    // El botón vuelve a pintar el formulario: si se llena antes, el repintado borra lo escrito y Entrar no
+    // llama al servidor («Ingresa teléfono y PIN», corrida del 2026-11-16). Se espera el campo y se confirma.
+    await page.locator('#l-pin').waitFor();
+    await expect(async () => {
+      await page.locator('#l-phone').fill(process.env.ROBOT_TELEFONO || '000000000');
+      await page.locator('#l-pin').fill(process.env.ROBOT_PIN!);
+      await expect(page.locator('#l-phone')).toHaveValue(process.env.ROBOT_TELEFONO || '000000000', { timeout: 1000 });
+      await expect(page.locator('#l-pin')).not.toHaveValue('', { timeout: 1000 });
+    }).toPass({ timeout: 10000 });
     const login = page.waitForResponse((r) => /functions\/v1\/api/.test(r.url()) && /"action":"login"/.test(r.request().postData() || ''), { timeout: 20000 }).catch(() => null);
     await page.locator('.en-go button.oro').click();
     const resp = await login;
