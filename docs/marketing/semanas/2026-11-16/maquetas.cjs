@@ -19,7 +19,12 @@ const BASE = `*{box-sizing:border-box;margin:0;padding:0}body{font-family:Archiv
 .hueco{position:absolute;left:0;right:0;bottom:0;background:repeating-linear-gradient(45deg,#c9c3b6 0 18px,#d6d0c3 18px 36px);display:flex;align-items:center;justify-content:center;padding:60px}
 .hueco div{background:rgba(239,230,212,.94);border:3px dashed ${P.tinta};padding:28px 32px;font:600 24px/1.4 'IBM Plex Mono',monospace;color:${P.tinta};max-width:820px}`;
 const marca = (c) => `<div class="marca" style="color:${c}">SND<span class="b"><i class="g"></i><i class="c"></i></span>WCH</div>`;
-const hueco = (alto, texto) => `<div class="hueco" style="height:${alto}px"><div>IMAGEN NUEVA (Figma, espera tu sí)<br><br>${texto}</div></div>`;
+// Con FINAL=1 el recuadro se reemplaza por la imagen nueva aprobada (Ezra, 2026-11-16: «si a todo»), en el orden de PIEZAS.
+const FINAL = !!process.env.FINAL, FOTOS = ['s16-carta-seis-final.png', 's16-celular-final.png', 's16-bolsa-final.png'];
+let iFoto = 0;
+const POS = ['center', 'center', 'center 25%'];
+const hueco = (alto, texto) => FINAL ? `<div class="abs" style="left:0;right:0;bottom:0;height:${alto}px;background:url('file://${D}/fotos/${FOTOS[iFoto]}') ${POS[iFoto++]}/cover"></div>` : huecoMaqueta(alto, texto);
+const huecoMaqueta = (alto, texto) => `<div class="hueco" style="height:${alto}px"><div>IMAGEN NUEVA (Figma, espera tu sí)<br><br>${texto}</div></div>`;
 const sello = (fondo, c) => `<div class="abs" style="right:70px;top:250px;width:200px;height:200px;border-radius:999px;background:${fondo};color:${c};display:flex;flex-direction:column;align-items:center;justify-content:center"><span class="mono" style="font-size:22px">DESDE</span><span class="disp" style="font-size:56px;margin-top:6px">S/${PRECIO}</span></div>`;
 const caja = (fondo, dentro) => `<div style="position:relative;width:1080px;height:1350px;overflow:hidden;background:${fondo}">${dentro}</div>`;
 
@@ -61,7 +66,7 @@ const PIEZAS = {
     fs.writeFileSync(tmp, `<!doctype html><html><head><meta charset="utf-8"><style>${FUENTES}html,body{width:1080px;height:1350px;overflow:hidden}${BASE}</style></head><body>${html}</body></html>`);
     await pg.goto('file://' + tmp, { waitUntil: 'load' });
     await pg.evaluate(async () => { await Promise.all(['400 40px "Anton"', '800 40px "Archivo"', '600 40px "IBM Plex Mono"', 'italic 400 40px "Instrument Serif"'].map((f) => document.fonts.load(f))); });
-    const png = path.join(D, `maqueta-${n}.png`);
+    const png = path.join(D, FINAL ? `final-${n}.png` : `maqueta-${n}.png`);
     await pg.screenshot({ path: png });
     execFileSync('python3', ['-c', "import sys;from PIL import Image;Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2],quality=92)", png, png.replace(/\.png$/, '.jpg')]);
     fs.rmSync(png);

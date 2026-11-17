@@ -24,3 +24,5 @@ automáticos (esperan el dato del domingo 23 de `pctClientesDeLaSemanaConAvisos`
 (`?src=ig-historia-referidos`).
 
 **Necesita el sí de Ezra:** las 3 imágenes nuevas en Figma (prompts en `PROMPTS.md`), y publicar.
+
+**Producido (2026-11-16, Ezra: «si a todo»):** piezas finales en `final-*.jpg` (con `FINAL=1` el script monta las imágenes de `fotos/`). Imágenes de Figma: 1 por pieza; en la semana del 23 se rehicieron la oficina y la de invita porque la primera versión traía pepino y un sándwich que no está en la carta. Nada publicado.
