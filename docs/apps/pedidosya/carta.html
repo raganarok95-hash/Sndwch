@@ -5,18 +5,18 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--verde:#1E3932;--oro:#CBA258;--crema:#F2F0EB;--celeste:#8CC8EC}
 html,body{background:var(--crema)}
-.hoja{width:210mm;height:297mm;padding:13mm 14mm 11mm;color:var(--verde);font-family:Archivo,sans-serif;display:flex;flex-direction:column}
-header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--verde);padding-bottom:5mm}
+.hoja{width:210mm;height:296mm;overflow:hidden;padding:9mm 14mm 8mm;color:var(--verde);font-family:Archivo,sans-serif;display:flex;flex-direction:column}
+header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--verde);padding-bottom:3mm}
 .logo{font-family:Anton,sans-serif;font-size:44px;letter-spacing:.02em;line-height:1;display:flex;align-items:center}
 .wm-mark{display:inline-flex;gap:.16em;margin:0 .12em;align-items:center}
 .wm-mark i{display:block;width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px}
 .wm-mark i:first-child{background:var(--oro)}.wm-mark i:last-child{background:var(--celeste)}
 .cab{font-family:'IBM Plex Mono',monospace;font-size:11px;text-align:right;line-height:1.5;text-transform:uppercase;letter-spacing:.06em}
-h2{font-family:Anton,sans-serif;font-size:22px;letter-spacing:.04em;margin:6mm 0 1mm;display:flex;justify-content:space-between;align-items:baseline}
+h2{font-family:Anton,sans-serif;font-size:22px;letter-spacing:.04em;margin:4mm 0 1mm;display:flex;justify-content:space-between;align-items:baseline}
 h2 .tam{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;display:flex;gap:0}
 h2 .tam span{width:24mm;text-align:right}
 .nota{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.04em;text-transform:uppercase;opacity:.75;margin-bottom:2mm}
-.item{display:flex;justify-content:space-between;gap:6mm;padding:3.1mm 0;border-bottom:1px solid rgba(30,57,50,.18)}
+.item{display:flex;justify-content:space-between;gap:6mm;padding:2mm 0;border-bottom:1px solid rgba(30,57,50,.18)}
 .item:last-child{border-bottom:0}
 .nom{font-family:Anton,sans-serif;font-size:19px;letter-spacing:.03em;line-height:1.1}
 .sl{color:var(--oro);font-weight:400;margin:0 .15em}
@@ -32,9 +32,7 @@ footer{margin-top:auto;border-top:2px solid var(--verde);padding-top:3mm;font-fa
 <p class="nota">Todos en pan Classic // White · 15CM: 85 g de proteína · 30CM: 170 g</p>
 <div class="item"><div><div class="nom">PHILLY CHEESESTEAK</div><p class="fr">El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo.</p><p class="ll">Lleva: res laminada · cebolla salteada · pimiento verde · queso cheddar.</p></div>
 <div class="pr"><span>S/ 20.90</span><span>S/ 32.90</span></div></div>
-<div class="item"><div><div class="nom">MEATBALL MARINARA</div><p class="fr">Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo.</p><p class="ll">Lleva: albóndiga marinara · queso americano.</p></div>
-<div class="pr"><span>S/ 20.90</span><span>S/ 32.90</span></div></div>
-<div class="item"><div><div class="nom">TURKEY</div><p class="fr">Pavo en lonjas finas, puestas en pliegues, con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta.</p><p class="ll">Lleva: pavo horneado · lechuga fresca · tomate fresco · cebolla morada juliana · pimiento verde · oil &amp; vinegar.</p></div>
+<div class="item"><div><div class="nom">TURKEY</div><p class="fr">Pavo en lonjas finas, puestas en pliegues, con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta.</p><p class="ll">Lleva: pavo laminado · lechuga fresca · tomate fresco · cebolla morada juliana · pimiento verde · oil &amp; vinegar.</p></div>
 <div class="pr"><span>S/ 20.90</span><span>S/ 32.90</span></div></div>
 <div class="item"><div><div class="nom">TUNA MELT</div><p class="fr">Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco.</p><p class="ll">Lleva: atún house · queso cheddar.</p></div>
 <div class="pr"><span>S/ 20.90</span><span>S/ 32.90</span></div></div>
@@ -42,6 +40,13 @@ footer{margin-top:auto;border-top:2px solid var(--verde);padding-top:3mm;font-fa
 <div class="pr"><span>S/ 20.90</span><span>S/ 32.90</span></div></div>
 <div class="item"><div><div class="nom">CLASSIC TUNA</div><p class="fr">Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca.</p><p class="ll">Lleva: atún house.</p></div>
 <div class="pr"><span>S/ 20.90</span><span>S/ 32.90</span></div></div>
+<h2>COMBOS <span class="tam"><span></span><span>15CM + BEBIDA</span></span></h2>
+<p class="nota">Un Signature de 15CM y la bebida que quieras · ahorras hasta S/ 1.00</p>
+<div class="item"><div><div class="nom">COMBO PHILLY CHEESESTEAK</div></div><div class="pr"><span></span><span>S/ 26.80</span></div></div>
+<div class="item"><div><div class="nom">COMBO TURKEY</div></div><div class="pr"><span></span><span>S/ 26.80</span></div></div>
+<div class="item"><div><div class="nom">COMBO TUNA MELT</div></div><div class="pr"><span></span><span>S/ 26.80</span></div></div>
+<div class="item"><div><div class="nom">COMBO ITALIAN HOAGIE</div></div><div class="pr"><span></span><span>S/ 26.80</span></div></div>
+<div class="item"><div><div class="nom">COMBO CLASSIC TUNA</div></div><div class="pr"><span></span><span>S/ 26.80</span></div></div>
 <h2>BEBIDAS <span class="tam"><span></span><span>500 ML</span></span></h2>
 <div class="item"><div><div class="nom">THE BLOOM<b class="sl">//</b>HIBISCUS</div><p class="fr">Flor de jamaica en infusión con un toque de canela, bien helada.</p></div>
 <div class="pr"><span></span><span>S/ 6.90</span></div></div>
