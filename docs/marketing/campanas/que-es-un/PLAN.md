@@ -18,7 +18,7 @@ Luz: `estudio/LUZ_DE_DIA.md`. **Cada frase cita su fuente** del banco
 | | | | pie | «El pan se ve *sencillo*. Lo de adentro, no.» | [P4] «Their bread looks plain AF, but it really do hit» |
 | 3 | TUNA MELT y CLASSIC TUNA | el chat + encuesta (papel) | 1 | «¿Frío o *gratinado?*» | [V1] Bronson «vas a tener que tomar una decisión difícil» (elección entre dos); post del 9-nov |
 | | | | 2 | Tuna Melt: «bien tostado, el queso *derretido*» · Classic Tuna: «atún en lascas, frío» | [P3] «perfectly toasted with melted cheese»; [C] «en lascas gruesas» |
-| 4 | MEATBALL MARINARA | 4 · WICHO reacciona (reel, celeste) | gancho | «Albóndigas *caseras*.» | [P2] «homemade meatballs»; [C] «hechas acá» |
+| 4 | ~~MEATBALL MARINARA~~ (pausado: Ezra 2026-11-17, «Por las primeras semanas quitemos de disponibilidad las albóndigas») | 4 · WICHO reacciona (reel, celeste) | gancho | «Albóndigas *caseras*.» | [P2] «homemade meatballs»; [C] «hechas acá» |
 | | | | cierre | «Tiernas, en su propia marinara.» | [P2] «tender meatballs»; [C] «cocidas dentro de su propia marinara» |
 | 5 | TURKEY | 5 · frase sobre foto real (oficina, luz de ventana) | 1 | «Pavo en lonjas *finas*.» | [C] pitch de SIG10 (13-nov: ya no dice «horneado») |
 | | | | 2 | «En pliegues, *nunca planas*.» | [C] desc de P08 (cambió el 11-nov: ya no se lamina acá) |
