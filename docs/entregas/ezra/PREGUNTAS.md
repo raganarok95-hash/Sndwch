@@ -10,7 +10,7 @@ El vigía de las 22:13 cuenta las filas `abierta` y las pone en el correo de cie
 |---|---|---|---|---|---|
 | Q01 | 2026-11-03 | app | Pegar el token de Instagram (empieza con «IG») como `INSTAGRAM_LOGIN_TOKEN` en Supabase | respondida | Ya está: verificado en la base el 2026-11-10 (token «IG», se renovó solo el 2026-11-08, vence el 2027-01-07). |
 | Q02 | 2026-11-03 | app | Pegar en Supabase el borrado de los 7 pedidos de prueba | respondida | Ezra 2026-11-17: «si a todo». Lo borra App |
-| Q03 | 2026-11-03 | operativo | A quién le compras la res, la carne molida, el pavo y el pan, y cuántos días tarda cada uno | en parte | Ezra 2026-11-17: «Todos son proveedores por whatsapp». Falta: días de entrega |
+| Q03 | 2026-11-03 | operativo | A quién le compras la res, la carne molida, el pavo y el pan, y cuántos días tarda cada uno | en parte | Ezra 2026-11-17: «Todos son proveedores por whatsapp». Falta: días de entrega. Mientras tanto se pide con un día de margen (OPERATIVO.md §4). |
 | Q04 | 2026-11-03 | operativo | ¿Ya llegaron las bolsas kraft y los sellos? | respondida | Ezra, 2026-11-11: «No llegaron ni kraft ni sellos. por eso por ahora quiero que generes igual lo que ibamos a hacer con los sellos, como stickers». Diseños hizo `sticker-sello-10x10cm`. |
 | Q05 | 2026-11-03 | operativo | Qué equipos ya tienes: congeladora, balanza, termómetro, pHmetro, refractómetro | abierta | |
 | Q06 | 2026-11-05 | operativo | El sí a la compra del primer fin de semana (lista en la carpeta del proyecto, `operacion/compras-apertura.md`) | respondida | Ezra, 2026-11-10: «Y sí dale luz verde a todo»; 2026-11-12: «todo debe ser como ya existe entonces laminado como ya venden». Pavo Braedt ya tajado. La compra la hace él. |

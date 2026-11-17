@@ -110,6 +110,11 @@ Hoy **no hay ninguna compra registrada** en el panel (Compras está vacío). Cad
 anote ahí calcula el costo real de cada receta y **avisa si un precio subió fuerte**. Por eso la
 regla: **toda compra se anota en el panel el mismo día**, con proveedor, cantidad y lo pagado.
 
+**Cómo se pide (dueño, 2026-11-16: «Todos son proveedores por whatsapp»)**: cada proveedor se pide por
+WhatsApp. Mientras no se sepa cuánto tarda cada uno, se pide **con un día de margen**: lo fresco del
+miércoles se pide el martes, y el pan del jueves se pide el miércoles. Lo de supermercado (Makro,
+Tottus, Plaza Vea) se compra el mismo día.
+
 | insumo | precio que usa el costeo | estado | proveedor | ¿cuánto tarda? |
 |---|---|---|---|---|
 | aguja de res | S/25 el kilo | cotizado por el dueño (30-sep) | **falta** | **falta** |
