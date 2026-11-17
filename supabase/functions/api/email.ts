@@ -1,6 +1,6 @@
 // SND//WCH — api / email
 // Envío del PIN de recuperación de cuenta por correo (Resend).
-import { RESEND_API_KEY, FROM_EMAIL, CONTACT_EMAIL, BUSINESS_LEGAL_NAME, SITE_URL, BUSINESS_WHATSAPP } from "./env.ts";
+import { RESEND_API_KEY, FROM_EMAIL, CONTACT_EMAIL, BUSINESS_LEGAL_NAME, BUSINESS_RUC, BUSINESS_ADDRESS, SITE_URL, BUSINESS_WHATSAPP } from "./env.ts";
 import { emailShell, escHtml } from "../_shared/email-shell.ts";
 import { PALETA as C } from "../_shared/paleta.ts";
 export function maskEmail(email: string): string {
@@ -134,13 +134,40 @@ export async function sendOrderProblemResolvedEmail(
 // Copia del reclamo/queja para el consumidor — exigido por el Código de Protección y
 // Defensa del Consumidor: al registrar un reclamo se le debe entregar constancia con el
 // código y la fecha de recepción.
-export async function sendComplaintConfirmation(to: string, name: string, claimCode: string, kind: string): Promise<boolean> {
+// La constancia lleva la COPIA DE LA HOJA (aprobado por el dueño el 2026-11-17): el
+// Reglamento pide que el consumidor reciba su hoja, no solo el código. Fecha y hora en Lima.
+export type HojaDeReclamo = {
+  createdAt: string; consumerDni: string; consumerAddress: string; consumerPhone: string;
+  isMinor: boolean; guardianName: string | null; orderRef: string | null; claimedAmount: number | null;
+  detail: string; consumerRequest: string;
+};
+export async function sendComplaintConfirmation(to: string, name: string, claimCode: string, kind: string, hoja: HojaDeReclamo): Promise<boolean> {
   const kindLabel = kind === "queja" ? "queja" : "reclamo";
+  const cuando = new Date(hoja.createdAt).toLocaleString("es-PE", { timeZone: "America/Lima", dateStyle: "long", timeStyle: "short" });
+  const fila = (k: string, v: string) => `<tr><td style="padding:4px 10px 4px 0;color:${C.oro};vertical-align:top;white-space:nowrap">${escHtml(k)}</td><td style="padding:4px 0;color:${C["text-body"]};white-space:pre-wrap">${escHtml(v)}</td></tr>`;
   const html = emailShell("LIBRO DE RECLAMACIONES", `
     <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">Hola ${escHtml(name)},</p>
     <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Registramos tu ${kindLabel}. Este es tu código:</p>
     <p style="font-size:28px;font-weight:900;color:${C.oro};letter-spacing:.05em;margin:16px 0">${claimCode}</p>
+    <p style="font-size:12px;color:${C["text-muted2"]};margin:18px 0 6px;letter-spacing:.1em">COPIA DE TU HOJA DE RECLAMACIÓN</p>
+    <table style="font-size:13px;line-height:1.5;border-collapse:collapse;width:100%">
+      ${fila("Proveedor", `${BUSINESS_LEGAL_NAME} · RUC ${BUSINESS_RUC}`)}
+      ${fila("Domicilio", BUSINESS_ADDRESS)}
+      ${fila("Fecha", cuando)}
+      ${fila("Tipo", kind === "queja" ? "Queja" : "Reclamo")}
+      ${fila("Consumidor", name)}
+      ${fila("DNI / CE", hoja.consumerDni)}
+      ${fila("Domicilio", hoja.consumerAddress)}
+      ${fila("Teléfono", hoja.consumerPhone)}
+      ${fila("Correo", to)}
+      ${hoja.isMinor && hoja.guardianName ? fila("Padre, madre o apoderado", hoja.guardianName) : ""}
+      ${fila("Pedido", hoja.orderRef || "No indicado")}
+      ${fila("Monto reclamado", hoja.claimedAmount !== null ? `S/${hoja.claimedAmount.toFixed(2)}` : "No indicado")}
+      ${fila("Detalle", hoja.detail)}
+      ${fila("Pedido del consumidor", hoja.consumerRequest)}
+    </table>
     <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">Conforme al Código de Protección y Defensa del Consumidor, responderemos dentro de los 15 días hábiles siguientes a la fecha de presentación. Conserva este código para hacer seguimiento.</p>
+    <p style="font-size:11px;color:${C["text-muted2"]};margin-top:10px">La formulación del reclamo no impide acudir a otras vías de solución de controversias ni es requisito previo para interponer una denuncia ante el INDECOPI.</p>
   `);
   return sendResend([to], `SND//WCH — Constancia de tu ${kindLabel} (${claimCode})`, html);
 }

@@ -49,6 +49,7 @@ const BIZ = {
   name: constante('BIZ_NAME'),
   ruc: constante('BIZ_RUC'),
   city: constante('BIZ_CITY'),
+  address: constante('BIZ_ADDRESS'),
   email: constante('BIZ_EMAIL'),
 };
 
@@ -116,6 +117,7 @@ const html = `<!doctype html>
 <div class="datos">
   <div><span>Proveedor · </span>${esc(BIZ.name)}</div>
   <div><span>RUC · </span>${esc(BIZ.ruc)}</div>
+  <div><span>Domicilio · </span>${esc(BIZ.address)}</div>
   <div><span>Cobertura · </span>Delivery en ${esc(BIZ.city)} (sin local de atención al público)</div>
   <div><span>Contacto · </span>${esc(BIZ.email)}</div>
 </div>

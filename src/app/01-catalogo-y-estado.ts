@@ -18,7 +18,7 @@ var SHADOW_GOLD=SHADOW_SM;
 // Protección y Defensa del Consumidor). Debe coincidir EXACTAMENTE con lo que el backend
 // tiene en env.ts (BUSINESS_LEGAL_NAME/BUSINESS_RUC) — ese es el que de verdad manda en
 // los correos de reclamos; esta copia es solo para pintar la UI.
-var BIZ_NAME='Ezra Kemish Vertiz Labarrera',BIZ_RUC='10736044523',BIZ_CITY='Trujillo, Perú',BIZ_EMAIL='contacto@sndwch.com',BIZ_IG='https://www.instagram.com/snd__wch/';
+var BIZ_NAME='Ezra Kemish Vertiz Labarrera',BIZ_RUC='10736044523',BIZ_CITY='Trujillo, Perú',BIZ_ADDRESS='Av. Prolongación César Vallejo 2670, Trujillo',BIZ_EMAIL='contacto@sndwch.com',BIZ_IG='https://www.instagram.com/snd__wch/';
 // El prefijo de moneda "S/" se muestra más chico que el monto — a tamaño completo
 // se confundía visualmente con un "5" pegado al número (ej. "S/22" leído como "5/22").
 var SOLES='<span style="font-size:.6em">S/</span>';
