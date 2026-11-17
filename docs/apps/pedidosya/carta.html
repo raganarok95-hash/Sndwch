@@ -7,52 +7,66 @@
 html,body{background:var(--crema)}
 .hoja{width:210mm;height:296mm;overflow:hidden;padding:9mm 14mm 8mm;color:var(--verde);font-family:Archivo,sans-serif;display:flex;flex-direction:column}
 header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--verde);padding-bottom:3mm}
-.logo{font-family:Anton,sans-serif;font-size:44px;letter-spacing:.02em;line-height:1;display:flex;align-items:center}
+.logo{font-family:Anton,sans-serif;font-size:38px;letter-spacing:.02em;line-height:1;display:flex;align-items:center}
 .wm-mark{display:inline-flex;gap:.16em;margin:0 .12em;align-items:center}
 .wm-mark i{display:block;width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px}
 .wm-mark i:first-child{background:var(--oro)}.wm-mark i:last-child{background:var(--celeste)}
 .cab{font-family:'IBM Plex Mono',monospace;font-size:11px;text-align:right;line-height:1.5;text-transform:uppercase;letter-spacing:.06em}
-h2{font-family:Anton,sans-serif;font-size:22px;letter-spacing:.04em;margin:4mm 0 1mm;display:flex;justify-content:space-between;align-items:baseline}
+h2{font-family:Anton,sans-serif;font-size:22px;letter-spacing:.04em;margin:2.5mm 0 .5mm;display:flex;justify-content:space-between;align-items:baseline}
 h2 .tam{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;display:flex;gap:0}
-h2 .tam span{width:24mm;text-align:right}
-.nota{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.04em;text-transform:uppercase;opacity:.75;margin-bottom:2mm}
-.item{display:flex;justify-content:space-between;gap:6mm;padding:2mm 0;border-bottom:1px solid rgba(30,57,50,.18)}
+h2 .tam span{text-align:right}
+.nota{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.04em;text-transform:uppercase;opacity:.75;margin-bottom:1mm}
+.item{display:flex;justify-content:space-between;gap:6mm;padding:1.3mm 0;border-bottom:1px solid rgba(30,57,50,.18)}
 .item:last-child{border-bottom:0}
-.nom{font-family:Anton,sans-serif;font-size:19px;letter-spacing:.03em;line-height:1.1}
+.nom{font-family:Anton,sans-serif;font-size:17px;letter-spacing:.03em;line-height:1.1}
 .sl{color:var(--oro);font-weight:400;margin:0 .15em}
-.fr{font-size:11px;line-height:1.35;margin-top:1mm}
-.ll{font-size:9.5px;line-height:1.4;margin-top:1mm;opacity:.8}
-.pr{display:flex;flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600}
-.pr span{width:24mm;text-align:right}
+.fr{font-size:10.5px;line-height:1.3;margin-top:.5mm}
+.ll{font-size:9px;line-height:1.3;margin-top:.5mm;opacity:.8}
+.pr{flex-shrink:0;white-space:nowrap;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600}
+.fila{display:flex;gap:3mm;align-items:flex-start}
+.n{font-style:normal;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:600;background:var(--verde);color:var(--crema);border-radius:999px;min-width:5.5mm;height:5.5mm;display:inline-flex;align-items:center;justify-content:center;margin-top:.8mm;flex-shrink:0}
+.chico{font-size:15px}
+.grid{display:grid;grid-template-columns:1fr 1fr;column-gap:8mm}
+.grid .item{border-bottom:1px solid rgba(30,57,50,.18)}
 footer{margin-top:auto;border-top:2px solid var(--verde);padding-top:3mm;font-family:'IBM Plex Mono',monospace;font-size:9px;line-height:1.5;display:flex;justify-content:space-between;gap:8mm}
 </style></head><body><div class="hoja">
 <header><div class="logo">SND<span class="wm-mark"><i></i><i></i></span>WCH</div>
-<div class="cab">Carta · Trujillo<br>Precios en soles</div></header>
-<h2>SIGNATURES <span class="tam"><span>15CM</span><span>30CM</span></span></h2>
-<p class="nota">Todos en pan Classic // White · 15CM: 85 g de proteína · 30CM: 170 g</p>
-<div class="item"><div><div class="nom">PHILLY CHEESESTEAK</div><p class="fr">El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo.</p><p class="ll">Lleva: res laminada · cebolla salteada · pimiento verde · queso cheddar.</p></div>
-<div class="pr"><span>S/ 20.90</span><span>S/ 32.90</span></div></div>
-<div class="item"><div><div class="nom">TURKEY</div><p class="fr">Pavo en lonjas finas, puestas en pliegues, con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta.</p><p class="ll">Lleva: pavo laminado · lechuga fresca · tomate fresco · cebolla morada juliana · pimiento verde · oil &amp; vinegar.</p></div>
-<div class="pr"><span>S/ 20.90</span><span>S/ 32.90</span></div></div>
-<div class="item"><div><div class="nom">TUNA MELT</div><p class="fr">Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco.</p><p class="ll">Lleva: atún house · queso cheddar.</p></div>
-<div class="pr"><span>S/ 20.90</span><span>S/ 32.90</span></div></div>
-<div class="item"><div><div class="nom">ITALIAN HOAGIE</div><p class="fr">Jamón ahumado, salame y pepperoni en pliegues, queso americano, verduras frescas y oil &amp; vinegar.</p><p class="ll">Lleva: embutido italiano · lechuga fresca · tomate fresco · cebolla morada juliana · pimiento verde · queso americano · oil &amp; vinegar.</p></div>
-<div class="pr"><span>S/ 20.90</span><span>S/ 32.90</span></div></div>
-<div class="item"><div><div class="nom">CLASSIC TUNA</div><p class="fr">Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca.</p><p class="ll">Lleva: atún house.</p></div>
-<div class="pr"><span>S/ 20.90</span><span>S/ 32.90</span></div></div>
+<div class="cab">Carta · Trujillo<br>20 productos · precios en soles</div></header>
+<h2>SIGNATURES 15CM <span class="tam"><span></span><span>85 G DE PROTEÍNA</span></span></h2>
+<p class="nota">Todos en pan Classic // White</p>
+<div class="item"><div class="fila"><i class="n">1</i><div><div class="nom">PHILLY CHEESESTEAK 15CM</div><p class="fr">El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo.</p><p class="ll">Lleva: res laminada · cebolla salteada · pimiento verde · queso cheddar.</p></div></div>
+<div class="pr">S/ 20.90</div></div>
+<div class="item"><div class="fila"><i class="n">2</i><div><div class="nom">TURKEY 15CM</div><p class="fr">Pavo en lonjas finas, puestas en pliegues, con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta.</p><p class="ll">Lleva: pavo laminado · lechuga fresca · tomate fresco · cebolla morada juliana · pimiento verde · oil &amp; vinegar.</p></div></div>
+<div class="pr">S/ 20.90</div></div>
+<div class="item"><div class="fila"><i class="n">3</i><div><div class="nom">TUNA MELT 15CM</div><p class="fr">Atún en lascas gruesas con mayonesa y pimienta blanca, bajo una capa de cheddar fundido que se estira al primer mordisco.</p><p class="ll">Lleva: atún house · queso cheddar.</p></div></div>
+<div class="pr">S/ 20.90</div></div>
+<div class="item"><div class="fila"><i class="n">4</i><div><div class="nom">ITALIAN HOAGIE 15CM</div><p class="fr">Jamón ahumado, salame y pepperoni en pliegues, queso americano, verduras frescas y oil &amp; vinegar.</p><p class="ll">Lleva: embutido italiano · lechuga fresca · tomate fresco · cebolla morada juliana · pimiento verde · queso americano · oil &amp; vinegar.</p></div></div>
+<div class="pr">S/ 20.90</div></div>
+<div class="item"><div class="fila"><i class="n">5</i><div><div class="nom">CLASSIC TUNA 15CM</div><p class="fr">Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca.</p><p class="ll">Lleva: atún house.</p></div></div>
+<div class="pr">S/ 20.90</div></div>
+<h2>SIGNATURES 30CM <span class="tam"><span></span><span>170 G DE PROTEÍNA · EL MISMO ARMADO</span></span></h2>
+<div class="grid"><div class="item"><div class="fila"><i class="n">6</i><div class="nom chico">PHILLY CHEESESTEAK 30CM</div></div><div class="pr">S/ 32.90</div></div>
+<div class="item"><div class="fila"><i class="n">7</i><div class="nom chico">TURKEY 30CM</div></div><div class="pr">S/ 32.90</div></div>
+<div class="item"><div class="fila"><i class="n">8</i><div class="nom chico">TUNA MELT 30CM</div></div><div class="pr">S/ 32.90</div></div>
+<div class="item"><div class="fila"><i class="n">9</i><div class="nom chico">ITALIAN HOAGIE 30CM</div></div><div class="pr">S/ 32.90</div></div>
+<div class="item"><div class="fila"><i class="n">10</i><div class="nom chico">CLASSIC TUNA 30CM</div></div><div class="pr">S/ 32.90</div></div></div>
 <h2>COMBOS <span class="tam"><span></span><span>15CM + BEBIDA</span></span></h2>
-<p class="nota">Un Signature de 15CM y la bebida que quieras · ahorras hasta S/ 1.00</p>
-<div class="item"><div><div class="nom">COMBO PHILLY CHEESESTEAK</div></div><div class="pr"><span></span><span>S/ 26.80</span></div></div>
-<div class="item"><div><div class="nom">COMBO TURKEY</div></div><div class="pr"><span></span><span>S/ 26.80</span></div></div>
-<div class="item"><div><div class="nom">COMBO TUNA MELT</div></div><div class="pr"><span></span><span>S/ 26.80</span></div></div>
-<div class="item"><div><div class="nom">COMBO ITALIAN HOAGIE</div></div><div class="pr"><span></span><span>S/ 26.80</span></div></div>
-<div class="item"><div><div class="nom">COMBO CLASSIC TUNA</div></div><div class="pr"><span></span><span>S/ 26.80</span></div></div>
+<p class="nota">Un Signature de 15CM y la bebida de 500 ml que quieras · ahorras desde S/ 1.00</p>
+<div class="grid"><div class="item"><div class="fila"><i class="n">11</i><div class="nom chico">COMBO PHILLY CHEESESTEAK</div></div><div class="pr">S/ 26.80</div></div>
+<div class="item"><div class="fila"><i class="n">12</i><div class="nom chico">COMBO TURKEY</div></div><div class="pr">S/ 26.80</div></div>
+<div class="item"><div class="fila"><i class="n">13</i><div class="nom chico">COMBO TUNA MELT</div></div><div class="pr">S/ 26.80</div></div>
+<div class="item"><div class="fila"><i class="n">14</i><div class="nom chico">COMBO ITALIAN HOAGIE</div></div><div class="pr">S/ 26.80</div></div>
+<div class="item"><div class="fila"><i class="n">15</i><div class="nom chico">COMBO CLASSIC TUNA</div></div><div class="pr">S/ 26.80</div></div></div>
 <h2>BEBIDAS <span class="tam"><span></span><span>500 ML</span></span></h2>
-<div class="item"><div><div class="nom">THE BLOOM<b class="sl">//</b>HIBISCUS</div><p class="fr">Flor de jamaica en infusión con un toque de canela, bien helada.</p></div>
-<div class="pr"><span></span><span>S/ 6.90</span></div></div>
-<div class="item"><div><div class="nom">COLD BREW<b class="sl">//</b>TEA</div><p class="fr">Té negro de hoja entera, reposado doce horas en frío.</p></div>
-<div class="pr"><span></span><span>S/ 5.90</span></div></div>
-<div class="item"><div><div class="nom">THE COOL<b class="sl">//</b>MINT</div><p class="fr">Hierba luisa y menta fresca en infusión helada.</p></div>
-<div class="pr"><span></span><span>S/ 6.90</span></div></div>
+<div class="grid"><div class="item"><div class="fila"><i class="n">16</i><div><div class="nom chico">THE BLOOM<b class="sl">//</b>HIBISCUS</div><p class="ll">Flor de jamaica en infusión con un toque de canela, bien helada.</p></div></div>
+<div class="pr">S/ 6.90</div></div>
+<div class="item"><div class="fila"><i class="n">17</i><div><div class="nom chico">COLD BREW<b class="sl">//</b>TEA</div><p class="ll">Té negro de hoja entera, reposado doce horas en frío.</p></div></div>
+<div class="pr">S/ 5.90</div></div>
+<div class="item"><div class="fila"><i class="n">18</i><div><div class="nom chico">THE COOL<b class="sl">//</b>MINT</div><p class="ll">Hierba luisa y menta fresca en infusión helada.</p></div></div>
+<div class="pr">S/ 6.90</div></div>
+<div class="item"><div class="fila"><i class="n">19</i><div><div class="nom chico">LEMON TEA</div><p class="ll">Té negro helado con limón: el té manda y el limón lo refresca.</p></div></div>
+<div class="pr">S/ 6.90</div></div>
+<div class="item"><div class="fila"><i class="n">20</i><div><div class="nom chico">THE CHAI</div><p class="ll">Chai especiado y aromático, bien helado.</p></div></div>
+<div class="pr">S/ 7.90</div></div></div>
 <footer><span>Delivery en Trujillo.</span><span>@snd__wch · sndwch.app</span></footer>
 </div></body></html>
