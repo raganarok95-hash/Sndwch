@@ -9,13 +9,13 @@ El vigía de las 22:13 cuenta las filas `abierta` y las pone en el correo de cie
 | id | desde | hilo | pregunta | estado | respuesta |
 |---|---|---|---|---|---|
 | Q01 | 2026-11-03 | app | Pegar el token de Instagram (empieza con «IG») como `INSTAGRAM_LOGIN_TOKEN` en Supabase | respondida | Ya está: verificado en la base el 2026-11-10 (token «IG», se renovó solo el 2026-11-08, vence el 2027-01-07). |
-| Q02 | 2026-11-03 | app | Pegar en Supabase el borrado de los 7 pedidos de prueba | abierta | |
-| Q03 | 2026-11-03 | operativo | A quién le compras la res, la carne molida, el pavo y el pan, y cuántos días tarda cada uno | abierta | |
+| Q02 | 2026-11-03 | app | Pegar en Supabase el borrado de los 7 pedidos de prueba | respondida | Ezra 2026-11-17: «si a todo». Lo borra App |
+| Q03 | 2026-11-03 | operativo | A quién le compras la res, la carne molida, el pavo y el pan, y cuántos días tarda cada uno | en parte | Ezra 2026-11-17: «Todos son proveedores por whatsapp». Falta: días de entrega |
 | Q04 | 2026-11-03 | operativo | ¿Ya llegaron las bolsas kraft y los sellos? | respondida | Ezra, 2026-11-11: «No llegaron ni kraft ni sellos. por eso por ahora quiero que generes igual lo que ibamos a hacer con los sellos, como stickers». Diseños hizo `sticker-sello-10x10cm`. |
 | Q05 | 2026-11-03 | operativo | Qué equipos ya tienes: congeladora, balanza, termómetro, pHmetro, refractómetro | abierta | |
 | Q06 | 2026-11-05 | operativo | El sí a la compra del primer fin de semana (lista en la carpeta del proyecto, `operacion/compras-apertura.md`) | respondida | Ezra, 2026-11-10: «Y sí dale luz verde a todo»; 2026-11-12: «todo debe ser como ya existe entonces laminado como ya venden». Pavo Braedt ya tajado. La compra la hace él. |
 | Q07 | 2026-11-03 | finanzas | Comisión real de PedidosYa, y si el 26% de Rappi es + IGV | en parte | Ezra 2026-11-12: «Me cobrarán 30% por pedidos» (PedidosYa, más un fijo al mes). Falta: si la de Rappi y la de PedidosYa llevan IGV. |
-| Q08 | 2026-11-02 | servicio | ¿Existe y revisas `contacto@sndwch.com`? Ahí llegan los reclamos | abierta | |
+| Q08 | 2026-11-02 | servicio | ¿Existe y revisas `contacto@sndwch.com`? Ahí llegan los reclamos | respondida | Ezra 2026-11-17: «si a todo» (existe y lo lee) |
 | Q09 | 2026-11-06 | recetas | Qué chimichurri con piña ganó la cata, A o B | respondida | Ezra 2026-11-12: «No lo haré sigamos con lo que los datos indican que es mejor». Queda A (piña 30%), la que cumple «dulce y ahumada de entrada» de la carta. |
 | Q10 | 2026-11-09 | disenos | Alto de la parte lisa de la botella de 500 ml (hacen falta 10.5 cm) | abierta | |
 | Q11 | 2026-11-09 | disenos | ¿La imprenta tiene tinta blanca? | abierta | |
@@ -26,5 +26,5 @@ El vigía de las 22:13 cuenta las filas `abierta` y las pone en el correo de cie
 | Q16 | 2026-11-11 | investigacion | ¿Cuáles de estas palabras dice la gente en Trujillo al hablar de su almuerzo o de un sánguche: bajonear/bajón, llenador, táper, combinado, menú, «al toque», buenazo, contundente? (no encontré fuente escrita; tu oído cuenta como fuente) | abierta | |
 | Q17 | 2026-11-13 | marketing | El caption del post 6 del perfil (Turkey) dice «pavo horneado», y la carta ya no lo dice. ¿Lo cambio en Instagram a «pavo en lonjas finas»? (editar un caption publicado) | abierta | |
 | Q18 | 2026-11-13 | app | La foto del Turkey en la app ya no es fiel (lonja gruesa, solo lechuga). ¿Foto real del Turkey de prueba (recomendado), la de Adobe Stock gratis con pan de molde, o busco una de pago? (opciones en /mnt/project-files/app/turkey-fotos-opciones.png; tarjeta en el hilo App) | respondida | Ezra, 2026-11-14, en la tarjeta: «La de pan de molde, ya». Publicada. |
-| Q19 | 2026-11-02 | servicio | Libro de Reclamaciones (texto legal, pide tu sí): poner el domicilio «Av. Prolongación César Vallejo 2670, Trujillo», la leyenda obligatoria de INDECOPI y la copia completa de la hoja en el correo de constancia (docs/servicio/PROPUESTA_APERTURA.md, punto A) | abierta | |
-| Q20 | 2026-11-02 | servicio | Avisar solo al cliente cuando su pedido va tarde, cargar el crédito en el mismo toque y una lista «Por devolver» en el panel (docs/servicio/PROPUESTA_APERTURA.md, puntos B y C) | abierta | |
+| Q19 | 2026-11-02 | servicio | Libro de Reclamaciones (texto legal, pide tu sí): poner el domicilio «Av. Prolongación César Vallejo 2670, Trujillo», la leyenda obligatoria de INDECOPI y la copia completa de la hoja en el correo de constancia (docs/servicio/PROPUESTA_APERTURA.md, punto A) | respondida | Ezra 2026-11-17: «si a todo». Lo hace Servicio |
+| Q20 | 2026-11-02 | servicio | Avisar solo al cliente cuando su pedido va tarde, cargar el crédito en el mismo toque y una lista «Por devolver» en el panel (docs/servicio/PROPUESTA_APERTURA.md, puntos B y C) | respondida | Ezra 2026-11-17: «si a todo». Lo hace Servicio |
