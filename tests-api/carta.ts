@@ -12,6 +12,7 @@ import {
   NO_DOUBLE_30_PROTS,
   NO_DOUBLE_PROTS,
   PROT_PRICE,
+  PROTS_PAUSADAS,
   RESERVE_SIGS,
   SIG_CONTENT,
   SIG_DATA,
@@ -48,7 +49,7 @@ export function signaturesRetirados(): string[] {
 /** Las proteínas que se pueden elegir en ARMA EL TUYO. */
 export function proteinasDelArmador(): string[] {
   return hay(
-    Object.keys(PROT_PRICE).filter((p) => !SIG_ONLY_PROTS.has(p) && !VAULT_ONLY_PROTS.has(p)),
+    Object.keys(PROT_PRICE).filter((p) => !SIG_ONLY_PROTS.has(p) && !VAULT_ONLY_PROTS.has(p) && !PROTS_PAUSADAS.has(p)),
     "ninguna proteína en el armador",
   );
 }
@@ -63,6 +64,11 @@ export function proteinasConDoble(): string[] {
 }
 
 /** Las que existen en el catálogo pero solo dentro de un Signature. */
+/** Las pausadas por ahora (vuelven): ni se arman ni se pide su Signature. Puede estar vacía. */
+export function proteinasPausadas(): string[] {
+  return [...PROTS_PAUSADAS];
+}
+
 export function proteinasSoloDeSignature(): string[] {
   return [...SIG_ONLY_PROTS];
 }

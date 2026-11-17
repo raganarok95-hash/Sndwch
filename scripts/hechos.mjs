@@ -34,17 +34,17 @@ const CABEZA = (titulo, que) => `# ${titulo}
 // ── CARTA ──────────────────────────────────────────────────────────────────────────────
 const sigs = CARTA.signatures.filter((s) => !s.secreto).sort((a, b) => a.orden - b.orden);
 const secreto = CARTA.signatures.find((s) => s.secreto);
-const armables = (xs) => xs.filter((x) => !x.soloSecreto && !x.soloEnSignature);
+const armables = (xs) => xs.filter((x) => !x.soloSecreto && !x.soloEnSignature && !x.pausado);
 let c = CABEZA('La carta', '`supabase/functions/_shared/carta.ts` (la semilla)');
 c += `
 Todo en soles. 15CM y 30CM son los dos tamaños. «Doble» es lo que suma pedir doble proteína.
 
-## Signatures (${sigs.length} en la carta pública)
+## Signatures (${sigs.filter((x) => !x.pausado).length} a la venta en la carta pública${sigs.some((x) => x.pausado) ? `; pausados por ahora: ${sigs.filter((x) => x.pausado).map((x) => x.nombre).join(', ')}` : ''})
 
 `;
 for (const s of sigs) {
   const p = P[s.prot];
-  c += `### ${s.nombre}${s.estrella ? ' ★ (la estrella: la que más deja por unidad)' : ''}
+  c += `### ${s.nombre}${s.pausado ? ' (PAUSADO: no se vende por ahora, vuelve)' : ''}${s.estrella ? ' ★ (la estrella: la que más deja por unidad)' : ''}
 - **Precio:** 15CM ${S(s.p15)} · 30CM ${S(s.p30)}${p && !p.sinDoble ? ` · doble proteína +${S(p.dbl15)} / +${S(p.dbl30)}` : ''}
 - **Receta:** pan ${nom(PA, s.pan)} · ${nom(P, s.prot)} · vegetales: ${lista(V, s.vegetales)} · salsas: ${lista(SA, s.salsas)} · queso: ${s.queso ? nom(Q, s.queso) + (s.quesoOpcional ? ' (opcional)' : '') : 'no lleva'}
 - **Cómo se vende:** ${s.pitch}
@@ -71,7 +71,7 @@ El precio lo pone la proteína (más el recargo del pan, si tiene). Vegetales y 
 |---|---|---|---|---|---|
 ${armables(CARTA.proteinas).map((p) => `| ${etiqueta(p)} | ${S(p.p15)} | ${S(p.p30)} | +${S(p.dbl15)} | +${S(p.dbl30)} | ${p.desc} |`).join('\n')}
 
-Proteínas que existen pero NO se eligen acá: ${CARTA.proteinas.filter((p) => p.soloSecreto || p.soloEnSignature).map((p) => `${etiqueta(p)} (${p.soloSecreto ? 'solo menú secreto' : 'solo dentro de su Signature'})`).join(', ') || '—'}.
+Proteínas que existen pero NO se eligen acá: ${CARTA.proteinas.filter((p) => p.soloSecreto || p.soloEnSignature || p.pausado).map((p) => `${etiqueta(p)} (${p.soloSecreto ? 'solo menú secreto' : p.pausado ? 'pausada por ahora, vuelve' : 'solo dentro de su Signature'})`).join(', ') || '—'}.
 
 **Vegetales:** ${armables(CARTA.vegetales).map((v) => `${etiqueta(v)} — ${v.desc}`).join(' · ')}
 

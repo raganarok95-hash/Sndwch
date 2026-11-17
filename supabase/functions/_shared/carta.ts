@@ -38,6 +38,8 @@ export type Proteina = {
   soloSecreto?: boolean;
   /** Vive en un Signature pero no se puede elegir en ARMA EL TUYO. */
   soloEnSignature?: boolean;
+  /** Fuera de la carta por ahora, pero vuelve: no se elige en ARMA EL TUYO. No se borra. */
+  pausado?: boolean;
   sinDoble?: boolean;
   sinDoble30?: boolean;
   foto?: string;
@@ -93,6 +95,8 @@ export type Signature = {
   estrella?: boolean;
   /** Menú secreto: se desbloquea con pedidos y su contenido real vive en `secret_signature`. */
   secreto?: { minPedidos: number };
+  /** Fuera de la carta por ahora, pero vuelve. La base manda (`catalog_items.active`); esto es la semilla. */
+  pausado?: boolean;
 };
 
 /**
@@ -149,7 +153,9 @@ export const CARTA: Carta = {
     { id: "P03", nombre: "Pollo", sabor: "Cajun", desc: "Pechuga deshilachada con la mezcla cajún de la casa. Calor seco, no picante de salsa.", p15: 13.9, p30: 23.9, dbl15: 6, dbl30: 11, soloSecreto: true },
     { id: "P04", nombre: "Atún", sabor: "House", desc: "En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.", p15: 19.9, p30: 30.9, dbl15: 10.9, dbl30: 21.9, foto: "img/prot_p04.webp" },
     { id: "P05", nombre: "Embutido", sabor: "Italiano", desc: "Jamón ahumado, salame y pepperoni, laminados finos y puestos en pliegues, nunca planos.", p15: 16.9, p30: 32.9, dbl15: 9.9, dbl30: 19.9, soloEnSignature: true, foto: "img/prot_p05.webp" },
-    { id: "P06", nombre: "Albóndiga", sabor: "Marinara", desc: "Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.", p15: 19.9, p30: 30.9, dbl15: 6.9, dbl30: 13.9, foto: "img/prot_p06.webp" },
+    { id: "P06", nombre: "Albóndiga", sabor: "Marinara", desc: "Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.", p15: 19.9, p30: 30.9, dbl15: 6.9, dbl30: 13.9, foto: "img/prot_p06.webp",
+      // Pausada (dueño, 2026-11-17: «Por las primeras semanas quitemos de disponibilidad las albóndigas»).
+      pausado: true },
     { id: "P08", nombre: "Pavo", sabor: "Laminado", desc: "Lonjas finas puestas en pliegues, nunca planas.", p15: 19.9, p30: 30.9, dbl15: 9, dbl30: 17, foto: "img/prot_p08.webp" },
     { id: "P09", nombre: "Res", sabor: "Laminada", desc: "Laminada fina y salteada al momento.", p15: 19.9, p30: 30.9, dbl15: 7, dbl30: 13.9, foto: "img/prot_p09.webp" },
   ],
@@ -192,6 +198,8 @@ export const CARTA: Carta = {
     { id: "SIG09", nombre: "Philly Cheesesteak", tipo: "Signature", orden: 1, estrella: true, pan: "B01", prot: "P09", vegetales: ["T10", "T06"], salsas: [], p15: 19.9, p30: 30.9, queso: "C02", foto: "img/sig09.jpg", fotoVertical: "img/sig09_v.webp",
       pitch: "El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. Tan jugoso que no lleva salsa. Es el que pides cuando el hambre va en serio." },
     { id: "SIG02", nombre: "Meatball Marinara", tipo: "Signature", orden: 2, pan: "B01", prot: "P06", vegetales: [], salsas: [], p15: 19.9, p30: 30.9, queso: "C01", foto: "img/sig02.jpg", fotoVertical: "img/sig02_v.webp",
+      // Pausado con su albóndiga (dueño, 2026-11-17). Vuelve: no se borra.
+      pausado: true,
       pitch: "Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. Caliente, contundente, de los que se comen con las dos manos. Para la noche en que ya decidiste no cocinar." },
     { id: "SIG10", nombre: "Turkey", tipo: "Signature", orden: 3, pan: "B01", prot: "P08", vegetales: ["T09", "T01", "T03", "T06"], salsas: ["S06"], p15: 19.9, p30: 30.9, foto: "img/sig10.jpg", fotoVertical: "img/sig10_v.webp",
       pitch: "Pavo en lonjas finas, puestas en pliegues, con lechuga, tomate, cebolla y pimiento bien frescos, y un toque de aceite y vinagre que lo despierta. Llena sin pesar: el almuerzo que no te tumba la tarde." },
@@ -216,9 +224,9 @@ export function etiqueta(x: { nombre: string; sabor?: string; tipo?: string }): 
   return segunda ? `${x.nombre} // ${segunda}` : x.nombre;
 }
 
-/** Signatures públicos (sin el secreto), en el orden de la carta. */
+/** Signatures públicos que se venden hoy (sin el secreto ni los pausados), en el orden de la carta. */
 export function signaturesDeLaCarta(c: Carta = CARTA): Signature[] {
-  return c.signatures.filter((s) => !s.secreto).sort((a, b) => a.orden - b.orden);
+  return c.signatures.filter((s) => !s.secreto && !s.pausado).sort((a, b) => a.orden - b.orden);
 }
 
 /** El Signature del menú secreto, si la carta tiene uno. */

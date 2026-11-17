@@ -24,7 +24,7 @@ export const SECRETO: string = ID_SECRETO;
 export const unPanSinRecargo = vuelta(CARTA.panes.filter((p) => !p.recargo), 'un pan sin recargo');
 export const unPanConRecargo = vuelta(CARTA.panes.filter((p) => p.recargo), 'un pan con recargo');
 
-const delArmador = (x: { soloEnSignature?: boolean; soloSecreto?: boolean }) => !x.soloEnSignature && !x.soloSecreto;
+const delArmador = (x: { soloEnSignature?: boolean; soloSecreto?: boolean; pausado?: boolean }) => !x.soloEnSignature && !x.soloSecreto && !x.pausado;
 /** Proteína, vegetal y salsa que el cliente puede elegir en ARMA EL TUYO. */
 export const unaProteinaDelArmador = vuelta(CARTA.proteinas.filter(delArmador), 'proteínas del armador');
 export const unVegetalDelArmador = vuelta(CARTA.vegetales.filter(delArmador), 'vegetales del armador');

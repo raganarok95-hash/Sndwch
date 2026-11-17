@@ -289,6 +289,8 @@ export const SIG_ONLY_TOPS = new Set<string>(idsDe(CARTA.vegetales, (x) => !!x.s
 // es devolver P01 acá.
 // Carta v4 (2026-09-24): P05 queda solo para el Italian Hoagie. P01 y P02 se retiraron enteras.
 export const SIG_ONLY_PROTS = new Set<string>(idsDe(CARTA.proteinas, (x) => !!x.soloEnSignature));
+// Pausadas (fuera de la carta por ahora, vuelven): no se arman. Hoy, la albóndiga (2026-11-17).
+export const PROTS_PAUSADAS = new Set<string>(idsDe(CARTA.proteinas, (x) => !!x.pausado));
 // Signatures de menú secreto/premium ("RESERVE" en el tag del cliente) — excluidas de
 // R06 ("SÁNDWICH 15CM // GRATIS") para que esa recompensa no pueda gamearse eligiendo el
 // Signature más caro disponible (SIG05, el menú secreto, S/24.90) muy por encima del
@@ -315,7 +317,8 @@ export function dblFee(pr: { pDbl: number; pDbl30: number } | undefined, size: "
 // su fila vive en `catalog_items` con active=false (loadCatalogItems la carga y priceSigBuild
 // rechaza pedirlos). Sin badges (decisión del dueño).
 export const SIG_CONTENT: Record<string, { n: string; s: string; badge: string; pitch: string; img: string | null; active: boolean }> = Object.fromEntries(
-  signaturesDeLaCarta().map((x) => [x.id, { n: x.nombre, s: x.tipo, badge: "", pitch: "", img: x.foto ?? null, active: true }]),
+  // Los pausados también entran (con active=false): si la base no responde, siguen sin poder pedirse.
+  CARTA.signatures.filter((x) => !x.secreto).map((x) => [x.id, { n: x.nombre, s: x.tipo, badge: "", pitch: "", img: x.foto ?? null, active: !x.pausado }]),
 );
 export const SIG_DATA: Record<string, { base: string; prot: string; tops: string[]; sauces: string[]; p15: number; p30: number; cheeseOptional?: boolean; fixedCheese?: string; sinEnvio?: boolean }> = Object.fromEntries(
   CARTA.signatures.map((x) => [x.id, {
@@ -652,7 +655,7 @@ function priceByoBuild(
 ): PricedBuild {
   if (!VALID_BASES.has(base)) throw new ApiError("Pan inválido.");
   const protInfo = PROT_PRICE[prot];
-  if (!protInfo || VAULT_ONLY_PROTS.has(prot) || SIG_ONLY_PROTS.has(prot)) throw new ApiError("Proteína inválida.");
+  if (!protInfo || VAULT_ONLY_PROTS.has(prot) || SIG_ONLY_PROTS.has(prot) || PROTS_PAUSADAS.has(prot)) throw new ApiError("Proteína inválida.");
   if (cheese && !VALID_CHEESE.has(cheese)) throw new ApiError("Queso inválido.");
   // A diferencia de sauces (tope de 3), toppings no tiene tope de negocio ("Sin límite,
   // elige los que quieras" en el builder) — el tope real es "cada topping válido, como

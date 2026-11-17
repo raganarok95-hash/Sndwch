@@ -1345,3 +1345,9 @@ vieron fallar con «nada invita» y con «ignora el día sin confirmar».
 
 El mismo día el dueño dijo **que no** a «Avísame cuando abran» en la app: «nadie llega desde
 Instagram».
+
+## Albóndigas pausadas al abrir (2026-11-17)
+
+Dueño: «Por las primeras semanas quitemos de disponibilidad las albóndigas». Se pausan, no se borran: P06 y SIG02
+llevan `pausado: true` en `_shared/carta.ts` y SIG02 está con `active=false` en `catalog_items`. Vuelven quitando
+la marca y activando SIG02 desde el panel el mismo día. Detalle en `docs/sesiones/2026-11-17.md`.

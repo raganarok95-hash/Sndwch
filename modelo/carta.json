@@ -107,7 +107,8 @@
       "p30": 30.9,
       "dbl15": 6.9,
       "dbl30": 13.9,
-      "foto": "img/prot_p06.webp"
+      "foto": "img/prot_p06.webp",
+      "pausado": true
     },
     {
       "id": "P08",
@@ -315,6 +316,7 @@
       "queso": "C01",
       "foto": "img/sig02.jpg",
       "fotoVertical": "img/sig02_v.webp",
+      "pausado": true,
       "pitch": "Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. Caliente, contundente, de los que se comen con las dos manos. Para la noche en que ya decidiste no cocinar."
     },
     {
