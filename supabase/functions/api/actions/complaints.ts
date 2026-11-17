@@ -69,7 +69,10 @@ export async function actSubmitComplaint(b: Entrada<"submit-complaint"> & { _ip?
   await sbUpdate("complaints", `id=eq.${row.id}`, { claim_code: claimCode });
 
   await Promise.all([
-    sendComplaintConfirmation(consumerEmail, consumerName, claimCode, kind),
+    sendComplaintConfirmation(consumerEmail, consumerName, claimCode, kind, {
+      createdAt: row.created_at, consumerDni, consumerAddress, consumerPhone, isMinor, guardianName,
+      orderRef: row.order_ref ?? null, claimedAmount, detail: detail.slice(0, 2000), consumerRequest: consumerRequest.slice(0, 1000),
+    }),
     sendComplaintNotification(claimCode, kind, consumerName, consumerEmail, consumerPhone, detail, consumerRequest),
   ]);
   // Aviso al dueño por push (o, sin celular suscrito, al correo de las cuentas admin; ver

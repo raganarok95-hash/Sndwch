@@ -1,6 +1,6 @@
 // SND//WCH — api / email
 // Envío del PIN de recuperación de cuenta por correo (Resend).
-import { RESEND_API_KEY, FROM_EMAIL, CONTACT_EMAIL, BUSINESS_LEGAL_NAME, SITE_URL, BUSINESS_WHATSAPP } from "./env.ts";
+import { RESEND_API_KEY, FROM_EMAIL, CONTACT_EMAIL, BUSINESS_LEGAL_NAME, BUSINESS_RUC, BUSINESS_ADDRESS, SITE_URL, BUSINESS_WHATSAPP } from "./env.ts";
 import { emailShell, escHtml } from "../_shared/email-shell.ts";
 import { PALETA as C } from "../_shared/paleta.ts";
 export function maskEmail(email: string): string {
@@ -99,14 +99,14 @@ export async function sendOrderStatusEmail(to: string, name: string, ref: string
 // sin saber que se le devuelve. `pagado` = el pedido ya estaba pagado al cancelarse (el panel
 // exige confirmar el reembolso antes de dejar cancelar uno así).
 export async function sendOrderCancelledEmail(
-  to: string, name: string, ref: string, motivo: "admin" | "pago-no-confirmado", pagado: boolean,
+  to: string, name: string, ref: string, motivo: "admin" | "pago-no-confirmado", pagado: boolean, conCredito: boolean,
 ): Promise<boolean> {
   const porque = motivo === "pago-no-confirmado"
     ? "No pudimos confirmar tu pago a tiempo, así que el pedido se canceló solo. Si sí pagaste, mándanos la captura por WhatsApp y lo vemos."
     : "Tuvimos que cancelarlo de nuestro lado. Lo sentimos.";
-  const plata = pagado
-    ? `<p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Como ya estaba pagado, te devolvemos el dinero por el mismo medio. Te escribimos para coordinarlo.</p>`
-    : "";
+  const plata = !pagado ? "" : conCredito
+    ? `<p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Lo pagaste con tu crédito de la app: ya te lo devolvimos ahí.</p>`
+    : `<p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Como ya estaba pagado, te devolvemos el dinero por el mismo medio. Te escribimos para coordinarlo.</p>`;
   const html = emailShell("TU PEDIDO FUE CANCELADO //", `
     <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">Hola ${escHtml(name)},</p>
     <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Tu pedido <b style="color:${C.text}">${escHtml(ref)}</b> fue cancelado. ${escHtml(porque)}</p>
@@ -114,6 +114,17 @@ export async function sendOrderCancelledEmail(
     <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">¿Dudas? Escríbenos por WhatsApp al ${escHtml(BUSINESS_WHATSAPP)}.</p>
   `);
   return sendResend([to], `SND//WCH — Tu pedido fue cancelado (${ref})`, html);
+}
+
+// El aviso de demora al cliente (dueño, 2026-11-17). El texto sale de avisoDeDemora (orders.ts).
+export async function sendOrderLateEmail(to: string, name: string, ref: string, texto: string): Promise<boolean> {
+  const html = emailShell("TU PEDIDO VA UN POCO TARDE //", `
+    <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">Hola ${escHtml(name)},</p>
+    <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">${escHtml(texto)}</p>
+    <p style="margin:20px 0"><a href="${SITE_URL}/?pedido=${encodeURIComponent(ref)}" style="display:inline-block;background:${C.oro};color:#1a1200;font-weight:800;font-size:15px;text-decoration:none;padding:12px 18px;border-radius:10px">Ver mi pedido</a></p>
+    <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">¿Algo más? Escríbenos por WhatsApp al ${escHtml(BUSINESS_WHATSAPP)}.</p>
+  `);
+  return sendResend([to], `SND//WCH — Tu pedido va un poco tarde (${ref})`, html);
 }
 
 // La respuesta a «Algo salió mal», también por correo (2026-11-02): antes solo iba por push,
@@ -134,13 +145,40 @@ export async function sendOrderProblemResolvedEmail(
 // Copia del reclamo/queja para el consumidor — exigido por el Código de Protección y
 // Defensa del Consumidor: al registrar un reclamo se le debe entregar constancia con el
 // código y la fecha de recepción.
-export async function sendComplaintConfirmation(to: string, name: string, claimCode: string, kind: string): Promise<boolean> {
+// La constancia lleva la COPIA DE LA HOJA (aprobado por el dueño el 2026-11-17): el
+// Reglamento pide que el consumidor reciba su hoja, no solo el código. Fecha y hora en Lima.
+export type HojaDeReclamo = {
+  createdAt: string; consumerDni: string; consumerAddress: string; consumerPhone: string;
+  isMinor: boolean; guardianName: string | null; orderRef: string | null; claimedAmount: number | null;
+  detail: string; consumerRequest: string;
+};
+export async function sendComplaintConfirmation(to: string, name: string, claimCode: string, kind: string, hoja: HojaDeReclamo): Promise<boolean> {
   const kindLabel = kind === "queja" ? "queja" : "reclamo";
+  const cuando = new Date(hoja.createdAt).toLocaleString("es-PE", { timeZone: "America/Lima", dateStyle: "long", timeStyle: "short" });
+  const fila = (k: string, v: string) => `<tr><td style="padding:4px 10px 4px 0;color:${C.oro};vertical-align:top;white-space:nowrap">${escHtml(k)}</td><td style="padding:4px 0;color:${C["text-body"]};white-space:pre-wrap">${escHtml(v)}</td></tr>`;
   const html = emailShell("LIBRO DE RECLAMACIONES", `
     <p style="font-size:14px;color:${C["text-body"]};line-height:1.6">Hola ${escHtml(name)},</p>
     <p style="font-size:14px;color:${C["text-muted"]};line-height:1.6">Registramos tu ${kindLabel}. Este es tu código:</p>
     <p style="font-size:28px;font-weight:900;color:${C.oro};letter-spacing:.05em;margin:16px 0">${claimCode}</p>
+    <p style="font-size:12px;color:${C["text-muted2"]};margin:18px 0 6px;letter-spacing:.1em">COPIA DE TU HOJA DE RECLAMACIÓN</p>
+    <table style="font-size:13px;line-height:1.5;border-collapse:collapse;width:100%">
+      ${fila("Proveedor", `${BUSINESS_LEGAL_NAME} · RUC ${BUSINESS_RUC}`)}
+      ${fila("Domicilio", BUSINESS_ADDRESS)}
+      ${fila("Fecha", cuando)}
+      ${fila("Tipo", kind === "queja" ? "Queja" : "Reclamo")}
+      ${fila("Consumidor", name)}
+      ${fila("DNI / CE", hoja.consumerDni)}
+      ${fila("Domicilio", hoja.consumerAddress)}
+      ${fila("Teléfono", hoja.consumerPhone)}
+      ${fila("Correo", to)}
+      ${hoja.isMinor && hoja.guardianName ? fila("Padre, madre o apoderado", hoja.guardianName) : ""}
+      ${fila("Pedido", hoja.orderRef || "No indicado")}
+      ${fila("Monto reclamado", hoja.claimedAmount !== null ? `S/${hoja.claimedAmount.toFixed(2)}` : "No indicado")}
+      ${fila("Detalle", hoja.detail)}
+      ${fila("Pedido del consumidor", hoja.consumerRequest)}
+    </table>
     <p style="font-size:12px;color:${C["text-muted2"]};margin-top:20px">Conforme al Código de Protección y Defensa del Consumidor, responderemos dentro de los 15 días hábiles siguientes a la fecha de presentación. Conserva este código para hacer seguimiento.</p>
+    <p style="font-size:11px;color:${C["text-muted2"]};margin-top:10px">La formulación del reclamo no impide acudir a otras vías de solución de controversias ni es requisito previo para interponer una denuncia ante el INDECOPI.</p>
   `);
   return sendResend([to], `SND//WCH — Constancia de tu ${kindLabel} (${claimCode})`, html);
 }

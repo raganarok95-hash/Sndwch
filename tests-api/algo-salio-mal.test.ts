@@ -11,7 +11,7 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
     throw new Error(msg ?? `esperaba ${JSON.stringify(expected)}, recibí ${JSON.stringify(actual)}`);
   }
 }
-import { puedeReportar, respondeAntesDe, REPORTE_PLAZO_HORAS } from "../supabase/functions/api/actions/problems.ts";
+import { puedeReportar, respondeAntesDe, REPORTE_PLAZO_HORAS, montoDeLaSolucion } from "../supabase/functions/api/actions/problems.ts";
 
 const H = 3600000;
 const ENTREGA = Date.parse("2026-10-09T01:00:00Z"); // 8:00 p.m. en Lima
@@ -53,4 +53,21 @@ Deno.test("la hora prometida nunca queda en el pasado", () => {
     const ahora = Date.parse("2026-10-08T05:00:00Z") + h * H;
     assertEquals(Date.parse(respondeAntesDe(ahora)) > ahora, true, `a las ${h}:00 de Lima`);
   }
+});
+
+// El crédito o reembolso de «Algo salió mal» (2026-11-17) se carga solo: un monto mal leído es
+// plata que sale sin que nadie lo note.
+Deno.test("sin monto escrito, se acredita o devuelve el total del pedido", () => {
+  assertEquals(montoDeLaSolucion("", 24.9), 24.9);
+  assertEquals(montoDeLaSolucion(undefined, 24.9), 24.9);
+});
+Deno.test("acepta coma decimal y redondea a céntimos", () => {
+  assertEquals(montoDeLaSolucion("4,50", 24.9), 4.5);
+  assertEquals(montoDeLaSolucion("4.505", 24.9), 4.51);
+});
+Deno.test("nunca más que lo pagado, ni cero, ni negativo, ni texto", () => {
+  assertEquals(montoDeLaSolucion("25", 24.9), null);
+  assertEquals(montoDeLaSolucion("0", 24.9), null);
+  assertEquals(montoDeLaSolucion("-3", 24.9), null);
+  assertEquals(montoDeLaSolucion("abc", 24.9), null);
 });
