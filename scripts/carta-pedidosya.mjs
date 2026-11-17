@@ -13,6 +13,13 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { CARTA, PORCION_PROTEINA_G, signaturesDeLaCarta } from '../supabase/functions/_shared/carta.ts';
 import { RECARGO_APPS } from '../supabase/functions/_shared/reglas.ts';
+import { REGLAS } from '../supabase/functions/_shared/dinero.ts';
+
+// PAUSADOS (Ezra, 2026-11-17: «Por las primeras semanas quitemos de disponibilidad las albóndigas»).
+// Se sacan por id; cuando vuelvan, se borra de esta lista.
+const PAUSADOS = ['SIG02'];
+// COMBOS (2026-11-17): PedidosYa pide 15 productos como mínimo. Cada Signature de 15CM con una bebida a
+// elección, con el mismo descuento por par de la web (REGLAS.comboPorPar). --sin-combos los quita.
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(RAIZ, 'docs/apps/pedidosya');
@@ -41,7 +48,7 @@ function lleva(s) {
   return partes;
 }
 
-const sigs = signaturesDeLaCarta().map((s) => ({
+const sigs = signaturesDeLaCarta().filter((s) => !PAUSADOS.includes(s.id)).map((s) => ({
   nombre: s.nombre.toUpperCase(),
   pan: `${B[s.pan].nombre} // ${B[s.pan].sabor}`,
   lleva: lleva(s),
@@ -50,6 +57,9 @@ const sigs = signaturesDeLaCarta().map((s) => ({
   p30: FIJO ? FIJO[1] : app(s.p30),
 }));
 const bebidas = CARTA.bebidas.map((b) => ({ nombre: `${b.nombre} // ${b.sabor}`.toUpperCase(), desc: b.desc.split(/(?<=\.)\s/)[0], precio: BEB ? BEB[CARTA.bebidas.indexOf(b)] : app(b.precio) }));
+const CON_COMBOS = !process.argv.includes('--sin-combos');
+const bebMax = Math.max(...bebidas.map((b) => b.precio));
+const combos = CON_COMBOS ? sigs.map((s) => ({ nombre: `COMBO ${s.nombre}`, precio: Math.round((s.p15 + bebMax - REGLAS.comboPorPar) * 100) / 100 })) : [];
 const panes = [...new Set(sigs.map((s) => s.pan))];
 
 const esc = (t) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;');
@@ -62,18 +72,18 @@ const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--verde:#1E3932;--oro:#CBA258;--crema:#F2F0EB;--celeste:#8CC8EC}
 html,body{background:var(--crema)}
-.hoja{width:210mm;height:297mm;padding:13mm 14mm 11mm;color:var(--verde);font-family:Archivo,sans-serif;display:flex;flex-direction:column}
-header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--verde);padding-bottom:5mm}
+.hoja{width:210mm;height:296mm;overflow:hidden;padding:9mm 14mm 8mm;color:var(--verde);font-family:Archivo,sans-serif;display:flex;flex-direction:column}
+header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--verde);padding-bottom:3mm}
 .logo{font-family:Anton,sans-serif;font-size:44px;letter-spacing:.02em;line-height:1;display:flex;align-items:center}
 .wm-mark{display:inline-flex;gap:.16em;margin:0 .12em;align-items:center}
 .wm-mark i{display:block;width:.10em;height:.88em;transform:skewX(-16deg);border-radius:1px}
 .wm-mark i:first-child{background:var(--oro)}.wm-mark i:last-child{background:var(--celeste)}
 .cab{font-family:'IBM Plex Mono',monospace;font-size:11px;text-align:right;line-height:1.5;text-transform:uppercase;letter-spacing:.06em}
-h2{font-family:Anton,sans-serif;font-size:22px;letter-spacing:.04em;margin:6mm 0 1mm;display:flex;justify-content:space-between;align-items:baseline}
+h2{font-family:Anton,sans-serif;font-size:22px;letter-spacing:.04em;margin:4mm 0 1mm;display:flex;justify-content:space-between;align-items:baseline}
 h2 .tam{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;display:flex;gap:0}
 h2 .tam span{width:24mm;text-align:right}
 .nota{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.04em;text-transform:uppercase;opacity:.75;margin-bottom:2mm}
-.item{display:flex;justify-content:space-between;gap:6mm;padding:3.1mm 0;border-bottom:1px solid rgba(30,57,50,.18)}
+.item{display:flex;justify-content:space-between;gap:6mm;padding:2mm 0;border-bottom:1px solid rgba(30,57,50,.18)}
 .item:last-child{border-bottom:0}
 .nom{font-family:Anton,sans-serif;font-size:19px;letter-spacing:.03em;line-height:1.1}
 .sl{color:var(--oro);font-weight:400;margin:0 .15em}
@@ -89,6 +99,9 @@ footer{margin-top:auto;border-top:2px solid var(--verde);padding-top:3mm;font-fa
 <p class="nota">Todos en pan ${esc(panes.join(' · '))} · 15CM: ${PORCION_PROTEINA_G.p15} g de proteína · 30CM: ${PORCION_PROTEINA_G.p30} g</p>
 ${sigs.map((s) => `<div class="item"><div><div class="nom">${esc(s.nombre)}</div><p class="fr">${esc(s.frase)}</p><p class="ll">Lleva: ${esc(s.lleva.join(' · '))}.</p></div>
 <div class="pr"><span>${sol(s.p15)}</span><span>${sol(s.p30)}</span></div></div>`).join('\n')}
+${combos.length ? `<h2>COMBOS <span class="tam"><span></span><span>15CM + BEBIDA</span></span></h2>
+<p class="nota">Un Signature de 15CM y la bebida que quieras · ahorras hasta S/ ${REGLAS.comboPorPar.toFixed(2)}</p>
+${combos.map((c) => `<div class="item"><div><div class="nom">${esc(c.nombre)}</div></div><div class="pr"><span></span><span>${sol(c.precio)}</span></div></div>`).join('\n')}` : ''}
 <h2>BEBIDAS <span class="tam"><span></span><span>500 ML</span></span></h2>
 ${bebidas.map((b) => `<div class="item"><div><div class="nom">${marca(b.nombre)}</div><p class="fr">${esc(b.desc)}</p></div>
 <div class="pr"><span></span><span>${sol(b.precio)}</span></div></div>`).join('\n')}
@@ -99,6 +112,7 @@ writeFileSync(join(OUT, 'carta.html'), html);
 const csv = [['categoria', 'producto', 'descripcion', 'precio'].join(';')];
 for (const s of sigs) for (const [t, p] of [['15CM', s.p15], ['30CM', s.p30]])
   csv.push(['Signatures', `${s.nombre} ${t}`, `${t} · ${t === '15CM' ? PORCION_PROTEINA_G.p15 : PORCION_PROTEINA_G.p30} g de proteína. ${s.frase} Lleva: ${s.lleva.join(', ')}.`, p.toFixed(2)].join(';'));
+for (const c of combos) csv.push(['Combos', c.nombre, `${c.nombre.replace('COMBO ', '')} de 15CM y una bebida de 500 ml a elección (${bebidas.map((b) => b.nombre).join(', ')}).`, c.precio.toFixed(2)].join(';'));
 for (const b of bebidas) csv.push(['Bebidas', `${b.nombre} 500 ML`, b.desc, b.precio.toFixed(2)].join(';'));
 writeFileSync(join(OUT, 'carta.csv'), '﻿' + csv.join('\n') + '\n');
 
@@ -114,4 +128,4 @@ if (i > 0) {
   await pg.screenshot({ path: join(dest, 'carta.png'), fullPage: true });
   await br.close();
 }
-console.log(`carta lista: ${sigs.length} Signatures, ${bebidas.length} bebidas (${FIJO ? `precio fijo ${FIJO.join(' / ')}` : `precio de app = web + ${Math.round(RECARGO_APPS * 100)}%`})`);
+console.log(`carta lista: ${sigs.length * 2 + combos.length + bebidas.length} productos (${sigs.length} Signatures x2, ${combos.length} combos, ${bebidas.length} bebidas) (${FIJO ? `precio fijo ${FIJO.join(' / ')}` : `precio de app = web + ${Math.round(RECARGO_APPS * 100)}%`})`);
