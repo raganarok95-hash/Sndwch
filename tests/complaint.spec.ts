@@ -94,6 +94,9 @@ test('con cuenta, los datos llegan llenos en la tarjeta y se envían los de la c
     'submit-complaint': { success: true, claimCode: 'REC-2026-000125' },
   });
   await entrarConTelefono(page, '987000111');
+  // El login termina después del clic y lleva a la cuenta: si el libro se abre antes, esa
+  // navegación lo tapa. Se espera la sesión (el efecto), no un texto.
+  await page.waitForFunction(() => { const w = window as any; return !!w.cust && !!w.token && !w.busy; });
   await abrirLibro(page);
 
   await expect(page.locator('[data-accion="libro-cambiar-datos"]')).toBeVisible();

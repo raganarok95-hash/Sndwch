@@ -127,6 +127,14 @@ export async function actAdminManualCredit(b: Entrada<"admin-manual-credit"> & {
   if (!phone || !delta || !isFinite(delta)) throw new ApiError("Ingresa teléfono y un monto válido (puede ser negativo).");
   const rows = await sbGet("customers", `phone=eq.${encodeURIComponent(phone)}&select=name`);
   if (!rows.length) throw new ApiError("Cliente no encontrado: " + phone, 404);
+  const updated = await ajustarCredito(phone, delta, "Ajuste manual (admin)");
+  await logAdminAction(s.phone, "manual-credit", phone, { delta });
+  return { success: true, name: rows[0].name, newBalance: updated.credit_balance };
+}
+
+// Mueve el crédito de un cliente y lo anota en el libro: el saldo y su renglón, siempre juntos.
+// Lo usan el crédito manual y «Algo salió mal» resuelto con crédito (problems.ts).
+export async function ajustarCredito(phone: string, delta: number, reason: string): Promise<any> {
   let updated: any;
   try {
     updated = await rpc("admin_adjust_credit", { p_phone: phone, p_delta: delta });
@@ -134,15 +142,13 @@ export async function actAdminManualCredit(b: Entrada<"admin-manual-credit"> & {
     if (e instanceof Error && e.message.includes("insufficient_balance")) {
       throw new ApiError("Ese descuento dejaría el saldo del cliente en negativo.", 409);
     }
+    if (e instanceof Error && e.message.includes("customer_not_found")) {
+      throw new ApiError("Ese cliente no tiene cuenta: no se le puede dejar crédito.", 404);
+    }
     throw e;
   }
-  await sbInsert("credit_ledger", {
-    customer_phone: phone,
-    delta,
-    reason: "Ajuste manual (admin)",
-  });
-  await logAdminAction(s.phone, "manual-credit", phone, { delta });
-  return { success: true, name: rows[0].name, newBalance: updated.credit_balance };
+  await sbInsert("credit_ledger", { customer_phone: phone, delta, reason });
+  return updated;
 }
 
 export async function actAdminAccountsList(b: Entrada<"admin-accounts-list"> & { _ip?: string }) {

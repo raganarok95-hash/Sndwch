@@ -19,7 +19,7 @@ import { sendPushToPhone, sendPushToAdmins, STATUS_PUSH_MESSAGES, etaWindowText 
 import { sendPurchaseEvent } from "../meta-capi.ts";
 import { storePausedUntil, promosKilled, pedidoCabeEnPausa } from "./hours.ts";
 import { horaLimaHHMM } from "../franja.ts";
-import { sendOrderConfirmationEmail, sendOrderStatusEmail, sendOrderCancelledEmail } from "../email.ts";
+import { sendOrderConfirmationEmail, sendOrderStatusEmail, sendOrderCancelledEmail, sendOrderLateEmail } from "../email.ts";
 import { logAdminAction, debugLog } from "../logging.ts";
 import { cargasPorHora, horaLlena, fijoPropio } from "../capacidad.ts";
 import { ID_SECRETO } from "../../_shared/carta.ts";
@@ -2756,10 +2756,26 @@ export async function actAdminCancelOrder(b: Entrada<"admin-cancel-order"> & { _
       // un push fallido no puede tumbar una cancelación que ya se ejecutó en la base
     }
   }
+  // «Por devolver» (dueño, 2026-11-17): un pedido pagado por fuera de la app que se cancela deja
+  // anotada su devolución hasta que el dueño la marque hecha. Lo pagado con crédito ya lo
+  // devolvió cancelar_pedido. Si esto falla, la cancelación ya pasó: se avisa al dueño.
+  if (order.payment_status === "paid" && order.payment_method !== "credit" && Number(order.total) > 0) {
+    try {
+      await sbInsert("refunds_due", {
+        order_id: String(order.id), ref: order.ref, amount: Number(order.total), payment_method: order.payment_method || "desconocido",
+        origen: "cancelacion", created_by: s.phone,
+      });
+    } catch (e) {
+      console.error("refunds_due falló para", order.ref, e);
+      try {
+        await sendPushToAdmins({ title: "Anota la devolución ⚠️", body: `${order.ref}: se canceló pagado y no se pudo anotar en «Por devolver». Devuélvelo a mano.`, url: "./index.html", tag: "sndwch-refund-" + order.id });
+      } catch { /* nada más que hacer */ }
+    }
+  }
   // Y por correo: casi nadie tiene el push activado (ver sendOrderCancelledEmail).
   if (order.customer_email) {
     try {
-      await sendOrderCancelledEmail(order.customer_email, order.customer_name || "", order.ref, "admin", order.payment_status === "paid");
+      await sendOrderCancelledEmail(order.customer_email, order.customer_name || "", order.ref, "admin", order.payment_status === "paid", order.payment_method === "credit");
     } catch { /* un correo fallido no deshace la cancelación */ }
   }
   await logAdminAction(s.phone, "cancel-order", orderId, { hadPayment: order.payment_status === "paid", reason });
@@ -2881,7 +2897,7 @@ export async function actExpireStaleManualPayments(b: Entrada<"expire-stale-manu
         }
         if (order.customer_email) {
           try {
-            await sendOrderCancelledEmail(order.customer_email, order.customer_name || "", order.ref, "pago-no-confirmado", false);
+            await sendOrderCancelledEmail(order.customer_email, order.customer_name || "", order.ref, "pago-no-confirmado", false, false);
           } catch { /* un correo fallido no revierte la expiración */ }
         }
       }
@@ -2994,7 +3010,55 @@ export async function actAlertStuckOrders(b: Entrada<"alert-stuck-orders"> & { _
     }
   }
 
+  // Cuarto barrido: el aviso de demora AL CLIENTE (dueño, 2026-11-17: «si a todo»). Los de
+  // arriba le avisan al dueño; este le escribe al que espera, una sola vez por pedido, cuando
+  // pasa la hora que se le prometió al pagar (promised_to) sin que el pedido llegue. Un Yape o
+  // Plin sin confirmar no cuenta: el pedido todavía no se aceptó.
+  const tarde = await sbGet(
+    "orders",
+    `status=in.(RECIBIDO,PREPARANDO,EN CAMINO)&alerted_customer_late=eq.false&promised_to=lt.${encodeURIComponent(new Date().toISOString())}` +
+      `&select=id,ref,status,customer_phone,customer_email,customer_name,payment_method,payment_status&limit=500`,
+  );
+  for (const order of tarde) {
+    const manualPending = (order.payment_method === "yape" || order.payment_method === "plin") && order.payment_status !== "paid";
+    if (manualPending) continue;
+    try {
+      // Se marca ANTES de avisar: un aviso de demora repetido cada 5 minutos es peor que ninguno.
+      const marcados = await sbUpdate("orders", `id=eq.${encodeURIComponent(order.id)}&alerted_customer_late=eq.false`, { alerted_customer_late: true });
+      if (!marcados.length) continue;
+      const enCaminoYa = order.status === "EN CAMINO";
+      const cuerpo = avisoDeDemora(order.ref, enCaminoYa);
+      if (order.customer_phone) {
+        try {
+          await sendPushToPhone(order.customer_phone, {
+            title: "Tu pedido va un poco tarde",
+            body: cuerpo,
+            url: "./index.html?pedido=" + encodeURIComponent(order.ref),
+            tag: "sndwch-order-" + order.ref,
+            renotify: true,
+          });
+        } catch { /* sin push: queda el correo */ }
+      }
+      if (order.customer_email) {
+        try {
+          await sendOrderLateEmail(order.customer_email, order.customer_name || "", order.ref, cuerpo);
+        } catch { /* un correo fallido no se reintenta: el dueño ya tiene su propio aviso */ }
+      }
+      alerted++;
+    } catch (e) {
+      console.error("alert-stuck-orders (demora al cliente) failed for order", order.id, e);
+    }
+  }
+
   return { success: true, alerted };
+}
+
+// El texto aprobado (docs/servicio/PROPUESTA_APERTURA.md, B). Si ya salió, no se le dice
+// «te avisamos apenas salga».
+export function avisoDeDemora(ref: string, enCamino: boolean): string {
+  return enCamino
+    ? `Tu pedido ${ref} va un poco tarde. Ya va en camino y llega en unos minutos.`
+    : `Tu pedido ${ref} va un poco tarde. Ya estamos en eso y te avisamos apenas salga.`;
 }
 
 // Margen sobre el ETA antes de considerarlo incumplido. No es arbitrario: al cliente se le

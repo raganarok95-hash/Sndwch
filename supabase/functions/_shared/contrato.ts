@@ -382,7 +382,9 @@ export const CONTRATO = {
   'admin-list-complaints': accion<Record<string, unknown>>()(e.objeto({ token, status: crudo })),
   'admin-respond-complaint': accion<Record<string, unknown>>()(e.objeto({ token, id: crudo, response: crudo })),
   'admin-order-problems': accion<Record<string, unknown>>()(e.objeto({ token })),
-  'admin-resolve-order-problem': accion<Record<string, unknown>>()(e.objeto({ token, id: crudo, solucion: crudo, nota: crudo })),
+  'admin-resolve-order-problem': accion<Record<string, unknown>>()(e.objeto({ token, id: crudo, solucion: crudo, nota: crudo, monto: crudo })),
+  'admin-refunds-due': accion<Record<string, unknown>>()(e.objeto({ token })),
+  'admin-mark-refunded': accion<Record<string, unknown>>()(e.objeto({ token, id: crudo })),
   'admin-zone-waitlist': accion<Record<string, unknown>>()(e.objeto({ token })),
   'admin-notify-zone': accion<Record<string, unknown>>()(e.objeto({ token, district: crudo, districtLabel: crudo })),
 

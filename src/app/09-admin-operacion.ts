@@ -315,7 +315,7 @@ var PANEL_OPCIONES:OpcionPanel[]=[
   {k:'compras',t:'Compras y costos',s:'lo que compraste y a cuánto',i:'caja',c:'Carta',m:[['Compras y costos','loadPurchases()','admin_purchases']]},
   {k:'clientes',t:'Clientes y puntos',s:'buscar un cliente, darle puntos',i:'clientes',c:'Clientes',m:[['Buscar cliente',"sndScreen='admin_customer';custDetail=null;custDetailPhone='';custDetailErr='';render()",'admin_customer'],['Puntos manuales',"sndScreen='admin_gen';agPhone='';agPts='';agMsg='';acPhone='';acDelta='';acMsg='';render()",'admin_gen']]},
   {k:'reclamos',t:'Reclamaciones',s:'Libro de Reclamaciones · tiene plazo legal',i:'reclamo',c:'Clientes',m:[['Reclamaciones','loadAdminComplaints()','admin_complaints']]},
-  {k:'opiniones',t:'Lo que dijeron',s:'calificaciones y «algo salió mal»',i:'estrella',c:'Clientes',m:[['Calificaciones','loadRatingsList()','admin_ratings'],['Algo salió mal','loadOrderProblems()','admin_order_problems']]},
+  {k:'opiniones',t:'Lo que dijeron',s:'calificaciones y «algo salió mal»',i:'estrella',c:'Clientes',m:[['Calificaciones','loadRatingsList()','admin_ratings'],['Algo salió mal','loadOrderProblems()','admin_order_problems'],['Por devolver','loadRefundsDue()','admin_refunds_due']]},
   {k:'zonas',t:'Zonas',s:'direcciones con problemas, quién espera tu zona',i:'direccion',c:'Clientes',m:[['Direcciones con problemas','loadProblemAddresses()','admin_problem_addresses'],['Zonas que esperan','loadZoneWaitlist()','admin_zone_waitlist'],['Lista de espera','loadWaitlist()','admin_waitlist']]},
   // «Avísale a tu gente» primero en Marketing: la simulación del 2026-09-13 midió que avisarle
   // a la red personal es la palanca que más mueve el mes 3.
