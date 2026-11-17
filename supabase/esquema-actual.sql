@@ -4,7 +4,7 @@
 -- migraciones NO reconstruyen la base (las tablas originales nacieron fuera del historial): con
 -- este archivo sí. Restaurar = cargar este archivo y después los datos del respaldo.
 --
--- foto-tomada-tras-migracion: 20261111115128
+-- foto-tomada-tras-migracion: 20261117010219
 
 create sequence if not exists public.ingredient_purchases_id_seq as bigint increment 1 minvalue 1 maxvalue 9223372036854775807 start 1;
 
@@ -408,7 +408,8 @@ create table public.orders (
   promised_from timestamp with time zone,
   promised_to timestamp with time zone,
   recurring_id uuid,
-  origen text
+  origen text,
+  alerted_customer_late boolean default false not null
 );
 
 create table public.pending_charges (
@@ -539,6 +540,19 @@ create table public.recurring_orders (
   created_at timestamp with time zone default now() not null,
   skip_on date,
   address_id bigint
+);
+
+create table public.refunds_due (
+  id bigint generated always as identity not null,
+  order_id text not null,
+  ref text not null,
+  amount numeric(10,2) not null,
+  payment_method text not null,
+  origen text not null,
+  created_by text not null,
+  created_at timestamp with time zone default now() not null,
+  refunded_at timestamp with time zone,
+  refunded_by text
 );
 
 create table public.restock_notify_requests (
@@ -796,6 +810,14 @@ alter table public.recurring_orders add constraint recurring_orders_slot_valido 
 
 alter table public.recurring_orders add constraint recurring_orders_weekday_valido CHECK (((weekday >= 0) AND (weekday <= 6)));
 
+alter table public.refunds_due add constraint refunds_due_amount_check CHECK ((amount > (0)::numeric));
+
+alter table public.refunds_due add constraint refunds_due_order_id_origen_key UNIQUE (order_id, origen);
+
+alter table public.refunds_due add constraint refunds_due_origen_check CHECK ((origen = ANY (ARRAY['cancelacion'::text, 'algo-salio-mal'::text])));
+
+alter table public.refunds_due add constraint refunds_due_pkey PRIMARY KEY (id);
+
 alter table public.restock_notify_requests add constraint restock_notify_requests_customer_phone_sig_id_key UNIQUE (customer_phone, sig_id);
 
 alter table public.restock_notify_requests add constraint restock_notify_requests_pkey PRIMARY KEY (id);
@@ -839,6 +861,8 @@ alter table public.promo_code_redemptions add constraint promo_code_redemptions_
 alter table public.ratings add constraint ratings_customer_phone_fkey FOREIGN KEY (customer_phone) REFERENCES customers(phone);
 
 alter table public.recurring_orders add constraint recurring_orders_address_id_fkey FOREIGN KEY (address_id) REFERENCES saved_addresses(id) ON DELETE SET NULL;
+
+alter table public.refunds_due add constraint refunds_due_order_id_fkey FOREIGN KEY (order_id) REFERENCES orders(id);
 
 alter table public.saved_addresses add constraint saved_addresses_customer_phone_fkey FOREIGN KEY (customer_phone) REFERENCES customers(phone);
 
@@ -949,6 +973,8 @@ CREATE UNIQUE INDEX promo_code_redemptions_promo_phone_key ON public.promo_code_
 CREATE INDEX recurring_orders_activas ON public.recurring_orders USING btree (weekday, slot) WHERE active;
 
 CREATE UNIQUE INDEX recurring_orders_unica ON public.recurring_orders USING btree (customer_phone, weekday, slot) WHERE active;
+
+CREATE INDEX refunds_due_pendientes_idx ON public.refunds_due USING btree (created_at) WHERE (refunded_at IS NULL);
 
 CREATE INDEX restock_notify_requests_sig_idx ON public.restock_notify_requests USING btree (sig_id);
 
@@ -2479,6 +2505,8 @@ alter table public.ratings enable row level security;
 
 alter table public.recurring_orders enable row level security;
 
+alter table public.refunds_due enable row level security;
+
 alter table public.restock_notify_requests enable row level security;
 
 alter table public.saved_addresses enable row level security;
@@ -2572,6 +2600,8 @@ grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on
 grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.ratings to service_role;
 
 grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.recurring_orders to service_role;
+
+grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.refunds_due to service_role;
 
 grant DELETE, INSERT, MAINTAIN, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE on table public.restock_notify_requests to service_role;
 
