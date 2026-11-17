@@ -2077,7 +2077,19 @@ body.kb-open #app{padding-bottom:0}
       { id: "P03", nombre: "Pollo", sabor: "Cajun", desc: "Pechuga deshilachada con la mezcla cajún de la casa. Calor seco, no picante de salsa.", p15: 13.9, p30: 23.9, dbl15: 6, dbl30: 11, soloSecreto: true },
       { id: "P04", nombre: "Atún", sabor: "House", desc: "En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca.", p15: 19.9, p30: 30.9, dbl15: 10.9, dbl30: 21.9, foto: "img/prot_p04.webp" },
       { id: "P05", nombre: "Embutido", sabor: "Italiano", desc: "Jamón ahumado, salame y pepperoni, laminados finos y puestos en pliegues, nunca planos.", p15: 16.9, p30: 32.9, dbl15: 9.9, dbl30: 19.9, soloEnSignature: true, foto: "img/prot_p05.webp" },
-      { id: "P06", nombre: "Albóndiga", sabor: "Marinara", desc: "Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.", p15: 19.9, p30: 30.9, dbl15: 6.9, dbl30: 13.9, foto: "img/prot_p06.webp" },
+      {
+        id: "P06",
+        nombre: "Albóndiga",
+        sabor: "Marinara",
+        desc: "Albóndigas chicas hechas acá, cocidas dentro de su propia marinara.",
+        p15: 19.9,
+        p30: 30.9,
+        dbl15: 6.9,
+        dbl30: 13.9,
+        foto: "img/prot_p06.webp",
+        // Pausada (dueño, 2026-11-17: «Por las primeras semanas quitemos de disponibilidad las albóndigas»).
+        pausado: true
+      },
       { id: "P08", nombre: "Pavo", sabor: "Laminado", desc: "Lonjas finas puestas en pliegues, nunca planas.", p15: 19.9, p30: 30.9, dbl15: 9, dbl30: 17, foto: "img/prot_p08.webp" },
       { id: "P09", nombre: "Res", sabor: "Laminada", desc: "Laminada fina y salteada al momento.", p15: 19.9, p30: 30.9, dbl15: 7, dbl30: 13.9, foto: "img/prot_p09.webp" }
     ],
@@ -2148,6 +2160,8 @@ body.kb-open #app{padding-bottom:0}
         queso: "C01",
         foto: "img/sig02.jpg",
         fotoVertical: "img/sig02_v.webp",
+        // Pausado con su albóndiga (dueño, 2026-11-17). Vuelve: no se borra.
+        pausado: true,
         pitch: "Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. Caliente, contundente, de los que se comen con las dos manos. Para la noche en que ya decidiste no cocinar."
       },
       {
@@ -2261,7 +2275,8 @@ body.kb-open #app{padding-bottom:0}
         pDbl: x2.dbl15,
         pDbl30: x2.dbl30,
         ...x2.soloSecreto ? { vaultOnly: true } : {},
-        ...x2.soloEnSignature ? { sigOnly: true } : {},
+        // Una proteína pausada se esconde del armador igual que una de Signature (vuelve después).
+        ...x2.soloEnSignature || x2.pausado ? { sigOnly: true } : {},
         ...x2.sinDoble ? { noDouble: true } : {},
         ...x2.sinDoble30 ? { noDouble30: true } : {}
       })),
@@ -2300,7 +2315,8 @@ body.kb-open #app{padding-bottom:0}
         ...x2.estrella ? { recommended: true } : {},
         ...x2.queso ? { fixedCheese: x2.queso } : {},
         ...x2.quesoOpcional ? { cheeseOptional: true } : {},
-        ...x2.secreto ? { secret: true, minOrders: x2.secreto.minPedidos } : {}
+        ...x2.secreto ? { secret: true, minOrders: x2.secreto.minPedidos } : {},
+        ...x2.pausado ? { retired: true } : {}
       })),
       // Recompensas con su `tipo` (qué perdonan): el código viejo decide por él, nunca por el id.
       // `sizeOnly` sale del tipo: subir a 30CM y el sándwich gratis solo se aplican a una línea de
@@ -4470,7 +4486,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '581b35bf00';
+var APP_BUILD = '2640b33bbe';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por

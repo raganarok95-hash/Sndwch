@@ -5,14 +5,14 @@
 
 Todo en soles. 15CM y 30CM son los dos tamaños. «Doble» es lo que suma pedir doble proteína.
 
-## Signatures (6 en la carta pública)
+## Signatures (5 a la venta en la carta pública; pausados por ahora: Meatball Marinara)
 
 ### Philly Cheesesteak ★ (la estrella: la que más deja por unidad)
 - **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/7 / +S/13.90
 - **Receta:** pan Classic // White · Res // Laminada · vegetales: Cebolla // Salteada, Pimiento // Verde · salsas: — · queso: Cheddar
 - **Cómo se vende:** El clásico de Filadelfia, sin atajos: res laminada que se saltea en el momento con cebolla y pimiento, y cheddar que se funde encima hasta amarrarlo todo. Tan jugoso que no lleva salsa. Es el que pides cuando el hambre va en serio.
 
-### Meatball Marinara
+### Meatball Marinara (PAUSADO: no se vende por ahora, vuelve)
 - **Precio:** 15CM S/19.90 · 30CM S/30.90 · doble proteína +S/6.90 / +S/13.90
 - **Receta:** pan Classic // White · Albóndiga // Marinara · vegetales: — · salsas: — · queso: Americano
 - **Cómo se vende:** Albóndigas cocidas en su propia marinara, queso americano derretido hasta el borde y un pan que aguanta todo el jugo. Caliente, contundente, de los que se comen con las dos manos. Para la noche en que ya decidiste no cocinar.
@@ -53,11 +53,10 @@ El precio lo pone la proteína (más el recargo del pan, si tiene). Vegetales y 
 | proteína | 15CM | 30CM | doble 15 | doble 30 | cómo es |
 |---|---|---|---|---|---|
 | Atún // House | S/19.90 | S/30.90 | +S/10.90 | +S/21.90 | En lascas gruesas, nunca hecho pasta. La mayonesa justa y pimienta blanca. |
-| Albóndiga // Marinara | S/19.90 | S/30.90 | +S/6.90 | +S/13.90 | Albóndigas chicas hechas acá, cocidas dentro de su propia marinara. |
 | Pavo // Laminado | S/19.90 | S/30.90 | +S/9 | +S/17 | Lonjas finas puestas en pliegues, nunca planas. |
 | Res // Laminada | S/19.90 | S/30.90 | +S/7 | +S/13.90 | Laminada fina y salteada al momento. |
 
-Proteínas que existen pero NO se eligen acá: Pollo // Cajun (solo menú secreto), Embutido // Italiano (solo dentro de su Signature).
+Proteínas que existen pero NO se eligen acá: Pollo // Cajun (solo menú secreto), Embutido // Italiano (solo dentro de su Signature), Albóndiga // Marinara (pausada por ahora, vuelve).
 
 **Vegetales:** Tomate // Fresco — En rodajas gruesas, cortado el mismo día. · Cebolla // Morada juliana — En pluma fina y cruda. Dulce al entrar, con filo al final. · Jalapeño // Encurtido — Picor limpio y corto, del que no tapa lo demás. · Pickles // Encurtidos — Pepinillo encurtido en rodajas: ácido y crocante. · Pepinillo // Fresco — En rodajas finas, frío. Agua y crujido. · Pimiento // Verde — Fresco, en tiras finas. Crujiente, con su punto amargo. · Lechuga // Fresca — En tiras y fría. Es lo que hace crujir los bordes.
 

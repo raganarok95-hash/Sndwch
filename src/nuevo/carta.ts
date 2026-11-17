@@ -16,7 +16,8 @@ export function cartaVieja(c: Carta = CARTA) {
     PROTS: c.proteinas.map((x) => ({
       id: x.id, l: x.nombre, s: x.sabor, d: x.desc, p15: x.p15, p30: x.p30, pDbl: x.dbl15, pDbl30: x.dbl30,
       ...(x.soloSecreto ? { vaultOnly: true } : {}),
-      ...(x.soloEnSignature ? { sigOnly: true } : {}),
+      // Una proteína pausada se esconde del armador igual que una de Signature (vuelve después).
+      ...(x.soloEnSignature || x.pausado ? { sigOnly: true } : {}),
       ...(x.sinDoble ? { noDouble: true } : {}),
       ...(x.sinDoble30 ? { noDouble30: true } : {}),
     })),
@@ -41,6 +42,7 @@ export function cartaVieja(c: Carta = CARTA) {
       ...(x.queso ? { fixedCheese: x.queso } : {}),
       ...(x.quesoOpcional ? { cheeseOptional: true } : {}),
       ...(x.secreto ? { secret: true, minOrders: x.secreto.minPedidos } : {}),
+      ...(x.pausado ? { retired: true } : {}),
     })),
     // Recompensas con su `tipo` (qué perdonan): el código viejo decide por él, nunca por el id.
     // `sizeOnly` sale del tipo: subir a 30CM y el sándwich gratis solo se aplican a una línea de

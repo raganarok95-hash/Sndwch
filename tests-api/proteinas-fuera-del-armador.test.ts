@@ -28,7 +28,7 @@ function assert(cond: boolean, msg: string): void {
   if (!cond) throw new Error(msg);
 }
 import { dblFee, priceCartItem, PROT_PRICE, SIG_DATA } from "../supabase/functions/api/catalog.ts";
-import { panSinRecargo, proteinasConDoble, proteinasDelArmador, proteinasSoloDeSignature, signaturesRetirados, signaturesVigentes, unaSalsaDelArmador } from "./carta.ts";
+import { panSinRecargo, proteinasConDoble, proteinasDelArmador, proteinasPausadas, proteinasSoloDeSignature, signaturesRetirados, signaturesVigentes, unaSalsaDelArmador } from "./carta.ts";
 
 // Productos de la carta, preguntados a la carta: la regla no depende de qué haya este mes.
 const PAN_SIN_RECARGO = panSinRecargo();
@@ -91,7 +91,10 @@ Deno.test("un Signature retirado ya no se puede pedir", () => {
 Deno.test("el armador no se quedó demasiado corto", () => {
   // Es el argumento entero de la sección: el cliente elige. Menos de cuatro deja de serlo.
   // Esta prueba es el piso, no una meta.
-  assert(proteinasDelArmador().length >= 4, `solo quedan ${proteinasDelArmador().length} proteínas en el armador`);
+  // Una pausa (decisión del dueño, temporal) no cuenta como haberla sacado: vuelve. Mientras dure,
+  // el armador puede quedar con tres (2026-11-17, sin la albóndiga), y eso lo eligió él.
+  const conLasQueVuelven = proteinasDelArmador().length + proteinasPausadas().length;
+  assert(conLasQueVuelven >= 4, `solo quedan ${conLasQueVuelven} proteínas en el armador (contando las pausadas)`);
 });
 
 Deno.test("el recargo del doble escala con el tamaño, en toda proteína que lo admite", () => {
@@ -103,5 +106,34 @@ Deno.test("el recargo del doble escala con el tamaño, en toda proteína que lo 
     const r15 = dblFee(PROT_PRICE[prot]!, "15");
     const r30 = dblFee(PROT_PRICE[prot]!, "30");
     assert(r30 >= r15 * 1.8, `${prot}: el doble de 30CM (S/${r30}) no escaló contra el de 15CM (S/${r15})`);
+  }
+});
+
+// PAUSADA (2026-11-17, el dueño sacó la albóndiga «por las primeras semanas»): no se prepara,
+// así que no se puede vender por NINGUNA puerta, ni armada ni dentro de su Signature. Modo de
+// fallo: silencio — el pedido se cobra y la cocina no tiene con qué hacerlo.
+Deno.test("una proteína pausada no se arma, y ningún Signature que la lleva se puede pedir", () => {
+  for (const prot of proteinasPausadas()) {
+    for (const size of ["15", "30"] as const) {
+      let tiro = false;
+      try {
+        armar(prot, size);
+      } catch {
+        tiro = true;
+      }
+      assert(tiro, `${prot} ${size}CM está pausada y todavía se puede armar`);
+    }
+    for (const sigId of Object.keys(SIG_DATA).filter((id) => SIG_DATA[id]!.prot === prot && !signaturesRetirados().includes(id))) {
+      throw new Error(`${sigId} lleva ${prot}, que está pausada, y sigue a la venta`);
+    }
+    for (const sigId of Object.keys(SIG_DATA).filter((id) => SIG_DATA[id]!.prot === prot && signaturesRetirados().includes(id))) {
+      let tiro = false;
+      try {
+        priceCartItem({ type: "sig", sigId, size: "15", qty: 1 });
+      } catch {
+        tiro = true;
+      }
+      assert(tiro, `${sigId} está pausado y todavía se puede pedir`);
+    }
   }
 });
