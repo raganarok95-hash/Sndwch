@@ -33,3 +33,5 @@ No hay encargos para la semana en curso (9 al 15). Los 14 del 3 al 8 se dieron p
 1. Las 3 piezas: van, cambian o se cortan.
 2. **3 imágenes nuevas en Figma**, una por pieza, con los créditos de tu plan.
 3. Sigue pendiente, del hilo de marketing: 1 imagen para rehacer la lámina HOAGIE de «Cómo se dice» con los embutidos nuevos.
+
+**Producido (2026-11-16, Ezra: «si a todo»):** piezas finales en `final-*.jpg` (con `FINAL=1` el script monta las imágenes de `fotos/`). Imágenes de Figma: 1 por pieza; en la semana del 23 se rehicieron la oficina y la de invita porque la primera versión traía pepino y un sándwich que no está en la carta. Nada publicado.

@@ -25,7 +25,11 @@ const BASE = `*{box-sizing:border-box;margin:0;padding:0}body{font-family:Archiv
 .hueco{position:absolute;left:0;right:0;bottom:0;background:repeating-linear-gradient(45deg,#c9c3b6 0 18px,#d6d0c3 18px 36px);display:flex;align-items:center;justify-content:center;padding:60px}
 .hueco div{background:rgba(239,230,212,.94);border:3px dashed ${P.tinta};padding:28px 32px;font:600 24px/1.4 'IBM Plex Mono',monospace;color:${P.tinta};max-width:820px}`;
 const marca = (c) => `<div class="marca" style="color:${c}">SND<span class="b"><i class="g"></i><i class="c"></i></span>WCH</div>`;
-const hueco = (alto, texto) => `<div class="hueco" style="height:${alto}px"><div>IMAGEN NUEVA (Figma, espera tu sí)<br><br>${texto}</div></div>`;
+// Con FINAL=1 el recuadro se reemplaza por la imagen nueva aprobada (Ezra, 2026-11-16: «si a todo»), en el orden de PIEZAS.
+const FINAL = !!process.env.FINAL, FOTOS = ['s23-oficina.png', 's23-30cm.png', 's23-invita-final.png'];
+let iFoto = 0;
+const hueco = (alto, texto) => FINAL ? `<div class="abs" style="left:0;right:0;bottom:0;height:${alto}px;background:url('file://${D}/fotos/${FOTOS[iFoto++]}') center/cover"></div>` : huecoMaqueta(alto, texto);
+const huecoMaqueta = (alto, texto) => `<div class="hueco" style="height:${alto}px"><div>IMAGEN NUEVA (Figma, espera tu sí)<br><br>${texto}</div></div>`;
 const sello = (fondo, c, arriba = 'DESDE', cifra = `S/${PRECIO}`, top = 250) => `<div class="abs" style="right:70px;top:${top}px;width:200px;height:200px;border-radius:999px;background:${fondo};color:${c};display:flex;flex-direction:column;align-items:center;justify-content:center"><span class="mono" style="font-size:22px">${arriba}</span><span class="disp" style="font-size:56px;margin-top:6px">${cifra}</span></div>`;
 const caja = (fondo, dentro) => `<div style="position:relative;width:1080px;height:1350px;overflow:hidden;background:${fondo}">${dentro}</div>`;
 
@@ -49,12 +53,12 @@ const PIEZAS = {
     ${hueco(620, 'Un PHILLY CHEESESTEAK de 30 cm, fiel a la receta (pan Classic, res laminada, cebolla salteada, pimiento verde y cheddar), recién cortado al medio sobre una tabla larga de madera, de costado, a la altura de la mesa. Dos manos, una de cada lado, se llevan cada mitad. Luz de día.')}`),
   // Sáb 28, 11:00 · Invita a alguien (referidos). Dos objetos con su etiqueta: la bebida para el invitado y el 15CM para ti.
   // Los puntos se nombran por lo que valen, como dice la app; las cifras salen de REGLAS.md.
-  '3-invita': caja(P.tan, `
+  '3-invita': caja('#6C7860', `
     <div class="abs" style="left:70px;top:60px;right:70px;display:flex;justify-content:space-between">
-      <div class="mono" style="font-size:26px;color:${P.tinta}">INVITA A ALGUIEN</div>${marca(P.tinta)}</div>
-    <div class="abs disp" style="left:70px;top:120px;font-size:150px;color:${P.tinta}">Uno invita.<br>Comen<br>los dos.</div>
-    <div class="abs voz" style="left:70px;top:590px;width:900px;font-size:38px;line-height:1.12;color:${P.tinta}">Tu invitado gana lo que cuesta una bebida; tú, lo que cuesta un 15CM. Tu enlace está en la app.</div>
-    <div class="abs mono" style="left:70px;top:700px;font-size:20px;color:${P.tinta}">EN PUNTOS · ${REGLAS.match(/El invitado recibe \*\*(\d+) puntos/)[1]} Y ${REGLAS.match(/quien invita \*\*(\d+)\*\*/)[1]} · CONDICIONES EN LA APP</div>
+      <div class="mono" style="font-size:26px;color:${P.tan}">INVITA A ALGUIEN</div>${marca(P.papel)}</div>
+    <div class="abs disp" style="left:70px;top:120px;font-size:150px;color:${P.papel}">Uno invita.<br>Comen<br>los dos.</div>
+    <div class="abs voz" style="left:70px;top:590px;width:900px;font-size:38px;line-height:1.12;color:${P.papel}">Tu invitado gana lo que cuesta una bebida; tú, lo que cuesta un 15CM. Tu enlace está en la app.</div>
+    <div class="abs mono" style="left:70px;top:700px;font-size:20px;color:${P.papel}">EN PUNTOS · ${REGLAS.match(/El invitado recibe \*\*(\d+) puntos/)[1]} Y ${REGLAS.match(/quien invita \*\*(\d+)\*\*/)[1]} · CONDICIONES EN LA APP</div>
     ${hueco(600, 'Sobre una mesa clara, dos cosas una al lado de la otra con una etiqueta de papel colgada de un cordel: a la izquierda una botella de 500 ml (sin marca), etiqueta «para quien invitas»; a la derecha un sándwich de 15 cm en su kraft, etiqueta «para ti». Las etiquetas se montan después, en blanco en la imagen.')}`),
 };
 
@@ -66,7 +70,7 @@ const PIEZAS = {
     fs.writeFileSync(tmp, `<!doctype html><html><head><meta charset="utf-8"><style>${FUENTES}html,body{width:1080px;height:1350px;overflow:hidden}${BASE}</style></head><body>${html}</body></html>`);
     await pg.goto('file://' + tmp, { waitUntil: 'load' });
     await pg.evaluate(async () => { await Promise.all(['400 40px "Anton"', '800 40px "Archivo"', '600 40px "IBM Plex Mono"', 'italic 400 40px "Instrument Serif"'].map((f) => document.fonts.load(f))); });
-    const png = path.join(D, `maqueta-${n}.png`);
+    const png = path.join(D, FINAL ? `final-${n}.png` : `maqueta-${n}.png`);
     await pg.screenshot({ path: png });
     execFileSync('python3', ['-c', "import sys;from PIL import Image;Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2],quality=92)", png, png.replace(/\.png$/, '.jpg')]);
     fs.rmSync(png);
