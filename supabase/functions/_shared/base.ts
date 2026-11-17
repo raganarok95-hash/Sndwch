@@ -7,7 +7,7 @@
 // Regenerar después de cada migración (con la herramienta de Supabase generate_typescript_types)
 // y actualizar la línea de abajo con la versión de la última migración aplicada.
 // `npm run check:tipos-base` falla si hay una migración más nueva que esta.
-// generado-contra-migracion: 20261111115128
+// generado-contra-migracion: 20261117010219
 export type Json =
   | string
   | number
@@ -1135,6 +1135,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          alerted_customer_late: boolean
           alerted_eta_missed: boolean
           alerted_scheduled_reminder: boolean
           alerted_stuck: boolean
@@ -1182,6 +1183,7 @@ export type Database = {
           total: number
         }
         Insert: {
+          alerted_customer_late?: boolean
           alerted_eta_missed?: boolean
           alerted_scheduled_reminder?: boolean
           alerted_stuck?: boolean
@@ -1229,6 +1231,7 @@ export type Database = {
           total: number
         }
         Update: {
+          alerted_customer_late?: boolean
           alerted_eta_missed?: boolean
           alerted_scheduled_reminder?: boolean
           alerted_stuck?: boolean
@@ -1702,6 +1705,53 @@ export type Database = {
             columns: ["address_id"]
             isOneToOne: false
             referencedRelation: "saved_addresses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      refunds_due: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string
+          id: number
+          order_id: string
+          origen: string
+          payment_method: string
+          ref: string
+          refunded_at: string | null
+          refunded_by: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by: string
+          id?: never
+          order_id: string
+          origen: string
+          payment_method: string
+          ref: string
+          refunded_at?: string | null
+          refunded_by?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string
+          id?: never
+          order_id?: string
+          origen?: string
+          payment_method?: string
+          ref?: string
+          refunded_at?: string | null
+          refunded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_due_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]

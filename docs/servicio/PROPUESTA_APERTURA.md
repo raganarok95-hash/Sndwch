@@ -23,7 +23,11 @@
 4. El correo de «Recibimos tu pedido» mandaba a una sección que ya no existe («PUNTOS → MIS
    PEDIDOS»); ahora lleva el enlace directo al pedido.
 
-## Espera tu sí
+## Aprobado y construido (dueño, 2026-11-17: «si a todo»)
+
+Todo lo de abajo ya está en la app. `contacto@sndwch.com` existe y lo lees (confirmado el mismo día).
+El aviso de demora sale cuando pasa la hora prometida al pagar; si el pedido ya va en camino dice
+«Ya va en camino y llega en unos minutos». Un Yape sin confirmar no recibe aviso.
 
 ### A · Libro de Reclamaciones: tres cosas que pide el reglamento (es texto legal: no se toca sin ti)
 1. **Falta el domicilio del proveedor.** La hoja muestra nombre y RUC, pero de dirección solo

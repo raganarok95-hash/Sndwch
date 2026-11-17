@@ -646,6 +646,7 @@ function providerBlockHTML(){
   return'<div style="background:var(--sw-card2,#171A14);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:14px 16px;margin-bottom:20px;font-family:\'EB Garamond\',serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.9">'
     +'<div><span style="color:'+GOLD+'">Proveedor · </span>'+esc(BIZ_NAME)+'</div>'
     +'<div><span style="color:'+GOLD+'">RUC · </span>'+BIZ_RUC+'</div>'
+    +'<div><span style="color:'+GOLD+'">Domicilio · </span>'+esc(BIZ_ADDRESS)+'</div>'
     +'<div><span style="color:'+GOLD+'">Cobertura · </span>Delivery en '+BIZ_CITY+' (sin local de atención al público)</div>'
     +'<div><span style="color:'+GOLD+'">Contacto · </span>'+BIZ_EMAIL+' · WhatsApp +51 930 957 640</div>'
     +'</div>';
@@ -741,6 +742,8 @@ function sPComplaints(){
     +'<div class="eyb">Libro de reclamaciones · '+n+' de 3</div>';
   var ley='Conforme a lo establecido en el Código de Protección y Defensa del Consumidor, este establecimiento cuenta con un Libro de Reclamaciones a tu disposición.';
   var plazo='Tenemos hasta 15 días hábiles para responder tu reclamo o queja, conforme a la normativa vigente.';
+  // Leyenda obligatoria del Reglamento del Libro de Reclamaciones (aprobada por el dueño el 2026-11-17).
+  var indecopi='La formulación del reclamo no impide acudir a otras vías de solución de controversias ni es requisito previo para interponer una denuncia ante el INDECOPI.';
   var err='<div id="cq-err" class="err" role="alert">'+esc(cmplErr)+'</div>';
   var minor='<button type="button" class="menor" role="checkbox" data-accion="libro-menor" aria-checked="'+(cmplMinor?'true':'false')+'" onclick="cmplGuardar();cmplMinor=!cmplMinor;render()"><i>'+(cmplMinor?icon('check',13,'#F4ECDD'):'')+'</i><span>Soy menor de edad (o reclamo en representación de uno)</span></button>'
     +(cmplMinor?cmplCampo('cq-guardian','Nombre del padre, madre o apoderado','text','name'):'');
@@ -757,7 +760,7 @@ function sPComplaints(){
     }
     h+=minor
       +'<div class="eyb luego">Luego</div><div class="mini"><div><b>2 · ¿Qué es?</b>Reclamo o queja, y el pedido</div><div><b>3 · ¿Qué pasó?</b>Lo que pasó y qué solicitas</div></div>'
-      +'<p class="ley">'+ley+' '+plazo+'</p>'+providerBlockLib()+err
+      +'<p class="ley">'+ley+' '+plazo+' '+indecopi+'</p>'+providerBlockLib()+err
       +'<div class="go sw-barra"><button data-accion="libro-siguiente" onclick="cmplIr(\'que\')">'+(tarjeta?'Sí, soy yo · siguiente':'Siguiente')+'</button></div></div>';
     return h;
   }
@@ -767,7 +770,7 @@ function sPComplaints(){
       api('my-orders',{token:token}).then(function(r:any){myOrders=(r&&r.orders)||[];if(sndScreen==='p_complaints'&&cmplStep==='que'){cmplGuardar();render();}}).catch(function(){});
     }
     h+='<h2>¿Qué es?</h2>'
-      +'<div class="tipo" role="radiogroup" aria-label="Tipo">'+[['reclamo','Reclamo','Disconformidad relacionada a un producto o servicio que contrataste con nosotros.'],['queja','Queja','Malestar o disconformidad no relacionada directamente a un pedido (ej. atención, demoras).']].map(function(x){
+      +'<div class="tipo" role="radiogroup" aria-label="Tipo">'+[['reclamo','Reclamo','Disconformidad relacionada a un producto o servicio que contrataste con nosotros.'],['queja','Queja','Malestar o disconformidad no relacionada directamente a un producto o servicio (ej. la atención que recibiste).']].map(function(x){
         var on=cmplKind===x[0];
         return'<button type="button" role="radio" aria-checked="'+on+'" data-accion="libro-tipo-'+x[0]+'" class="'+(on?'on':'')+'" onclick="cmplGuardar();cmplKind=\''+x[0]+'\';render()"><b>'+x[1]+'</b><span>'+x[2]+'</span></button>';
       }).join('')+'</div>';
@@ -790,13 +793,14 @@ function sPComplaints(){
   h+='<h2>¿Qué pasó?</h2><div class="campos">'
     +cmplCampo('cq-detail','Describe lo que pasó, con el mayor detalle posible','text','',true)
     +cmplCampo('cq-request','¿Qué solicitas? (ej: reposición, reembolso, respuesta)','text','',true)+'</div>'
-    +'<p class="ley">'+plazo+'</p>'+err
+    +'<p class="ley">'+plazo+' '+indecopi+'</p>'+err
     +'<div class="go sw-barra"><button data-accion="libro-enviar" onclick="doSubmitComplaint()"'+(cmplBusy?' disabled':'')+'>'+(cmplBusy?'Enviando…':'Enviar '+(queja?'queja':'reclamo'))+'</button></div></div>';
   return h;
 }
 // Los datos del proveedor son obligatorios a la vista en el libro; salen de BIZ_*, nunca escritos.
 function providerBlockLib(){
   return'<div class="prov"><div><b>Proveedor · </b>'+esc(BIZ_NAME)+'</div><div><b>RUC · </b>'+BIZ_RUC+'</div>'
+    +'<div><b>Domicilio · </b>'+esc(BIZ_ADDRESS)+'</div>'
     +'<div><b>Cobertura · </b>Delivery en '+BIZ_CITY+' (sin local de atención al público)</div>'
     +'<div><b>Contacto · </b>'+BIZ_EMAIL+' · WhatsApp +51 930 957 640</div></div>';
 }

@@ -1,6 +1,6 @@
 // SND//WCH — bundle del PANEL. Generado por scripts/build.mjs; no editar a mano.
 // Se carga bajo demanda desde el router (loadAdminBundle) cuando se abre una pantalla
-// de admin. Ningún cliente lo descarga: son ~364 KB que antes
+// de admin. Ningún cliente lo descarga: son ~368 KB que antes
 // viajaban en index.html a cada celular que abría la carta.
 // Íconos de línea minimalistas — mismo trazo/estilo que el ícono de Instagram del pie
 // de página (stroke currentColor, sin relleno), en vez de emoji grandes y de colores
@@ -356,7 +356,7 @@ var PANEL_OPCIONES = [
     { k: 'compras', t: 'Compras y costos', s: 'lo que compraste y a cuánto', i: 'caja', c: 'Carta', m: [['Compras y costos', 'loadPurchases()', 'admin_purchases']] },
     { k: 'clientes', t: 'Clientes y puntos', s: 'buscar un cliente, darle puntos', i: 'clientes', c: 'Clientes', m: [['Buscar cliente', "sndScreen='admin_customer';custDetail=null;custDetailPhone='';custDetailErr='';render()", 'admin_customer'], ['Puntos manuales', "sndScreen='admin_gen';agPhone='';agPts='';agMsg='';acPhone='';acDelta='';acMsg='';render()", 'admin_gen']] },
     { k: 'reclamos', t: 'Reclamaciones', s: 'Libro de Reclamaciones · tiene plazo legal', i: 'reclamo', c: 'Clientes', m: [['Reclamaciones', 'loadAdminComplaints()', 'admin_complaints']] },
-    { k: 'opiniones', t: 'Lo que dijeron', s: 'calificaciones y «algo salió mal»', i: 'estrella', c: 'Clientes', m: [['Calificaciones', 'loadRatingsList()', 'admin_ratings'], ['Algo salió mal', 'loadOrderProblems()', 'admin_order_problems']] },
+    { k: 'opiniones', t: 'Lo que dijeron', s: 'calificaciones y «algo salió mal»', i: 'estrella', c: 'Clientes', m: [['Calificaciones', 'loadRatingsList()', 'admin_ratings'], ['Algo salió mal', 'loadOrderProblems()', 'admin_order_problems'], ['Por devolver', 'loadRefundsDue()', 'admin_refunds_due']] },
     { k: 'zonas', t: 'Zonas', s: 'direcciones con problemas, quién espera tu zona', i: 'direccion', c: 'Clientes', m: [['Direcciones con problemas', 'loadProblemAddresses()', 'admin_problem_addresses'], ['Zonas que esperan', 'loadZoneWaitlist()', 'admin_zone_waitlist'], ['Lista de espera', 'loadWaitlist()', 'admin_waitlist']] },
     // «Avísale a tu gente» primero en Marketing: la simulación del 2026-09-13 midió que avisarle
     // a la red personal es la palanca que más mueve el mes 3.
@@ -3737,10 +3737,12 @@ async function loadOrderProblems() {
 }
 async function resolveOrderProblem(id, solucion) {
     var nota = document.getElementById('op-nota-' + id);
+    var monto = document.getElementById('op-monto-' + id);
     try {
-        var r = await api('admin-resolve-order-problem', { token: token, id: id, solucion: solucion, nota: nota ? nota.value : '' });
+        var r = await api('admin-resolve-order-problem', { token: token, id: id, solucion: solucion, nota: nota ? nota.value : '', monto: monto ? monto.value : '' });
         // Solo se dice «le avisamos» si el correo salió; si no, el aviso queda en la app (y el push, si lo tiene).
-        showToast(r && r.avisadoPorCorreo ? 'Listo. Le avisamos al cliente por correo.' : 'Listo. Lo verá en la app; si no tiene la app abierta, avísale por WhatsApp.', 'success');
+        var hecho = r && r.creditoCargado ? 'Crédito cargado. ' : r && r.porDevolver ? 'Anotado en «Por devolver». ' : 'Listo. ';
+        showToast(hecho + (r && r.avisadoPorCorreo ? 'Le avisamos al cliente por correo.' : 'Lo verá en la app; si no tiene la app abierta, avísale por WhatsApp.'), 'success');
     }
     catch (e) {
         showToast(e.message);
@@ -3764,6 +3766,7 @@ function sAdminOrderProblems() {
             + '<span style="font-family:EB Garamond,serif;font-size:11px;color:' + (tarde ? 'var(--sw-danger,#ff8888)' : GOLD) + '">' + (tarde ? 'Se pasó: ' : 'Antes de ') + esc(horaLima(vence)) + '</span></div>'
             + (p.detalle ? '<div style="font-family:EB Garamond,serif;font-style:italic;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:6px">' + esc(p.detalle) + '</div>' : '')
             + '<input id="op-nota-' + p.id + '" placeholder="Nota para el cliente (opcional)" style="margin-top:10px;width:100%;box-sizing:border-box;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:9px 12px;color:var(--sw-text,#FFFFFF);font-family:EB Garamond,serif;font-size:13px">'
+            + '<input id="op-monto-' + p.id + '" inputmode="decimal" placeholder="Monto S/ del crédito o reembolso (vacío = todo el pedido)" style="margin-top:6px;width:100%;box-sizing:border-box;background:var(--sw-card2,#171A14);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:8px;padding:9px 12px;color:var(--sw-text,#FFFFFF);font-family:EB Garamond,serif;font-size:13px">'
             + '<div style="display:flex;gap:6px;margin-top:8px">' + Object.keys(SOL).map(function (k) { return '<button onclick="resolveOrderProblem(' + p.id + ',\'' + k + '\')" style="all:unset;cursor:pointer;flex:1;text-align:center;padding:9px 0;border:1px solid ' + GOLD + ';border-radius:8px;font-family:EB Garamond,serif;font-size:13px;color:' + GOLD + '">' + SOL[k] + '</button>'; }).join('') + '</div>'
             + '</div>';
     }).join('') : '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:16px">Nada por responder.</div>';
@@ -3772,6 +3775,58 @@ function sAdminOrderProblems() {
             + cerrados.slice(0, 20).map(function (p) { return '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);padding:6px 0;border-bottom:1px solid var(--sw-border-soft,#1c1c1c)">' + esc(p.ref) + ' · ' + esc(MOT[p.motivo] || p.motivo) + ' → ' + esc(SOL[p.resolution] || '') + '</div>'; }).join('');
     }
     h += BTN('Actualizar //', 'loadOrderProblems()', true);
+    return h + '</div>';
+}
+// POR DEVOLVER (dueño, 2026-11-17: «si a todo»). Cada devolución de dinero por fuera de la app
+// (pedido pagado que se canceló, o «Algo salió mal» con reembolso) queda acá hasta que la marcas.
+var refundsDue = null;
+var METODO_DEV = { card: 'tarjeta (Culqi)', yape: 'Yape', plin: 'Plin', cod: 'efectivo', transfer: 'transferencia' };
+async function loadRefundsDue() {
+    sndScreen = 'admin_refunds_due';
+    busy = true;
+    busyMsg = 'Cargando devoluciones...';
+    render();
+    try {
+        var r = await api('admin-refunds-due', { token: token });
+        refundsDue = r.refunds || [];
+    }
+    catch (e) {
+        refundsDue = null;
+    }
+    busy = false;
+    render();
+}
+async function markRefunded(id) {
+    try {
+        await api('admin-mark-refunded', { token: token, id: String(id) });
+        showToast('Marcado como devuelto.', 'success');
+    }
+    catch (e) {
+        showToast(e.message);
+    }
+    loadRefundsDue();
+}
+function sAdminRefundsDue() {
+    var h = H('POR DEVOLVER', "loadAdmin()") + '<div style="flex:1;padding:20px 20px 40px;overflow-y:auto" class="fi">';
+    if (!refundsDue) {
+        return h + '<div style="text-align:center;padding-top:64px"><div style="font-family:EB Garamond,serif;font-weight:600;font-size:11px;color:var(--sw-danger,#ff8888);letter-spacing:.2em">No se pudo cargar //</div></div>' + BTN('Reintentar //', 'loadRefundsDue()', true) + '</div>';
+    }
+    var ORIGEN = { cancelacion: 'Pedido cancelado', 'algo-salio-mal': 'Algo salió mal' };
+    var pend = refundsDue.filter(function (x) { return !x.refunded_at; }), hechos = refundsDue.filter(function (x) { return !!x.refunded_at; });
+    h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:' + GOLD + ';letter-spacing:.2em;margin-bottom:10px">' + pend.length + ' por devolver //</div>';
+    h += pend.length ? pend.map(function (x) {
+        return '<div style="background:var(--sw-card,#1B1F18);border:1px solid rgba(255,165,0,.35);border-radius:10px;padding:14px;margin-bottom:10px">'
+            + '<div style="display:flex;justify-content:space-between;gap:8px"><b style="font-family:EB Garamond,serif;font-size:15px;color:var(--sw-text,#FFFFFF)">' + esc(x.ref) + '</b>'
+            + '<b style="font-family:EB Garamond,serif;font-size:15px;color:' + GOLD + '">' + SOLES_TXT + pz(Number(x.amount) || 0) + '</b></div>'
+            + '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-top:4px">' + esc(ORIGEN[x.origen] || x.origen) + ' · por ' + esc(METODO_DEV[x.payment_method] || x.payment_method) + ' · ' + esc(cuandoFue(new Date(x.created_at))) + '</div>'
+            + '<button data-accion="marcar-devuelto" onclick="markRefunded(' + Number(x.id) + ')" style="all:unset;cursor:pointer;display:block;box-sizing:border-box;width:100%;text-align:center;margin-top:10px;padding:9px 0;border:1px solid ' + GOLD + ';border-radius:8px;font-family:EB Garamond,serif;font-size:13px;color:' + GOLD + '">Ya lo devolví</button>'
+            + '</div>';
+    }).join('') : '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);margin-bottom:16px">No le debes nada a nadie.</div>';
+    if (hechos.length) {
+        h += '<div style="font-family:EB Garamond,serif;font-weight:600;font-size:9px;color:var(--sw-text-muted,#9DA096);letter-spacing:.2em;margin:18px 0 10px">Devueltos //</div>'
+            + hechos.slice(0, 20).map(function (x) { return '<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);padding:6px 0;border-bottom:1px solid var(--sw-border-soft,#1c1c1c)">' + esc(x.ref) + ' · ' + SOLES_TXT + pz(Number(x.amount) || 0) + '</div>'; }).join('');
+    }
+    h += BTN('Actualizar //', 'loadRefundsDue()', true);
     return h + '</div>';
 }
 // ZONAS QUE ESPERAN — quién se anotó en el checkout para que le avisemos cuando lleguemos a
@@ -4741,6 +4796,7 @@ Object.assign(ADMIN_SCREENS, {
     admin_ratings: sAdminRatings,
     admin_complaints: sAdminComplaints,
     admin_order_problems: sAdminOrderProblems,
+    admin_refunds_due: sAdminRefundsDue,
     admin_zone_waitlist: sAdminZoneWaitlist,
     admin_prep: sAdminPrepList,
     admin_recipes: sAdminRecipes,

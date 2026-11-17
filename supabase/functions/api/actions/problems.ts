@@ -18,6 +18,7 @@ import { requireSession, requireAdmin, verifyCronSecret } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
 import { sendPushToAdmins, sendPushToPhone } from "../push.ts";
 import { sendOrderProblemResolvedEmail } from "../email.ts";
+import { ajustarCredito } from "./admin.ts";
 import * as R from "../../_shared/reglas.ts";
 
 export const REPORTE_PLAZO_HORAS = R.REPORTE_PLAZO_HORAS;
@@ -120,6 +121,14 @@ export async function actAdminOrderProblems(b: Entrada<"admin-order-problems"> &
   };
 }
 
+// Cuánto se acredita o se devuelve: vacío = el total del pedido; acepta coma decimal; nunca 0,
+// negativo ni más que lo pagado (null = no vale). Plata real: lo prueba tests-api/algo-salio-mal.
+export function montoDeLaSolucion(entrada: unknown, total: number): number | null {
+  const txt = entrada === undefined || entrada === null ? "" : String(entrada).trim();
+  const monto = txt === "" ? total : Math.round(Number(txt.replace(",", ".")) * 100) / 100;
+  return Number.isFinite(monto) && monto > 0 && monto <= total ? monto : null;
+}
+
 export async function actAdminResolveOrderProblem(b: Entrada<"admin-resolve-order-problem"> & { _ip?: string }) {
   const s = await requireAdmin(b.token);
   const id = String(b.id || "").trim();
@@ -127,6 +136,20 @@ export async function actAdminResolveOrderProblem(b: Entrada<"admin-resolve-orde
   if (!id) throw new ApiError("Falta el reporte.");
   if (!SOLUCIONES[solucion]) throw new ApiError("Elige cómo se resuelve.");
   const nota = String(b.nota || "").trim().slice(0, 500);
+  const previo = (await sbGet("order_problems", `id=eq.${encodeURIComponent(id)}&select=id,order_id,customer_phone,resolved_at`))[0];
+  if (!previo) throw new ApiError("No encontramos ese reporte.", 404);
+  if (previo.resolved_at) throw new ApiError("Ese reporte ya estaba resuelto.", 409);
+  const pedido = (await sbGet("orders", `id=eq.${encodeURIComponent(String(previo.order_id))}&select=id,ref,total,payment_method,customer_email,customer_name`))[0];
+  if (!pedido) throw new ApiError("No encontramos el pedido de ese reporte.", 404);
+  // El monto del crédito o del reembolso: el que escribe el dueño (algo que faltó) o, si no
+  // escribe nada, el total del pedido. Nunca más que lo que se pagó.
+  const total = Number(pedido.total) || 0;
+  const monto = solucion === "reposicion" ? 0 : montoDeLaSolucion(b.monto, total);
+  if (monto === null) {
+    throw new ApiError(`El monto tiene que ser mayor que 0 y no más que el total del pedido (S/${total.toFixed(2)}).`);
+  }
+  // Lo pagado con crédito de la app se devuelve como crédito: ese es «el mismo medio».
+  const vaComoCredito = solucion === "credito" || (solucion === "reembolso" && pedido.payment_method === "credit");
   // Guard atómico: solo el primero que resuelve gana, y un reporte ya resuelto no se pisa.
   const rows = await sbUpdate(
     "order_problems",
@@ -135,11 +158,27 @@ export async function actAdminResolveOrderProblem(b: Entrada<"admin-resolve-orde
   );
   const p = rows && rows[0];
   if (!p) throw new ApiError("Ese reporte ya estaba resuelto.", 409);
-  await logAdminAction(s.phone, "resolve-order-problem", undefined, { id, ref: p.ref, solucion });
+  // El crédito se carga en el mismo toque (dueño, 2026-11-17). Si no se puede cargar, el reporte
+  // vuelve a quedar abierto: nunca se le dice «te dejamos crédito» sin haberlo dejado.
+  try {
+    if (vaComoCredito) {
+      await ajustarCredito(String(p.customer_phone), monto, `Crédito por «Algo salió mal» ${p.ref}`);
+    } else if (solucion === "reembolso") {
+      await sbInsert("refunds_due", {
+        order_id: String(pedido.id), ref: p.ref, amount: monto, payment_method: pedido.payment_method || "desconocido",
+        origen: "algo-salio-mal", created_by: s.phone,
+      });
+    }
+  } catch (e) {
+    await sbUpdate("order_problems", `id=eq.${encodeURIComponent(id)}`, { resolved_at: null, resolution: null, resolution_note: null, resolved_by: null });
+    throw e;
+  }
+  await logAdminAction(s.phone, "resolve-order-problem", undefined, { id, ref: p.ref, solucion, monto: solucion === "reposicion" ? null : monto });
+  const texto = SOLUCIONES[solucion] + (solucion === "reposicion" ? "" : ` (S/${monto.toFixed(2)})`);
   try {
     await sendPushToPhone(p.customer_phone, {
       title: `Sobre tu pedido ${p.ref}`,
-      body: SOLUCIONES[solucion] + (nota ? ". " + nota : "."),
+      body: texto + (nota ? ". " + nota : "."),
       url: "./index.html",
       tag: "sndwch-order-problem-resuelto-" + p.id,
     });
@@ -150,14 +189,29 @@ export async function actAdminResolveOrderProblem(b: Entrada<"admin-resolve-orde
   // al dueño «Le avisamos al cliente». `avisadoPorCorreo` le deja saber si de verdad salió.
   let avisadoPorCorreo = false;
   try {
-    const o = await sbGet("orders", `id=eq.${encodeURIComponent(String(p.order_id))}&select=customer_email,customer_name`);
-    if (o[0]?.customer_email) {
-      avisadoPorCorreo = await sendOrderProblemResolvedEmail(o[0].customer_email, o[0].customer_name || "", p.ref, SOLUCIONES[solucion], nota);
+    if (pedido.customer_email) {
+      avisadoPorCorreo = await sendOrderProblemResolvedEmail(pedido.customer_email, pedido.customer_name || "", p.ref, texto, nota);
     }
   } catch {
     // el reporte ya quedó resuelto; el cliente lo ve igual en la app
   }
-  return { success: true, avisadoPorCorreo };
+  return { success: true, avisadoPorCorreo, creditoCargado: vaComoCredito, porDevolver: !vaComoCredito && solucion === "reembolso" };
+}
+
+// «Por devolver» (dueño, 2026-11-17): lo que se le debe devolver a un cliente por fuera de la
+// app (tarjeta, Yape, Plin) hasta que el dueño marca que lo hizo.
+export async function actAdminRefundsDue(b: Entrada<"admin-refunds-due"> & { _ip?: string }) {
+  await requireAdmin(b.token);
+  return { refunds: await sbGet("refunds_due", "order=refunded_at.desc.nullsfirst,created_at.asc&limit=100") };
+}
+export async function actAdminMarkRefunded(b: Entrada<"admin-mark-refunded"> & { _ip?: string }) {
+  const s = await requireAdmin(b.token);
+  const id = String(b.id || "").trim();
+  if (!/^\d+$/.test(id)) throw new ApiError("Falta la devolución.");
+  const rows = await sbUpdate("refunds_due", `id=eq.${id}&refunded_at=is.null`, { refunded_at: new Date().toISOString(), refunded_by: s.phone });
+  if (!rows.length) throw new ApiError("Esa devolución ya estaba marcada.", 409);
+  await logAdminAction(s.phone, "mark-refunded", undefined, { id, ref: rows[0].ref, amount: rows[0].amount });
+  return { success: true };
 }
 
 // Cron: los reportes a los que se les está por pasar la hora prometida sin respuesta. Una

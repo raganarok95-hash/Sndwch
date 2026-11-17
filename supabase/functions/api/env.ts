@@ -234,6 +234,8 @@ export const META_CAPI_TOKEN = Deno.env.get("META_CAPI_TOKEN");
 export const BUSINESS_LEGAL_NAME = "Ezra Kemish Vertiz Labarrera";
 export const BUSINESS_RUC = "10736044523";
 export const BUSINESS_CITY = "Trujillo, Perú";
+// Domicilio del proveedor en la hoja del Libro (dueño, 2026-11-17). Igual que BIZ_ADDRESS del cliente.
+export const BUSINESS_ADDRESS = "Av. Prolongación César Vallejo 2670, Trujillo";
 export const CONTACT_EMAIL = "contacto@sndwch.com";
 // El mismo WhatsApp que muestra el cliente en el bloque del proveedor (06-cuenta-y-pedidos.ts).
 export const BUSINESS_WHATSAPP = "+51 930 957 640";

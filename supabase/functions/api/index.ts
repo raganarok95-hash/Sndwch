@@ -60,7 +60,7 @@ import {
 } from "./actions/complaints.ts";
 import { actReportClientError } from "./actions/errores.ts";
 import {
-  actReportOrderProblem, actMyOrderProblems, actAdminOrderProblems, actAdminResolveOrderProblem, actAlertOrderProblems,
+  actReportOrderProblem, actMyOrderProblems, actAdminOrderProblems, actAdminResolveOrderProblem, actAdminRefundsDue, actAdminMarkRefunded, actAlertOrderProblems,
 } from "./actions/problems.ts";
 import { actAdminZoneWaitlist, actAdminNotifyZone } from "./actions/zones.ts";
 import {
@@ -254,6 +254,8 @@ const ACTIONS: ConContrato & SinContrato = {
   "my-order-problems": actMyOrderProblems,
   "admin-order-problems": actAdminOrderProblems,
   "admin-resolve-order-problem": actAdminResolveOrderProblem,
+  "admin-refunds-due": actAdminRefundsDue,
+  "admin-mark-refunded": actAdminMarkRefunded,
   "alert-order-problems": actAlertOrderProblems,
   "admin-zone-waitlist": actAdminZoneWaitlist,
   "admin-notify-zone": actAdminNotifyZone,
