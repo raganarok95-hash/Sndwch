@@ -218,4 +218,7 @@ ITALIAN HOAGIE (precios online de Makro: confírmalos en Makro Trujillo).
 Al abrir van en **botella de 500 ml** con la receta nueva **cero azúcar** (v6, dueño 2026-10-24):
 THE BLOOM, COLD BREW // TEA y THE COOL. Esas fórmulas están **fuera del repo** (es público), así
 que no están acá. Las recetas con azúcar de `RECETARIO.md` (PARTE 4) **ya no se usan**.
+Desde el 2026-11-17 se suman **LEMON TEA** y **THE CHAI** (las pide la carta de PedidosYa). Sus recetas
+están en el panel (D10 y D09). El LEMON TEA **sale de la misma tanda de té que el COLD BREW // TEA**: una sola
+infusión en frío para las dos, y al colar se separa la parte que lleva limón (2026-11-18).
 La regla que no cambia: botella fría desde la noche anterior y sin hielo.
