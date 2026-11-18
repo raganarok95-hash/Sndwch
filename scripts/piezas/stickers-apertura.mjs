@@ -19,7 +19,7 @@ const [OUT = 'docs/marketing/stickers-apertura'] = process.argv.slice(2);
 mkdirSync(OUT, { recursive: true });
 
 const CREMA = '#F2F0EB', OSCURA = '#1E3932', ORO = '#CBA258', CELESTE = '#8CC8EC';
-// Los mismos textos de la lata v3 (PROPUESTA_V3.md). Al abrir solo hay tres bebidas (OPERATIVO.md).
+// Los mismos textos de la lata v3 (PROPUESTA_V3.md). Al abrir eran tres; LEMON TEA y CHAI se suman por PedidosYa (2026-11-17).
 const BOTELLAS = [
   { id: 'bloom', nut: [2, 0, 0, 0.5, 0.2, 0, 4], nombre: 'BLOOM', sabor: 'Hibiscus', icono: 'flor', tinta: CREMA, liquido: '#7F0D31',
     ing: 'agua, flor de jamaica (hibiscus), cáscara de naranja, canela, edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)' },
@@ -27,6 +27,13 @@ const BOTELLAS = [
     ing: 'agua, té negro, edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)' },
   { id: 'cool', nut: [2, 0, 0, 0.4, 0.1, 0, 2], nombre: 'COOL', sabor: 'Hierba luisa y menta', icono: 'rama', tinta: OSCURA, liquido: '#BFB662',
     ing: 'agua, hierba luisa, menta, jugo de limón, edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)' },
+  // LEMON TEA y THE CHAI entran a la carta de PedidosYa (Ezra, 2026-11-17: «incluye … las dos que faltan»): los textos de la lata v3.
+  { id: 'lemon-tea', nut: [2, 0, 0, 0.7, 0.2, 0, 3], nombre: 'LEMON TEA', sabor: 'Té negro y limón', icono: 'limon', tinta: CREMA, liquido: '#AD5E13',
+    ing: 'agua, té negro, jugo de limón, edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)' },
+  { id: 'chai', nut: [1, 0, 0, 0.3, 0, 0, 3], nombre: 'CHAI', sabor: 'Especiado y aromático', icono: 'anis', tinta: CREMA, liquido: '#772612',
+    ing: 'agua, chai (té negro, canela, jengibre, saborizante natural de vainilla, clavo de olor, cardamomo, pimienta negra, vainilla en polvo), edulcorante (sucralosa, INS 955), colorantes (mica, INS 555; dióxido de titanio, INS 171)',
+    // lleva saborizante: sin «Sabor 100% natural», como la lata
+    sello: 'TÉ NEGRO Y ESPECIAS' },
 ].map((B) => ({ ...B, ml: '500 ML', mlCap: 4.4 }));  // 4.4 en el dibujo de 66 mm = 4.0 mm impresos a 60 mm
 const ML = 500;
 const LEGAL = { razonSocial: (process.env.LEGAL_TITULAR || '[nombre del titular del RUC]') + ' (SNDWCH)', ruc: '10736044523',
@@ -248,9 +255,9 @@ await pliegoSalsas('salsas-A4-1-con-nombre', SALSAS);
 await pliegoSalsas('cocina-A4-tandas', COCINA);
 await pliegoSalsas('salsas-A4-2-en-blanco', Array.from({ length: 18 }, () => ['', '', '']));
 
-// ── 4 · Vista para el dueño: las tres botellas (frente y atrás) sobre su bebida ──
+// ── 4 · Vista para el dueño: todas las botellas (frente y atrás) sobre su bebida ──
 {
-  const W = 3 * 130 + 20, H = 128;
+  const W = BOTELLAS.length * 130 + 20, H = 128;
   const col = BOTELLAS.map((L, i) => {
     const x = 10 + i * 130, img = (f) => 'file://' + resolve(OUT, f + '.png');
     return `<div style="position:absolute;left:${x}mm;top:16mm;width:124mm;height:106mm;background:${L.liquido};border-radius:3mm"></div>
