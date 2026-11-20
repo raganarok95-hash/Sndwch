@@ -33,6 +33,8 @@ Salsa: 14 g en 15CM y 28 g en 30CM.
 | **ITALIAN HOAGIE** | CLASSIC // WHITE | AMERICANO | EMBUTIDO // ITALIANO | lechuga, tomate, cebolla morada, pimiento verde | OIL & VINEGAR | no |
 | **CLASSIC TUNA** | CLASSIC // WHITE | no lleva | ATÚN // HOUSE | ninguno | ninguna | no |
 
+**El pan** (CLASSIC y FOCACCIA) lo hacen especialmente para SND//WCH, con **masa madre** (Ezra, 2026-11-20).
+
 **Orden para armar los fríos:** pan → queso (si lleva) → proteína → vegetales → salsa.
 **Pan:** corte bisagra (no separes las dos mitades: así no se abre en la moto).
 
