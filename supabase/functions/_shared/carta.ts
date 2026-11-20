@@ -144,8 +144,8 @@ export const CARTA: Carta = {
     { id: "R06", tipo: "sandwich", pts: 400, nombre: "Sándwich", sabor: "Gratis", desc: "Sándwich 15CM gratis — no aplica al menú secreto" },
   ],
   panes: [
-    { id: "B01", nombre: "Classic", sabor: "White", desc: "Miga suave y corteza fina. No pelea con el relleno, lo sostiene." },
-    { id: "B03", nombre: "Focaccia", sabor: "Artesanal", desc: "Aceite de oliva en la masa y sal gruesa arriba. Más aromática y más densa.", recargo: { p15: 0.5, p30: 1 } },
+    { id: "B01", nombre: "Classic", sabor: "White", desc: "De masa madre, hecho para nosotros. Miga suave y corteza fina: no pelea con el relleno, lo sostiene." },
+    { id: "B03", nombre: "Focaccia", sabor: "Artesanal", desc: "De masa madre, hecha para nosotros. Aceite de oliva en la masa y sal gruesa arriba: más aromática y más densa.", recargo: { p15: 0.5, p30: 1 } },
   ],
   // El doble escala con el tamaño (85 g en 15CM, 170 g en 30CM): por eso son dos recargos.
   // Precios y doble de la v4 (docs/MENU_CLASICOS_USA.md, modelo/rentabilidad_por_parte.py).

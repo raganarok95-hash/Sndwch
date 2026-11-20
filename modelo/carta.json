@@ -50,13 +50,13 @@
       "id": "B01",
       "nombre": "Classic",
       "sabor": "White",
-      "desc": "Miga suave y corteza fina. No pelea con el relleno, lo sostiene."
+      "desc": "De masa madre, hecho para nosotros. Miga suave y corteza fina: no pelea con el relleno, lo sostiene."
     },
     {
       "id": "B03",
       "nombre": "Focaccia",
       "sabor": "Artesanal",
-      "desc": "Aceite de oliva en la masa y sal gruesa arriba. Más aromática y más densa.",
+      "desc": "De masa madre, hecha para nosotros. Aceite de oliva en la masa y sal gruesa arriba: más aromática y más densa.",
       "recargo": {
         "p15": 0.5,
         "p30": 1
