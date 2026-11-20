@@ -55,11 +55,14 @@ Lo que se lee de esto, sin ver la creatividad:
 Se toma la mecánica, nunca su frase, su nombre ni su historia. Respetando la marca: nombres en MAYÚSCULAS,
 sin identidad regional, sin hablar de cómo es la cocina por dentro, sin etiquetas de IA en el contenido.
 
-1. **Una promesa, dicha con un hecho, no con un adjetivo.** Ellos: «el pan era chico». El 30CM **no tiene historia
-   de origen** (Ezra, 2026-11-20: «30cm es solo una mdida que consideraba grande»), así que la pieza «¿POR QUÉ 30?»
-   queda **descartada**: no se inventa una razón. Lo verdadero que sí se puede contar es la medida misma: el 30CM
-   mide 30 de verdad, con la porción de la receta (INDECOPI). Pieza posible: SANDO con una regla junto al pan,
-   «MIDE 30. LO MEDIMOS.», sin decir por qué.
+1. **Una promesa, dicha con una historia verdadera: el pan.** Ellos cuentan su pan roseta; nosotros tenemos la
+   nuestra. Ezra, 2026-11-20: «Son panes hechos especialmente, diseñados para el negocio trabajados con masa
+   madre». Pieza: carrusel de 2 o 3, «ESTE PAN NO SE COMPRA.» → «Se hace para nosotros, con masa madre.» → el
+   sándwich armado. SANDO lo cuenta (es el que cuida el oficio). Va también como reel corto si hay toma real del
+   pan. Ojo: la carta (`carta.ts`) todavía no dice «masa madre»; Calidad lo confirma con Ezra o con el panadero
+   antes de publicar, y si entra a la carta, se agrega el mismo día.
+   La idea «¿POR QUÉ 30?» queda **descartada**: el 30CM no tiene historia (Ezra, 2026-11-20: «30cm es solo una
+   mdida que consideraba grande») y no se inventa una.
 2. **Pauta en goteo, cuando Ezra la prenda.** En vez de un anuncio grande, 2 anuncios nuevos cada 3 o 4 días,
    cada uno con la fórmula de `anuncio-directo`, y apagar el que no traiga pedidos (reglas de `pauta-medible`).
    Todo queda en pausa hasta su sí.
