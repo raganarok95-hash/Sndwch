@@ -54,7 +54,7 @@ Cada tanda, con lo que hay que tener a mano para hacerla. La tanda **de apertura
 | **BEBIDAS** (1 L de cada una) | 2 botellas de 500 ml | **THE BLOOM:** 16 g flor de jamaica, 3 g canela, 5 g cáscara de naranja · **COLD BREW // TEA:** 26 g té negro a granel · **THE COOL:** 13 g hierba luisa, 10 g menta, 25 ml limón · todas: agua de bidón, solución de sucralosa pura al 2% y de sal al 10% | Bloom y Cool duran 7 días; Cold Brew, 5 |
 | **LEMON TEA** y **THE CHAI** (PedidosYa, 18-nov) | 2 botellas de 500 ml por litro | receta en el panel (D10 y D09): el LEMON TEA sale de la tanda del COLD BREW TEA (más té negro y limón); THE CHAI con filtrantes de chai | al abrir, de 2 a 3 L de cada una |
 | **Vegetales del día** (por cada 10 sándwiches con verdura) | — | tomate 350 g · lechuga 210 g · cebolla morada 70 g · pimiento verde 70 g (y 70 g más de pimiento por cada 10 PHILLY) | 2 veces por semana |
-| **Pan sub** | 2 porciones 15CM por pan | 12 panes para abrir, cortados y congelados | según el proveedor (sección 4) |
+| **Pan sub** (con calor, solo el del día afuera: 20-nov) | 2 porciones 15CM por pan | 12 panes para abrir; frío del todo, cortado en mitades, envuelto de a 2 y congelado el mismo día (hasta 3 meses); sin refri; se regenera del congelador al horno a 177 °C (King Arthur) | según el proveedor (sección 4) |
 | **Quesos** | cheddar: 8 tajadas por paquete · americano: 10 | 2 paquetes de cheddar y 1 de americano para abrir | cuando quede 1 paquete |
 | **Empaque** | por pedido | bolsa kraft lisa, papel manteca, sticker de cierre, servilletas | cuando queden 30 de cada uno |
 
