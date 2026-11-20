@@ -75,11 +75,35 @@ export const BEBIDAS_SIN_SANDWICH_DESDE = 2;
 export const NOTE_ALERT_WORDS = ["alergi", "alérgi", "intoleran", "celiac", "celíac", "gluten", "lactosa", "diabet"];
 
 // ── Envío ──────────────────────────────────────────────────────────────────────────
-export const DELIVERY_KM_RATE = 2;
+// TARIFARIO POR KM del grupo de motorizados (dueño, 2026-11-20: «Me actualizaron el tarifario de
+// envío»). Cada tramo cubre hasta `hastaKm` inclusive; el que cae entre dos tramos (1.55 km) paga
+// el de arriba, así el error queda del lado de pagarle completo al motorizado. Pasado el último
+// tramo no hay tarifa: la app no acepta la dirección (DELIVERY_MAX_KM). Reemplaza a S/2 por km.
+export const TARIFA_ENVIO: { hastaKm: number; precio: number }[] = [
+  { hastaKm: 1.5, precio: 5 },
+  { hastaKm: 2.2, precio: 6 },
+  { hastaKm: 3.0, precio: 7 },
+  { hastaKm: 3.9, precio: 8 },
+  { hastaKm: 4.5, precio: 9 },
+  { hastaKm: 5.0, precio: 10 },
+  { hastaKm: 5.5, precio: 11 },
+  { hastaKm: 6.0, precio: 12 },
+  { hastaKm: 6.5, precio: 13 },
+  { hastaKm: 7.0, precio: 14 },
+];
+/** Hasta dónde llega el envío: el último tramo del tarifario. */
+export const DELIVERY_MAX_KM = TARIFA_ENVIO[TARIFA_ENVIO.length - 1]!.hastaKm;
 export const DELIVERY_ROAD_FACTOR = 1.3;
-export const DELIVERY_MIN_FEE = 5;
-// SIN LÍMITES DE ENVÍO (dueño, 2026-09-30: «manda siempre la distancia, mi proveedor de delivery
-// no tiene límites de envío»). Hasta hoy había un tope de 12 km y El Milagro / El Porvenir se
+/** El envío más barato: el primer tramo («delivery desde S/5»). */
+export const DELIVERY_MIN_FEE = TARIFA_ENVIO[0]!.precio;
+/** Lo que cuesta el envío a `km` cobrables, o null si está fuera del tarifario. Cliente y servidor usan ESTA. */
+export function tarifaEnvio(km: number): number | null {
+  if (!Number.isFinite(km) || km < 0) return null;
+  const tramo = TARIFA_ENVIO.find((t) => km <= t.hastaKm);
+  return tramo ? tramo.precio : null;
+}
+// SIN LÍMITES POR DISTRITO (dueño, 2026-09-30: «manda siempre la distancia, mi proveedor de delivery
+// no tiene límites de envío»). Desde el 2026-11-20 el límite es el del tarifario (DELIVERY_MAX_KM). Hasta el 2026-09-30 había un tope de 12 km y El Milagro / El Porvenir se
 // rechazaban por el texto de la dirección. La lista vacía apaga ese rechazo sin ramas muertas
 // (el mismo criterio que la hora valle retirada); el tope de km se quitó con sus chequeos.
 export const DELIVERY_EXCLUDED_ZONES: string[] = [];
@@ -87,7 +111,7 @@ export const ZONAS_DE_ENVIO: { id: string; nombre: string; precio: number }[] = 
   { id: "cerca", nombre: "Cerca del local", precio: 6 },
   { id: "media", nombre: "Distancia media", precio: 8 },
   { id: "lejos", nombre: "Lejos", precio: 12 },
-  { id: "muy_lejos", nombre: "Muy lejos", precio: 15 },
+  { id: "muy_lejos", nombre: "Muy lejos", precio: 14 },
 ];
 
 // ── Cobro, tarjeta de regalo y Plan Semanal ────────────────────────────────────────

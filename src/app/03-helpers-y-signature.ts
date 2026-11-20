@@ -1232,7 +1232,8 @@ function envioEstimadoGrupo(g:any):{km:number,fee:number}|null{
   if(!g.isOrganizer)return null;
   var a=myAddresses.find(function(x:any){return typeof x.lat==='number'&&typeof x.lon==='number';});
   var km=kmADireccion(a);
-  return km==null?null:{km:km,fee:deliveryFeeForKm(km)};
+  var fee=km==null?null:deliveryFeeForKm(km);
+  return km==null||fee==null?null:{km:km,fee:fee};
 }
 // Las cifras de esta pantalla van con dos decimales y en columna, como en la maqueta (7.00).
 function d2(n:number):string{return(Math.round(n*100)/100).toFixed(2);}

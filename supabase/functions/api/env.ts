@@ -283,7 +283,7 @@ export const BASE_SURCHARGE = REGLAS.recargoPan;
 // AVISABA del desajuste; el cobro seguía saliendo de la zona elegida.
 //
 // El dueño creía que la app ya cobraba por distancia. No lo hacía. Ahora sí.
-export const DELIVERY_KM_RATE = R.DELIVERY_KM_RATE; // [MEDIDO] dueño 2026-09-02: S/2 por km del tercero
+// Desde el 2026-11-20 no es S/2 por km: es el TARIFARIO POR TRAMOS del grupo (R.TARIFA_ENVIO, R.tarifaEnvio).
 // La distancia que se puede calcular sin depender de nadie es la de LÍNEA RECTA entre el
 // punto de despacho y el pin del cliente. La ruta real en moto siempre es más larga (calles,
 // sentidos, óvalos). 1.3 es el factor de corrección de ciudad acordado con el dueño
@@ -291,10 +291,9 @@ export const DELIVERY_KM_RATE = R.DELIVERY_KM_RATE; // [MEDIDO] dueño 2026-09-0
 // consulta y una cuenta que contratar, y porque un factor editable se calibra contra lo que
 // los motorizados cobran de verdad.
 export const DELIVERY_ROAD_FACTOR = R.DELIVERY_ROAD_FACTOR;
-// Piso de la tarifa. A S/2/km, alguien a 800 m pagaría S/1.60 y ningún motorizado toma ese
-// viaje. [MEDIDO] dueño 2026-09-02: el mínimo que le cobra su grupo por un viaje corto es
-// S/5. Por debajo de 2.5 km, entonces, la tarifa la fija este piso y no los kilómetros.
+// El envío más barato: el primer tramo del tarifario (S/5 hasta 1.5 km, dueño 2026-11-20).
 export const DELIVERY_MIN_FEE = R.DELIVERY_MIN_FEE;
+export const DELIVERY_MAX_KM = R.DELIVERY_MAX_KM;
 // Punto de despacho — mismas coordenadas que STORE_LAT/STORE_LON en el cliente, que ya se
 // usaban para el banner "estás cerca". `npm run parity` compara los dos lados.
 export const STORE_LAT = R.STORE_LAT;

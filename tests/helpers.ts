@@ -1,4 +1,5 @@
 import { Page } from '@playwright/test';
+import { tarifaEnvio, CULQI_FEE_RATE } from '../supabase/functions/_shared/reglas.ts';
 import path from 'path';
 
 // SND//WCH — tests/helpers
@@ -112,7 +113,10 @@ export async function stubWindowOpen(page: Page) {
 //
 // Representa al cliente NORMAL: el que ya confirmó su ubicación una vez y la tiene guardada.
 // El caso sin pin tiene su propio test en tests/delivery-distancia.spec.ts.
-export const PIN_TEST = { lat: -8.111962, lon: -79.039458, km: 4.0, fee: 8 };
+// El envío sale del tarifario (desde el 2026-11-20 es por tramos): 4.0 km cae en S/9.
+export const PIN_TEST = { lat: -8.111962, lon: -79.039458, km: 4.0, fee: tarifaEnvio(4.0)! };
+/** El envío de PIN_TEST con tarjeta: engordado por la comisión de Culqi, como lo cobra el servidor. */
+export const PIN_TEST_FEE_TARJETA = Math.round((PIN_TEST.fee / (1 - CULQI_FEE_RATE)) * 100) / 100;
 
 export async function setDeliveryPin(page: Page, lat = PIN_TEST.lat, lon = PIN_TEST.lon) {
   await page.evaluate(([la, lo]) => {

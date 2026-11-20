@@ -9,9 +9,12 @@ import * as R from '../../supabase/functions/_shared/reglas.ts';
 const mayuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function reglasViejas() {
-  const r = structuredClone({ ...R });
+  // Las funciones no se clonan (structuredClone las rechaza): van aparte, tal cual.
+  const { tarifaEnvio, ...datos } = R;
+  const r = structuredClone(datos);
   return {
     ...r,
+    tarifaEnvio,
     DELIVERY_PRICE_ZONES: r.ZONAS_DE_ENVIO.map((z) => ({ id: z.id, l: z.nombre, fee: z.precio })),
     // En pantalla la etiqueta del escalón empieza con mayúscula; en el servidor va dentro de una frase.
     REFERRAL_MILESTONES: r.REFERRAL_MILESTONES.map((m) => ({ ...m, label: mayuscula(m.label) })),

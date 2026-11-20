@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, mockBackend, stubWindowOpen, APP_FILE, entrarConTelefono, cartaDeLaApp, ponerRecibe, ponerDireccion, pagarConYape, type Carta } from './helpers';
+import { gotoApp, mockBackend, stubWindowOpen, APP_FILE, entrarConTelefono, cartaDeLaApp, ponerRecibe, ponerDireccion, pagarConYape, type Carta, PIN_TEST } from './helpers';
 
 // INCENTIVO AL ORGANIZADOR (2026-08-22). Quien junta un pedido grupal de 5 o más
 // sándwiches se lleva gratis el 15CM más barato del grupo. Es el motor del canal de
@@ -135,7 +135,7 @@ test('el organizador cierra un grupo de 5 y el total descuenta el 15CM más bara
   // Los cuatro que se pagan + delivery de zona 'media' (S/8, sin engordar porque paga con
   // Yape/Plin). Si el descuento del organizador no se hubiera aplicado el total no
   // coincidiría con el del servidor y el pedido se rechazaría.
-  expect(placeOrder!.body.total).toBe(Math.round((4 * c.p15[caro]! + 8) * 100) / 100);
+  expect(placeOrder!.body.total).toBe(Math.round((4 * c.p15[caro]! + PIN_TEST.fee) * 100) / 100);
   // El código del grupo viaja con el pedido: es lo que le permite al servidor verificar
   // el descuento contra la base y, además, medir el canal de oficinas.
   expect(placeOrder!.body.groupCode).toBe('OFI001');

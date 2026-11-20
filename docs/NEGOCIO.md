@@ -266,8 +266,10 @@ de margen hecho sin esto usa el precio del insumo crudo y sale ~1.85x optimista.
   del mapa existía pero **solo AVISABA** del desajuste, y su texto llegaba a decir "puede que
   el motorizado te pida la diferencia al llegar" — una promesa sobre lo que haría un tercero.
   El dueño creía que la app ya cobraba por distancia; no lo hacía.
-  Ahora: `km cobrables = haversine(pin, local) × DELIVERY_ROAD_FACTOR` y
-  `tarifa = techo(max(DELIVERY_MIN_FEE, km × DELIVERY_KM_RATE) al medio sol)`. Las cuatro
+  Ahora: `km cobrables = haversine(pin, local) × DELIVERY_ROAD_FACTOR` y la tarifa sale del
+  **tarifario por tramos** (`TARIFA_ENVIO` y `tarifaEnvio()` en `_shared/reglas.ts`, desde el 2026-11-20:
+  S/5 hasta 1.5 km … S/14 hasta 7 km; pasado 7 km no se acepta la dirección). Antes era
+  `techo(max(5, km × 2) al medio sol)`. Las
   constantes más `STORE_LAT`/`STORE_LON` están duplicadas cliente/servidor y las compara
   `npm run parity` — si se desajustan, el cliente muestra un monto y el servidor cobra otro,
   y la diferencia sale del bolsillo del dueño al pagarle al motorizado.
@@ -280,9 +282,7 @@ de margen hecho sin esto usa el precio del insumo crudo y sale ~1.85x optimista.
   error posible acá); y **el servidor cae al cobro por zona si no recibe coordenadas**, a
   propósito, para que un shell viejo servido por un service worker desactualizado pueda pagar
   igual en vez de encontrarse el checkout roto.
-  **`DELIVERY_MIN_FEE = 5`** es el mínimo real que el grupo de motorizados le cobra al dueño
-  por un viaje corto (confirmado 2026-09-02): por debajo de 2.5 km la tarifa la fija ese piso
-  y no los kilómetros. `orders.delivery_km` guarda los km cobrados para poder comparar contra lo que
+  **`DELIVERY_MIN_FEE`** es el primer tramo del tarifario (S/5 hasta 1.5 km, 2026-11-20). `orders.delivery_km` guarda los km cobrados para poder comparar contra lo que
   el motorizado cobró ese día.
   El monto se cobra dentro del mismo pago del pedido; el dueño le paga al motorizado con ese
   dinero. El negocio no gana ni subsidia el

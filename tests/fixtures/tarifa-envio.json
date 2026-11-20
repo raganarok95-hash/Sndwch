@@ -1,16 +1,21 @@
 {
-  "_porque": "La MISMA tabla la verifican dos pruebas en dos lenguajes: tests-api/delivery-distancia.test.ts contra el Deno del servidor, y tests/paridad-envio.spec.ts contra el JavaScript real del navegador. Si una de las dos fórmulas cambia y la otra no, una de las dos pruebas falla. `npm run parity` no puede atrapar esto: compara CONSTANTES, no la fórmula que las combina.",
-  "_regla": "Se redondea hacia ARRIBA al medio sol, y nunca por debajo del mínimo. El delivery es pass-through: si el cobro se queda corto, la diferencia sale del bolsillo del dueño al pagarle al motorizado.",
+  "_porque": "La MISMA tabla la verifican dos pruebas en dos lenguajes: tests-api/delivery-distancia.test.ts contra el Deno del servidor, y tests/paridad-envio.spec.ts contra el JavaScript real del navegador. Si el cobro de un lado cambia y el del otro no, una de las dos pruebas falla.",
+  "_regla": "El tarifario por km del grupo de motorizados, copiado del mensaje del dueño (2026-11-20). Cada tramo incluye su borde de arriba; lo que cae entre dos tramos paga el de arriba. Pasado 7 km no hay tarifa (null): la app no acepta la dirección. El delivery es pass-through: si el cobro se queda corto, la diferencia sale del bolsillo del dueño.",
   "casos": [
-    { "km": 0,    "fee": 5,   "nota": "el propio local: manda el mínimo" },
-    { "km": 1.2,  "fee": 5,   "nota": "por debajo de 2.5 km la tarifa la fija el piso" },
-    { "km": 2.4,  "fee": 5,   "nota": "2.4 x 2 = 4.80, sigue por debajo del mínimo" },
-    { "km": 2.5,  "fee": 5,   "nota": "el punto exacto donde los km alcanzan al mínimo" },
-    { "km": 2.6,  "fee": 5.5, "nota": "5.20 sube al medio sol de arriba, no baja a 5" },
-    { "km": 3.0,  "fee": 6,   "nota": "6.00 exacto no se sube a 6.50" },
-    { "km": 3.1,  "fee": 6.5, "nota": "6.20 redondea hacia arriba" },
-    { "km": 3.76, "fee": 8,   "nota": "7.52 -> 8, nunca 7.50" },
-    { "km": 5.0,  "fee": 10,  "nota": "10.00 exacto" },
-    { "km": 7.3,  "fee": 15,  "nota": "14.60 -> 15" }
+    { "km": 0,    "fee": 5,    "nota": "el propio local" },
+    { "km": 1.5,  "fee": 5,    "nota": "0 – 1.5 km: S/5 (borde incluido)" },
+    { "km": 1.55, "fee": 6,    "nota": "entre 1.5 y 1.6 paga el tramo de arriba" },
+    { "km": 2.2,  "fee": 6,    "nota": "1.6 – 2.2 km: S/6" },
+    { "km": 2.3,  "fee": 7,    "nota": "2.3 – 3.0 km: S/7" },
+    { "km": 3.0,  "fee": 7,    "nota": "3.0 exacto sigue en S/7" },
+    { "km": 3.9,  "fee": 8,    "nota": "3.1 – 3.9 km: S/8" },
+    { "km": 4.2,  "fee": 9,    "nota": "4.0 – 4.5 km: S/9" },
+    { "km": 5.0,  "fee": 10,   "nota": "4.6 – 5.0 km: S/10" },
+    { "km": 5.3,  "fee": 11,   "nota": "5.1 – 5.5 km: S/11" },
+    { "km": 6.0,  "fee": 12,   "nota": "5.6 – 6.0 km: S/12" },
+    { "km": 6.4,  "fee": 13,   "nota": "6.1 – 6.5 km: S/13" },
+    { "km": 7.0,  "fee": 14,   "nota": "6.6 – 7.0 km: S/14, el último tramo" },
+    { "km": 7.01, "fee": null, "nota": "pasado 7 km no hay tarifa" },
+    { "km": 12,   "fee": null, "nota": "lejos: no se acepta" }
   ]
 }

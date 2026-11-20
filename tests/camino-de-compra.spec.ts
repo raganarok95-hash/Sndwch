@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, elegirSando, pedirUnSignature, ponerRecibe, ponerDireccion, pagarConYape, cartaDeLaApp } from './helpers';
+import { gotoApp, elegirSando, pedirUnSignature, ponerRecibe, ponerDireccion, pagarConYape, cartaDeLaApp, PIN_TEST, PIN_TEST_FEE_TARJETA } from './helpers';
 
 // EL CAMINO DE COMPRA de las maquetas (01 → bebidas → 30G → 34 → 31 → 06A), de punta a punta.
 //
@@ -9,7 +9,7 @@ import { gotoApp, elegirSando, pedirUnSignature, ponerRecibe, ponerDireccion, pa
 //   · que se vuelva a exigir un distrito. El envío se cobra por distancia y el distrito ya no
 //     limita nada (dueño, 2026-09-30). Exigirlo dejaba al cliente en un bucle 30G → 34 → mapa
 //     cuando el geocodificador no lo reconocía: ninguna prueba lo vio porque todas elegían uno.
-// El pin de las pruebas (PIN_TEST) cae a 4 km: S/8 de envío con Yape, 8/(1-0.055) con tarjeta.
+// El pin de las pruebas (PIN_TEST) cae a 4 km: su envío del tarifario con Yape, y con la comisión con tarjeta.
 
 const ORDEN = (body: any) => ({
   success: true,
@@ -35,7 +35,7 @@ test('con Yape, sin distrito: el pedido sale con el total de la carta más el en
   expect(po!.body.name).toBe('Cliente Camino');
   expect(po!.body.phone).toBe('987654321');
   expect(po!.body.address).toContain('Calle Los Cedros 500');
-  expect(po!.body.total).toBe(Math.round((c.p15[it.sigId]! + 8) * 100) / 100);
+  expect(po!.body.total).toBe(Math.round((c.p15[it.sigId]! + PIN_TEST.fee) * 100) / 100);
 });
 
 test('con tarjeta, sin distrito: prepare-order lleva el envío con la comisión', async ({ page }) => {
@@ -52,5 +52,5 @@ test('con tarjeta, sin distrito: prepare-order lleva el envío con la comisión'
   await expect.poll(() => calls.find((x) => x.action === 'prepare-order'), { timeout: 10000 }).toBeTruthy();
   const c = await cartaDeLaApp(page);
   const pr = calls.find((x) => x.action === 'prepare-order')!;
-  expect(pr.body.total).toBe(Math.round((c.p15[pr.body.items[0].sigId]! + 8.47) * 100) / 100);
+  expect(pr.body.total).toBe(Math.round((c.p15[pr.body.items[0].sigId]! + PIN_TEST_FEE_TARJETA) * 100) / 100);
 });

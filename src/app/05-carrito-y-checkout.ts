@@ -392,7 +392,7 @@ function sOCart(){
   if(appliedPromo)ex+='<div class="ex"><span>Código '+esc(appliedPromo.code)+'</span><span>−'+pz(appliedPromo.discount)+'</span></div>';
   ex+=dirOk&&envio>0
     ?'<div class="ex"><span>Envío '+deliveryKmNow()+' km</span><span>'+pz(envio)+'</span></div>'
-    :'<div class="ex"><span>Envío</span><span>Al elegir dónde</span></div>';
+    :'<div class="ex"><span>Envío</span><span>'+(dirOk&&fueraDeAlcance(deliveryKmNow())?'Más de '+DELIVERY_MAX_KM+' km':'Al elegir dónde')+'</span></div>';
   var rw2=!appliedPromo?recompensaUsable():null;
   var renglones=en30('Llega',llegaTexto(),'Programar',"hoja30='programar';hojaErr='';initSchedDefault();render()")
     // Dónde y Recibe abren la MISMA hoja (dueño, 2026-11-02, «Sí a todo»; aprobadas/pedido-simple-hoja-de-datos.png).
@@ -453,7 +453,7 @@ function hoja30HTML(){
       +'<label class="campo"><s>Celular</s><input id="o-phone" type="tel" inputmode="tel" autocomplete="tel" value="'+esc(confPhone)+'"></label>'
       +(dirOk2
         ?'<label class="campo"><s>Dirección</s><input id="o-addr" type="text" autocomplete="street-address" value="'+esc(addrText)+'"></label>'
-          +'<button class="mapa30" data-accion="mover-pin" onclick="hojaAlMapa()"><span>📍 Marcado en el mapa · '+(km2!=null?km2.toFixed(1)+' km · ':'')+'envío '+SOLES_TXT+pz(deliveryFeeAmount())+'</span><u>Mover</u></button>'
+          +'<button class="mapa30" data-accion="mover-pin" onclick="hojaAlMapa()"><span>📍 Marcado en el mapa · '+(km2!=null?km2.toFixed(1)+' km · ':'')+(fueraDeAlcance(km2)?'llegamos hasta '+DELIVERY_MAX_KM+' km':'envío '+SOLES_TXT+pz(deliveryFeeAmount()))+'</span><u>Mover</u></button>'
         :'<button class="mapa30 falta" data-accion="marcar-en-el-mapa" onclick="hojaAlMapa()"><span>📍 Dirección · márcala en el mapa y te decimos el envío</span><u>'+(cust&&myAddresses.length?'Elegir':'Marcar')+'</u></button>')
       +'<label class="campo"><s>Referencia (opcional)</s><input id="o-notes" type="text" value="'+esc(confNotes)+'"></label>'
       +'<div class="err" role="alert">'+esc(hojaErr)+'</div>'
@@ -603,7 +603,7 @@ function sODir(){
     return'<button class="et" data-accion="elegir-direccion" aria-pressed="'+sel+'" onclick="'+alTocar+'">'
       +'<span class="hd"><span>'+esc(a.label||'Guardada')+'</span><span>'+(km!=null?km.toFixed(1)+' km':'—')+'</span></span>'
       +'<b>'+esc(a.address)+'</b>'+(a.reference?'<s>'+esc(a.reference)+'</s>':'')
-      +'<span class="pie"><i>'+(env!=null?'Envío '+SOLES_TXT+pz(env):'Márcala en el mapa')+'</i><u>Editar</u></span></button>';
+      +'<span class="pie"><i>'+(env!=null?'Envío '+SOLES_TXT+pz(env):fueraDeAlcance(km)?'Llegamos hasta '+DELIVERY_MAX_KM+' km':'Márcala en el mapa')+'</i><u>Editar</u></span></button>';
   }).join('');
   var sel=lista.find(function(a){return dirElegida!=null&&mismoId(dirElegida,a.id);});
   var envSel=sel?envioADireccion(sel):null;
@@ -727,6 +727,10 @@ function pagarConTarjetaYa(){selectPayMethod('culqi');render();confirmarPago();}
 var _pendingOrder=null;
 // Lo que impide pagar, o null. Lee el ESTADO del pedido (confNom, addrText, schedSlot…), no
 // campos de un formulario: la 30G guarda cada dato en su renglón. El servidor vuelve a validar.
+// Lo que se le dice a quien marca una dirección más lejos que el tarifario (dueño, 2026-11-20).
+function textoFueraDeAlcance(km:number):string{
+  return'Esa dirección queda a '+km.toFixed(1)+' km y por ahora llegamos hasta '+DELIVERY_MAX_KM+' km del local. Prueba con otra dirección más cerca.';
+}
 function problemaDelPedido():string|null{
   elegirGuardadaSola();
   if(!cart.length)return'Tu pedido está vacío.';
@@ -757,6 +761,7 @@ function problemaDelPedido():string|null{
       :'Esta hora ya está completa — la cocina no da abasto para más pedidos ahora mismo. Prueba con otro día.';
   }
   if(deliveryKmNow()===null)return'Marca tu ubicación en el mapa para calcular el envío: se cobra por distancia real.';
+  if(fueraDeAlcance(deliveryKmNow()))return textoFueraDeAlcance(deliveryKmNow() as number);
   return null;
 }
 // `desdePagar`: viene de la 31, que ES la confirmación (se ve el monto y el QR); no se vuelve a
@@ -1977,7 +1982,7 @@ var _revUlt='';
 function pintarEnvioMapa(lat,lon){
   var km=kmADireccion({lat:lat,lon:lon}),fee=envioADireccion({lat:lat,lon:lon});
   var e=document.getElementById('mmap-envio'),k=document.getElementById('mmap-km');
-  if(e)e.textContent=fee==null?'Envío':'Envío '+SOLES_TXT+pz(fee);
+  if(e)e.textContent=fee!=null?'Envío '+SOLES_TXT+pz(fee):fueraDeAlcance(km)?'Llegamos hasta '+DELIVERY_MAX_KM+' km':'Envío';
   if(k)k.textContent=km==null?'':(Math.round(km*10)/10).toFixed(1)+' km';
 }
 function revGeo(lat,lon){

@@ -138,8 +138,14 @@ r += `
 - Notas que avisan a cocina: ${R.NOTE_ALERT_WORDS.join(', ')}.
 
 ## Envío
-- Por distancia: km en línea recta × ${R.DELIVERY_ROAD_FACTOR} (factor de ruta) × ${S(R.DELIVERY_KM_RATE)} por km, mínimo ${S(R.DELIVERY_MIN_FEE)}, redondeado hacia ARRIBA al medio sol. Es pass-through: todo va al motorizado.
-- Sin tope de distancia${R.DELIVERY_EXCLUDED_ZONES.length ? '. No se entrega en: ' + R.DELIVERY_EXCLUDED_ZONES.join(', ') : ' ni zonas excluidas: manda la distancia'} (dueño, 2026-09-30).
+- Por distancia, con el TARIFARIO POR KM del grupo de motorizados (dueño, 2026-11-20). Los km son la línea recta × ${R.DELIVERY_ROAD_FACTOR} (factor de ruta). Es pass-through: todo va al motorizado.
+
+| hasta | envío |
+|---|---|
+${R.TARIFA_ENVIO.map((t) => `| ${t.hastaKm.toFixed(1)} km | ${S(t.precio)} |`).join('\n')}
+
+- Lo que cae entre dos tramos paga el de arriba. Más de **${R.DELIVERY_MAX_KM} km**: no hay tarifa y la app no acepta la dirección.
+- Sin zonas excluidas por distrito${R.DELIVERY_EXCLUDED_ZONES.length ? '. No se entrega en: ' + R.DELIVERY_EXCLUDED_ZONES.join(', ') : ''}: manda la distancia.
 - Sin coordenadas cae a zona: ${R.ZONAS_DE_ENVIO.map((z) => `${z.nombre} ${S(z.precio)}`).join(' · ')}.
 
 ## Pago

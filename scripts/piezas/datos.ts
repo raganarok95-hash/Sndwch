@@ -4,7 +4,7 @@
 // reciente de cada Signature, igual que loadCatalogItems): nombres y precios coinciden.
 import { CARTA } from "../../supabase/functions/_shared/carta.ts";
 import { REGLAS } from "../../supabase/functions/_shared/dinero.ts";
-import { DELIVERY_MIN_FEE, DELIVERY_KM_RATE } from "../../supabase/functions/_shared/reglas.ts";
+import { DELIVERY_MIN_FEE, DELIVERY_MAX_KM } from "../../supabase/functions/_shared/reglas.ts";
 
 const nombre = (lista: any[], id?: string) => lista.find((x: any) => x.id === id);
 const sigs = CARTA.signatures.filter((s: any) => !s.secreto).sort((a: any, b: any) => a.orden - b.orden).map((s: any) => ({
@@ -24,5 +24,5 @@ console.log(JSON.stringify({
   sigs, pasos,
   cuenta: { panes: CARTA.panes.length, proteinas: CARTA.proteinas.filter((p: any) => !p.soloSecreto).length, quesos: CARTA.quesos.length, vegetales: CARTA.vegetales.filter((v: any) => !v.soloSecreto).length, salsas: CARTA.salsas.filter((v: any) => !v.soloSecreto).length },
   bebidas: CARTA.bebidas.map((b: any) => ({ nombre: b.nombre, sabor: b.sabor })),
-  organizadorDesde: REGLAS.organizadorDesde, envioMinimo: DELIVERY_MIN_FEE, envioPorKm: DELIVERY_KM_RATE,
+  organizadorDesde: REGLAS.organizadorDesde, envioMinimo: DELIVERY_MIN_FEE, envioHastaKm: DELIVERY_MAX_KM,
 }));

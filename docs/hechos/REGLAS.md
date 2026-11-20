@@ -20,9 +20,24 @@
 - Notas que avisan a cocina: alergi, alérgi, intoleran, celiac, celíac, gluten, lactosa, diabet.
 
 ## Envío
-- Por distancia: km en línea recta × 1.3 (factor de ruta) × S/2 por km, mínimo S/5, redondeado hacia ARRIBA al medio sol. Es pass-through: todo va al motorizado.
-- Sin tope de distancia ni zonas excluidas: manda la distancia (dueño, 2026-09-30).
-- Sin coordenadas cae a zona: Cerca del local S/6 · Distancia media S/8 · Lejos S/12 · Muy lejos S/15.
+- Por distancia, con el TARIFARIO POR KM del grupo de motorizados (dueño, 2026-11-20). Los km son la línea recta × 1.3 (factor de ruta). Es pass-through: todo va al motorizado.
+
+| hasta | envío |
+|---|---|
+| 1.5 km | S/5 |
+| 2.2 km | S/6 |
+| 3.0 km | S/7 |
+| 3.9 km | S/8 |
+| 4.5 km | S/9 |
+| 5.0 km | S/10 |
+| 5.5 km | S/11 |
+| 6.0 km | S/12 |
+| 6.5 km | S/13 |
+| 7.0 km | S/14 |
+
+- Lo que cae entre dos tramos paga el de arriba. Más de **7 km**: no hay tarifa y la app no acepta la dirección.
+- Sin zonas excluidas por distrito: manda la distancia.
+- Sin coordenadas cae a zona: Cerca del local S/6 · Distancia media S/8 · Lejos S/12 · Muy lejos S/14.
 
 ## Pago
 - Yape por defecto (sin recargo). Con tarjeta (Culqi) el ENVÍO se cobra ÷ (1 − 0.055) para que la comisión no se coma lo del motorizado; la comisión sobre la comida la absorbe el margen.

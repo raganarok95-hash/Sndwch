@@ -589,9 +589,9 @@ function baseSurcharge(base,size){var b=BASE_SURCHARGE[base];return b?(size==='1
 // Estas cuatro constantes DEBEN coincidir con las de supabase/functions/api/env.ts — el
 // servidor es el que de verdad cobra y recalcula todo desde las coordenadas; acá solo se
 // muestra. `npm run parity` compara los dos lados.
-var DELIVERY_KM_RATE=REGLAS_N.DELIVERY_KM_RATE;          // S/ por kilómetro
 var DELIVERY_ROAD_FACTOR=REGLAS_N.DELIVERY_ROAD_FACTOR;    // línea recta → ruta real en moto
-var DELIVERY_MIN_FEE=REGLAS_N.DELIVERY_MIN_FEE;          // piso real del motorizado por viaje corto (dueño 2026-09-02)
+var DELIVERY_MIN_FEE=REGLAS_N.DELIVERY_MIN_FEE;          // el primer tramo del tarifario («delivery desde»)
+var DELIVERY_MAX_KM=REGLAS_N.DELIVERY_MAX_KM;            // hasta dónde llega el tarifario (dueño 2026-11-20)
 // Kilómetros COBRABLES desde el pin confirmado. `null` significa "no se puede medir" y nunca
 // 0: un 0 silencioso le cobraría el mínimo a alguien que vive a 10 km.
 function deliveryKmNow(){
@@ -601,17 +601,13 @@ function deliveryKmNow(){
   if(!isFinite(recta))return null;
   return Math.round(recta*DELIVERY_ROAD_FACTOR*100)/100;
 }
-// La tarifa antes de la comisión de tarjeta. Se redondea hacia ARRIBA al medio sol: el
-// motorizado cobra en efectivo y S/7.43 no existe en la práctica; hacia arriba y no al más
-// cercano deja el error del lado de pagarle completo, nunca del lado de quedarse corto — el
-// delivery es pass-through y no tiene margen del que salga la diferencia.
-// La fórmula, separada del "de dónde salen los km", para que se pueda comparar contra la
-// del servidor con una tabla compartida (tests/fixtures/tarifa-envio.json). Lleva el MISMO
-// nombre que su gemela en supabase/functions/api/actions/orders.ts a propósito: si algún
-// día una de las dos cambia y la otra no, hay dos pruebas que fallan en vez de un cliente
-// que muestra un monto y un servidor que cobra otro.
-function deliveryFeeForKm(km){
-  return Math.ceil(Math.max(DELIVERY_MIN_FEE,km*DELIVERY_KM_RATE)*2)/2;
+// La tarifa antes de la comisión de tarjeta: el TARIFARIO POR TRAMOS (dueño, 2026-11-20), la MISMA
+// función que cobra el servidor (`tarifaEnvio`, _shared/reglas.ts). null = más lejos que el último
+// tramo: no hay tarifa y no se puede pagar (lo dice problemaDelPedido). Lleva el mismo nombre que su
+// gemela de supabase/functions/api/actions/orders.ts a propósito: las dos se prueban contra la misma
+// tabla (tests/fixtures/tarifa-envio.json).
+function deliveryFeeForKm(km:number):number|null{
+  return REGLAS_N.tarifaEnvio(km);
 }
 // Los km cobrables y el envío a una dirección GUARDADA (con pin), con la misma fórmula que el
 // checkout y sin la comisión de tarjeta (Yape es el método por defecto). null si no tiene pin
@@ -626,6 +622,8 @@ function envioADireccion(a:any):number|null{
   var km=kmADireccion(a);
   return km==null?null:deliveryFeeForKm(km);
 }
+// La dirección tiene pin pero queda más lejos que el tarifario: no se le puede cobrar el envío.
+function fueraDeAlcance(km:number|null):boolean{return km!=null&&deliveryFeeForKm(km)==null;}
 // El envío sale 0 si TODAS las líneas son de un Signature que no lo cobra (catalog_items.sin_envio,
 // p. ej. el sándwich de prueba). DEBE coincidir con carritoSinEnvio del servidor (api/catalog.ts).
 function carritoSinEnvio():boolean{
@@ -645,7 +643,8 @@ function deliveryFeeBase(){
     var z=DELIVERY_PRICE_ZONES.find(function(x){return x.id===deliveryZone;});
     return z?z.fee:0;
   }
-  return deliveryFeeForKm(km);
+  // Fuera del tarifario no hay monto: 0 acá, y problemaDelPedido no deja pagar.
+  return deliveryFeeForKm(km)||0;
 }
 function deliveryFeeAmount(){
   var fee=deliveryFeeBase();
