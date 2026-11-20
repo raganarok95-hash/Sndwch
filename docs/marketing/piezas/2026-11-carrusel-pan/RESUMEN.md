@@ -11,4 +11,4 @@ Lo que falta antes de producir:
 1. ✓ Ezra eligió la 1a (2026-11-20 12:49: «A»). RECETAS ya tiene el pedido de «masa madre».
 2. La foto de la lámina 1: lo mejor es una foto REAL del pan partido (la promesa es sobre el pan). Si no hay, se genera con IA, fiel al pan real.
 3. La foto de la lámina 3 es provisional (la del Philly de PedidosYa). Hace falta una nueva para no repetir.
-4. Calidad: «masa madre» todavía no está en carta.ts. Ezra lo dijo hoy; RECETAS lo carga en la carta antes de publicar.
+4. ✓ «Masa madre» ya está en la carta y en la app (CLASSIC: «De masa madre, hecho para nosotros»). Regla: no decir quién lo hornea ni que lo hacemos nosotros; lo hace un panadero para SND//WCH. La lámina 2 cumple.
