@@ -94,3 +94,9 @@ o (3) un hecho de la carta. Sin fuente, no se propone. Las frases de las lámina
 Ezra, sobre las palabras del banco de frases [T] (pavita, sanguche, jama, bitute, como cancha, papaya…): «Ninguna eso
 es muy genérico». La parte [T] sirve para entender qué se elogia y qué se critica, no como palabras para titulares.
 Siguen valiendo [V] (fórmulas con envíos) y [P] (palabras de clientes del producto) y [C] (la carta).
+
+- **2026-11-20, gancho de la historia del pan.** Ezra rechazó «ESTE PAN NO SE COMPRA.»: «El nombre está algo
+  estúpido xd Piensa bien porque me ayudaría decirlo de esa forma». Igual que «Ese ya gotea»: nada de frases
+  ingeniosas vacías; el gancho dice un hecho claro y explica por qué ayuda a vender. Dato real del pan (Ezra,
+  2026-11-20): «Son panes hechos especialmente, diseñados para el negocio trabajados con masa madre». El 30CM no
+  tiene historia («30cm es solo una mdida que consideraba grande»): no se inventa una.

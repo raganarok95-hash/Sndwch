@@ -57,8 +57,21 @@ sin identidad regional, sin hablar de cómo es la cocina por dentro, sin etiquet
 
 1. **Una promesa, dicha con una historia verdadera: el pan.** Ellos cuentan su pan roseta; nosotros tenemos la
    nuestra. Ezra, 2026-11-20: «Son panes hechos especialmente, diseñados para el negocio trabajados con masa
-   madre». Pieza: carrusel de 2 o 3, «ESTE PAN NO SE COMPRA.» → «Se hace para nosotros, con masa madre.» → el
-   sándwich armado. SANDO lo cuenta (es el que cuida el oficio). Va también como reel corto si hay toma real del
+   madre». «ESTE PAN NO SE COMPRA.» fue **rechazado** por Ezra
+   (2026-11-20: «El nombre está algo estúpido xd»). Ganchos de reemplazo, claros y verdaderos, cada uno apoyado en el
+   banco de frases (`../frases/2026-11-11-banco-de-frases.md`):
+   - **«Crujiente por fuera, suave por dentro.»** sobre la toma del pan partiéndose. Es el elogio literal de la
+     crítica peruana al buen sánguche, «el pan crujiente y suave» [T5]; la imagen frena antes que el texto.
+     Solo si el pan es así (lo confirma Ezra).
+   - **«El pan es la mitad del sándwich.»** → «El nuestro es de masa madre y se hace solo para SND//WCH.» La queja
+     más repetida del sánguche peruano es el pan «seco» o «chicloso» [T5][T1]; nombra el problema que todos
+     conocen y responde con un hecho.
+   - **«Nuestro pan se hornea solo para nosotros.»** En Trujillo «horneado» es sinónimo de bien hecho [T1]. Es la
+     misma mecánica de Monstruos: el pan propio como prueba de que el sándwich es distinto.
+   - **«¿Por qué no encuentras nuestro pan en ninguna panadería?»** Pregunta con respuesta verdadera en la lámina 2
+     (masa madre, hecho para el negocio); la curiosidad obliga a pasar.
+   SANDO lo cuenta (es el que cuida el oficio). Sin juegos de palabras: Ezra rechazó «Ese ya gotea» y «Este pan no se
+   compra» por tontos. Va también como reel corto si hay toma real del
    pan. Ojo: la carta (`carta.ts`) todavía no dice «masa madre»; Calidad lo confirma con Ezra o con el panadero
    antes de publicar, y si entra a la carta, se agrega el mismo día.
    La idea «¿POR QUÉ 30?» queda **descartada**: el 30CM no tiene historia (Ezra, 2026-11-20: «30cm es solo una
