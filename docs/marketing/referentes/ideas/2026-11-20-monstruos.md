@@ -55,10 +55,11 @@ Lo que se lee de esto, sin ver la creatividad:
 Se toma la mecánica, nunca su frase, su nombre ni su historia. Respetando la marca: nombres en MAYÚSCULAS,
 sin identidad regional, sin hablar de cómo es la cocina por dentro, sin etiquetas de IA en el contenido.
 
-1. **Una promesa, dicha con una historia, no con un adjetivo.** Ellos: «el pan era chico». Nosotros ya
-   tenemos la nuestra: el **30CM** mide 30 de verdad y el relleno es el de la receta (INDECOPI). Pieza:
-   carrusel de 2, «¿POR QUÉ 30?» → la razón real del tamaño, contada por SANDO. La razón tiene que salir de
-   Ezra (ver Q21 en `docs/entregas/ezra/PREGUNTAS.md`); no se inventa.
+1. **Una promesa, dicha con un hecho, no con un adjetivo.** Ellos: «el pan era chico». El 30CM **no tiene historia
+   de origen** (Ezra, 2026-11-20: «30cm es solo una mdida que consideraba grande»), así que la pieza «¿POR QUÉ 30?»
+   queda **descartada**: no se inventa una razón. Lo verdadero que sí se puede contar es la medida misma: el 30CM
+   mide 30 de verdad, con la porción de la receta (INDECOPI). Pieza posible: SANDO con una regla junto al pan,
+   «MIDE 30. LO MEDIMOS.», sin decir por qué.
 2. **Pauta en goteo, cuando Ezra la prenda.** En vez de un anuncio grande, 2 anuncios nuevos cada 3 o 4 días,
    cada uno con la fórmula de `anuncio-directo`, y apagar el que no traiga pedidos (reglas de `pauta-medible`).
    Todo queda en pausa hasta su sí.
