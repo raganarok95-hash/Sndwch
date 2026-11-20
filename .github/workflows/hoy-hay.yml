@@ -1,0 +1,32 @@
+name: Historia hoy hay
+
+# La historia «hoy hay» de las 11:00, sola (scripts/piezas/hoy-hay-historia.mjs). A las 10:00 de Lima lee qué
+# hay en producción, arma el cuadro y lo programa para las 11:00; el cron de Supabase lo publica. Solo sale si
+# hoy se abre, hay inventario y Ezra aprobó la semana (docs/marketing/hoy-hay/APROBADO.md).
+on:
+  schedule:
+    - cron: '0 15 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency: hoy-hay
+
+jobs:
+  hoy-hay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node scripts/piezas/hoy-hay-historia.mjs --probar-semana
+      - name: Armar y programar la historia de hoy
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: node scripts/piezas/hoy-hay-historia.mjs

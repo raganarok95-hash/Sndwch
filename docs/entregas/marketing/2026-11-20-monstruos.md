@@ -1,3 +1,8 @@
+de: investigacion
+para: marketing
+estado: abierta
+para-cuando: 2026-11-27
+---
 # Para Equipo de marketing · 2026-11-20 · referente Sánguches Monstruos
 
 Ezra pidió analizar la publicidad de @monstruosperu. Análisis: `docs/marketing/referentes/ideas/2026-11-20-monstruos.md`.

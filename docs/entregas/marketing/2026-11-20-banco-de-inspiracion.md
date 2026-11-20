@@ -1,3 +1,8 @@
+de: investigacion
+para: marketing
+estado: abierta
+para-cuando: 2026-11-27
+---
 # Para Equipo de marketing · 2026-11-20 · banco de inspiración
 
 Ezra pidió tomar lo mejor de cada cuenta viral, no copiar estrategias. Banco: `docs/marketing/referentes/2026-11-20-banco-de-inspiracion.md`
