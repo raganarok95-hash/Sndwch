@@ -7,7 +7,7 @@
 //
 // Promesa: la historia solo nombra lo que hay hoy, y solo sale si (1) hoy se abre, (2) el inventario se pudo
 // leer (`ok`) y (3) Ezra aprobó la semana en docs/marketing/hoy-hay/APROBADO.md (una línea `- AAAA-MM-DD`
-// con el lunes de la semana). Modo de fallo que evita: una historia que promete algo agotado, o que sale sin
+// con el lunes de la semana, o `- desde AAAA-MM-DD` para todas las semanas desde ese lunes). Modo de fallo que evita: una historia que promete algo agotado, o que sale sin
 // el sí del dueño. Repetible: si el src del día ya está, no se vuelve a subir.
 //
 // Uso: node scripts/piezas/hoy-hay-historia.mjs            (en GitHub, con SUPABASE_ACCESS_TOKEN)
@@ -25,7 +25,8 @@ export function lunesDe(fecha) {
   return d.toISOString().slice(0, 10);
 }
 export function semanaAprobada(fecha, texto) {
-  return texto.split('\n').some((l) => l.trim() === `- ${lunesDe(fecha)}`);
+  const lunes = lunesDe(fecha);
+  return texto.split('\n').some((l) => { const t = l.trim(); const d = t.match(/^- desde (\d{4}-\d{2}-\d{2})/); return t === `- ${lunes}` || (d && lunes >= d[1]); });
 }
 const hh = (h) => `${Math.floor(h)}:${String(Math.round((h % 1) * 60)).padStart(2, '0')}`;
 
@@ -62,7 +63,8 @@ if (process.argv[2] === '--muestra') {
   renderizar({ fecha: '2026-11-20', horario: { abre: 11, cierra: 22 }, hay: [{ nombre: 'Muestra uno' }, { nombre: 'Muestra dos' }, { nombre: 'Muestra tres' }, { nombre: 'Muestra cuatro' }, { nombre: 'Muestra cinco' }] }, process.argv[3] || '/tmp/hoy-hay.png');
 } else if (process.argv[2] === '--probar-semana') {
   const ok = lunesDe('2026-11-20') === '2026-11-16' && lunesDe('2026-11-16') === '2026-11-16' && lunesDe('2026-11-22') === '2026-11-16'
-    && semanaAprobada('2026-11-20', '# x\n- 2026-11-16\n') && !semanaAprobada('2026-11-24', '- 2026-11-16');
+    && semanaAprobada('2026-11-20', '# x\n- 2026-11-16\n') && !semanaAprobada('2026-11-24', '- 2026-11-16')
+    && semanaAprobada('2026-12-02', '- desde 2026-11-23 · x') && !semanaAprobada('2026-11-20', '- desde 2026-11-23 · x');
   console.log(ok ? '✓ hoy-hay-historia: la semana aprobada se lee bien' : '✗ hoy-hay-historia: lunesDe/semanaAprobada');
   process.exit(ok ? 0 : 1);
 } else {
