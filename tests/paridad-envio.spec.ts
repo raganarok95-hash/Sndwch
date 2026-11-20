@@ -23,7 +23,7 @@ import { gotoApp } from './helpers';
 
 const TABLA = JSON.parse(
   readFileSync(path.join(__dirname, 'fixtures', 'tarifa-envio.json'), 'utf8'),
-) as { casos: Array<{ km: number; fee: number; nota: string }> };
+) as { casos: Array<{ km: number; fee: number | null; nota: string }> };
 
 test('el cliente cobra lo mismo que el servidor para cada distancia', async ({ page }) => {
   await gotoApp(page, {});
@@ -40,18 +40,20 @@ test('el cliente cobra lo mismo que el servidor para cada distancia', async ({ p
   });
 });
 
-test('el cliente redondea hacia ARRIBA, nunca al más cercano', async ({ page }) => {
+test('pasado el último tramo el cliente lo marca fuera de alcance', async ({ page }) => {
   await gotoApp(page, {});
-  // 3.1 km × S/2 = S/6.20. Al medio sol más cercano daría 6.00; hacia arriba da 6.50.
-  // La diferencia la pone el dueño de su bolsillo cada vez que se equivoca hacia abajo.
-  const fee = await page.evaluate(() => (window as any).deliveryFeeForKm(3.1));
-  expect(fee).toBe(6.5);
-});
-
-test('por debajo del mínimo manda el mínimo, no los kilómetros', async ({ page }) => {
-  await gotoApp(page, {});
-  // El grupo de motorizados cobra un piso por viaje corto: cobrar 2 × 1.2 = S/2.40 sería
-  // cobrarle al cliente menos de lo que cuesta llevarle el pedido.
-  const fee = await page.evaluate(() => (window as any).deliveryFeeForKm(1.2));
-  expect(fee).toBe(5);
+  // Modo de fallo: el cliente muestra un envío (o S/0) a alguien a 10 km y lo deja seguir; el
+  // servidor lo rechaza recién al tocar pagar. problemaDelPedido frena el pago con fueraDeAlcance.
+  const r = await page.evaluate(() => {
+    const w = window as any;
+    const lejos = { lat: w.STORE_LAT + 0.08, lon: w.STORE_LON };
+    const cerca = { lat: w.STORE_LAT + 0.005, lon: w.STORE_LON };
+    return {
+      lejos: w.fueraDeAlcance(w.kmADireccion(lejos)), envioLejos: w.envioADireccion(lejos),
+      cerca: w.fueraDeAlcance(w.kmADireccion(cerca)),
+    };
+  });
+  expect(r.lejos).toBe(true);
+  expect(r.envioLejos).toBeNull();
+  expect(r.cerca).toBe(false);
 });

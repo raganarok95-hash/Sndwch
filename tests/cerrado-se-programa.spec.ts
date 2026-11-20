@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { gotoApp, entrarConTelefono } from './helpers';
+import { gotoApp, entrarConTelefono, PIN_TEST } from './helpers';
 
 // CON EL LOCAL CERRADO, EL PEDIDO SE PROGRAMA SOLO (dueño, 2026-10-02 a las 5 a.m.: «no me deja
 // porque me pide programar pero no hay dónde programar o no me deriva a ese proceso»).
@@ -11,7 +11,7 @@ test('fuera de horario el carrito se programa para la primera hora libre y Pagar
   await page.clock.setFixedTime(new Date('2026-10-02T10:00:00Z'));
   await gotoApp(page, {
     login: { customer: { phone: '900000001', name: 'Prueba', points: 0 }, isAdmin: false, token: 't' },
-    'addresses-list': { addresses: [{ id: 1, label: 'Casa', address: 'Av Prolongación Cesar Vallejo 2670', reference: null, lat: -8.0912, lon: -79.0101 }] },
+    'addresses-list': { addresses: [{ id: 1, label: 'Casa', address: 'Av Prolongación Cesar Vallejo 2670', reference: null, lat: PIN_TEST.lat, lon: PIN_TEST.lon }] },
     // El horario real: 11 a 22 todos los días.
     'get-store-hours': { hours: Array.from({ length: 7 }, () => ({ open: 11, close: 22, closed: false })), businessLaunched: true },
     '*': { success: true },
@@ -43,7 +43,7 @@ test('en pausa el carrito se programa para cuando termina la pausa y Pagar avanz
   await page.clock.setFixedTime(new Date('2026-10-20T18:00:00Z'));
   await gotoApp(page, {
     login: { customer: { phone: '900000001', name: 'Prueba', points: 0 }, isAdmin: false, token: 't' },
-    'addresses-list': { addresses: [{ id: 1, label: 'Casa', address: 'Av Prolongación Cesar Vallejo 2670', reference: null, lat: -8.0912, lon: -79.0101 }] },
+    'addresses-list': { addresses: [{ id: 1, label: 'Casa', address: 'Av Prolongación Cesar Vallejo 2670', reference: null, lat: PIN_TEST.lat, lon: PIN_TEST.lon }] },
     'get-store-hours': { hours: Array.from({ length: 7 }, () => ({ open: 11, close: 22, closed: false })), businessLaunched: true, pausedUntil: '2026-10-20T19:00:00.000Z' },
     '*': { success: true },
   });

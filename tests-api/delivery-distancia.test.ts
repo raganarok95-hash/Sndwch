@@ -1,4 +1,5 @@
-// Cobro del delivery por DISTANCIA REAL (2026-09-02), sobre el código real del servidor.
+// Cobro del delivery por DISTANCIA REAL (2026-09-02; tarifario por tramos desde el 2026-11-20),
+// sobre el código real del servidor.
 //
 // POR QUÉ EXISTE. Esto decide cuánto se le cobra a cada cliente por el envío, y el envío es
 // PASS-THROUGH: el negocio no gana nada con él, solo lo cobra para pagarle al motorizado. Un
@@ -15,11 +16,12 @@ function assertEquals<T>(actual: T, expected: T, msg?: string) {
     throw new Error(msg ?? `esperaba ${JSON.stringify(expected)}, recibí ${JSON.stringify(actual)}`);
   }
 }
-import { haversineKm, billableKm, deliveryFeeForKm } from "../supabase/functions/api/actions/orders.ts";
+import { haversineKm, billableKm, deliveryFeeForKm, resolveDeliveryFee } from "../supabase/functions/api/actions/orders.ts";
 import {
-  DELIVERY_KM_RATE, DELIVERY_ROAD_FACTOR, DELIVERY_MIN_FEE,
+  DELIVERY_ROAD_FACTOR, DELIVERY_MIN_FEE, DELIVERY_MAX_KM,
   STORE_LAT, STORE_LON,
 } from "../supabase/functions/api/env.ts";
+import { TARIFA_ENVIO } from "../supabase/functions/_shared/reglas.ts";
 
 Deno.test("la distancia al propio local es cero", () => {
   assertEquals(Math.round(haversineKm(STORE_LAT, STORE_LON, STORE_LAT, STORE_LON) * 1000), 0);
@@ -55,69 +57,41 @@ Deno.test("coordenadas imposibles devuelven null, nunca 0", () => {
   assertEquals(billableKm(0, 0), null);
 });
 
-Deno.test("por debajo del mínimo se cobra el mínimo", () => {
-  // A S/2/km, alguien a 800 m pagaría S/1.60 y ningún motorizado toma ese viaje.
-  assertEquals(deliveryFeeForKm(0), DELIVERY_MIN_FEE);
-  assertEquals(deliveryFeeForKm(0.8), DELIVERY_MIN_FEE);
-  assertEquals(deliveryFeeForKm(DELIVERY_MIN_FEE / DELIVERY_KM_RATE), DELIVERY_MIN_FEE);
-});
-
-Deno.test("por encima del mínimo se cobran los kilómetros", () => {
-  assertEquals(deliveryFeeForKm(5), 10);
-  assertEquals(deliveryFeeForKm(7), 14);
-  assertEquals(deliveryFeeForKm(10), 20);
-});
-
-Deno.test("el redondeo va hacia ARRIBA al medio sol, nunca hacia abajo", () => {
-  // Redondear al más cercano dejaría la mitad de los viajes cobrando de menos, y esa
-  // diferencia sale del bolsillo del dueño: el delivery no tiene margen del que salga.
-  assertEquals(deliveryFeeForKm(3.6), 7.5);   // 7.20 -> 7.50
-  assertEquals(deliveryFeeForKm(3.55), 7.5);  // 7.10 -> 7.50
-  assertEquals(deliveryFeeForKm(4.0), 8);     // exacto, no se infla
-  assertEquals(deliveryFeeForKm(4.1), 8.5);   // 8.20 -> 8.50
-  for (const km of [3.1, 4.4, 5.7, 6.3, 8.9]) {
-    const fee = deliveryFeeForKm(km);
-    assertEquals(fee >= km * DELIVERY_KM_RATE, true, `${km} km: cobra ${fee}, cuesta ${km * DELIVERY_KM_RATE}`);
-    assertEquals(Math.round(fee * 2) === fee * 2, true, `${fee} no es múltiplo de 0.5`);
-  }
-});
-
-// Sin tope de cobertura desde el 2026-09-30: se barre hasta más allá de lo que mide la ciudad.
-const HASTA_KM = 40;
-
-Deno.test("la tarifa nunca queda por debajo de lo que cuesta el viaje", () => {
-  // La única forma en que este cálculo NO se puede equivocar: cobrar menos de lo que hay que
-  // pagarle al motorizado. Se barre todo el rango de cobertura.
-  for (let km = 0; km <= HASTA_KM; km += 0.1) {
-    const fee = deliveryFeeForKm(km);
-    assertEquals(fee >= km * DELIVERY_KM_RATE, true, `a ${km.toFixed(1)} km cobra ${fee} y cuesta ${(km * DELIVERY_KM_RATE).toFixed(2)}`);
-  }
-});
-
-Deno.test("la tarifa crece con la distancia, sin saltos hacia atrás", () => {
+Deno.test("cada distancia hasta el último tramo tiene tarifa, y la tarifa nunca baja", () => {
+  // Modo de fallo: un hueco entre tramos (1.55 km) que devuelva null le negaría el pedido a
+  // alguien cerca; uno que devuelva menos que el tramo anterior le cobraría de menos.
   let previa = -1;
-  for (let km = 0; km <= HASTA_KM; km += 0.05) {
+  for (let km = 0; km <= DELIVERY_MAX_KM + 1e-9; km += 0.01) {
     const fee = deliveryFeeForKm(km);
-    assertEquals(fee >= previa, true, `a ${km.toFixed(2)} km la tarifa BAJÓ de ${previa} a ${fee}`);
-    previa = fee;
+    assertEquals(fee !== null, true, `a ${km.toFixed(2)} km no hay tarifa`);
+    assertEquals((fee as number) >= previa, true, `a ${km.toFixed(2)} km la tarifa BAJÓ de ${previa} a ${fee}`);
+    previa = fee as number;
   }
+  assertEquals(deliveryFeeForKm(0), DELIVERY_MIN_FEE);
+  assertEquals(DELIVERY_MAX_KM, TARIFA_ENVIO[TARIFA_ENVIO.length - 1]!.hastaKm);
 });
 
-Deno.test("el mínimo es el que cobra el motorizado por un viaje corto", () => {
-  // S/5, confirmado por el dueño el 2026-09-02. Por debajo de 2.5 km la tarifa la fija este
-  // piso y no los kilómetros — que es justo el tramo que el cálculo por km solo no podía
-  // cubrir sin generar viajes que nadie acepta.
-  assertEquals(DELIVERY_MIN_FEE, 5);
-  assertEquals(deliveryFeeForKm(2.4), 5);
-  assertEquals(deliveryFeeForKm(2.6), 5.5);
-  // Y tiene que seguir cubriendo su propia distancia equivalente.
-  assertEquals(deliveryFeeForKm(DELIVERY_MIN_FEE / DELIVERY_KM_RATE) >= DELIVERY_MIN_FEE, true);
+Deno.test("pasado el último tramo no hay tarifa y el pedido se rechaza antes de cobrar", () => {
+  // Modo de fallo: cobrar un envío inventado (o S/0) a alguien a 10 km, y que el dueño ponga
+  // la diferencia al pagarle al motorizado.
+  assertEquals(deliveryFeeForKm(DELIVERY_MAX_KM + 0.01), null);
+  // ~0.08° al norte son ~9 km en recta, ~11.6 km cobrables.
+  let motivo = "";
+  try {
+    resolveDeliveryFee(STORE_LAT + 0.08, STORE_LON, "");
+  } catch (e) {
+    motivo = (e as Error).message;
+  }
+  assertEquals(motivo.includes(`${DELIVERY_MAX_KM} km`), true, `no rechazó la dirección lejana (dijo: «${motivo}»)`);
+  // Y una dirección cerca sí pasa, con su km.
+  const cerca = resolveDeliveryFee(STORE_LAT + 0.005, STORE_LON, "");
+  assertEquals(cerca.km !== null && cerca.fee >= DELIVERY_MIN_FEE, true);
 });
 
 // ── PARIDAD DE LA FÓRMULA, NO SOLO DE LAS CONSTANTES (2026-09-10) ───────────────────────
 //
 // La revisión de arquitectura encontró el hueco: `npm run parity` compara los VALORES
-// duplicados entre cliente y servidor —DELIVERY_KM_RATE, DELIVERY_MIN_FEE, el factor de
+// duplicados entre cliente y servidor —DELIVERY_MIN_FEE, el factor de
 // ruta— pero ninguna de sus 93 comprobaciones mira la FÓRMULA que los combina. Si un lado
 // empezara a redondear al medio sol más cercano en vez de hacia arriba, parity seguiría en
 // verde y el cliente mostraría un monto mientras el servidor cobra otro: exactamente el
@@ -129,7 +103,7 @@ Deno.test("el mínimo es el que cobra el motorizado por un viaje corto", () => {
 const TABLA = JSON.parse(Deno.readTextFileSync(new URL("../tests/fixtures/tarifa-envio.json", import.meta.url)));
 
 Deno.test("el servidor cobra lo que dice la tabla compartida con el cliente", () => {
-  for (const c of TABLA.casos as Array<{ km: number; fee: number; nota: string }>) {
+  for (const c of TABLA.casos as Array<{ km: number; fee: number | null; nota: string }>) {
     assertEquals(
       deliveryFeeForKm(c.km),
       c.fee,

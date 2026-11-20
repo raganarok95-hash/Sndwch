@@ -6,12 +6,13 @@ import type { Entrada } from "../../_shared/contrato.ts";
 import {
   CULQI_SECRET_KEY, REFERRAL_BONUS_POINTS, REFERRER_REWARD_POINTS, STALE_MANUAL_PAYMENT_HOURS,
   isWithinStoreHours, computeRankName, loadStoreHours, DELIVERY_EXCLUDED_ZONES, DELIVERY_ZONE_FEES,
-  DELIVERY_KM_RATE, DELIVERY_ROAD_FACTOR, DELIVERY_MIN_FEE, STORE_LAT, STORE_LON,
+  DELIVERY_ROAD_FACTOR, DELIVERY_MAX_KM, STORE_LAT, STORE_LON,
   CULQI_FEE_RATE, noteNeedsAttention, MAX_PUSH_PER_RUN, REFERRAL_MILESTONES,
   ventanaPrometida, RANKS,
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
 import { ApiError } from "../types.ts";
+import { tarifaEnvio } from "../../_shared/reglas.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { loadCatalogPrices, carritoSinEnvio, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES, etiquetaDeEscalon, loQueGanaQuienInvita } from "../catalog.ts";
 import { organizerFreeSandwichApplies, cerrarGrupoSiTodosPagaron } from "./group.ts";
@@ -834,13 +835,11 @@ export function billableKm(lat: unknown, lon: unknown): number | null {
   return Math.round(recta * DELIVERY_ROAD_FACTOR * 100) / 100;
 }
 
-// Tarifa a partir de los kilómetros. Se redondea hacia ARRIBA al medio sol: el motorizado
-// cobra en efectivo y un monto como S/7.43 no existe en la práctica; y redondear hacia arriba
-// y no al más cercano deja el error del lado del que paga al motorizado, nunca del lado de
-// quedarse corto — el delivery es pass-through y no tiene margen del que salga la diferencia.
-export function deliveryFeeForKm(km: number): number {
-  const bruto = Math.max(DELIVERY_MIN_FEE, km * DELIVERY_KM_RATE);
-  return Math.ceil(bruto * 2) / 2;
+// Tarifa a partir de los kilómetros: el TARIFARIO POR TRAMOS del grupo de motorizados (dueño,
+// 2026-11-20), el mismo que usa el cliente (`tarifaEnvio`, _shared/reglas.ts). null = más lejos
+// que el último tramo: no hay tarifa y el pedido no se acepta (lo decide resolveDeliveryFee).
+export function deliveryFeeForKm(km: number): number | null {
+  return tarifaEnvio(km);
 }
 
 // El monto que se cobra, resuelto desde las coordenadas del pedido.
@@ -854,7 +853,12 @@ export function deliveryFeeForKm(km: number): number {
 export function resolveDeliveryFee(lat: unknown, lon: unknown, zone: string): { fee: number; km: number | null } {
   const km = billableKm(lat, lon);
   if (km === null) return { fee: deliveryFeeForZone(zone), km: null };
-  return { fee: deliveryFeeForKm(km), km };
+  const fee = deliveryFeeForKm(km);
+  // Fuera del tarifario no hay con qué pagarle al motorizado: se rechaza ANTES de reservar o cobrar.
+  if (fee === null) {
+    throw new ApiError(`Esa dirección queda a ${km.toFixed(1)} km y por ahora llegamos hasta ${DELIVERY_MAX_KM} km del local.`, 400);
+  }
+  return { fee, km };
 }
 
 // Versión para el flujo de tarjeta: el fee se "engorda" por la comisión de Culqi, igual que

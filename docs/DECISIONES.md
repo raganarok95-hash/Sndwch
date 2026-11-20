@@ -1351,3 +1351,10 @@ Instagram».
 Dueño: «Por las primeras semanas quitemos de disponibilidad las albóndigas». Se pausan, no se borran: P06 y SIG02
 llevan `pausado: true` en `_shared/carta.ts` y SIG02 está con `active=false` en `catalog_items`. Vuelven quitando
 la marca y activando SIG02 desde el panel el mismo día. Detalle en `docs/sesiones/2026-11-17.md`.
+
+## Tarifario de envío por tramos y tope de 7 km (2026-11-20)
+
+Dueño: «Me actualizaron el tarifario de envío». El envío pasa de S/2 por km (mínimo S/5) a los tramos del grupo de
+motorizados (`TARIFA_ENVIO`, `_shared/reglas.ts`). Pasado el último tramo (7 km) no hay tarifa, así que la app no
+acepta la dirección: cobrar un monto inventado dejaría la diferencia en el bolsillo del dueño. Si el grupo da precio
+para más lejos, se agrega el tramo y el tope sube solo. Detalle en `docs/sesiones/2026-11-20.md`.
