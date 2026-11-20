@@ -100,3 +100,5 @@ Siguen valiendo [V] (fórmulas con envíos) y [P] (palabras de clientes del prod
   ingeniosas vacías; el gancho dice un hecho claro y explica por qué ayuda a vender. Dato real del pan (Ezra,
   2026-11-20): «Son panes hechos especialmente, diseñados para el negocio trabajados con masa madre». El 30CM no
   tiene historia («30cm es solo una mdida que consideraba grande»): no se inventa una.
+
+- 2026-11-20 · Carrusel del pan: entre «¿Por qué no encuentras nuestro pan en ninguna panadería?» y «El pan es la mitad del sándwich.», Ezra eligió la pregunta: «A». La curiosidad con respuesta verdadera le ganó a la frase de sentencia.

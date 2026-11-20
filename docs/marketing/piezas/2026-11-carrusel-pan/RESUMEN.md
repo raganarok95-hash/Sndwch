@@ -8,7 +8,7 @@ Fuente de la verdad: Ezra, 2026-11-20: «Son panes hechos especialmente, diseña
 - Lámina 3: el sándwich armado y «Pídelo en sndwch.app» (ya abrimos, el «pide» está permitido).
 
 Lo que falta antes de producir:
-1. Ezra elige entre 1a y 1b.
+1. ✓ Ezra eligió la 1a (2026-11-20 12:49: «A»). RECETAS ya tiene el pedido de «masa madre».
 2. La foto de la lámina 1: lo mejor es una foto REAL del pan partido (la promesa es sobre el pan). Si no hay, se genera con IA, fiel al pan real.
 3. La foto de la lámina 3 es provisional (la del Philly de PedidosYa). Hace falta una nueva para no repetir.
 4. Calidad: «masa madre» todavía no está en carta.ts. Ezra lo dijo hoy; RECETAS lo carga en la carta antes de publicar.

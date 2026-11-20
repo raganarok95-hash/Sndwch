@@ -1,2 +1,15 @@
-{"id":"2026-11-carrusel-pan","pedido":"Carrusel del pan contado por SANDO. Ezra, 2026-11-20: «Son panes hechos especialmente, diseñados para el negocio trabajados con masa madre». Ganchos elegidos: «2 y 4 … Me suenan bien»","formato":"carrusel 3 láminas 4:5","canal":"instagram","src":"ig-carrusel-pan","estado":"maqueta",
- "puertas":{"concepto":"elegido por Ezra","arte":null,"calidad":null},"concepto_elegido":"El pan propio, de masa madre, hecho solo para SND//WCH"}
+{
+ "id": "2026-11-carrusel-pan",
+ "pedido": "Carrusel del pan contado por SANDO. Ezra, 2026-11-20: «Son panes hechos especialmente, diseñados para el negocio trabajados con masa madre». Ganchos elegidos: «2 y 4 … Me suenan bien»",
+ "formato": "carrusel 3 láminas 4:5",
+ "canal": "instagram",
+ "src": "ig-carrusel-pan",
+ "estado": "espera foto real del pan",
+ "puertas": {
+  "concepto": "elegido por Ezra",
+  "arte": null,
+  "calidad": null
+ },
+ "concepto_elegido": "El pan propio, de masa madre, hecho solo para SND//WCH",
+ "lamina_1": "1a «¿Por qué no encuentras nuestro pan en ninguna panadería?» (Ezra, 2026-11-20 12:49: «A»)"
+}
