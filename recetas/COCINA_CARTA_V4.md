@@ -163,7 +163,7 @@ Paquete abierto: bien cerrado en el refri, úsalo en 3-4 días.
 
 ### EMBUTIDO // ITALIANO — para el ITALIAN HOAGIE
 
-**No se cocina. Se lamina y se pesa.** Lamina lo del día.
+**No se cocina ni se lamina: llega ya tajado. Solo se pesa.**
 
 **Desde el 2026-11-03 (dueño): jamón ahumado, salame y pepperoni** (antes jamón, cabanossi y paté).
 
