@@ -1228,11 +1228,14 @@ var legalFromUrl=null;
 // cliente objetivo: el compañero de al lado vio el empaque. Lo que faltaba era el puente
 // entre ese sándwich y un pedido grupal, y ese puente es este parámetro.
 var wantsNewGroup=false;
+// ?embajador=1 — la página donde alguien se inscribe solo como embajador y recibe su enlace
+// (2026-11-21, sin que el dueño tenga que crearlo a mano en el panel).
+var embajadorAltaFromUrl=false,embajadorAlta:any={};
 // ?fijo=ID[&franja=HH:MM] — el aviso del pedido fijo lleva acá. `franja` es la hora que el
 // aviso ofreció cuando la de siempre se llenó: se respeta, para que el toque haga lo que el
 // aviso dijo.
 var fijoFromUrl:string|null=null,franjaFromUrl:string|null=null;
-(function(){try{var qp=new URLSearchParams(location.search);var rc=qp.get('ref');if(rc)refCode=rc.trim();var gc=qp.get('group');if(gc)groupCodeFromUrl=gc.trim().toUpperCase();var ng=qp.get('grupo');if(ng)wantsNewGroup=true;var dt=qp.get('entrega');if(dt)deliveryTokenFromUrl=dt.trim();var pe=qp.get('pedido');if(pe)pedidoFromUrl=pe.trim().slice(0,40);
+(function(){try{var qp=new URLSearchParams(location.search);var rc=qp.get('ref');if(rc)refCode=rc.trim();var gc=qp.get('group');if(gc)groupCodeFromUrl=gc.trim().toUpperCase();var ng=qp.get('grupo');if(ng)wantsNewGroup=true;if(qp.get('embajador'))embajadorAltaFromUrl=true;var dt=qp.get('entrega');if(dt)deliveryTokenFromUrl=dt.trim();var pe=qp.get('pedido');if(pe)pedidoFromUrl=pe.trim().slice(0,40);
   var fj=qp.get('fijo');if(fj)fijoFromUrl=fj.trim();var fr=qp.get('franja');if(fr&&/^[0-2][0-9]:[0-5][0-9]$/.test(fr))franjaFromUrl=fr;
   // ?src=... en el link de un anuncio (ver plan de campaña) — se guarda apenas se detecta
   // y sobrevive aunque el registro pase en otra visita, así un clic de anuncio que hoy solo

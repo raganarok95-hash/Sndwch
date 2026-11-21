@@ -1439,7 +1439,7 @@ async function pagarEmbajador(id){
 function textoParaReclutar(d){
   return '¿Estudias o trabajas en Trujillo? Busco embajadores para SND//WCH, sándwiches a domicilio que se piden en sndwch.app.\n'
     +'Te doy tu propio enlace: por cada persona NUEVA que pida con él te pago '+SOLES_TXT+pz(d.porPrimero)+' cuando recibe su pedido y '+SOLES_TXT+pz(d.porSegundo)+' más cuando vuelve a pedir. '
-    +'Sin horario y desde tu celular; te pago cada semana por Yape.\n¿Te interesa? Escríbeme.';
+    +'Sin horario y desde tu celular; te pago cada semana por Yape.\nSaca tu enlace en un minuto: https://sndwch.app/?embajador=1&src=reclutar';
 }
 function textoDeBienvenida(d,e){
   return '¡Hola, '+e.nombre+'! Ya tienes tu enlace de SND//WCH:\n'+e.enlace+'\n\n'
@@ -1460,7 +1460,7 @@ function sAdminEmbajadores(){
   h+='<div style="margin-top:12px">'+BTN('Crear su enlace //','crearEmbajador()').replace('<button ','<button data-accion="crear-embajador" ')+'</div>';
   h+='</div>';
   if(!d.embajadores.length){
-    h+='<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">Todavía no hay embajadores. Publica el aviso de arriba y crea el enlace de cada uno aquí.</div>';
+    h+='<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096)">Todavía no hay embajadores. Publica el aviso de arriba: quien entra a su enlace se inscribe solo y aparece aquí. También puedes crear uno a mano.</div>';
   }else{
     h+=d.embajadores.slice().sort(function(a,b){return b.debe-a.debe;}).map(function(e){
       return'<div data-embajador="'+e.id+'" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border-soft,#1c1c1c);border-radius:10px;padding:14px;margin-bottom:10px">'
