@@ -16,7 +16,7 @@ import { writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, existsSync } from 'node:fs';
 import { SB, BUCKET, conectar, mananaEnLima, precio } from './produccion.mjs';
 
 const sinSubir = process.argv.includes('--sin-subir');
@@ -46,7 +46,19 @@ if (!candidatos.length) { console.log('Hoy no hay ningún Signature disponible: 
 const usados = await pedir(`${SB}/rest/v1/marketing_calendar?plantilla=eq.signature&select=datos,created_at&order=created_at.desc&limit=300`);
 const ultimo = {};
 for (const u of usados) { const sig = u.datos?.sig; if (sig && !ultimo[sig]) ultimo[sig] = u.created_at; }
-const sig = candidatos.sort((a, b) => String(ultimo[a] || '').localeCompare(String(ultimo[b] || '')))[0];
+// Una imagen NUEVA cada video (Ezra, 2026-11-21: «se siguen usando las mismas imágenes que ya están
+// creadas. Creatividad»). La foto de la app (img/sigXX_v.webp) ya salió en todos los videos: no se usa
+// más. Sale de las tomas que hace Flow para el video del día (encargos `video-<sig>-*`, en
+// docs/marketing/estudio/hecho/), una que todavía no salió en ningún video. Si ningún Signature tiene
+// una toma sin usar, hoy no hay video: repetir la misma imagen es justo lo que el dueño pidió no hacer.
+const HECHO = 'docs/marketing/estudio/hecho';
+const yaSalieron = new Set(usados.map((u) => u.datos?.foto).filter(Boolean));
+const tomasNuevas = (id) => (existsSync(HECHO) ? readdirSync(HECHO).filter((d) => d.startsWith(`video-${id.toLowerCase()}-`)).sort()
+  .flatMap((d) => readdirSync(join(HECHO, d)).filter((f) => /^v\d+\.(jpe?g|png|webp)$/.test(f)).sort().map((f) => `${HECHO}/${d}/${f}`)) : [])
+  .filter((t) => !yaSalieron.has(t));
+const conToma = candidatos.filter((id) => tomasNuevas(id).length);
+if (!conToma.length) { console.log('Hoy no hay video: ningún Signature tiene una toma nueva sin usar (encargar «video-<sig>-*» a Flow).'); process.exit(0); }
+const sig = conToma.sort((a, b) => String(ultimo[a] || '').localeCompare(String(ultimo[b] || '')))[0];
 const src = `v-${sig.toLowerCase()}-${hoy.replace(/-/g, '')}`;
 
 // Un día, un video: si el workflow se reintenta, no duplica (src también es único en la base).
@@ -58,7 +70,9 @@ const tmp = mkdtempSync(join(tmpdir(), 'video-diario-'));
 writeFileSync(join(tmp, 'real.json'), JSON.stringify(items[sig]));
 const datosTxt = execFileSync('node_modules/.bin/deno', ['run', '--allow-read', '--no-check', 'scripts/video-auto/datos.ts', sig, join(tmp, 'real.json')], { encoding: 'utf8' });
 const datos = JSON.parse(datosTxt);
-writeFileSync(join(tmp, 'datos.json'), datosTxt);
+const foto = tomasNuevas(sig)[0];
+datos.foto = foto;
+writeFileSync(join(tmp, 'datos.json'), JSON.stringify(datos));
 // En la carpeta del repo (ignorada por git): el workflow la guarda como artefacto para verla.
 const mp4 = `video-del-dia.mp4`;
 execFileSync('node', ['scripts/video-auto/render.mjs', join(tmp, 'datos.json'), mp4], { stdio: 'inherit' });
@@ -87,7 +101,7 @@ await pedir(`${SB}/rest/v1/marketing_calendar`, {
     scheduled_date: hoy, channel: 'instagram', status: 'draft', title: `${datos.nombre} — video del día`,
     caption_text: caption, media_type: 'video', video_url: videoUrl, created_by: 'productor',
     plantilla: 'signature', gancho: datos.gancho, src, rol: 'productor', revision: 'pendiente',
-    datos: { sig, prot: items[sig]?.prot || null, p15: datos.p15, p30: datos.p30 },
+    datos: { sig, prot: items[sig]?.prot || null, p15: datos.p15, p30: datos.p30, foto },
   }),
 });
 console.log(`✓ ${videoUrl}\n✓ en el calendario como borrador, pendiente de revisión`);

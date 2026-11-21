@@ -14,3 +14,5 @@
 - **2026-10-16 · El pan también es la receta.** La foto aprobada del Turkey traía una baguette
   enharinada; llega un pan blanco suave (Classic // White). El prompt nombra el pan con su forma:
   «soft white sub roll, thin soft crust, no flour dusting, not a baguette».
+
+- 2026-11-21 · **Regla: cada reel o video lleva imágenes NUEVAS, nunca las que ya existen.** Ezra, sobre el video del día publicado: «Vi que el reel que se creó no está mal el último publicado pero se siguen usando las mismas imágenes que ya están creadas. Creatividad». Por qué: las fotos de la app (img/sig*) ya salieron en todos los videos y el feed se ve repetido. Cómo se aplica: el video del día solo usa tomas de Flow (`video-<sig>-*`) que no salieron antes, y si no hay ninguna, ese día no sale video.

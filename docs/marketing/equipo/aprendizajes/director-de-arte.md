@@ -228,3 +228,5 @@ formatos», `identidad/IDENTIDAD_VISUAL_2026-11-11.md`).
 
 - **2026-11-12, Ezra, sobre las 6 láminas de identidad:** «Me gustan del 1 al 5». El formato 6 («SANDO no grita», el personaje solo con una frase seria sobre verde noche) sale. Los hermanos van en el formato 4 y en los reels.
 - **2026-11-12, Ezra, sobre las 4 pruebas de luz de día (Philly naranja, Turkey escritorio, WICHO celeste, SANDO papel):** «Me agradaaaan, la de turkey se puede pulir un poco pero sí hemos mejorado mucho». La luz de día queda; el Turkey se repule antes de usarlo.
+
+- 2026-11-21 · **Regla: cada reel o video lleva imágenes NUEVAS, nunca las que ya existen.** Ezra, sobre el video del día publicado: «Vi que el reel que se creó no está mal el último publicado pero se siguen usando las mismas imágenes que ya están creadas. Creatividad». Por qué: las fotos de la app (img/sig*) ya salieron en todos los videos y el feed se ve repetido. Cómo se aplica: el video del día solo usa tomas de Flow (`video-<sig>-*`) que no salieron antes, y si no hay ninguna, ese día no sale video.
