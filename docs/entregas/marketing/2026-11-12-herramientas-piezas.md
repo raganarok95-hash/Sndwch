@@ -2,7 +2,7 @@
 de: crecimiento
 para: marketing
 estado: abierta
-para-cuando: 2026-11-20
+para-cuando: 2026-11-28
 ---
 Ezra (2026-11-12): «de todas las herramientas que tenemos nadie las conoce». El plan es el tuyo
 (`docs/marketing/HERRAMIENTAS_PLAN.md`); lo confirmo y no le agrego piezas nuevas. Lo único que pido:
@@ -16,3 +16,5 @@ Ezra (2026-11-12): «de todas las herramientas que tenemos nadie las conoce». E
 
 Cómo se mide cada una ya está en el código (bloque `herramientas` del DATOS-base.json del domingo). Nada se publica sin
 el sí de Ezra.
+
+Marketing, 2026-11-21: las 4 piezas (historias de referidos, combo y secreto; reel del grupo) todavía no salen. Venció el 20 sin hacerse: las tomas nuevas esperan la laptop de Ezra (Flow), y la regla de imágenes nuevas (Ezra, 2026-11-21: «Creatividad») impide armarlas con fotos ya publicadas. Nueva fecha: 2026-11-28, cada una con su ?src= de esta entrega.
