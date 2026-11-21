@@ -397,6 +397,8 @@ window.addEventListener('load',function(){sndRestoreOwnedFns();});
   armarBotonAtras();
   if(!pedidoFromUrl&&!deliveryTokenFromUrl)revisarPedidoVivo();
   if(pedidoFromUrl&&!deliveryTokenFromUrl)abrirPedidoDelEnlace(pedidoFromUrl);
+  // ?embajador=1 — la inscripción de embajadores se lleva la pantalla entera.
+  if(embajadorAltaFromUrl&&!deliveryTokenFromUrl){sndScreen='embajador_alta';render();}
   // ?entrega=TOKEN — el link del motorizado (#19). Va al final a propósito: si está, es lo
   // único que importa de esta visita y se lleva la pantalla entera.
   if(deliveryTokenFromUrl){
@@ -628,6 +630,7 @@ function renderScreen(){
     case'group_split': h=sGroupSplit();break;
     case'p_addresses': h=sPAddresses();break;
     case'delivery_confirm':h=sDeliveryConfirm();break;
+    case'embajador_alta':h=sEmbajadorAlta();break;
     // ── LAS 34 PANTALLAS DEL PANEL YA NO ESTÁN ESCRITAS ACÁ ────────────────────────
     // Estaban como 34 `case` fijos, y eso era lo que ataba el router al panel: mientras el
     // router nombrara cada pantalla de admin, el panel no se podía sacar del bundle que

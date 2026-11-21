@@ -9,7 +9,7 @@
 // Aquí solo viven quiénes son (`embajadores`) y lo que ya se les pagó (`embajador_pagos`).
 import type { Entrada } from "../../_shared/contrato.ts";
 import { comisionesDeEmbajadores, origenDeEmbajador, REGLAS, type PedidoDeComision } from "../../_shared/dinero.ts";
-import { leer, sbInsert } from "../db.ts";
+import { leer, rpc, sbInsert } from "../db.ts";
 import { ApiError } from "../types.ts";
 import { requireAdmin } from "../session.ts";
 import { logAdminAction } from "../logging.ts";
@@ -107,4 +107,34 @@ export async function actAdminEmbajadorPagar(b: Entrada<"admin-embajador-pagar">
   await sbInsert("embajador_pagos", { embajador_id: id, monto: debe, pagado_por: s.phone });
   await logAdminAction(s.phone, "embajador-pagar", e.codigo, { monto: debe });
   return { success: true, monto: debe };
+}
+
+// ── INSCRIPCIÓN SIN EL DUEÑO (2026-11-21) ─────────────────────────────────────────────────────
+// Dueño, 2026-11-21: «Gestiona todo el proceso que esté activo». Antes cada embajador lo creaba
+// el dueño a mano desde el panel; ahora cualquiera se inscribe en sndwch.app/?embajador=1 y recibe
+// su enlace al instante. No abre ningún gasto: solo se paga por clientes NUEVOS que reciben su
+// pedido (`comisionesDeEmbajadores`), y el pago lo registra el dueño a mano desde el panel.
+// Límites contra el abuso: 3 inscripciones por IP al día y 60 en total al día.
+export async function actEmbajadorInscribirse(b: Entrada<"embajador-inscribirse"> & { _ip?: string }) {
+  const nombre = b.nombre.trim().replace(/\s+/g, " ");
+  if (nombre.length < 2) throw new ApiError("Escribe tu nombre.", 400);
+  let telefono: string;
+  try { telefono = telefonoDeAdmin(b.telefono); } catch { throw new ApiError("Escribe tu celular de 9 dígitos (empieza con 9).", 400); }
+  const existentes = await leer("embajadores", ["codigo", "telefono", "activo"] as const);
+  const yaEs = existentes.find((e) => e.telefono === telefono);
+  // Quien ya está inscrito recupera su enlace (lo perdió, cambió de celular de navegador…).
+  if (yaEs) {
+    if (!yaEs.activo) throw new ApiError("Este celular ya no participa. Escríbenos por WhatsApp si es un error.", 403);
+    return { success: true, yaInscrito: true, enlace: ENLACE_BASE + origenDeEmbajador(yaEs.codigo), porPrimero: REGLAS.embajadorPorPrimero, porSegundo: REGLAS.embajadorPorSegundo };
+  }
+  const ip = String(b._ip || "unknown");
+  if (!(await rpc("check_rate_limit", { p_key: `emb-inscribir:${ip}`, p_limit: 3, p_window_minutes: 1440 }))) {
+    throw new ApiError("Ya se inscribieron varias personas desde esta conexión hoy. Prueba mañana.", 429);
+  }
+  if (!(await rpc("check_rate_limit", { p_key: "emb-inscribir-total", p_limit: 60, p_window_minutes: 1440 }))) {
+    throw new ApiError("Hoy ya se llenaron los cupos. Vuelve mañana.", 429);
+  }
+  const codigo = codigoDeEmbajador(nombre, existentes.map((e) => e.codigo));
+  await sbInsert("embajadores", { nombre, codigo, telefono });
+  return { success: true, yaInscrito: false, enlace: ENLACE_BASE + origenDeEmbajador(codigo), porPrimero: REGLAS.embajadorPorPrimero, porSegundo: REGLAS.embajadorPorSegundo };
 }

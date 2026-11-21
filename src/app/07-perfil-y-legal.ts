@@ -483,3 +483,62 @@ async function doConfirmDelivery(){
   }
   render();
 }
+
+
+// ── INSCRIPCIÓN DE EMBAJADORES (?embajador=1, 2026-11-21) ────────────────────────────────────
+// Cualquiera se inscribe con nombre y celular y recibe su enlace al instante. Los montos que se
+// muestran llegan del servidor (REGLAS), nunca escritos acá.
+function sEmbajadorAlta(){
+  var d=embajadorAlta||{};
+  var caja=function(inner){
+    return'<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;background:var(--sw-bg,#17130E)">'
+      +'<div style="max-width:380px;width:100%">'+inner+'</div></div>';
+  };
+  var titulo=function(t){return'<div style="font-family:\'Bodoni Moda\',serif;font-optical-sizing:auto;font-size:22px;font-weight:640;color:var(--sw-text,#FFFFFF);margin-bottom:8px">'+t+'</div>';};
+  var texto=function(t){return'<div style="font-family:EB Garamond,serif;font-size:15px;color:var(--sw-text-body,#EFEDE4);line-height:1.6;margin-bottom:14px">'+t+'</div>';};
+  var nota=function(t){return'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-text-muted,#9DA096);line-height:1.6;margin-bottom:12px">'+t+'</div>';};
+  if(d.ok){
+    return caja(titulo(d.yaInscrito?'Ya estabas inscrito //':'Listo, ya eres embajador //')
+      +texto('Este es tu enlace. Compártelo con quien quieras:')
+      +'<div data-accion="enlace-embajador" style="background:var(--sw-card,#1B1F18);border:1px solid var(--sw-border,#2C3228);border-radius:10px;padding:12px 14px;font-family:EB Garamond,serif;font-size:15px;color:'+GOLD+';word-break:break-all;margin-bottom:12px">'+esc(d.enlace)+'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">'
+      +BTN('Compartir por WhatsApp //','compartirEmbajador()').replace('<button ','<button data-accion="compartir-embajador" ')
+      +BTN('Copiar mi enlace //',"copiarEnlaceEmbajador()",true).replace('<button ','<button data-accion="copiar-embajador" ')
+      +'</div>'
+      +nota('Te pagamos '+SOLES_TXT+pz(d.porPrimero)+' cuando alguien que nunca había pedido hace su primer pedido con tu enlace y lo recibe, y '+SOLES_TXT+pz(d.porSegundo)+' más cuando hace el segundo. Pagamos cada semana por Yape a este celular.')
+      +nota('Reglas: si lo publicas en redes, pon #publicidad. Nada de spam ni de prometer precios o descuentos: solo comparte tu enlace. Tus propios pedidos no cuentan.')
+      +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096)">Guarda esta página o tu enlace. Si lo pierdes, vuelve a inscribirte con el mismo celular y te lo mostramos otra vez.</div>');
+  }
+  return caja(titulo('Gana con SND//WCH //')
+    +texto('Comparte tu enlace con tus amigos, tu salón o tu trabajo. Cada vez que alguien nuevo pide con tu enlace y recibe su pedido, te pagamos por Yape.')
+    +'<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">'
+    +INP('emb-alta-nombre','Tu nombre // ej. Ana María','text','',null,'name')
+    +INP('emb-alta-telefono','Tu celular // te pagamos por Yape aquí','tel','',null,'tel')
+    +'</div>'
+    +(d.error?'<div style="font-family:EB Garamond,serif;font-size:13px;color:var(--sw-danger,#ff8888);margin-bottom:10px">'+esc(d.error)+'</div>':'')
+    +BTN(d.loading?'Creando tu enlace…':'Quiero mi enlace //',d.loading?'':'inscribirEmbajador()').replace('<button ','<button data-accion="inscribir-embajador" ')
+    +'<div style="font-family:EB Garamond,serif;font-style:italic;font-size:11px;color:var(--sw-text-muted,#9DA096);margin-top:12px;line-height:1.5">Usamos tu celular solo para pagarte por Yape.</div>');
+}
+async function inscribirEmbajador(){
+  var n=(document.getElementById('emb-alta-nombre') as HTMLInputElement|null);
+  var t=(document.getElementById('emb-alta-telefono') as HTMLInputElement|null);
+  var nombre=n?n.value.trim():'',telefono=t?t.value.trim():'';
+  if(nombre.length<2){embajadorAlta={error:'Escribe tu nombre.'};render();return;}
+  if(telefono.replace(/\D/g,'').length<9){embajadorAlta={error:'Escribe tu celular de 9 dígitos.'};render();return;}
+  embajadorAlta={loading:true};render();
+  try{
+    var r=await api('embajador-inscribirse',{nombre:nombre,telefono:telefono});
+    embajadorAlta={ok:true,yaInscrito:!!r.yaInscrito,enlace:r.enlace,porPrimero:r.porPrimero,porSegundo:r.porSegundo};
+  }catch(e){
+    embajadorAlta={error:(e&&e.message)||'No se pudo inscribir. Prueba otra vez.'};
+  }
+  render();
+}
+function compartirEmbajador(){
+  var msg='Prueba SND//WCH, sándwiches armados al momento con delivery en Trujillo. Pide aquí: '+(embajadorAlta.enlace||'');
+  window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+}
+async function copiarEnlaceEmbajador(){
+  try{await navigator.clipboard.writeText(embajadorAlta.enlace||'');showToast('Enlace copiado.');}
+  catch(e){showToast('Mantén presionado el enlace para copiarlo.');}
+}

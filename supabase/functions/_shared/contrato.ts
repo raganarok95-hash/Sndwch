@@ -365,6 +365,12 @@ export const CONTRATO = {
     token,
     id: e.entero({ min: 1, mensaje: 'Falta el embajador.' }),
   })),
+  // Inscripción pública de embajadores (2026-11-21): sin sesión, con límite por IP.
+  'embajador-inscribirse': accion<Record<string, unknown>>()(e.objeto({
+    token,
+    nombre: e.texto({ min: 2, max: 60, mensaje: 'Escribe tu nombre.' }),
+    telefono: e.texto({ min: 9, max: 20, mensaje: 'Escribe tu celular de 9 dígitos.' }),
+  })),
   'admin-calendar-list': accion<Record<string, unknown>>()(e.objeto({ token })),
   'admin-calendar-create': accion<Record<string, unknown>>()(e.objeto({ token, scheduledDate: crudo, channel: crudo, title: crudo, status: crudo, captionText: crudo, whatsappText: crudo, photoIdea: crudo, videoIdea: crudo, campaignTag: crudo })),
   'admin-calendar-update': accion<Record<string, unknown>>()(e.objeto({ token, id: crudo, scheduledDate: crudo, channel: crudo, title: crudo, captionText: crudo, whatsappText: crudo, photoIdea: crudo, videoIdea: crudo, campaignTag: crudo, status: crudo })),
