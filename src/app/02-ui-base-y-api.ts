@@ -455,7 +455,7 @@ async function loadStoreHoursBackground(){
     if(Array.isArray(r.hours)&&r.hours.length===7){
       STORE_HOURS=r.hours.map(function(d){return d.closed?null:[d.open,d.close];});
     }
-    businessLaunched=r.businessLaunched===true;
+    if(typeof r.businessLaunched==="boolean")businessLaunched=r.businessLaunched;
     if(r.metaPixelId){metaPixelId=r.metaPixelId;initMetaPixel(r.metaPixelId);}
     // Mismo mecanismo que el píxel: el literal de 01-* es solo la semilla, y el valor real
     // llega del servidor. Sin esto, poner el secret no prendía "Continuar con Google" y el
