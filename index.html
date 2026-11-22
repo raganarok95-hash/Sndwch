@@ -4506,7 +4506,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '02bb558a8e';
+var APP_BUILD = '76b5ac6eec';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -4521,7 +4521,12 @@ var wlPhone = '', wlName = '', wlMsg = '', wlDone = localStorage.getItem('sw_wl_
 // carga; el admin la togglea el día real de lanzamiento y la tarjeta de lista de espera
 // desaparece sola, sin necesitar otro cambio de código (fix P1 de crítica impeccable
 // 2026-07-30: antes solo dependía de cust/wlDone, nunca de si el negocio ya abrió).
-var businessLaunched = false;
+// ⚠ DESDE EL DÍA DE APERTURA ARRANCA EN true (2026-11-22). Arrancar en false pintaba «Abrimos el 20
+// de noviembre · Te avisamos el día que abramos» mientras get-store-hours tardaba (hasta 4 s medidos):
+// después de abrir, quien llegaba veía que no habíamos abierto y se iba. La base sigue mandando:
+// si el dueño apaga el negocio, get-store-hours lo pone en false apenas responde.
+var APERTURA_MS = Date.parse('2026-11-20T06:00:00-05:00');
+var businessLaunched = Date.now() >= APERTURA_MS;
 // Key de Google Maps — llega en get-store-hours. Es el ÚNICO motor de ubicación: sin ella el
 // mapa dice que no está disponible y el error llega al dueño (ver loadGoogleMaps()).
 var googleMapsKey = '';
@@ -5296,7 +5301,8 @@ async function loadStoreHoursBackground() {
         if (Array.isArray(r.hours) && r.hours.length === 7) {
             STORE_HOURS = r.hours.map(function (d) { return d.closed ? null : [d.open, d.close]; });
         }
-        businessLaunched = r.businessLaunched === true;
+        if (typeof r.businessLaunched === "boolean")
+            businessLaunched = r.businessLaunched;
         if (r.metaPixelId) {
             metaPixelId = r.metaPixelId;
             initMetaPixel(r.metaPixelId);
