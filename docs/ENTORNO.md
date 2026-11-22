@@ -842,3 +842,9 @@ se renueva con `GET graph.instagram.com/refresh_access_token?grant_type=ig_refre
 Facebook (la página) sigue con `META_PAGE_ACCESS_TOKEN`.
 
 - **Flow en la laptop: Chrome bloquea las descargas múltiples de flow.google.com (2026-11-12).** Flow dice «Se descargó tu imagen» y en Descargas no aparece nada. Arreglo (lo hace Ezra): en flow.google.com, ícono de descarga bloqueada → «Permitir siempre que flow.google.com descargue varios archivos» (o Configuración › Privacidad › Configuración de sitios › Descargas automáticas). Sin eso no se sigue la cola ni se gastan créditos de video.
+
+- **Leer perfiles ajenos de Instagram (2026-11-22): no se puede desde la nube.** WebFetch da
+  `robots_disallowed`, y el auto mode bloquea la API pública de perfiles. La Biblioteca de Anuncios de Meta solo
+  muestra anuncios pagados. La vía es Remote Control con Claude in Chrome en la laptop del dueño,
+  desde el Instagram del negocio (Ezra, 2026-11-22: «puedes verlo desde el ig del negocio moviendo
+  chrome por la laptop»), o capturas del dueño.
