@@ -1116,7 +1116,12 @@ var wlPhone='',wlName='',wlMsg='',wlDone=localStorage.getItem('sw_wl_done')==='1
 // carga; el admin la togglea el día real de lanzamiento y la tarjeta de lista de espera
 // desaparece sola, sin necesitar otro cambio de código (fix P1 de crítica impeccable
 // 2026-07-30: antes solo dependía de cust/wlDone, nunca de si el negocio ya abrió).
-var businessLaunched=false;
+// ⚠ DESDE EL DÍA DE APERTURA ARRANCA EN true (2026-11-22). Arrancar en false pintaba «Abrimos el 20
+// de noviembre · Te avisamos el día que abramos» mientras get-store-hours tardaba (hasta 4 s medidos):
+// después de abrir, quien llegaba veía que no habíamos abierto y se iba. La base sigue mandando:
+// si el dueño apaga el negocio, get-store-hours lo pone en false apenas responde.
+var APERTURA_MS=Date.parse('2026-11-20T06:00:00-05:00');
+var businessLaunched=Date.now()>=APERTURA_MS;
 // Key de Google Maps — llega en get-store-hours. Es el ÚNICO motor de ubicación: sin ella el
 // mapa dice que no está disponible y el error llega al dueño (ver loadGoogleMaps()).
 var googleMapsKey='';
