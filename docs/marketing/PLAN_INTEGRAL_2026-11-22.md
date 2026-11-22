@@ -62,3 +62,11 @@ Nada se prende, programa ni sube sin el sí de Ezra. Lo arma el media buyer, en 
   refuerza o se corta. Lo que no trae pedidos en dos semanas se cambia.
 - Lo que espera a Ezra: vincular @snd__wch a la cuenta publicitaria, aceptar el Remote Control
   (Flow), verificar Google, mandar los mensajes a oficinas y contactos, y el sí a la prueba de S/300.
+
+## 4 · Ajuste por el referente Brandos (2026-11-22, mismo día)
+
+Ezra puso de vara a @brandosbestial (`referentes/brandos-monday/ANALISIS.md`). Lo que cambia:
+**el frente 8 (videos) pasa a ser primero video real de cocina** grabado con el celular por Ezra
+(6 tomas por sándwich, empezando por el Philly) y montado en 9 s con el corte primero y en bucle.
+SANDO y WICHO quedan para el humor y las historias. Se suma un kit visual fijo, la medición por
+envíos y una colaboración con PedidosYa el día que salga la tienda.
