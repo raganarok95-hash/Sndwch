@@ -1,6 +1,7 @@
 // SND//WCH — api / actions/hours
 // Horario de atención editable desde el panel admin (antes era un array hardcodeado en
 // env.ts que exigía redesplegar la función para cambiar un horario feriado o de temporada).
+import { CIERRE_TEMPORAL, cerradoTemporalmente } from "../../_shared/reglas.ts";
 import type { Entrada } from "../../_shared/contrato.ts";
 import { STORE_HOURS, loadStoreHours, META_PIXEL_ID, GOOGLE_CLIENT_ID, GOOGLE_MAPS_KEY, MAX_ORDERS_PER_HOUR, QUEUE_MINUTES_PER_ORDER } from "../env.ts";
 import { sbGet, sbUpdate, sbUpsert } from "../db.ts";
@@ -64,6 +65,8 @@ export async function actGetStoreHours(_b: Entrada<"get-store-hours">) {
   return {
     hours: STORE_HOURS.map((range) => (range ? { open: range[0], close: range[1], closed: false } : { open: null, close: null, closed: true })),
     businessLaunched: settings?.[0]?.business_launched === true,
+    // Cierre temporal (dueño, 2026-11-23): la hora en que volvemos, o null. El cliente le cree a esto.
+    cerradoHasta: cerradoTemporalmente() ? CIERRE_TEMPORAL!.hasta : null,
     // El píxel de Meta se activa solo si el secret existe — así se prende sin redesplegar
     // el cliente, y mientras no esté configurado la app no carga ningún script de terceros.
     metaPixelId: META_PIXEL_ID || null,

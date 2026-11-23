@@ -74,6 +74,28 @@ export const RECARGO_APPS = 0.10;
 export const BEBIDAS_SIN_SANDWICH_DESDE = 2;
 export const NOTE_ALERT_WORDS = ["alergi", "alérgi", "intoleran", "celiac", "celíac", "gluten", "lactosa", "diabet"];
 
+// ── Cierre temporal ────────────────────────────────────────────────────────────────
+// CERRADO HASTA UNA FECHA (dueño, 2026-11-23: «Cierra el app, por el momento. Coloca un aviso que
+// atenderemos a partir del miércoles 25»). Mientras dure, la app no toma pedidos (ni para ahora ni
+// programados) y la puerta dice cuándo volvemos. Se reabre SOLA a la hora de `hasta`, sin tocar
+// nada. Para quitarlo antes, o cuando ya pasó, se pone en null. Vive en el código y no en la base
+// para que valga igual en el cliente y en el servidor desde el mismo despliegue.
+export const CIERRE_TEMPORAL: { hasta: string } | null = { hasta: "2026-11-25T11:00:00-05:00" };
+/** true mientras el cierre temporal está vigente. */
+export function cerradoTemporalmente(ahoraMs: number = Date.now()): boolean {
+  if (!CIERRE_TEMPORAL) return false;
+  const hasta = Date.parse(CIERRE_TEMPORAL.hasta);
+  return Number.isFinite(hasta) && ahoraMs < hasta;
+}
+/** «el miércoles 25 de noviembre desde las 11:00», sacado de `hasta` (la cifra nunca se escribe a mano). */
+export function cuandoVolvemos(): string {
+  if (!CIERRE_TEMPORAL) return "";
+  const d = new Date(CIERRE_TEMPORAL.hasta);
+  const dia = d.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Lima" }).replace(",", "");
+  const hora = d.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "America/Lima" });
+  return `el ${dia} desde las ${hora}`;
+}
+
 // ── Envío ──────────────────────────────────────────────────────────────────────────
 // TARIFARIO POR KM del grupo de motorizados (dueño, 2026-11-20: «Me actualizaron el tarifario de
 // envío»). Cada tramo cubre hasta `hastaKm` inclusive; el que cae entre dos tramos (1.55 km) paga

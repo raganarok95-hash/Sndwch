@@ -1,3 +1,4 @@
+import { cerradoTemporalmente } from "../_shared/reglas.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import type { Accion, Entrada, Salida } from "../_shared/contrato.ts";
 import { validarEntrada } from "./entrada.ts";
@@ -309,7 +310,11 @@ Deno.serve(async (req: Request) => {
   try {
     // La frontera: una acción con contrato recibe su entrada ya validada y normalizada.
     body = validarEntrada(action, body && typeof body === "object" ? body : {}, ip);
-    const result = await handler(body);
+    // Cierre temporal (dueño, 2026-11-23): los avisos que invitan a pedir no salen mientras no tomamos
+    // pedidos. El cron igual late (heartbeat), así el vigía no lo da por caído.
+    const result = AVISOS_QUE_INVITAN_A_PEDIR.has(action) && cerradoTemporalmente()
+      ? { success: true, saltado: "cierre temporal" }
+      : await handler(body);
     await recordCronHeartbeat(body, action, true);
     recordSlowRequest(action, Date.now() - startedAt);
     return json(result);
@@ -337,6 +342,13 @@ Deno.serve(async (req: Request) => {
 // calcula sobre esa cola, que es exactamente la parte que importa.
 //
 // Sin await y en try: medir nunca puede costarle latencia a la petición que está midiendo.
+// Los crons que le escriben al cliente para que pida. Se callan durante un CIERRE_TEMPORAL.
+const AVISOS_QUE_INVITAN_A_PEDIR = new Set([
+  "remind-recurring-orders", "remind-points-nudge", "remind-unclaimed-challenge", "remind-peak-hour",
+  "remind-abandoned-cart", "remind-abandoned-payment", "remind-unused-credit", "remind-after-cancel",
+  "remind-second-order", "remind-high-rank-winback", "remind-never-ordered", "bounce-back-first-order",
+  "remind-lapsed-customers",
+]);
 const SLOW_REQUEST_MS = 1200;
 function recordSlowRequest(action: string, ms: number) {
   if (!Number.isFinite(ms) || ms < SLOW_REQUEST_MS) return;

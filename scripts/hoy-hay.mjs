@@ -34,7 +34,8 @@ export function queHayHoy(catalogo, horario, ahora = new Date()) {
     ok: Object.keys(inv).length > 0,
     motivo: Object.keys(inv).length > 0 ? '' : 'no hay inventario cargado: no se sabe qué hay',
     fecha: lima.toISOString().slice(0, 10),
-    abreHoy: horario.businessLaunched === true && !dia.closed,
+    // Cierre temporal del dueño (cerradoHasta, 2026-11-23): ese día tampoco se abre.
+    abreHoy: horario.businessLaunched === true && !dia.closed && !(horario.cerradoHasta && String(horario.cerradoHasta).slice(0, 10) > lima.toISOString().slice(0, 10)),
     horario: dia.closed ? null : { abre: dia.open, cierra: dia.close },
     hay, agotado,
   };

@@ -42,7 +42,9 @@ for (const dia of [hoy, manana]) {
   const delDia = piezas.filter((p) => p.scheduled_date === dia);
   if (!delDia.length) continue;
   const semana = horario.hours?.[new Date(`${dia}T12:00:00-05:00`).getUTCDay()];
-  const abre = !!semana && semana.closed !== true && !(horario.pausedUntil && dia === hoy);
+  const abre = !!semana && semana.closed !== true && !(horario.pausedUntil && dia === hoy)
+    // Cierre temporal del dueño (cerradoHasta, 2026-11-23): los días ANTES del día en que volvemos no se abre.
+    && !(horario.cerradoHasta && String(horario.cerradoHasta).slice(0, 10) > dia);
   const desdeCuando = horaDePublicar(dia, hoy, new Date());
   const veredictos = decidir({ piezas: delDia, hoy: dia, abreHoy: abre, cat: catSinStock, conVideo, recientes });
   for (const v of veredictos) {
