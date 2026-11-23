@@ -8,7 +8,7 @@ variantes: 2
 creditos_max: 0
 modelo: Flow imagen
 ---
-Photorealistic vertical 9:16 food photo for a short video. Extreme close-up macro of the cut face of the 15 cm sub sandwich, the layers of the filling filling most of the frame, crumbs of the crust visible, on a light wooden table, bright window light from the side. Real portion: about 85 grams of protein, honest and even, never overfilled, nothing spilling out. Recipe in order: soft white sub roll (Classic White); thin turkey slices laid in soft generous folds (never flat); shredded crisp lettuce; thick fresh red tomato slices; thin raw red onion; thin green bell pepper strips; a light drizzle of olive oil and vinegar. No cheese, no mayonnaise.
+Photorealistic vertical 9:16 food photo for a short video. Extreme close-up macro of the cut face of the 15 cm sub sandwich, the layers of the filling filling most of the frame, crumbs of the crust visible, on a light wooden table, bright window light from the side. Real portion: about 85 grams of protein, honest and even, never overfilled, nothing spilling out. Recipe in order: soft white sub roll (Classic White); thin turkey slices laid in soft generous folds (never flat); shredded crisp lettuce; thick fresh red tomato slices; thin raw red onion; no bell pepper; a light drizzle of olive oil and vinegar. No cheese, no mayonnaise.
 
 Bright, appetizing, cheerful. Daylight or bright studio light, soft and even, no dark areas.
 No darkness, no night, no single hanging bulb, no vignette, no fog, no horror or eerie mood, no harsh shadows.
