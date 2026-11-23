@@ -2347,6 +2347,7 @@ body.kb-open #app{padding-bottom:0}
     BEBIDAS_SIN_SANDWICH_DESDE: () => BEBIDAS_SIN_SANDWICH_DESDE,
     CHALLENGE_BONUS_POINTS: () => CHALLENGE_BONUS_POINTS,
     CHALLENGE_TARGET_ORDERS: () => CHALLENGE_TARGET_ORDERS,
+    CIERRE_TEMPORAL: () => CIERRE_TEMPORAL,
     CULQI_FEE_RATE: () => CULQI_FEE_RATE,
     DELIVERY_EXCLUDED_ZONES: () => DELIVERY_EXCLUDED_ZONES,
     DELIVERY_MAX_KM: () => DELIVERY_MAX_KM,
@@ -2380,6 +2381,8 @@ body.kb-open #app{padding-bottom:0}
     YAPE_AUTO_TOPE: () => YAPE_AUTO_TOPE,
     YAPE_NUMERO_COBRO: () => YAPE_NUMERO_COBRO,
     ZONAS_DE_ENVIO: () => ZONAS_DE_ENVIO,
+    cerradoTemporalmente: () => cerradoTemporalmente,
+    cuandoVolvemos: () => cuandoVolvemos,
     tarifaEnvio: () => tarifaEnvio
   });
   var ptsDe = (tipo) => {
@@ -2430,6 +2433,19 @@ body.kb-open #app{padding-bottom:0}
   var RECARGO_APPS = 0.1;
   var BEBIDAS_SIN_SANDWICH_DESDE = 2;
   var NOTE_ALERT_WORDS = ["alergi", "alérgi", "intoleran", "celiac", "celíac", "gluten", "lactosa", "diabet"];
+  var CIERRE_TEMPORAL = { hasta: "2026-11-25T11:00:00-05:00" };
+  function cerradoTemporalmente(ahoraMs = Date.now()) {
+    if (!CIERRE_TEMPORAL) return false;
+    const hasta = Date.parse(CIERRE_TEMPORAL.hasta);
+    return Number.isFinite(hasta) && ahoraMs < hasta;
+  }
+  function cuandoVolvemos() {
+    if (!CIERRE_TEMPORAL) return "";
+    const d2 = new Date(CIERRE_TEMPORAL.hasta);
+    const dia = d2.toLocaleDateString("es-PE", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Lima" }).replace(",", "");
+    const hora = d2.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "America/Lima" });
+    return `el ${dia} desde las ${hora}`;
+  }
   var TARIFA_ENVIO = [
     { hastaKm: 1.5, precio: 5 },
     { hastaKm: 2.2, precio: 6 },
@@ -2473,11 +2489,13 @@ body.kb-open #app{padding-bottom:0}
   // src/nuevo/reglas.ts
   var mayuscula = (s2) => s2.charAt(0).toUpperCase() + s2.slice(1);
   function reglasViejas() {
-    const { tarifaEnvio: tarifaEnvio2, ...datos } = reglas_exports;
+    const { tarifaEnvio: tarifaEnvio2, cerradoTemporalmente: cerradoTemporalmente2, cuandoVolvemos: cuandoVolvemos2, ...datos } = reglas_exports;
     const r2 = structuredClone(datos);
     return {
       ...r2,
       tarifaEnvio: tarifaEnvio2,
+      cerradoTemporalmente: cerradoTemporalmente2,
+      cuandoVolvemos: cuandoVolvemos2,
       DELIVERY_PRICE_ZONES: r2.ZONAS_DE_ENVIO.map((z2) => ({ id: z2.id, l: z2.nombre, fee: z2.precio })),
       // En pantalla la etiqueta del escalón empieza con mayúscula; en el servidor va dentro de una frase.
       REFERRAL_MILESTONES: r2.REFERRAL_MILESTONES.map((m2) => ({ ...m2, label: mayuscula(m2.label) }))
@@ -4506,7 +4524,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '4f15b0283b';
+var APP_BUILD = 'dae0053ff5';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -5303,6 +5321,10 @@ async function loadStoreHoursBackground() {
         }
         if (typeof r.businessLaunched === "boolean")
             businessLaunched = r.businessLaunched;
+        if (typeof r.businessLaunched === "boolean") {
+            var ch = r.cerradoHasta ? Date.parse(r.cerradoHasta) : 0;
+            cierreHasta = isFinite(ch) ? ch : 0;
+        }
         if (r.metaPixelId) {
             metaPixelId = r.metaPixelId;
             initMetaPixel(r.metaPixelId);
@@ -6785,6 +6807,20 @@ function horaDoce(h) {
 // Dueño, 2026-11-02: «Abrimos el 20 de noviembre».
 var MES_DE_APERTURA = 'Abrimos el 20 de noviembre';
 var avisameListo = false;
+// ¿La app toma pedidos? Abierto (businessLaunched) y sin cierre temporal (dueño, 2026-11-23:
+// «atenderemos a partir del miércoles 25»). Todo aviso de «todavía no» pregunta por ESTO.
+// Arranca con el cierre del código (por si get-store-hours tarda) y después manda lo que diga el
+// servidor (`cerradoHasta`), que es quien de verdad rechaza.
+var cierreHasta = REGLAS_N.cerradoTemporalmente(Date.now()) && REGLAS_N.CIERRE_TEMPORAL ? Date.parse(REGLAS_N.CIERRE_TEMPORAL.hasta) : 0;
+function enCierreTemporal() { return businessLaunched && cierreHasta > Date.now(); }
+function tomaPedidos() { return businessLaunched && !enCierreTemporal(); }
+// El rótulo del aviso: la fecha de apertura antes de abrir, o cuándo volvemos durante un cierre.
+function rotuloNoAbierto() {
+    if (!enCierreTemporal())
+        return MES_DE_APERTURA;
+    var v = String(REGLAS_N.cuandoVolvemos()).replace(/ desde las .*$/, '');
+    return 'Volvemos ' + v;
+}
 async function avisameAlAbrir() {
     var cel = await showPrompt('Tu celular y te escribimos el día que abramos.', '', 'tel');
     if (cel === null)
@@ -6800,8 +6836,8 @@ async function avisameAlAbrir() {
 }
 function puertaEstado() {
     var envio = 'delivery desde ' + SOLES_TXT + (DELIVERY_MIN_FEE % 1 ? pz(DELIVERY_MIN_FEE) : String(DELIVERY_MIN_FEE));
-    if (!businessLaunched)
-        return { rotulo: MES_DE_APERTURA, detalle: envio, cerrado: false };
+    if (!tomaPedidos())
+        return { rotulo: rotuloNoAbierto(), detalle: envio, cerrado: enCierreTemporal() };
     var lima = limaDayHour(new Date()), range = STORE_HOURS[lima.weekday];
     if (!range)
         return { rotulo: 'Cerrado hoy', detalle: envio, cerrado: true };
@@ -6829,9 +6865,12 @@ function sOEleccion() {
         // antes-de-abrir.png): el aviso iba abajo en chico y el cliente se enteraba recién al pagar.
         // Un pedido en curso manda sobre todo lo demás: es lo que el cliente vino a ver.
         + (pedidoVivoEnPuerta ? '<button class="aviso-abre vivo" data-accion="volver-al-pedido" onclick="abrirPedidoVivo()"><div><b>#' + esc(pedidoVivoEnPuerta.ref) + ' //</b><span>' + esc(textoPedidoEnPuerta(pedidoVivoEnPuerta)) + '</span></div><u>Ver →</u></button>'
-            : businessLaunched ? '' : '<div class="aviso-abre" data-accion="aviso-antes-de-abrir"><div><b>' + esc(MES_DE_APERTURA) + ' //</b>'
-                + '<span>' + (avisameListo ? 'Listo: te escribimos el día que abramos.' : 'Ya puedes ver la carta. Te avisamos el día que abramos.') + '</span></div>'
-                + (avisameListo ? '' : '<button data-accion="avisame-al-abrir" onclick="avisameAlAbrir()">Avísame</button>') + '</div>')
+            : tomaPedidos() ? ''
+                : enCierreTemporal() ? '<div class="aviso-abre" data-accion="aviso-cierre-temporal"><div><b>' + esc(rotuloNoAbierto()) + ' //</b>'
+                    + '<span>Por ahora no tomamos pedidos. Atendemos ' + esc(REGLAS_N.cuandoVolvemos()) + '. Ya puedes ver la carta.</span></div></div>'
+                    : '<div class="aviso-abre" data-accion="aviso-antes-de-abrir"><div><b>' + esc(MES_DE_APERTURA) + ' //</b>'
+                        + '<span>' + (avisameListo ? 'Listo: te escribimos el día que abramos.' : 'Ya puedes ver la carta. Te avisamos el día que abramos.') + '</span></div>'
+                        + (avisameListo ? '' : '<button data-accion="avisame-al-abrir" onclick="avisameAlAbrir()">Avísame</button>') + '</div>')
         + '<div class="mitades">'
         // ⚠ EL NUMERO SE CUENTA, NUNCA SE ESCRIBE (ver cuantosSignatures).
         + mitad('sig', 'hs', 'SND', 'Ya está resuelto', cuantosSignatures(), 'sando.webp')
@@ -9003,7 +9042,7 @@ function sOCart() {
     var h = '<div class="m30 kraft fi"><button class="sal" onclick="go(\'o_home\')" aria-label="Seguir pidiendo">←</button>'
         + '<div class="tit"><em>Va saliendo</em><b>' + esc(cuantasCosas(cart.length)).replace(' ', '<br>') + '</b></div>'
         // Antes de abrir se dice ARRIBA, no recién al tocar Pagar (dueño, 2026-11-02, «Sí a todo»).
-        + (businessLaunched ? '' : '<div class="aviso-abre30" data-accion="aviso-antes-de-abrir"><b>' + esc(MES_DE_APERTURA) + '</b>Todavía no tomamos pedidos. ' + (avisameListo ? 'Ya estás anotado: te escribimos el día que abramos.' : '<button onclick="avisameAlAbrir()">Avísame cuando abran →</button>') + '</div>')
+        + (tomaPedidos() ? '' : enCierreTemporal() ? '<div class="aviso-abre30" data-accion="aviso-cierre-temporal"><b>' + esc(rotuloNoAbierto()) + '</b>Por ahora no tomamos pedidos. Atendemos ' + esc(REGLAS_N.cuandoVolvemos()) + '.</div>' : '<div class="aviso-abre30" data-accion="aviso-antes-de-abrir"><b>' + esc(MES_DE_APERTURA) + '</b>Todavía no tomamos pedidos. ' + (avisameListo ? 'Ya estás anotado: te escribimos el día que abramos.' : '<button onclick="avisameAlAbrir()">Avísame cuando abran →</button>') + '</div>')
         + '<div class="papel"><div class="cinta c1"></div><div class="cinta c2"></div><div class="sello">'
         + '<div class="hd"><span>SND//WCH · TRUJILLO</span><span></span></div>'
         + lineas + ex + renglones
@@ -9209,7 +9248,7 @@ function faltaSandwich() {
 // el carrito mostraba «Llega 5:24 a.m.» y «Pagar» solo repetía un aviso en rojo. Si no queda
 // ninguna hora libre hoy ni mañana, se deja como estaba y el aviso lo dice.
 function programarSiCerrado() {
-    if (scheduleMode !== 'now' || !businessLaunched)
+    if (scheduleMode !== 'now' || !tomaPedidos())
         return;
     if (storeStatus().open && !hourIsFull(new Date()) && !pausaHasta())
         return;
@@ -9245,7 +9284,7 @@ function irAPagar() {
     }
     var err = problemaDelPedido();
     // Si lo que falla es la hora, se abre donde se elige, no un aviso que manda a buscarla.
-    if (err && businessLaunched && (scheduleMode === 'later' || !storeStatus().open || pausaHasta() || hourIsFull(new Date()))) {
+    if (err && tomaPedidos() && (scheduleMode === 'later' || !storeStatus().open || pausaHasta() || hourIsFull(new Date()))) {
         hoja30 = 'programar';
         hojaErr = err;
         initSchedDefault();
@@ -9445,6 +9484,8 @@ function problemaDelPedido() {
     // programar tampoco dejaba pedir (dueño, 2026-11-02, captura del recibo a las 6:38 a.m.).
     if (!businessLaunched)
         return 'Todavía no abrimos. Te avisamos apenas arranquemos.';
+    if (enCierreTemporal())
+        return 'Por ahora no tomamos pedidos. Atendemos ' + REGLAS_N.cuandoVolvemos() + '.';
     if (scheduleMode === 'later') {
         var v = schedInputValue();
         if (!v)

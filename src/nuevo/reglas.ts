@@ -10,11 +10,13 @@ const mayuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function reglasViejas() {
   // Las funciones no se clonan (structuredClone las rechaza): van aparte, tal cual.
-  const { tarifaEnvio, ...datos } = R;
+  const { tarifaEnvio, cerradoTemporalmente, cuandoVolvemos, ...datos } = R;
   const r = structuredClone(datos);
   return {
     ...r,
     tarifaEnvio,
+    cerradoTemporalmente,
+    cuandoVolvemos,
     DELIVERY_PRICE_ZONES: r.ZONAS_DE_ENVIO.map((z) => ({ id: z.id, l: z.nombre, fee: z.precio })),
     // En pantalla la etiqueta del escalón empieza con mayúscula; en el servidor va dentro de una frase.
     REFERRAL_MILESTONES: r.REFERRAL_MILESTONES.map((m) => ({ ...m, label: mayuscula(m.label) })),

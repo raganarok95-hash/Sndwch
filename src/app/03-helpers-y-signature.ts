@@ -988,6 +988,19 @@ function horaDoce(h:number):string{
 // Dueño, 2026-11-02: «Abrimos el 20 de noviembre».
 var MES_DE_APERTURA='Abrimos el 20 de noviembre';
 var avisameListo=false;
+// ¿La app toma pedidos? Abierto (businessLaunched) y sin cierre temporal (dueño, 2026-11-23:
+// «atenderemos a partir del miércoles 25»). Todo aviso de «todavía no» pregunta por ESTO.
+// Arranca con el cierre del código (por si get-store-hours tarda) y después manda lo que diga el
+// servidor (`cerradoHasta`), que es quien de verdad rechaza.
+var cierreHasta:number=REGLAS_N.cerradoTemporalmente(Date.now())&&REGLAS_N.CIERRE_TEMPORAL?Date.parse(REGLAS_N.CIERRE_TEMPORAL.hasta):0;
+function enCierreTemporal():boolean{return businessLaunched&&cierreHasta>Date.now();}
+function tomaPedidos():boolean{return businessLaunched&&!enCierreTemporal();}
+// El rótulo del aviso: la fecha de apertura antes de abrir, o cuándo volvemos durante un cierre.
+function rotuloNoAbierto():string{
+  if(!enCierreTemporal())return MES_DE_APERTURA;
+  var v=String(REGLAS_N.cuandoVolvemos()).replace(/ desde las .*$/,'');
+  return'Volvemos '+v;
+}
 async function avisameAlAbrir(){
   var cel=await showPrompt('Tu celular y te escribimos el día que abramos.','','tel');
   if(cel===null)return;
@@ -996,7 +1009,7 @@ async function avisameAlAbrir(){
 }
 function puertaEstado():{rotulo:string,detalle:string,cerrado:boolean}{
   var envio='delivery desde '+SOLES_TXT+(DELIVERY_MIN_FEE%1?pz(DELIVERY_MIN_FEE):String(DELIVERY_MIN_FEE));
-  if(!businessLaunched)return{rotulo:MES_DE_APERTURA,detalle:envio,cerrado:false};
+  if(!tomaPedidos())return{rotulo:rotuloNoAbierto(),detalle:envio,cerrado:enCierreTemporal()};
   var lima=limaDayHour(new Date()),range=STORE_HOURS[lima.weekday];
   if(!range)return{rotulo:'Cerrado hoy',detalle:envio,cerrado:true};
   var abierto=lima.hour>=range[0]&&lima.hour<range[1];
@@ -1023,7 +1036,10 @@ function sOEleccion(){
     // antes-de-abrir.png): el aviso iba abajo en chico y el cliente se enteraba recién al pagar.
     // Un pedido en curso manda sobre todo lo demás: es lo que el cliente vino a ver.
     +(pedidoVivoEnPuerta?'<button class="aviso-abre vivo" data-accion="volver-al-pedido" onclick="abrirPedidoVivo()"><div><b>#'+esc(pedidoVivoEnPuerta.ref)+' //</b><span>'+esc(textoPedidoEnPuerta(pedidoVivoEnPuerta))+'</span></div><u>Ver →</u></button>'
-    :businessLaunched?'':'<div class="aviso-abre" data-accion="aviso-antes-de-abrir"><div><b>'+esc(MES_DE_APERTURA)+' //</b>'
+    :tomaPedidos()?''
+    :enCierreTemporal()?'<div class="aviso-abre" data-accion="aviso-cierre-temporal"><div><b>'+esc(rotuloNoAbierto())+' //</b>'
+      +'<span>Por ahora no tomamos pedidos. Atendemos '+esc(REGLAS_N.cuandoVolvemos())+'. Ya puedes ver la carta.</span></div></div>'
+    :'<div class="aviso-abre" data-accion="aviso-antes-de-abrir"><div><b>'+esc(MES_DE_APERTURA)+' //</b>'
       +'<span>'+(avisameListo?'Listo: te escribimos el día que abramos.':'Ya puedes ver la carta. Te avisamos el día que abramos.')+'</span></div>'
       +(avisameListo?'':'<button data-accion="avisame-al-abrir" onclick="avisameAlAbrir()">Avísame</button>')+'</div>')
     +'<div class="mitades">'

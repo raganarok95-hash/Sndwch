@@ -178,6 +178,13 @@ export async function levantarServidor({ semilla = '' } = {}) {
     // Si alguien mueve la llamada a Culqi a otro archivo, se dice: si no, el pago con tarjeta
     // saldría a la pasarela real (y fallaría sin red) en vez de a la falsa.
     if (llamadasACulqi < 3) throw new Error('Las llamadas a api.culqi.com se movieron de orders.ts / culqi-claim.ts: actualiza servidor-local.mjs.');
+    // Un cierre temporal del dueño (CIERRE_TEMPORAL) cerraría también los flujos de prueba: acá se prueba
+    // la app abierta, así que la copia lo apaga. El cierre en sí lo prueba tests-api/cierre-temporal.test.ts.
+    const reglas = join(fn, 'functions', '_shared', 'reglas.ts');
+    const conCierre = readFileSync(reglas, 'utf8');
+    const sinCierre = conCierre.replace(/export const CIERRE_TEMPORAL: \{ hasta: string \} \| null = [^;]+;/, 'export const CIERRE_TEMPORAL: { hasta: string } | null = null;');
+    if (sinCierre === conCierre && !/CIERRE_TEMPORAL[^\n]*= null;/.test(conCierre)) throw new Error('No encontré CIERRE_TEMPORAL en reglas.ts: actualiza servidor-local.mjs.');
+    writeFileSync(reglas, sinCierre);
     const env = {
       ...process.env,
       SUPABASE_URL: `http://127.0.0.1:${pProxy}`,

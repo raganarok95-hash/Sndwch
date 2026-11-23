@@ -414,7 +414,7 @@ function sOCart(){
   var h='<div class="m30 kraft fi"><button class="sal" onclick="go(\'o_home\')" aria-label="Seguir pidiendo">←</button>'
     +'<div class="tit"><em>Va saliendo</em><b>'+esc(cuantasCosas(cart.length)).replace(' ','<br>')+'</b></div>'
     // Antes de abrir se dice ARRIBA, no recién al tocar Pagar (dueño, 2026-11-02, «Sí a todo»).
-    +(businessLaunched?'':'<div class="aviso-abre30" data-accion="aviso-antes-de-abrir"><b>'+esc(MES_DE_APERTURA)+'</b>Todavía no tomamos pedidos. '+(avisameListo?'Ya estás anotado: te escribimos el día que abramos.':'<button onclick="avisameAlAbrir()">Avísame cuando abran →</button>')+'</div>')
+    +(tomaPedidos()?'':enCierreTemporal()?'<div class="aviso-abre30" data-accion="aviso-cierre-temporal"><b>'+esc(rotuloNoAbierto())+'</b>Por ahora no tomamos pedidos. Atendemos '+esc(REGLAS_N.cuandoVolvemos())+'.</div>':'<div class="aviso-abre30" data-accion="aviso-antes-de-abrir"><b>'+esc(MES_DE_APERTURA)+'</b>Todavía no tomamos pedidos. '+(avisameListo?'Ya estás anotado: te escribimos el día que abramos.':'<button onclick="avisameAlAbrir()">Avísame cuando abran →</button>')+'</div>')
     +'<div class="papel"><div class="cinta c1"></div><div class="cinta c2"></div><div class="sello">'
     +'<div class="hd"><span>SND//WCH · TRUJILLO</span><span></span></div>'
     +lineas+ex+renglones
@@ -560,7 +560,7 @@ function faltaSandwich():boolean{
 // el carrito mostraba «Llega 5:24 a.m.» y «Pagar» solo repetía un aviso en rojo. Si no queda
 // ninguna hora libre hoy ni mañana, se deja como estaba y el aviso lo dice.
 function programarSiCerrado(){
-  if(scheduleMode!=='now'||!businessLaunched)return;
+  if(scheduleMode!=='now'||!tomaPedidos())return;
   if(storeStatus().open&&!hourIsFull(new Date())&&!pausaHasta())return;
   scheduleMode='later';schedSlot=null;initSchedDefault();
   if(!schedSlot)scheduleMode='now';
@@ -576,7 +576,7 @@ function irAPagar(){
   if(!direccionLista()||!recibeListo()){hoja30='recibe';hojaErr=!direccionLista()&&recibeListo()?'Falta marcar dónde te lo dejamos.':'';render();return;}
   var err=problemaDelPedido();
   // Si lo que falla es la hora, se abre donde se elige, no un aviso que manda a buscarla.
-  if(err&&businessLaunched&&(scheduleMode==='later'||!storeStatus().open||pausaHasta()||hourIsFull(new Date()))){hoja30='programar';hojaErr=err;initSchedDefault();render();return;}
+  if(err&&tomaPedidos()&&(scheduleMode==='later'||!storeStatus().open||pausaHasta()||hourIsFull(new Date()))){hoja30='programar';hojaErr=err;initSchedDefault();render();return;}
   if(err){var e=document.getElementById('o-err');if(e)e.textContent=err;else showToast(err,'error');return;}
   go('o_pagar');
 }
@@ -744,6 +744,7 @@ function problemaDelPedido():string|null{
   // Antes de abrir, esto va ANTES que el horario: decía «Estamos cerrados, toca Programar» y
   // programar tampoco dejaba pedir (dueño, 2026-11-02, captura del recibo a las 6:38 a.m.).
   if(!businessLaunched)return'Todavía no abrimos. Te avisamos apenas arranquemos.';
+  if(enCierreTemporal())return'Por ahora no tomamos pedidos. Atendemos '+REGLAS_N.cuandoVolvemos()+'.';
   if(scheduleMode==='later'){
     var v=schedInputValue();
     if(!v)return'Elige una hora para tu pedido programado.';

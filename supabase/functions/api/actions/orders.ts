@@ -12,7 +12,7 @@ import {
 } from "../env.ts";
 import { sbGet, sbInsert, sbUpdate, rpc, storageUpload, storageSignedUrl } from "../db.ts";
 import { ApiError } from "../types.ts";
-import { tarifaEnvio } from "../../_shared/reglas.ts";
+import { tarifaEnvio, cerradoTemporalmente, cuandoVolvemos } from "../../_shared/reglas.ts";
 import { verifyActiveSession, requireSession, requireAdmin, safeCustomer, verifyCronSecret } from "../session.ts";
 import { loadCatalogPrices, carritoSinEnvio, deriveCart, priceCartItem, REWARDS, assertCartGatesAllowed, SIG_GATES, etiquetaDeEscalon, loQueGanaQuienInvita } from "../catalog.ts";
 import { organizerFreeSandwichApplies, cerrarGrupoSiTodosPagaron } from "./group.ts";
@@ -170,6 +170,11 @@ async function assertBusinessLaunched(scheduledFor: string | null): Promise<void
       "Todavía no abrimos. Déjanos tu teléfono en la app y te avisamos apenas arranquemos.",
       403,
     );
+  }
+  // Cierre temporal hasta una fecha (dueño, 2026-11-23): no entra NADA, ni lo programado. Va en el
+  // mismo guard que atraviesan los dos caminos de cobro, antes de reservar o cobrar.
+  if (cerradoTemporalmente()) {
+    throw new ApiError(`Por ahora no estamos tomando pedidos. Atendemos ${cuandoVolvemos()}.`, 403);
   }
   // Pausa temporal ("hoy ya no puedo", "vuelvo en 2 horas"). Va dentro del mismo guard que
   // ya atraviesan los DOS caminos de cobro, así que ningún pedido puede colarse por un

@@ -117,6 +117,8 @@ test('un cliente nuevo recorre la app real sin errores', async ({ page }) => {
       // el negocio no abre (businessLaunched). Se anota en el registro y no cuenta como hallazgo, para que el vigía
       // vuelva a avisar de los errores de verdad (estuvo en rojo todos los días del 2026-10-25 al 2026-11-01 por esto).
       if (/Todavía no abrimos/.test(aviso)) { console.log('antes de abrir: Pagar avisa «Todavía no abrimos» (esperado)'); return; }
+      // Cierre temporal puesto por el dueño (CIERRE_TEMPORAL en _shared/reglas.ts, 2026-11-23): también es lo esperado.
+      if (/no tomamos pedidos/.test(aviso)) { console.log('cierre temporal: Pagar avisa «no tomamos pedidos» (esperado)'); return; }
       hallazgos.push({ paso: pasoActual, que: 'Pagar no llevó a ninguna pantalla' + (aviso ? ': ' + aviso.slice(0, 160) : '') });
     }
     if (llego && Date.now() < APERTURA) {
