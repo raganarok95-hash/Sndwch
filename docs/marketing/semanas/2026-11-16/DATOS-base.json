@@ -1,0 +1,55 @@
+{
+ "semana": "2026-11-16",
+ "prueba": false,
+ "pedidos": 0,
+ "clientesNuevos": 0,
+ "clientesQueVuelven": 0,
+ "ticketPromedio": null,
+ "enGrupo": 0,
+ "conPedidoFijo": 0,
+ "porOrigen": [
+  {
+   "origen": "directo",
+   "visitas": 144,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  },
+  {
+   "origen": "ig-bio",
+   "visitas": 5,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  },
+  {
+   "origen": "meta-carta",
+   "visitas": 1,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  },
+  {
+   "origen": "v-sig04-20261120",
+   "visitas": 1,
+   "pedidos": 0,
+   "nuevos": 0,
+   "conversion": 0
+  }
+ ],
+ "porHora": {},
+ "porDia": {},
+ "gastoDePauta": {},
+ "costoPorClienteNuevoMeta": null,
+ "herramientas": {
+  "nuevosPorReferido": 0,
+  "clientesQueLleganAlTercerPedido": 0,
+  "pctPedidosConBebida": null,
+  "pedidosConPremioDePuntos": 0,
+  "pctPedidosConCuenta": null,
+  "pctNuevosQueCreanCuenta": null,
+  "pctClientesDeLaSemanaConAvisos": null,
+  "canjesPorCodigo": {}
+ },
+ "generado": "2026-11-23T14:33:43.962Z"
+}
