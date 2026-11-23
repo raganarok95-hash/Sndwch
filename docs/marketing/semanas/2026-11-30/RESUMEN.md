@@ -17,8 +17,8 @@ repite uno usado (revisado con `git grep`).
 **Lo que se cortó:** el pedido fijo (la app lo ofrece desde el 2.º pedido y aún no hay clientes que vuelvan) y las
 fotos de clientes (no hay todavía). El 30CM ya salió el 26.
 
-**Avisos:** (1) la app está cerrada hasta el miércoles 25 a las 11:00, y la pieza del martes 24 («Junta a 5») invita a
-pedir: conviene pasarla al jueves 26 y correr el 30CM al viernes 27. (2) TURKEY ya no lleva pimiento: la foto de la
-semana del 23 con la mesa de la oficina lo muestra con pimiento, igual que «Faltan 3 días».
+**Avisos:** (1) la app está cerrada hasta el miércoles 25 a las 11:00: «Junta a 5» pasó al miércoles 25 a las 12:00 (Equipo de
+marketing). (2) TURKEY ya no lleva pimiento: la foto de la
+mesa de la oficina lo muestra con pimiento. Un retoque sin gastar no quedó creíble; rehacerla es 1 imagen de Figma y espera el sí de Ezra.
 
 **Necesita el sí de Ezra:** las 3 imágenes nuevas en Figma (`PROMPTS.md`) y publicar.
