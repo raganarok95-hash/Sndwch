@@ -19,6 +19,6 @@ fotos de clientes (no hay todavía). El 30CM ya salió el 26.
 
 **Avisos:** (1) la app está cerrada hasta el miércoles 25 a las 11:00: «Junta a 5» pasó al miércoles 25 a las 12:00 (Equipo de
 marketing). (2) TURKEY ya no lleva pimiento: la foto de la
-mesa de la oficina lo muestra con pimiento. Un retoque sin gastar no quedó creíble; rehacerla es 1 imagen de Figma y espera el sí de Ezra.
+mesa de la oficina lo muestra con pimiento. Equipo de marketing la recortó para que no se vea (2026-11-23): no se rehace.
 
 **Necesita el sí de Ezra:** las 3 imágenes nuevas en Figma (`PROMPTS.md`) y publicar.
