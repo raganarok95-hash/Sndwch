@@ -26,7 +26,7 @@ const BASE = `*{box-sizing:border-box;margin:0;padding:0}body{font-family:Archiv
 .hueco div{background:rgba(239,230,212,.94);border:3px dashed ${P.tinta};padding:28px 32px;font:600 24px/1.4 'IBM Plex Mono',monospace;color:${P.tinta};max-width:820px}`;
 const marca = (c) => `<div class="marca" style="color:${c}">SND<span class="b"><i class="g"></i><i class="c"></i></span>WCH</div>`;
 // Con FINAL=1 el recuadro se reemplaza por la imagen nueva aprobada (Ezra, 2026-11-16: «si a todo»), en el orden de PIEZAS.
-const FINAL = !!process.env.FINAL, FOTOS = ['s23-oficina.png', 's23-30cm.png', 's23-invita-final.png'];
+const FINAL = !!process.env.FINAL, FOTOS = ['s23-oficina-recorte.png', 's23-30cm.png', 's23-invita-final.png'];
 let iFoto = 0;
 const hueco = (alto, texto) => FINAL ? `<div class="abs" style="left:0;right:0;bottom:0;height:${alto}px;background:url('file://${D}/fotos/${FOTOS[iFoto++]}') center/cover"></div>` : huecoMaqueta(alto, texto);
 const huecoMaqueta = (alto, texto) => `<div class="hueco" style="height:${alto}px"><div>IMAGEN NUEVA (Figma, espera tu sí)<br><br>${texto}</div></div>`;
