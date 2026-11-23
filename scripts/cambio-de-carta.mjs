@@ -51,10 +51,12 @@ function main() {
   for (const c of lista) {
     for (const [hilo, que] of entregasDe(c)) {
       const dir = `docs/entregas/${hilo}`;
+      // Dos días de plazo: el mismo día la marcaba atascada esa misma noche (2026-11-22, 4 entregas de SIG10).
+      const plazo = new Date(Date.parse(fecha + 'T12:00:00Z') + 2 * 864e5).toISOString().slice(0, 10);
       const f = `${dir}/${fecha}-carta-${c.id.toLowerCase()}.md`;
       if (existsSync(f)) continue;
       mkdirSync(dir, { recursive: true });
-      writeFileSync(f, `de: automatizaciones\npara: ${hilo}\nestado: abierta\npara-cuando: ${fecha}\n---\n` +
+      writeFileSync(f, `de: automatizaciones\npara: ${hilo}\nestado: abierta\npara-cuando: ${plazo}\n---\n` +
         `Cambió ${c.nombre.toUpperCase()} (${c.id}) en la carta: ${c.campos.join(', ')}.\n` +
         `Falta: ${que}.\nLo dejó solo scripts/cambio-de-carta.mjs. Al terminar, cambia «estado: abierta» por «estado: hecha» y una línea de qué hiciste.\n`);
       console.log(`→ ${f}`);
