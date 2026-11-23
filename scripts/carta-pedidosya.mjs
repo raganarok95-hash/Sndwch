@@ -138,7 +138,7 @@ const i = process.argv.indexOf('--pdf');
 if (i > 0) {
   const dest = process.argv[i + 1];
   const { chromium } = createRequire(import.meta.url)('playwright');
-  const br = await chromium.launch();
+  const br = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_PATH ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } : {});
   const pg = await br.newPage({ viewport: { width: 794, height: 1123 }, deviceScaleFactor: 2 });
   await pg.goto('file://' + join(OUT, 'carta.html'));
   await pg.evaluate(() => document.fonts.ready);
