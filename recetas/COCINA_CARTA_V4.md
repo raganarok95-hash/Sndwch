@@ -28,7 +28,7 @@ Salsa: 14 g en 15CM y 28 g en 30CM.
 |---|---|---|---|---|---|---|
 | **PHILLY CHEESESTEAK** | CLASSIC // WHITE | CHEDDAR | RES // LAMINADA | CEBOLLA // SALTEADA + PIMIENTO // VERDE | ninguna | sí |
 | **MEATBALL MARINARA** | CLASSIC // WHITE, tostado | AMERICANO | ALBÓNDIGA // MARINARA | ninguno | ninguna | sí |
-| **TURKEY** | CLASSIC // WHITE | no lleva | PAVO // HORNEADO | lechuga, tomate, cebolla morada, pimiento verde | OIL & VINEGAR | no |
+| **TURKEY** | CLASSIC // WHITE | no lleva | PAVO // LAMINADO | lechuga, tomate, cebolla morada (sin pimiento desde el 2026-11-23) | OIL & VINEGAR | no |
 | **TUNA MELT** | CLASSIC // WHITE | CHEDDAR | ATÚN // HOUSE | ninguno | ninguna | sí (solo el queso) |
 | **ITALIAN HOAGIE** | CLASSIC // WHITE | AMERICANO | EMBUTIDO // ITALIANO | lechuga, tomate, cebolla morada, pimiento verde | OIL & VINEGAR | no |
 | **CLASSIC TUNA** | CLASSIC // WHITE | no lleva | ATÚN // HOUSE | ninguno | ninguna | no |
@@ -155,7 +155,7 @@ Al pedido (4 min):
 **TUNA MELT, al pedido (2 min):** tuesta la cara de adentro del pan en la sartén, pon el atún, la
 tajada de cheddar encima (2 en 30CM), **tapa la sartén a fuego bajo 1 min** hasta que se funda.
 
-### PAVO // HORNEADO — para el TURKEY
+### PAVO // LAMINADO — para el TURKEY
 
 **No se cocina. Viene tajado** (jamón de pavo Braedt 480 g, como hace Subway con su pavo: llega
 tajado del proveedor). **En pliegues, nunca plano** (así se ve lleno). 85 g en 15CM, 170 g en 30CM.
@@ -204,7 +204,7 @@ Sale de `modelo/rentabilidad_por_parte.py` con los precios de la base (`catalog_
 |---|---|---|---|---|
 | PHILLY CHEESESTEAK | S/6.48 | 32.5% | S/11.65 | 37.7% |
 | MEATBALL MARINARA | S/6.03 | 30.3% | S/10.76 | 34.8% |
-| TURKEY | S/6.42 | 32.2% | S/11.54 | 37.3% |
+| TURKEY | S/6.38 | 32.1% | S/11.48 | 37.1% |
 | TUNA MELT | S/6.45 | 32.4% | S/11.60 | 37.5% |
 | ITALIAN HOAGIE | S/6.67 | 33.5% | S/12.04 | 39.0% |
 | CLASSIC TUNA | S/5.55 | 27.9% | S/9.80 | 31.7% |
