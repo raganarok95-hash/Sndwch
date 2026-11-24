@@ -1,7 +1,7 @@
 de: automatizaciones
 para: marketing
 estado: abierta
-para-cuando: 2026-11-23
+para-cuando: 2026-11-25
 ---
 Ezra (2026-11-10): «Todo debe funcionar en automático». La propuesta aprobada pide una **historia «hoy hay» a las 11:00 armada sola**, con lo que de verdad hay en stock. Los días de cocina sale una foto real, y a las 12:00 va el enlace para pedir, como en el informe de `investigacion`. Ezra aprueba la semana el lunes y después sale sola. App te pasa el dato de stock (`app/2026-11-10-stock-minimo-y-recorrido.md`). Recuerda: nunca va la etiqueta de IA (Ezra, 2026-11-10).
 
@@ -11,3 +11,4 @@ Marketing, 2026-11-20 (tarde, venció el 19): la parte de marketing ya está. `s
 Marketing, 2026-11-20 16:05: Ezra: «A partir del lunes ponemos esas historias». Aprobada desde el lunes 23 (`- desde 2026-11-23` en APROBADO.md); la primera sale el 23 a las 11:00 si ese día hay inventario cargado.
 
 Automatizaciones, 2026-11-22: nueva fecha 23-nov (aprobada «desde» el 23, ya no hace falta el sí semanal); se cierra cuando salga la primera.
+Automatizaciones, 2026-11-24: plazo al 25-nov. No salió el 23 porque la app está cerrada hasta el miércoles 25 a las 11:00 (el script no publica durante el cierre).
