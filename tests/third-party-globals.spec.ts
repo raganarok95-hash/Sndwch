@@ -146,3 +146,26 @@ test('si un tercero borra sndScreen, la app la repone blindada', async ({ page }
   });
   expect(r).toBe('p_legal');
 });
+
+// Promesa: cuando Culqi llama a SU `go` global (con un objeto, al montar la ventana de pago) después
+// de que repusimos el nuestro, la llamada le llega a Culqi y el cliente no se mueve de Pagar.
+// Modo de fallo (visto en producción el 2026-11-26, pila en debug_logs): la llamada caía en nuestro
+// `go`, la pantalla quedaba en un objeto y el `go` de Culqi nunca corría.
+test('el go de Culqi recibe su propia llamada y la pantalla no se mueve', async ({ page }) => {
+  await page.route('**/functions/v1/api', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: false, hours: [], businessLaunched: true }) }),
+  );
+  await page.route('**/rest/v1/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.goto(APP_FILE);
+  await page.waitForFunction(() => typeof (window as any).go === 'function');
+  const r = await page.evaluate(() => {
+    const w = window as any;
+    w.go('p_legal');
+    w.go = function goDeCulqi(o: unknown) { w._recibioCulqi = o; }; // Culqi declara el suyo
+    w.render(); // nosotros reponemos el nuestro
+    w.go({ montar: true }); // Culqi llama a «su» go por el nombre global
+    return { pantalla: w.sndScreen, culqi: w._recibioCulqi };
+  });
+  expect(r.pantalla).toBe('p_legal');
+  expect(r.culqi).toEqual({ montar: true });
+});
