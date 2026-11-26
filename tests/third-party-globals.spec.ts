@@ -124,3 +124,25 @@ test('una escritura ajena a sndScreen no saca al cliente de su pantalla', async 
   });
   expect(pantalla).toBe('p_legal');
 });
+
+// Promesa: si un tercero BORRA o redefine la pantalla (lo que el accesor no puede impedir), la
+// app la repone, vuelve a blindarla y avisa una vez. Modo de fallo: quedaría como dato normal y
+// la siguiente escritura ajena volvería a sacar al cliente de su pantalla.
+test('si un tercero borra sndScreen, la app la repone blindada', async ({ page }) => {
+  await page.route('**/functions/v1/api', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: false, hours: [], businessLaunched: true }) }),
+  );
+  await page.route('**/rest/v1/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.goto(APP_FILE);
+  await page.waitForFunction(() => typeof (window as any).go === 'function');
+  const r = await page.evaluate(() => {
+    const w = window as any;
+    delete w.sndScreen;
+    w.render();
+    w.go('p_legal');
+    w.sndScreen = function vueInterno() { return 1; };
+    w.render();
+    return w.sndScreen;
+  });
+  expect(r).toBe('p_legal');
+});
