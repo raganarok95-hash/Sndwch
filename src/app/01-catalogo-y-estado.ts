@@ -928,7 +928,7 @@ function alcanzaParaDoble(code:string,size?:string):boolean{
 // navegador puede redefinir la propiedad en vez de abortar ese script (que sería la pasarela).
 var _sndPantallaActual='o_home',_sndPantallaPisadaReportada=false;
 declare var sndScreen:string;
-try{
+function instalarPantallaBlindada(){
   Object.defineProperty(window,'sndScreen',{configurable:true,enumerable:true,
     get:function(){return _sndPantallaActual;},
     set:function(v){
@@ -939,7 +939,8 @@ try{
       console.warn('sndScreen: se ignoró una escritura que no es texto ('+typeof v+')');
       try{if(typeof api==='function')api('report-client-error',{donde:'sndScreen-pisada',mensaje:'escritura de tipo '+typeof v+' ignorada',pila:pila.slice(0,800),pantalla:_sndPantallaActual,version:typeof APP_BUILD!=='undefined'?APP_BUILD:''}).catch(function(){});}catch(_){}
     }});
-}catch(e){(window as any).sndScreen='o_home';}
+}
+try{instalarPantallaBlindada();}catch(e){(window as any).sndScreen='o_home';}
 var sndTab='order',busy=false,busyMsg='';
 // Tab activa en el home (Signatures/Arma el tuyo) — puramente de presentación, no
 // se persiste ni afecta ningún flujo de pedido real.

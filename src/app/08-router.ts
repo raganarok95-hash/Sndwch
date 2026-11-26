@@ -487,8 +487,16 @@ function render(){
     // además de los tirantes, porque el costo es una comparación por render y el costo de
     // equivocarse es la app entera caída sin que nadie se entere.
     if(typeof sndScreen!=='string'){
+      // Diagnóstico (2026-11-26): con el accesor de 01-* una escritura ajena ya no llega acá, así
+      // que si llega es porque alguien BORRÓ o REDEFINIÓ la propiedad, o porque render() corrió
+      // antes de que existiera. Se reporta qué quedó y la pila, para saber cuál de las tres fue.
+      var dsc:any=null;try{dsc=Object.getOwnPropertyDescriptor(window,'sndScreen');}catch(_){}
+      var qued=dsc?(dsc.get?'accesor ajeno':'dato '+typeof dsc.value):'borrada';
+      if(dsc&&dsc.get&&dsc.get.toString().indexOf('_sndPantallaActual')>=0)qued='nuestro accesor';
       console.error('sndScreen fue sobrescrito por un script externo — reponiendo a o_home');
-      sndScreen='o_home';
+      reportarError('sndScreen-en-render',new Error('quedó: '+qued+' · tipo '+typeof sndScreen+' · '+String(typeof sndScreen==='function'?String(sndScreen).slice(0,80):'')+' · estado '+document.readyState+' · '+Math.round(performance.now())+' ms'));
+      _sndPantallaActual='o_home';
+      try{if(dsc)delete (window as any).sndScreen;instalarPantallaBlindada();}catch(_){sndScreen='o_home';}
     }
     // El lado se aplica en CADA render y en UN solo sitio. Hacerlo dentro de cada onclick
     // que cambia de pantalla garantizaba lo contrario: la que se olvidara se quedaría del
