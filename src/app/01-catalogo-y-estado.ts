@@ -918,7 +918,29 @@ function alcanzaParaDoble(code:string,size?:string):boolean{
 // nunca de 1-3 letras. Compartimos el objeto `window` con Culqi y con Google Sign-In, y
 // los dos son bundles minificados que pueden declarar globales de cualquier nombre corto
 // en cualquier actualización suya, sin avisarnos.
-var sndScreen='o_home',sndTab='order',busy=false,busyMsg='';
+// Desde el 2026-11-26 la pantalla además está BLINDADA: `sndScreen` es un accesor de `window`
+// que solo acepta strings. El recorrido real del 25-nov (corrida 45710163146) vio otra vez la
+// variable pisada justo después de abrir y cerrar la ventana de Culqi; con el guard de render()
+// eso mandaba al cliente a la puerta, y si pasaba con la ventana de pago abierta, el rechazo de
+// la tarjeta se pintaba en la puerta en vez de en Pagar. Ahora la escritura ajena se ignora (el
+// cliente se queda donde estaba) y se reporta UNA vez con la pila, para saber quién fue.
+// `configurable:true` a propósito: si un bundle declara una función global con este nombre, el
+// navegador puede redefinir la propiedad en vez de abortar ese script (que sería la pasarela).
+var _sndPantallaActual='o_home',_sndPantallaPisadaReportada=false;
+declare var sndScreen:string;
+try{
+  Object.defineProperty(window,'sndScreen',{configurable:true,enumerable:true,
+    get:function(){return _sndPantallaActual;},
+    set:function(v){
+      if(typeof v==='string'){_sndPantallaActual=v;return;}
+      if(_sndPantallaPisadaReportada)return;
+      _sndPantallaPisadaReportada=true;
+      var pila=String(new Error('sndScreen').stack||'');
+      console.warn('sndScreen: se ignoró una escritura que no es texto ('+typeof v+')');
+      try{if(typeof api==='function')api('report-client-error',{donde:'sndScreen-pisada',mensaje:'escritura de tipo '+typeof v+' ignorada',pila:pila.slice(0,800),pantalla:_sndPantallaActual,version:typeof APP_BUILD!=='undefined'?APP_BUILD:''}).catch(function(){});}catch(_){}
+    }});
+}catch(e){(window as any).sndScreen='o_home';}
+var sndTab='order',busy=false,busyMsg='';
 // Tab activa en el home (Signatures/Arma el tuyo) — puramente de presentación, no
 // se persiste ni afecta ningún flujo de pedido real.
 // null = todavia no eligio hermano, y eso pinta la pantalla de eleccion (sOEleccion).

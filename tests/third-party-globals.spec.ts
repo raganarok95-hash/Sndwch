@@ -103,3 +103,24 @@ test('un sndScreen corrupto no deja la app muerta', async ({ page }) => {
   const tipo = await page.evaluate(() => typeof (window as any).sndScreen);
   expect(tipo, 'sndScreen debe haber vuelto a ser un string').toBe('string');
 });
+
+// Promesa: si un tercero pisa la pantalla mientras el cliente está en otra (Pagar con la ventana
+// de Culqi abierta, visto otra vez en el recorrido real del 2026-11-25), el cliente se queda donde
+// estaba. Modo de fallo: antes el guard de render() lo mandaba a la puerta sin decir nada, y el
+// rechazo de su tarjeta se pintaba ahí, lejos de Pagar.
+test('una escritura ajena a sndScreen no saca al cliente de su pantalla', async ({ page }) => {
+  await page.route('**/functions/v1/api', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ valid: false, hours: [], businessLaunched: true }) }),
+  );
+  await page.route('**/rest/v1/**', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  await page.goto(APP_FILE);
+  await page.waitForFunction(() => typeof (window as any).go === 'function');
+  const pantalla = await page.evaluate(() => {
+    const w = window as any;
+    w.go('p_legal');
+    w.sndScreen = function vueInterno() { return 1; };
+    w.render();
+    return w.sndScreen;
+  });
+  expect(pantalla).toBe('p_legal');
+});
