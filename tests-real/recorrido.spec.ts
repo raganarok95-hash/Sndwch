@@ -42,6 +42,12 @@ const IGNORAR = [
 function vigilar(page: Page) {
   page.on('pageerror', (e) => hallazgos.push({ paso: pasoActual, que: 'JS: ' + String(e.message).slice(0, 200) }));
   page.on('console', (m) => {
+    // Diagnóstico de la pantalla pisada (2026-11-26): se imprime cuándo y con qué versión pasa.
+    if (/sndScreen/.test(m.text())) {
+      console.log(`sndScreen: [${m.type()}] ${m.text().slice(0, 300)} · ${new Date().toISOString()}`);
+      page.evaluate(() => { const w = window as any; const d = Object.getOwnPropertyDescriptor(w, 'sndScreen'); return 'versión ' + w.APP_BUILD + ' · propiedad ' + (d ? (d.get ? 'accesor' : 'dato ' + typeof d.value) : 'no existe') + ' · ' + location.href + ' · ' + document.readyState; })
+        .then((x) => console.log('sndScreen: ' + x)).catch(() => {});
+    }
     if (m.type() !== 'error') return;
     const t = m.text() + ' ' + (m.location()?.url || '');
     if (!IGNORAR.some((r) => r.test(t))) hallazgos.push({ paso: pasoActual, que: 'consola: ' + t.slice(0, 200) });
@@ -167,7 +173,9 @@ test('un cliente nuevo recorre la app real sin errores', async ({ page }) => {
     marca('cerrada');
     // La ventana de Culqi sigue con conexiones abiertas aunque se cierre, y la espera de «red quieta» de
     // paso() no terminaba nunca (visto el 2026-11-12): se vuelve a la puerta, que la descarta del todo.
+    console.log('culqi: vuelvo a la puerta · ' + new Date().toISOString());
     await page.goto('/');
+    console.log('culqi: en la puerta · ' + new Date().toISOString());
     if (abrio !== true) hallazgos.push({ paso: pasoActual, que: 'La ventana de pago con tarjeta (Culqi) no abrió en sndwch.app (' + abrir + ')' });
   });
   await paso(page, 'wicho-armador', async () => {
