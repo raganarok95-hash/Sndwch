@@ -16,3 +16,5 @@ que el post le da el nombre a buscar, no un enlace más.
 | lun 30, 12:00 | ITALIAN HOAGIE | Jamón ahumado, salame y pepperoni en pliegues, queso americano, verduras frescas y oil & vinegar. Pídelo en PedidosYa: busca SND//WCH. |
 | mar 1, 12:00 | CLASSIC TUNA | Atún en lascas gruesas, nunca hecho pasta, con la mayonesa justa y pimienta blanca. Cremoso, simple y bien hecho. Pídelo en PedidosYa: busca SND//WCH. |
 | mié 2, 12:00 | PHILLY 30CM | El mismo Philly, el doble de largo: para uno con hambre o para partirlo entre dos. Pídelo en 30CM en PedidosYa: busca SND//WCH. |
+
+En PedidosYa la tienda se llama «Snd//wch» (ID 653094, captura del portal que mandó Ezra el 26-nov). Falta el enlace para la bio.
