@@ -3,9 +3,11 @@ name: Historia hoy hay
 # La historia «hoy hay» de las 11:00, sola (scripts/piezas/hoy-hay-historia.mjs). A las 10:00 de Lima lee qué
 # hay en producción, arma el cuadro y lo programa para las 11:00; el cron de Supabase lo publica. Solo sale si
 # hoy se abre, hay inventario y Ezra aprobó la semana (docs/marketing/hoy-hay/APROBADO.md).
+# GitHub corre los schedule con 5 a 8 h de atraso (el 25-nov salió 18:24 de Lima y la historia no salió: «las 11:00
+# ya pasaron»). Por eso se intenta varias veces desde la 1:00 de Lima; el script no repite si ya quedó programada.
 on:
   schedule:
-    - cron: '0 15 * * *'
+    - cron: '0 6,9,12,15 * * *'
   workflow_dispatch:
 
 permissions:
