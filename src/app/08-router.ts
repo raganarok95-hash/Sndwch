@@ -101,11 +101,17 @@ function makeClickablesAccessible(){
     if(!el.hasAttribute('role'))el.setAttribute('role','button');
   }
 }
+// La versión ajena de cada función que se repuso. Culqi (visto el 2026-11-26, con la pila en
+// debug_logs) declara un `go` global propio y después, al montar su ventana, lo llama por su nombre
+// global: como ya repusimos el nuestro, llamaba al NUESTRO con un objeto y el suyo nunca corría.
+// Se guarda el ajeno para que nuestras funciones puedan devolverle la llamada que no es suya.
+var _sndFuncionesAjenas:Record<string,any>={};
 function sndRestoreOwnedFns(){
   var fixed=[];
   for(var k in _sndOwnedFns){
     try{
-      if((window as any)[k]!==_sndOwnedFns[k]){(window as any)[k]=_sndOwnedFns[k];fixed.push(k);}
+      var actual=(window as any)[k];
+      if(actual!==_sndOwnedFns[k]){if(typeof actual==='function')_sndFuncionesAjenas[k]=actual;(window as any)[k]=_sndOwnedFns[k];fixed.push(k);}
     }catch(_){}
   }
   if(fixed.length)console.warn('Un script externo pisó estas funciones y se repusieron:',fixed.join(', '));

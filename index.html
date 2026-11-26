@@ -4559,7 +4559,7 @@ var pollTimer = null, lastPollCount = 0, pollFailing = false;
 // teléfono?". Sin esto, un shell viejo pegado en caché y un bug real de código se ven
 // idénticos desde afuera, y no hay forma de distinguirlos sin tener el dispositivo en la
 // mano. Se pinta al pie del home, en gris tenue.
-var APP_BUILD = '8eae1c9c95';
+var APP_BUILD = '18422744ad';
 var isOffline = !navigator.onLine;
 // El service worker sirve el shell desde caché (stale-while-revalidate) para que la app
 // abra al instante; cuando detecta que en el servidor hay una versión distinta avisa por
@@ -5988,7 +5988,18 @@ function skeletonCards(n, heightPx) {
     return new Array(n || 3).fill(row).join('');
 }
 // NAV
-function go(s) { sndScreen = s; render(); }
+// Culqi también tiene un `go` global y lo llama con un objeto al montar su ventana (2026-11-26):
+// esa llamada no es nuestra y se le devuelve a la suya, sin tocar la pantalla del cliente.
+function go(s) {
+    if (typeof s !== 'string') {
+        var suya = _sndFuncionesAjenas.go;
+        if (typeof suya === 'function')
+            return suya.apply(this, arguments);
+        return;
+    }
+    sndScreen = s;
+    render();
+}
 function swTab(t) { sndTab = t; sndScreen = t === 'order' ? 'o_home' : (cust ? 'p_home' : 'p_auth'); aErr = ''; render(); }
 // Reconstruye el estado global del builder a partir de un "build" guardado
 // (viene de un pedido pasado o de un favorito) y salta directo a confirmar.
@@ -13754,11 +13765,19 @@ function makeClickablesAccessible() {
             el.setAttribute('role', 'button');
     }
 }
+// La versión ajena de cada función que se repuso. Culqi (visto el 2026-11-26, con la pila en
+// debug_logs) declara un `go` global propio y después, al montar su ventana, lo llama por su nombre
+// global: como ya repusimos el nuestro, llamaba al NUESTRO con un objeto y el suyo nunca corría.
+// Se guarda el ajeno para que nuestras funciones puedan devolverle la llamada que no es suya.
+var _sndFuncionesAjenas = {};
 function sndRestoreOwnedFns() {
     var fixed = [];
     for (var k in _sndOwnedFns) {
         try {
-            if (window[k] !== _sndOwnedFns[k]) {
+            var actual = window[k];
+            if (actual !== _sndOwnedFns[k]) {
+                if (typeof actual === 'function')
+                    _sndFuncionesAjenas[k] = actual;
                 window[k] = _sndOwnedFns[k];
                 fixed.push(k);
             }

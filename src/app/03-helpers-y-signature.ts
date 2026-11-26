@@ -242,7 +242,12 @@ function skeletonCards(n,heightPx){
 }
 
 // NAV
-function go(s){sndScreen=s;render();}
+// Culqi también tiene un `go` global y lo llama con un objeto al montar su ventana (2026-11-26):
+// esa llamada no es nuestra y se le devuelve a la suya, sin tocar la pantalla del cliente.
+function go(s){
+  if(typeof s!=='string'){var suya=_sndFuncionesAjenas.go;if(typeof suya==='function')return suya.apply(this,arguments);return;}
+  sndScreen=s;render();
+}
 function swTab(t){sndTab=t;sndScreen=t==='order'?'o_home':(cust?'p_home':'p_auth');aErr='';render();}
 
 // Reconstruye el estado global del builder a partir de un "build" guardado
