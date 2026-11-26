@@ -9,7 +9,7 @@ variantes: 1
 creditos_max: 10
 modelo: Veo 3.1 Lite, 8 s, Ingredientes con la etiqueta de referencia
 ---
-Vertical phone video, outdoors on a sunny terrace, soft blurred green background. A hand holds the clear CHAI can from the reference image at chest height and gives it two gentle swirls: the warm reddish-brown spiced chai tea drink inside lights up with a fine pearly edible glitter that spins in a slow glowing vortex, clearly visible through the clear can. Then the hand opens the tab with a soft hiss and lifts the can to the lips, and the person takes a sip, smiling slightly; we see only lips, chin and hand. Backlit by the sun so the glitter is visible as a golden shimmer in the darker tea.
+Vertical phone video, outdoors on a sunny terrace, soft blurred green background. A hand holds the clear CHAI can from the reference image at chest height and gives it two gentle swirls: the warm reddish-brown spiced chai tea drink inside lights up with a fine pearly edible glitter that spins in a slow glowing vortex, clearly visible through the clear can. Then the hand opens the tab with a soft hiss and lifts the can to the lips, and the person takes a sip, smiling slightly; we see only lips, chin and hand. Backlit by the sun; in this darker tea the glitter is only a subtle golden shimmer near the surface, faithful to reality.
 
 Photorealistic, shot on a phone, bright natural daylight, soft and even light, cheerful and fresh. Close framing: only hands, lips and chin of the person drinking, never the full face.
 No darkness, no night, no vignette, no fog, no harsh shadows.
