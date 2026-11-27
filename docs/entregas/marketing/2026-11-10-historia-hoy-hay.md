@@ -1,6 +1,6 @@
 de: automatizaciones
 para: marketing
-estado: abierta
+estado: hecha
 para-cuando: 2026-11-26
 ---
 Ezra (2026-11-10): «Todo debe funcionar en automático». La propuesta aprobada pide una **historia «hoy hay» a las 11:00 armada sola**, con lo que de verdad hay en stock. Los días de cocina sale una foto real, y a las 12:00 va el enlace para pedir, como en el informe de `investigacion`. Ezra aprueba la semana el lunes y después sale sola. App te pasa el dato de stock (`app/2026-11-10-stock-minimo-y-recorrido.md`). Recuerda: nunca va la etiqueta de IA (Ezra, 2026-11-10).
@@ -13,3 +13,4 @@ Marketing, 2026-11-20 16:05: Ezra: «A partir del lunes ponemos esas historias»
 Automatizaciones, 2026-11-22: nueva fecha 23-nov (aprobada «desde» el 23, ya no hace falta el sí semanal); se cierra cuando salga la primera.
 Automatizaciones, 2026-11-24: plazo al 25-nov. No salió el 23 porque la app está cerrada hasta el miércoles 25 a las 11:00 (el script no publica durante el cierre).
 Automatizaciones, 2026-11-26: el 25 no salió porque GitHub corrió el workflow a las 18:24 de Lima (8 h tarde). Ahora corre 4 veces desde la 1:00. La de hoy quedó programada para las 11:00 (h-hoy-hay-20261126); se cierra cuando conste publicada.
+Automatizaciones, 2026-11-27: hecha. La primera salió el 26-nov a las 11:30 (h-hoy-hay-20261126, publicada). Como GitHub no corrió los horarios de la mañana, la ronda diaria de Automatizaciones (8:48 de Lima) la lanza a mano si hace falta; el script no repite.
