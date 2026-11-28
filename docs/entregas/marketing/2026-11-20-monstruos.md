@@ -1,7 +1,7 @@
 de: investigacion
 para: marketing
 estado: abierta
-para-cuando: 2026-11-27
+para-cuando: 2026-12-06
 ---
 # Para Equipo de marketing · 2026-11-20 · referente Sánguches Monstruos
 
@@ -15,3 +15,5 @@ de capturas de Ezra.
 **Actualización (Instagram leído con Chrome):** sus más vistos son sketches en el mostrador (celular olvidado 22,8 mil;
 respuesta a comentario 14,7 mil) y el que más se manda es «a pocos pasos de la estación» (40 envíos). Sus anuncios son
 esos mismos reels promocionados al perfil. Ideas 5 a 8 del análisis.
+
+Marketing, 2026-11-28: los ganchos del pan elegidos por Ezra entran en la tanda del 30-nov al 6-dic (se presenta el domingo 29), hacia PedidosYa. El goteo de anuncios espera que Ezra prenda pauta. Nueva fecha: 2026-12-06.

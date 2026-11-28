@@ -1,7 +1,7 @@
 ---
 de: crecimiento
 para: marketing
-estado: abierta
+estado: pausada
 para-cuando: 2026-11-28
 ---
 Ezra (2026-11-12): «de todas las herramientas que tenemos nadie las conoce». El plan es el tuyo
@@ -18,3 +18,5 @@ Cómo se mide cada una ya está en el código (bloque `herramientas` del DATOS-b
 el sí de Ezra.
 
 Marketing, 2026-11-21: las 4 piezas (historias de referidos, combo y secreto; reel del grupo) todavía no salen. Venció el 20 sin hacerse: las tomas nuevas esperan la laptop de Ezra (Flow), y la regla de imágenes nuevas (Ezra, 2026-11-21: «Creatividad») impide armarlas con fotos ya publicadas. Nueva fecha: 2026-11-28, cada una con su ?src= de esta entrega.
+
+Marketing, 2026-11-28: en pausa por orden de Ezra (2026-11-26: «toda la publicidad hasta que yo lo diga que se enfoque en pedir por PedidosYa»). Referidos, combo de la app, secreto y grupo solo existen en la app, así que estas 4 piezas no salen hasta que Ezra levante esa regla.
